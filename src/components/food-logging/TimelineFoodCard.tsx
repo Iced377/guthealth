@@ -69,7 +69,6 @@ export default function TimelineFoodCard({
   );
 
   const mutedTextClass = "text-muted-foreground";
-  const primaryTextClass = "text-foreground";
   const buttonTextClass = "text-foreground"; 
 
   const aiSummaries = item.fodmapData?.aiSummaries;
@@ -83,10 +82,10 @@ export default function TimelineFoodCard({
           <p className="ml-2 text-white">AI Analyzing...</p>
         </div>
       )}
-      <CardHeader className="px-4 py-3">
+      <CardHeader className="px-4 py-3 bg-primary text-primary-foreground">
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
-            <CardTitle className={cn("text-md sm:text-lg font-semibold font-headline break-words", primaryTextClass)}>{item.name}</CardTitle>
+            <CardTitle className={cn("text-md sm:text-lg font-semibold font-headline break-words")}>{item.name}</CardTitle>
           </div>
           {!isGuestView && (
             <div className="flex items-center gap-0.5 ml-2 shrink-0">
@@ -102,11 +101,13 @@ export default function TimelineFoodCard({
                         disabled={isLoadingAi}
                         className={cn(
                           "h-7 w-7",
-                          item.userFeedback === 'safe' ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'
+                          item.userFeedback === 'safe' 
+                            ? 'bg-white/20 hover:bg-white/30 text-primary-foreground' 
+                            : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
                         )}
                         aria-label="Mark as Safe"
                       >
-                        <ThumbsUp className={`h-4 w-4 ${item.userFeedback === 'safe' ? 'fill-green-500/70' : ''}`} />
+                        <ThumbsUp className={cn("h-4 w-4", item.userFeedback === 'safe' ? 'fill-primary-foreground/70' : '')} />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Safe</p></TooltipContent>
@@ -122,11 +123,13 @@ export default function TimelineFoodCard({
                         disabled={isLoadingAi}
                         className={cn(
                           "h-7 w-7",
-                          item.userFeedback === 'unsafe' ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'text-muted-foreground hover:text-red-500 hover:bg-red-500/10'
+                          item.userFeedback === 'unsafe' 
+                            ? 'bg-red-700/60 hover:bg-red-700/80 text-primary-foreground' 
+                            : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
                         )}
                         aria-label="Mark as Unsafe"
                       >
-                        <ThumbsDown className={`h-4 w-4 ${item.userFeedback === 'unsafe' ? 'fill-red-500/70' : ''}`} />
+                        <ThumbsDown className={cn("h-4 w-4", item.userFeedback === 'unsafe' ? 'fill-primary-foreground/70' : '')} />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Unsafe</p></TooltipContent>
@@ -138,7 +141,7 @@ export default function TimelineFoodCard({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => onRemoveItem(item.id)} className="text-destructive hover:bg-destructive/20 h-7 w-7"  disabled={isLoadingAi} aria-label="Remove this item">
+                        <Button variant="ghost" size="icon" onClick={() => onRemoveItem(item.id)} className="text-red-300 hover:text-red-200 hover:bg-white/10 h-7 w-7" disabled={isLoadingAi} aria-label="Remove this item">
                             <Trash2 className="h-4 w-4" />
                         </Button>
                     </TooltipTrigger>
@@ -149,9 +152,9 @@ export default function TimelineFoodCard({
             </div>
           )}
         </div>
-        <p className={cn("text-xs pt-1", mutedTextClass)}>Logged: {timeAgo}</p>
+        <p className={cn("text-xs pt-1 opacity-90")}>Logged: {timeAgo}</p>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-3 space-y-0"> 
+      <CardContent className="px-4 pt-2 pb-3 space-y-0"> 
         {item.isSimilarToSafe && !isManualMacroEntry && (
           <Badge
             variant="default"
@@ -339,3 +342,5 @@ export default function TimelineFoodCard({
     </Card>
   );
 }
+
+    
