@@ -37,7 +37,9 @@ const DataSecuritySection = () => (
   <section className="py-16 sm:py-20 bg-muted/50">
     <div className="container mx-auto px-4">
       <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16 font-headline">
-        <Shield className="inline-block h-10 w-10 mr-3 text-primary" /> Your Data Security is Our Priority
+        <GradientText>
+          <Shield className="inline-block h-10 w-10 mr-3 text-primary" /> Your Data Security is Our Priority
+        </GradientText>
       </h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {[
@@ -180,7 +182,9 @@ export default function LandingPageClientContent({
       {/* How It Works Section */}
       <section className="py-16 sm:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16 font-headline">How GutCheck Works</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16 font-headline">
+            <GradientText>How GutCheck Works</GradientText>
+          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { title: "Snap a Photo or Log a Meal", description: "Use your camera or write a short meal description. GutCheck’s AI analyzes ingredients and serving size." },
@@ -225,7 +229,9 @@ export default function LandingPageClientContent({
       <section className="py-16 sm:py-20 bg-muted/50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10 font-headline">
-            <AccuracyTipIcon className="inline-block h-10 w-10 mr-3 text-primary" /> Want more accurate results?
+            <GradientText>
+              <AccuracyTipIcon className="inline-block h-10 w-10 mr-3 text-primary" /> Want more accurate results?
+            </GradientText>
           </h2>
           <Accordion type="single" collapsible className="w-full max-w-2xl mx-auto bg-card p-4 sm:p-6 rounded-lg shadow-md border border-border">
             {[
@@ -249,7 +255,9 @@ export default function LandingPageClientContent({
       {/* Feedback Section */}
       <section className="py-16 sm:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16 font-headline">Beta Users are Already providing feedback</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16 font-headline">
+            <GradientText>Beta Users are Already providing feedback</GradientText>
+          </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {placeholderFeedback.map((feedback) => (
               <Card key={feedback.id} className="bg-card border-border shadow-lg p-6 rounded-xl flex flex-col">
@@ -284,7 +292,9 @@ export default function LandingPageClientContent({
         <section className="py-16 sm:py-20 text-center bg-primary/10">
           <div className="container mx-auto px-4">
             <ShieldCheck className="h-16 w-16 text-primary mx-auto mb-6" />
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6 font-headline">Enjoy the Beta!</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-6 font-headline">
+              <GradientText>Enjoy the Beta!</GradientText>
+            </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8">
               Thank you for being a part of our beta program. Your insights and experiences are invaluable. Please continue to share your feedback through the widget!
             </p>
