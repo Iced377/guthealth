@@ -53,11 +53,13 @@ interface ReleaseNote {
 const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.6.6",
-    date: "June 08, 2025",
-    title: "App Audit & Timestamp Fixes",
+    date: "June 08, 2025", // Assuming date remains the same, adjust if needed
+    title: "App Audit Fixes & Enhanced Timestamp Editing",
     description: [
-      "Conducted app audit: Implemented robust date and time selection for all food logging and editing. Ensured consistent editing dialogs for AI-processed items.",
-      "Corrected server-side AI model access issues by defaulting to stable models and improving error reporting for model-not-found scenarios.",
+      "Timestamp Control: Implemented precise date AND time selection for all food logging and editing actions.",
+      "Audit Fix - Consistent Editing: Standardized editing dialogs; AI-processed items (text/photo) now consistently use the appropriate dialog for re-analysis or detail adjustment.",
+      "Audit Fix - AI Model Stability: Resolved AI model access errors by defaulting to stable models and improving error messages for 'model not found' scenarios.",
+      "Audit Fix - Firestore Compatibility: Ensured data integrity by converting potentially 'undefined' values to 'null' before saving to Firestore.",
     ],
   },
   {
