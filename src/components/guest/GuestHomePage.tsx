@@ -103,7 +103,7 @@ export default function GuestHomePage({
       <h2 className="text-3xl sm:text-4xl font-bold mb-6 font-headline text-center">
         <GradientText>
             <Heart className="inline-block h-10 w-10 mr-3 text-primary" /> {/* Heart icon is now part of the gradient */}
-            Become a GutCheck Pioneer!
+            Become a GutChecker Pioneer!
         </GradientText>
       </h2>
       <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8 text-center">
@@ -149,4 +149,3 @@ export default function GuestHomePage({
     </div>
   );
 }
-
