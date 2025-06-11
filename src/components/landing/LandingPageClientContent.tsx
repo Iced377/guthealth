@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield } from 'lucide-react'; // Changed JournalText to ScrollText
+import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield } from 'lucide-react'; 
 import Link from 'next/link';
 
 const featureIcons: Record<string, React.ElementType> = {
-  "Snap a Photo or Log a Meal": ScrollText, // Changed from JournalText
+  "Snap a Photo or Log a Meal": ScrollText, 
   "Get Instant Deep Feedback": Brain,
   "Track Your Reactions": BarChart2,
   "Optimize with AI Recommendations": Lightbulb,
@@ -135,7 +135,7 @@ export default function LandingPageClientContent({
       <section className="py-16 sm:py-24 bg-gradient-to-br from-primary/10 via-background to-background">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 tracking-tight">
-            Track your gut. <span className="text-primary">Transform your health.</span>
+            Track your gut. <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">Transform your health.</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
             GutCheck helps you identify foods that trigger IBS and optimize your diet, effectively.
@@ -146,7 +146,7 @@ export default function LandingPageClientContent({
             </div>
           )}
           {heroActionContent && (
-            <div className="flex justify-center"> {/* Ensure buttons are centered */}
+            <div className="flex justify-center"> 
               {heroActionContent}
             </div>
           )}
@@ -192,7 +192,7 @@ export default function LandingPageClientContent({
                 <Card
                   key={index}
                   className="bg-card border-border shadow-lg hover:shadow-xl transition-shadow text-center p-6 rounded-xl card-reveal-animation"
-                  style={{ animationDelay: `${index * 0.15}s` }} // Staggered delay
+                  style={{ animationDelay: `${index * 0.15}s` }} 
                 >
                   <CardHeader className="p-0 mb-4 flex flex-col items-center">
                     <TooltipProvider>
@@ -275,7 +275,7 @@ export default function LandingPageClientContent({
 
       {/* Final CTA Section - Conditional Rendering */}
       {finalCTAMessage ? (
-        <section className="py-16 sm:py-20 text-center bg-background"> {/* Using background for guest CTA */}
+        <section className="py-16 sm:py-20 text-center bg-background"> 
           {finalCTAMessage}
         </section>
       ) : (
