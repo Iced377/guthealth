@@ -73,11 +73,12 @@ export async function getPersonalizedDietitianInsight(input: PersonalizedDietiti
 
 const personalizedDietitianPrompt = ai.definePrompt({
   name: 'personalizedDietitianPrompt',
-  model: 'googleai/gemini-1.5-pro-latest', // Explicitly set model
+  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily use default model
   input: { schema: PersonalizedDietitianInputSchema },
   output: { schema: PersonalizedDietitianOutputSchema },
   prompt: `You are an expert AI Dietitian and Wellness Coach.
-Your task is to provide a comprehensive, empathetic, personalized, and actionable response based on the user's question and ALL their provided data (profile, food log, symptom log).
+Provide a comprehensive, empathetic, personalized, and actionable response based on the user's question and ALL their provided data (profile, food log, symptom log).
+Output the response as a JSON object with a single key 'aiResponse'.
 
 User's Question:
 "{{{userQuestion}}}"
@@ -123,25 +124,18 @@ User's Recent Symptom Log (chronological):
 
 RESPONSE GUIDELINES:
 1.  **Analysis & Insight:**
-    *   If the question relates to food triggers, identify patterns between food intake (timing, ingredients, FODMAPs, user feedback) and symptoms.
-    *   If about diet improvement, suggest specific, actionable changes based on logs.
+    *   Analyze patterns between food (timing, ingredients, FODMAPs, user feedback) and symptoms if question relates to triggers.
+    *   Suggest specific, actionable dietary changes based on logs if about diet improvement.
     *   Connect general well-being questions to dietary habits if relevant.
-    *   If data is insufficient for a deep answer, state this clearly, but still offer general advice or suggest what additional data would be helpful.
+    *   If data is insufficient for a deep answer, state this clearly, but offer general advice or suggest what additional data would be helpful.
 2.  **Personalization & Tone:**
     *   Be highly personalized: refer to specific foods logged or symptoms reported.
     *   Maintain a supportive, encouraging, and caring tone.
     *   Avoid definitive medical diagnoses. Frame suggestions as possibilities to explore or discuss with a healthcare professional.
-3.  **Formatting & Output:**
+3.  **Formatting:**
     *   Synthesize information to provide new insights; do NOT just repeat input data.
     *   Structure your response clearly using paragraphs. For multiple points, consider markdown bullet points (* or -) for readability.
-    *   Your entire response should be the value for the 'aiResponse' field in a JSON object.
-
-Example Output Format:
-{
-  "aiResponse": "Your detailed, personalized, and empathetic insight here, addressing the user's question based on their data..."
-}
-
-Provide your detailed, personalized insight for 'aiResponse' below:
+    *   Your entire response should be the value for the 'aiResponse' field.
 `,
 });
 
@@ -172,10 +166,15 @@ const personalizedDietitianFlow = ai.defineFlow(
       return output;
     } catch (error: any) {
       console.error('[PersonalizedDietitianFlow] Error during AI processing:', error);
+      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("Model not found");
+      let specificResponseMessage = `An error occurred while consulting the AI dietitian: ${error.message || 'Unknown AI error'}. Please try again later.`;
+      if (modelNotFoundError) {
+        specificResponseMessage = "AI Dietitian analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
+      }
+      
       return { 
-        aiResponse: `An error occurred while consulting the AI dietitian: ${error.message || 'Unknown AI error'}. Please try again later. If the issue persists, ensure your API key for the AI service is correctly configured.` 
+        aiResponse: specificResponseMessage
       };
     }
   }
 );
-

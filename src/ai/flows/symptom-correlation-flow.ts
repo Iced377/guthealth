@@ -83,12 +83,13 @@ export async function getSymptomCorrelations(input: SymptomCorrelationInput): Pr
 
 const symptomCorrelationPrompt = ai.definePrompt({
   name: 'symptomCorrelationPrompt',
-  model: 'googleai/gemini-1.5-pro-latest', // Set capable model
+  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily use default model
   input: {schema: SymptomCorrelationInputSchema},
   output: {schema: SymptomCorrelationOutputSchema},
   prompt: `You are an AI assistant for IBS pattern identification.
-Analyze the user's food and symptom logs to find correlations. Consider timing (1-4 hour onset typical), ingredients, portions, frequency, and overall FODMAP risk.
-Output a JSON object adhering to SymptomCorrelationOutputSchema.
+Analyze the user's food and symptom logs to find correlations.
+Consider timing (1-4 hour onset typical), ingredients, portions, frequency, and overall FODMAP risk.
+Output a JSON object strictly adhering to 'SymptomCorrelationOutputSchema'.
 
 User's Food Log:
 {{#each foodLog}}- {{this.name}} ({{this.portionSize}} {{this.portionUnit}}, Ingredients: {{this.ingredients}}, Logged: {{this.timestamp}}, Risk: {{#if this.overallFodmapRisk}}{{this.overallFodmapRisk}}{{else}}N/A{{/if}}){{else}}(None){{/each}}
@@ -98,15 +99,11 @@ User's Symptom Log:
 
 {{#if safeFoods.length}}User's Marked Safe Foods (reference):{{#each safeFoods}} - {{this.name}} ({{this.portionSize}} {{this.portionUnit}}){{/each}}{{/if}}
 
-Generate 2-3 key insights as per the schema.
-Insight Examples:
-- Type: 'potential_trigger', Title: "Garlic & Bloating Link", Description: "Bloating reported 3/4 times within 2-4 hours post-garlic meals.", Confidence: 'medium'.
-- Type: 'potential_safe', Title: "Oats Seem Safe", Description: "'Oats with berries' logged 5 times, no subsequent symptoms. Consider marking safe.", Confidence: 'medium'.
-- Type: 'observation', Title: "Dairy & Gas", Description: "Frequent gas after high-dairy meals.", Confidence: 'high'.
-- Type: 'no_clear_pattern', Title: "Headaches Unclear", Description: "No clear food link to headaches in current logs.", Confidence: 'low', SuggestionToUser: "Log consistently for better insights."
-
-Prioritize strong correlations. Safe foods are less likely triggers unless portion significantly increased.
-If data is sparse, provide an 'observation' insight about needing more data.
+Generate 2-3 key insights. Prioritize strong correlations. Safe foods are less likely triggers unless portion significantly increased.
+If data is sparse, provide an 'observation' insight stating more data is needed.
+Examples of insights:
+- 'potential_trigger': Title="Garlic & Bloating Link", Description="Bloating reported 3/4 times within 2-4 hours post-garlic meals.", Confidence='medium'.
+- 'potential_safe': Title="Oats Seem Safe", Description="'Oats with berries' logged 5 times, no subsequent symptoms.", Confidence='medium'.
 `,
 });
 
@@ -129,9 +126,15 @@ const symptomCorrelationFlow = ai.defineFlow(
       return output!;
     } catch (error: any) {
       console.error('[SymptomCorrelationFlow] Error during AI processing:', error);
+      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("Model not found");
+      let specificDescription = `Error during symptom correlation: ${error.message || 'Unknown error'}.`;
+      if (modelNotFoundError) {
+        specificDescription = "Symptom correlation analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
+      }
+      
       return {
         ...defaultErrorOutput,
-        insights: [{ ...defaultErrorOutput.insights[0], description: `Error during symptom correlation: ${error.message || 'Unknown error'}.`}]
+        insights: [{ ...defaultErrorOutput.insights[0], description: specificDescription }]
       };
     }
   }

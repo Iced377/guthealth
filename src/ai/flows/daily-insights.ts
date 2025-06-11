@@ -64,34 +64,21 @@ export async function getDailyInsights(input: DailyInsightsInput): Promise<Daily
 
 const dailyInsightsPrompt = ai.definePrompt({
   name: 'dailyInsightsPrompt',
-  model: 'googleai/gemini-1.5-pro-latest', // Standardized model name
+  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily use default model
   input: {schema: DailyInsightsInputSchema},
   output: {schema: DailyInsightsOutputSchema},
-  prompt: `Analyze the user's daily food log, symptoms, and micronutrient summary (if provided) to generate personalized insights.
-Output a JSON object strictly adhering to the 'DailyInsightsOutputSchema'.
+  prompt: `Analyze the user's daily food log, symptoms, and (if provided) micronutrient summary.
+Output a JSON object strictly matching 'DailyInsightsOutputSchema'.
 
+Data:
 Food Log: {{{foodLog}}}
 Symptoms: {{{symptoms}}}
-{{#if micronutrientSummary}}
-Micronutrient Summary: {{{micronutrientSummary}}}
-{{/if}}
+{{#if micronutrientSummary}}Micronutrient Summary: {{{micronutrientSummary}}}{{/if}}
 
-The output JSON should include:
+Instructions:
 - 'triggerInsights': Identify potential trigger foods or high-risk meals.
-- 'micronutrientFeedback': Provide feedback on micronutrient intake. If no summary was provided, the schema description for this field guides the expected output.
-- 'overallSummary': A brief, general overview of the day.
-
-Example Input:
-Food Log: "Breakfast: Oats with berries. Lunch: Chicken salad. Dinner: Spaghetti bolognese (with onion and garlic)."
-Symptoms: "Bloating after dinner."
-Micronutrient Summary: "High in Vitamin C, low in Iron."
-
-Example Output (JSON):
-{
-  "triggerInsights": "The spaghetti bolognese containing onion and garlic may have contributed to your bloating, as these are common FODMAP triggers.",
-  "micronutrientFeedback": "Your Vitamin C intake was good today. You might want to focus on iron-rich foods tomorrow.",
-  "overallSummary": "Today included a mix of meals. Bloating was noted after dinner, potentially linked to FODMAPs."
-}
+- 'micronutrientFeedback': Comment on micronutrient intake. If 'micronutrientSummary' is absent, follow schema guidance for this field.
+- 'overallSummary': Provide a brief general overview of the day.
 `,
 });
 
@@ -135,9 +122,15 @@ const dailyInsightsFlow = ai.defineFlow(
 
     } catch (error: any) {
       console.error('[DailyInsightsFlow] Error during AI processing:', error);
+      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("Model not found");
+      let specificSummaryMessage = `Error during daily insights analysis: ${error.message || 'Unknown error'}.`;
+      if (modelNotFoundError) {
+        specificSummaryMessage = "Daily insights analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
+      }
+      
       return {
         ...defaultErrorOutput,
-        overallSummary: `Error during daily insights analysis: ${error.message || 'Unknown error'}.`,
+        overallSummary: specificSummaryMessage,
       };
     }
   }
