@@ -307,16 +307,18 @@ export default function RootPage() {
         ...foodItemData,
         id: currentItemId,
         timestamp: logTimestamp,
-        fodmapData: fodmapAnalysis,
-        isSimilarToSafe: isSimilar,
-        userFodmapProfile: itemFodmapProfileForSimilarity,
-        calories: fodmapAnalysis?.calories,
-        protein: fodmapAnalysis?.protein,
-        carbs: fodmapAnalysis?.carbs,
-        fat: fodmapAnalysis?.fat,
+        fodmapData: fodmapAnalysis ?? null,
+        isSimilarToSafe: isSimilar ?? false,
+        userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+        calories: fodmapAnalysis?.calories ?? null,
+        protein: fodmapAnalysis?.protein ?? null,
+        carbs: fodmapAnalysis?.carbs ?? null,
+        fat: fodmapAnalysis?.fat ?? null,
         entryType: 'food',
         userFeedback: editingItem ? editingItem.userFeedback : null,
         macrosOverridden: false,
+        originalName: foodItemData.name, // For manual entry, originalName is same as name unless AI changes it
+        sourceDescription: "Manually logged" // Default source for manual entries
       };
 
       if (authUser && authUser.uid !== 'guest-user') {
@@ -352,11 +354,13 @@ export default function RootPage() {
         timestamp: logTimestamp,
         isSimilarToSafe: similarityOutput?.isSimilar ?? false,
         entryType: 'food',
-        fodmapData: undefined,
+        fodmapData: null,
         userFodmapProfile: generateFallbackFodmapProfile(foodItemData.name),
-        calories: undefined, protein: undefined, carbs: undefined, fat: undefined,
+        calories: null, protein: null, carbs: null, fat: null,
         userFeedback: editingItem ? editingItem.userFeedback : null,
         macrosOverridden: false,
+        originalName: foodItemData.name,
+        sourceDescription: "Manually logged (analysis failed)"
       };
        if (editingItem) {
         updateTimelineEntry(processedFoodItem);
@@ -430,22 +434,22 @@ export default function RootPage() {
       processedFoodItem = {
         id: currentItemId,
         name: mealDescriptionOutput.wittyName,
-        originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
+        originalName: mealDescriptionOutput.primaryFoodItemForAnalysis ?? null,
         ingredients: mealDescriptionOutput.consolidatedIngredients,
         portionSize: mealDescriptionOutput.estimatedPortionSize,
         portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-        sourceDescription: formData.mealDescription,
+        sourceDescription: formData.mealDescription ?? null,
         timestamp: logTimestamp,
-        fodmapData: fodmapAnalysis,
-        isSimilarToSafe: isSimilar,
-        userFodmapProfile: itemFodmapProfileForSimilarity,
-        calories: finalCalories,
-        protein: finalProtein,
-        carbs: finalCarbs,
-        fat: finalFat,
+        fodmapData: fodmapAnalysis ?? null,
+        isSimilarToSafe: isSimilar ?? false,
+        userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+        calories: finalCalories ?? null,
+        protein: finalProtein ?? null,
+        carbs: finalCarbs ?? null,
+        fat: finalFat ?? null,
         entryType: 'food',
         userFeedback: editingItem ? editingItem.userFeedback : null,
-        macrosOverridden: userDidOverrideMacros,
+        macrosOverridden: userDidOverrideMacros ?? false,
       };
 
       if (authUser && authUser.uid !== 'guest-user') {
@@ -485,16 +489,16 @@ export default function RootPage() {
             portionUnit: mealDescriptionOutput?.estimatedPortionUnit || editingItem?.portionUnit || "",
             sourceDescription: formData.mealDescription,
             timestamp: logTimestamp,
-            fodmapData: undefined,
+            fodmapData: null,
             isSimilarToSafe: similarityOutput?.isSimilar ?? false,
-            userFodmapProfile: fodmapAnalysis?.detailedFodmapProfile || editingItem?.userFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput?.primaryFoodItemForAnalysis || "fallback"),
-            calories: userDidOverrideMacros ? formData.calories : (editingItem ? editingItem.calories : undefined),
-            protein: userDidOverrideMacros ? formData.protein : (editingItem ? editingItem.protein : undefined),
-            carbs: userDidOverrideMacros ? formData.carbs : (editingItem ? editingItem.carbs : undefined),
-            fat: userDidOverrideMacros ? formData.fat : (editingItem ? editingItem.fat : undefined),
+            userFodmapProfile: (fodmapAnalysis?.detailedFodmapProfile || editingItem?.userFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput?.primaryFoodItemForAnalysis || "fallback")) ?? null,
+            calories: (userDidOverrideMacros ? formData.calories : (editingItem ? editingItem.calories : undefined)) ?? null,
+            protein: (userDidOverrideMacros ? formData.protein : (editingItem ? editingItem.protein : undefined)) ?? null,
+            carbs: (userDidOverrideMacros ? formData.carbs : (editingItem ? editingItem.carbs : undefined)) ?? null,
+            fat: (userDidOverrideMacros ? formData.fat : (editingItem ? editingItem.fat : undefined)) ?? null,
             entryType: 'food',
             userFeedback: editingItem ? editingItem.userFeedback : null,
-            macrosOverridden: userDidOverrideMacros,
+            macrosOverridden: userDidOverrideMacros ?? false,
         };
         if (editingItem) {
             updateTimelineEntry(processedFoodItem);
@@ -549,18 +553,19 @@ export default function RootPage() {
 
       processedFoodItem = {
         name: photoData.name,
+        originalName: photoData.name, // For photo, originalName is same as name unless AI changes it
         ingredients: photoData.ingredients,
         portionSize: photoData.portionSize,
         portionUnit: photoData.portionUnit,
         id: currentItemId,
         timestamp: logTimestamp,
-        fodmapData: fodmapAnalysis,
-        isSimilarToSafe: isSimilar,
-        userFodmapProfile: itemFodmapProfileForSimilarity,
-        calories: fodmapAnalysis?.calories,
-        protein: fodmapAnalysis?.protein,
-        carbs: fodmapAnalysis?.carbs,
-        fat: fodmapAnalysis?.fat,
+        fodmapData: fodmapAnalysis ?? null,
+        isSimilarToSafe: isSimilar ?? false,
+        userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+        calories: fodmapAnalysis?.calories ?? null,
+        protein: fodmapAnalysis?.protein ?? null,
+        carbs: fodmapAnalysis?.carbs ?? null,
+        fat: fodmapAnalysis?.fat ?? null,
         entryType: 'food',
         userFeedback: null,
         macrosOverridden: false,
@@ -585,6 +590,7 @@ export default function RootPage() {
       toast({ title: 'Error Processing Photo Log', description: `Could not log food from photo. AI analysis might have failed.`, variant: 'destructive' });
       processedFoodItem = {
         name: photoData.name,
+        originalName: photoData.name,
         ingredients: photoData.ingredients,
         portionSize: photoData.portionSize,
         portionUnit: photoData.portionUnit,
@@ -592,9 +598,9 @@ export default function RootPage() {
         timestamp: logTimestamp,
         isSimilarToSafe: similarityOutput?.isSimilar ?? false,
         entryType: 'food',
-        fodmapData: undefined,
-        userFodmapProfile: fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(photoData.name),
-        calories: undefined, protein: undefined, carbs: undefined, fat: undefined,
+        fodmapData: null,
+        userFodmapProfile: (fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(photoData.name)) ?? null,
+        calories: null, protein: null, carbs: null, fat: null,
         userFeedback: null,
         macrosOverridden: false,
         sourceDescription: "Identified by photo (analysis partially failed)",
@@ -607,7 +613,7 @@ export default function RootPage() {
 
 
   const handleSubmitManualMacroEntry = async (
-    entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback' | 'macrosOverridden'> & { entryType: 'manual_macro' | 'food' },
+    entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback'> & { entryType: 'manual_macro' | 'food' },
     customTimestamp?: Date
   ) => {
     const currentItemId = editingItem ? editingItem.id : `macro-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -615,6 +621,7 @@ export default function RootPage() {
     const newEntry: LoggedFoodItem = {
       ...entryData,
       id: currentItemId,
+      name: entryData.name || "Manual Macro Adjustment",
       timestamp: logTimestamp,
       entryType: 'manual_macro',
       ingredients: "Manual entry",
@@ -622,6 +629,14 @@ export default function RootPage() {
       portionUnit: "serving",
       userFeedback: editingItem ? editingItem.userFeedback : null,
       macrosOverridden: true,
+      calories: entryData.calories ?? null,
+      protein: entryData.protein ?? null,
+      carbs: entryData.carbs ?? null,
+      fat: entryData.fat ?? null,
+      fodmapData: null, // Manual macros don't have FODMAP data
+      userFodmapProfile: null,
+      isSimilarToSafe: false,
+      sourceDescription: "Manual macro entry"
     };
 
     if (authUser && authUser.uid !== 'guest-user') {
@@ -686,7 +701,7 @@ export default function RootPage() {
                 ...logToSave,
                 timestamp: Timestamp.fromDate(newSymptomLog.timestamp)
             });
-            newSymptomLog.id = docRef.id;
+            newSymptomLog.id = docRef.id; // Update with Firestore generated ID
             toast({ title: "Symptoms Logged & Saved", description: "Your symptoms have been recorded." });
         } catch (error: any) {
             console.error("Error saving symptom log to Firestore:", error);
@@ -716,7 +731,7 @@ export default function RootPage() {
             toast({ title: "Entry Removed", description: "The timeline entry has been deleted from cloud." });
         } catch (error) {
             console.error("Error removing timeline entry from Firestore:", error);
-            if (entryToRemove) addTimelineEntry(entryToRemove);
+            if (entryToRemove) addTimelineEntry(entryToRemove); // Add back if cloud delete failed
             toast({ title: "Error Removing Entry", description: "Could not remove entry from cloud. Removed locally.", variant: "destructive" });
         }
     } else {
@@ -726,11 +741,11 @@ export default function RootPage() {
 
 
   const handleLogPreviousMealFlow = (logMethod: 'AI' | 'Manual' | 'Photo') => {
-
+    // Close any other potentially open food logging dialogs
     setIsSimplifiedAddFoodDialogOpen(false);
     setIsAddFoodDialogOpen(false);
     setIsIdentifyByPhotoDialogOpen(false);
-    setEditingItem(null);
+    setEditingItem(null); // Clear any editing state
 
     if (logMethod === 'AI') {
       openSimplifiedAddFoodDialog();
@@ -739,6 +754,7 @@ export default function RootPage() {
     } else if (logMethod === 'Photo') {
       openIdentifyByPhotoDialog();
     }
+    // The LogPreviousMealDialog itself will close via its onLogMethodSelect call
   };
 
 
@@ -793,19 +809,19 @@ export default function RootPage() {
       newFoodItem = {
         id: newItemId,
         name: mealDescriptionOutput.wittyName,
-        originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
+        originalName: mealDescriptionOutput.primaryFoodItemForAnalysis ?? null,
         ingredients: mealDescriptionOutput.consolidatedIngredients,
         portionSize: mealDescriptionOutput.estimatedPortionSize,
         portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-        sourceDescription: formData.mealDescription,
+        sourceDescription: formData.mealDescription ?? null,
         timestamp: new Date(),
-        fodmapData: fodmapAnalysis,
+        fodmapData: fodmapAnalysis ?? null,
         isSimilarToSafe: false,
-        userFodmapProfile: fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis),
-        calories: fodmapAnalysis?.calories,
-        protein: fodmapAnalysis?.protein,
-        carbs: fodmapAnalysis?.carbs,
-        fat: fodmapAnalysis?.fat,
+        userFodmapProfile: (fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis)) ?? null,
+        calories: fodmapAnalysis?.calories ?? null,
+        protein: fodmapAnalysis?.protein ?? null,
+        carbs: fodmapAnalysis?.carbs ?? null,
+        fat: fodmapAnalysis?.fat ?? null,
         entryType: 'food',
         userFeedback: null,
         macrosOverridden: false,
@@ -816,7 +832,8 @@ export default function RootPage() {
     } catch (error: any) {
         console.error('Guest AI meal processing failed:', error);
         toast({ title: "Error Noting Meal", description: "Could not analyze meal.", variant: 'destructive' });
-
+        // Optionally set a fallback newFoodItem or clear lastGuestFoodItem
+        setLastGuestFoodItem(null);
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [newItemId]: false }));
       setIsGuestLogFoodDialogOpen(false);
@@ -850,16 +867,15 @@ export default function RootPage() {
       const baseRepetitionData = {
         id: newItemId,
         timestamp: newTimestamp,
-        isSimilarToSafe: false,
-        userFodmapProfile: undefined,
-        calories: undefined, protein: undefined, carbs: undefined, fat: undefined,
+        isSimilarToSafe: false, // Will be re-evaluated
+        userFodmapProfile: null, // Will be re-evaluated
         entryType: 'food' as 'food',
-        userFeedback: null,
-        macrosOverridden: itemToRepeat.macrosOverridden || false,
+        userFeedback: null, // New entry, no feedback yet
+        macrosOverridden: itemToRepeat.macrosOverridden ?? false,
       };
 
       if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo")) {
-
+        // Repeat an AI (text) logged meal
         mealDescriptionOutput = await processMealDescription({ mealDescription: itemToRepeat.sourceDescription });
         fodmapAnalysis = await analyzeFoodItem({
           foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
@@ -870,41 +886,30 @@ export default function RootPage() {
 
         const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
         if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
-          const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
-            name: sf.name,
-            portionSize: sf.portionSize,
-            portionUnit: sf.portionUnit,
-            fodmapProfile: sf.fodmapProfile,
-          }));
           similarityOutput = await isSimilarToSafeFoods({
-            currentFoodItem: {
-              name: mealDescriptionOutput.primaryFoodItemForAnalysis,
-              portionSize: mealDescriptionOutput.estimatedPortionSize,
-              portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-              fodmapProfile: itemFodmapProfileForSimilarity
-            },
-            userSafeFoodItems: safeFoodItemsForSimilarity,
+            currentFoodItem: { name: mealDescriptionOutput.primaryFoodItemForAnalysis, portionSize: mealDescriptionOutput.estimatedPortionSize, portionUnit: mealDescriptionOutput.estimatedPortionUnit, fodmapProfile: itemFodmapProfileForSimilarity },
+            userSafeFoodItems: userProfile.safeFoods.map(sf => ({ ...sf, fodmapProfile: sf.fodmapProfile })),
           });
         }
 
         processedFoodItem = {
           ...baseRepetitionData,
           name: mealDescriptionOutput.wittyName,
-          originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
+          originalName: mealDescriptionOutput.primaryFoodItemForAnalysis ?? null,
           ingredients: mealDescriptionOutput.consolidatedIngredients,
           portionSize: mealDescriptionOutput.estimatedPortionSize,
           portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-          sourceDescription: itemToRepeat.sourceDescription,
-          fodmapData: fodmapAnalysis,
+          sourceDescription: itemToRepeat.sourceDescription ?? null,
+          fodmapData: fodmapAnalysis ?? null,
           isSimilarToSafe: similarityOutput?.isSimilar ?? false,
-          userFodmapProfile: itemFodmapProfileForSimilarity,
-          calories: itemToRepeat.macrosOverridden ? itemToRepeat.calories : fodmapAnalysis?.calories,
-          protein: itemToRepeat.macrosOverridden ? itemToRepeat.protein : fodmapAnalysis?.protein,
-          carbs: itemToRepeat.macrosOverridden ? itemToRepeat.carbs : fodmapAnalysis?.carbs,
-          fat: itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat,
+          userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+          calories: (itemToRepeat.macrosOverridden ? itemToRepeat.calories : fodmapAnalysis?.calories) ?? null,
+          protein: (itemToRepeat.macrosOverridden ? itemToRepeat.protein : fodmapAnalysis?.protein) ?? null,
+          carbs: (itemToRepeat.macrosOverridden ? itemToRepeat.carbs : fodmapAnalysis?.carbs) ?? null,
+          fat: (itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat) ?? null,
         };
 
-      } else {
+      } else { // Repeat a manually logged meal or photo-logged meal
         fodmapAnalysis = await analyzeFoodItem({
           foodItem: itemToRepeat.originalName || itemToRepeat.name,
           ingredients: itemToRepeat.ingredients,
@@ -914,20 +919,9 @@ export default function RootPage() {
 
         const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(itemToRepeat.originalName || itemToRepeat.name);
         if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
-           const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
-              name: sf.name,
-              portionSize: sf.portionSize,
-              portionUnit: sf.portionUnit,
-              fodmapProfile: sf.fodmapProfile,
-          }));
           similarityOutput = await isSimilarToSafeFoods({
-            currentFoodItem: {
-              name: itemToRepeat.originalName || itemToRepeat.name,
-              portionSize: itemToRepeat.portionSize,
-              portionUnit: itemToRepeat.portionUnit,
-              fodmapProfile: itemFodmapProfileForSimilarity
-            },
-            userSafeFoodItems: safeFoodItemsForSimilarity,
+            currentFoodItem: { name: itemToRepeat.originalName || itemToRepeat.name, portionSize: itemToRepeat.portionSize, portionUnit: itemToRepeat.portionUnit, fodmapProfile: itemFodmapProfileForSimilarity },
+            userSafeFoodItems: userProfile.safeFoods.map(sf => ({ ...sf, fodmapProfile: sf.fodmapProfile })),
           });
         }
 
@@ -938,14 +932,14 @@ export default function RootPage() {
           ingredients: itemToRepeat.ingredients,
           portionSize: itemToRepeat.portionSize,
           portionUnit: itemToRepeat.portionUnit,
-          sourceDescription: itemToRepeat.sourceDescription,
-          fodmapData: fodmapAnalysis,
+          sourceDescription: itemToRepeat.sourceDescription ?? null,
+          fodmapData: fodmapAnalysis ?? null,
           isSimilarToSafe: similarityOutput?.isSimilar ?? false,
-          userFodmapProfile: itemFodmapProfileForSimilarity,
-          calories: itemToRepeat.macrosOverridden ? itemToRepeat.calories : fodmapAnalysis?.calories,
-          protein: itemToRepeat.macrosOverridden ? itemToRepeat.protein : fodmapAnalysis?.protein,
-          carbs: itemToRepeat.macrosOverridden ? itemToRepeat.carbs : fodmapAnalysis?.carbs,
-          fat: itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat,
+          userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+          calories: (itemToRepeat.macrosOverridden ? itemToRepeat.calories : fodmapAnalysis?.calories) ?? null,
+          protein: (itemToRepeat.macrosOverridden ? itemToRepeat.protein : fodmapAnalysis?.protein) ?? null,
+          carbs: (itemToRepeat.macrosOverridden ? itemToRepeat.carbs : fodmapAnalysis?.carbs) ?? null,
+          fat: (itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat) ?? null,
         };
       }
 
@@ -955,6 +949,7 @@ export default function RootPage() {
         await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
         toast({ title: "Meal Repeated & Saved", description: `"${processedFoodItem.name}" added with fresh AI analysis.` });
       } else {
+        // This case should ideally not happen for repeat if user is logged in for original item
         toast({ title: "Meal Repeated (Locally)", description: `"${processedFoodItem.name}" added. Login to save.` });
       }
       addTimelineEntry(processedFoodItem);
@@ -962,18 +957,21 @@ export default function RootPage() {
       console.error('Error repeating meal:', error);
       toast({ title: 'Error Repeating Meal', description: `Could not repeat the meal. AI analysis might have failed.`, variant: 'destructive' });
 
-       processedFoodItem = {
+       processedFoodItem = { // Fallback if AI fails
         ...baseRepetitionData,
         name: itemToRepeat.name + " (Repeat Failed)",
-        originalName: itemToRepeat.originalName,
+        originalName: itemToRepeat.originalName ?? null,
         ingredients: itemToRepeat.ingredients,
         portionSize: itemToRepeat.portionSize,
         portionUnit: itemToRepeat.portionUnit,
-        sourceDescription: itemToRepeat.sourceDescription,
-        fodmapData: undefined,
-        userFodmapProfile: itemToRepeat.userFodmapProfile,
-        calories: itemToRepeat.calories, protein: itemToRepeat.protein, carbs: itemToRepeat.carbs, fat: itemToRepeat.fat,
-        macrosOverridden: itemToRepeat.macrosOverridden,
+        sourceDescription: itemToRepeat.sourceDescription ?? null,
+        fodmapData: null,
+        userFodmapProfile: itemToRepeat.userFodmapProfile ?? null,
+        calories: itemToRepeat.calories ?? null,
+        protein: itemToRepeat.protein ?? null,
+        carbs: itemToRepeat.carbs ?? null,
+        fat: itemToRepeat.fat ?? null,
+        macrosOverridden: itemToRepeat.macrosOverridden ?? false,
       };
       addTimelineEntry(processedFoodItem);
     } finally {
@@ -1008,7 +1006,7 @@ export default function RootPage() {
         <SimplifiedAddFoodDialog
             isOpen={isGuestLogFoodDialogOpen}
             onOpenChange={setIsGuestLogFoodDialogOpen}
-            onSubmitLog={(data, userDidOverrideMacros) => handleGuestProcessMealDescription(data)}
+            onSubmitLog={(data, userDidOverrideMacros) => handleGuestProcessMealDescription(data)} // userDidOverrideMacros is false for guest
             isGuestView={true}
             key={editingItem ? `edit-${editingItem.id}` : 'guest-new'}
         />
@@ -1105,10 +1103,10 @@ export default function RootPage() {
         initialValues={editingItem && editingItem.entryType === 'food' && editingItem.sourceDescription && !editingItem.sourceDescription.startsWith("Identified by photo") ?
             {
               mealDescription: editingItem.sourceDescription,
-              calories: editingItem.calories,
-              protein: editingItem.protein,
-              carbs: editingItem.carbs,
-              fat: editingItem.fat
+              calories: editingItem.calories ?? undefined,
+              protein: editingItem.protein ?? undefined,
+              carbs: editingItem.carbs ?? undefined,
+              fat: editingItem.fat ?? undefined
             }
             : { mealDescription: '' }}
         initialMacrosOverridden={editingItem?.macrosOverridden || false}
@@ -1157,7 +1155,7 @@ export default function RootPage() {
           onSubmitEntry={(data) => handleSubmitManualMacroEntry(data, selectedLogDateForPreviousMeal)}
           isEditing={!!editingItem && editingItem.entryType === 'manual_macro'}
           initialValues={editingItem && editingItem.entryType === 'manual_macro' ?
-            { calories: editingItem.calories, protein: editingItem.protein, carbs: editingItem.carbs, fat: editingItem.fat, entryName: editingItem.name }
+            { calories: editingItem.calories ?? undefined, protein: editingItem.protein ?? undefined, carbs: editingItem.carbs ?? undefined, fat: editingItem.fat ?? undefined, entryName: editingItem.name }
             : undefined
           }
           key={editingItem?.id ? `edit-macro-${editingItem.id}` : 'new-macro'}
