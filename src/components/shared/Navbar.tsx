@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.5";
+export const APP_VERSION = "Beta 3.6.6";
 
 interface ReleaseNote {
   version: string;
@@ -51,6 +51,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.6.6",
+    date: "June 08, 2025",
+    title: "App Audit & Timestamp Fixes",
+    description: [
+      "Conducted app audit: Implemented robust date and time selection for all food logging and editing. Ensured consistent editing dialogs for AI-processed items.",
+      "Corrected server-side AI model access issues by defaulting to stable models and improving error reporting for model-not-found scenarios.",
+    ],
+  },
   {
     version: "Beta 3.6.5",
     date: "June 08, 2025",
