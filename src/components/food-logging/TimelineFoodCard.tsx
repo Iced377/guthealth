@@ -85,9 +85,69 @@ export default function TimelineFoodCard({
       )}
       <CardHeader className="px-4 py-3">
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1 min-w-0">
             <CardTitle className={cn("text-md sm:text-lg font-semibold font-headline break-words", primaryTextClass)}>{item.name}</CardTitle>
           </div>
+          {!isGuestView && (
+            <div className="flex items-center gap-0.5 ml-2 shrink-0">
+              {!isManualMacroEntry && onSetFeedback && (
+                <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleFeedback('safe')}
+                        disabled={isLoadingAi}
+                        className={cn(
+                          "h-7 w-7",
+                          item.userFeedback === 'safe' ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'
+                        )}
+                        aria-label="Mark as Safe"
+                      >
+                        <ThumbsUp className={`h-4 w-4 ${item.userFeedback === 'safe' ? 'fill-green-500/70' : ''}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Safe</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                       <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleFeedback('unsafe')}
+                        disabled={isLoadingAi}
+                        className={cn(
+                          "h-7 w-7",
+                          item.userFeedback === 'unsafe' ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'text-muted-foreground hover:text-red-500 hover:bg-red-500/10'
+                        )}
+                        aria-label="Mark as Unsafe"
+                      >
+                        <ThumbsDown className={`h-4 w-4 ${item.userFeedback === 'unsafe' ? 'fill-red-500/70' : ''}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Unsafe</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                </>
+              )}
+              {onRemoveItem && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => onRemoveItem(item.id)} className="text-destructive hover:bg-destructive/20 h-7 w-7"  disabled={isLoadingAi} aria-label="Remove this item">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                     <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Remove Item</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          )}
         </div>
         <p className={cn("text-xs pt-1", mutedTextClass)}>Logged: {timeAgo}</p>
       </CardHeader>
@@ -235,8 +295,8 @@ export default function TimelineFoodCard({
         </Accordion>
       </CardContent>
       {!isGuestView && ( 
-        <CardFooter className="flex flex-wrap justify-between items-center px-4 pt-2 pb-3 gap-2 border-t border-border/50">
-          <div className="flex gap-2 flex-wrap">
+        <CardFooter className="flex flex-wrap justify-start items-center px-4 pt-2 pb-3 gap-2 border-t border-border/50">
+          
               {!isManualMacroEntry && onLogSymptoms && (
                 <Button
                     variant="outline"
@@ -268,49 +328,12 @@ export default function TimelineFoodCard({
                   onClick={() => onRepeatMeal(item)}
                   disabled={isLoadingAi}
                   className={cn("border-accent hover:bg-accent hover:text-accent-foreground", buttonTextClass)}
-                  aria-label="Repeat this meal"
+                  aria-label="Log this meal to today"
                 >
-                  <Repeat className="mr-1.5 h-4 w-4" /> Repeat
+                  <Repeat className="mr-1.5 h-4 w-4" /> Log this meal to today
                 </Button>
               )}
-          </div>
-          <div className="flex gap-1 items-center">
-              {!isManualMacroEntry && onSetFeedback && (
-                <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleFeedback('safe')}
-                  disabled={isLoadingAi}
-                  className={cn(
-                    "h-8 w-8",
-                    item.userFeedback === 'safe' ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'
-                  )}
-                  aria-label="Mark as Safe"
-                >
-                  <ThumbsUp className={`h-4 w-4 ${item.userFeedback === 'safe' ? 'fill-green-500/70' : ''}`} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleFeedback('unsafe')}
-                  disabled={isLoadingAi}
-                   className={cn(
-                    "h-8 w-8",
-                    item.userFeedback === 'unsafe' ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'text-muted-foreground hover:text-red-500 hover:bg-red-500/10'
-                  )}
-                  aria-label="Mark as Unsafe"
-                >
-                  <ThumbsDown className={`h-4 w-4 ${item.userFeedback === 'unsafe' ? 'fill-red-500/70' : ''}`} />
-                </Button>
-                </>
-              )}
-              {onRemoveItem && (
-                <Button variant="ghost" size="sm" onClick={() => onRemoveItem(item.id)} className="text-destructive hover:bg-destructive/20"  disabled={isLoadingAi} aria-label="Remove this item">
-                <Trash2 className="mr-1.5 h-4 w-4" /> Remove
-                </Button>
-              )}
-          </div>
+          
         </CardFooter>
       )}
     </Card>
