@@ -38,7 +38,6 @@ const SymptomLogEntrySchema = z.object({
   timestamp: z.string().datetime().describe("ISO 8601 datetime string for when symptoms were logged."),
 });
 
-// Schema remains internally defined, but not exported as a const
 const SymptomCorrelationInputSchema = z.object({
   foodLog: z.array(LoggedFoodItemSchema).describe("A chronological list of the user's logged food items."),
   symptomLog: z.array(SymptomLogEntrySchema).describe("A chronological list of the user's logged symptoms."),
@@ -56,7 +55,6 @@ const InsightSchema = z.object({
   suggestionToUser: z.string().optional().describe("An actionable suggestion for the user, e.g., 'Consider discussing with your dietitian.' or 'Try logging more consistently.'"),
 });
 
-// Schema remains internally defined, but not exported as a const
 const SymptomCorrelationOutputSchema = z.object({
   insights: z.array(InsightSchema).describe("A list of insights derived from correlating food and symptom logs. Examples: 'Bloating reported 4 times after eating onion >15g.' or 'You’ve had no symptoms after 3 lentil meals under 30g. Mark as safe?'"),
 });
@@ -72,7 +70,6 @@ const defaultErrorOutput: SymptomCorrelationOutput = {
 };
 
 export async function getSymptomCorrelations(input: SymptomCorrelationInput): Promise<SymptomCorrelationOutput> {
-  // Basic validation: ensure there's enough data to analyze
   if (input.foodLog.length < 3 && input.symptomLog.length < 1) {
     return { insights: [{
         type: 'observation',
@@ -86,52 +83,38 @@ export async function getSymptomCorrelations(input: SymptomCorrelationInput): Pr
 
 const symptomCorrelationPrompt = ai.definePrompt({
   name: 'symptomCorrelationPrompt',
-  input: {schema: SymptomCorrelationInputSchema}, // Uses internal schema
-  output: {schema: SymptomCorrelationOutputSchema}, // Uses internal schema
-  prompt: `You are an AI assistant helping a user with IBS identify patterns between their food intake and symptoms.
-Analyze the provided food log and symptom log. Look for correlations, considering timing, ingredients, portion sizes, and frequency.
+  model: 'googleai/gemini-1.5-pro-latest', // Set capable model
+  input: {schema: SymptomCorrelationInputSchema},
+  output: {schema: SymptomCorrelationOutputSchema},
+  prompt: `You are an AI assistant for IBS pattern identification.
+Analyze the user's food and symptom logs to find correlations. Consider timing (1-4 hour onset typical), ingredients, portions, frequency, and overall FODMAP risk.
+Output a JSON object adhering to SymptomCorrelationOutputSchema.
 
-User's Food Log (chronological):
-{{#each foodLog}}
-- Food: {{this.name}} (Portion: {{this.portionSize}} {{this.portionUnit}}, Ingredients: {{this.ingredients}}, Logged: {{this.timestamp}} {{#if this.overallFodmapRisk}}Overall Risk: {{this.overallFodmapRisk}}{{/if}})
-{{else}}
-(No food items logged for this period)
-{{/each}}
+User's Food Log:
+{{#each foodLog}}- {{this.name}} ({{this.portionSize}} {{this.portionUnit}}, Ingredients: {{this.ingredients}}, Logged: {{this.timestamp}}, Risk: {{#if this.overallFodmapRisk}}{{this.overallFodmapRisk}}{{else}}N/A{{/if}}){{else}}(None){{/each}}
 
-User's Symptom Log (chronological):
-{{#each symptomLog}}
-- Symptoms: {{#each this.symptoms}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}} (Logged: {{this.timestamp}}{{#if this.severity}}, Severity: {{this.severity}}{{/if}}{{#if this.notes}}, Notes: {{this.notes}}{{/if}})
-{{else}}
-(No symptoms logged for this period)
-{{/each}}
+User's Symptom Log:
+{{#each symptomLog}}- Symptoms: {{#each this.symptoms}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}} (Logged: {{this.timestamp}}, Severity: {{#if this.severity}}{{this.severity}}{{else}}N/A{{/if}}, Notes: {{#if this.notes}}"{{this.notes}}"{{else}}N/A{{/if}}){{else}}(None){{/each}}
 
-{{#if safeFoods.length}}
-User's Marked Safe Foods (for reference, these are generally tolerated by the user at these portions):
-{{#each safeFoods}}
-- {{this.name}} (Portion: {{this.portionSize}} {{this.portionUnit}})
-{{/each}}
-{{/if}}
+{{#if safeFoods.length}}User's Marked Safe Foods (reference):{{#each safeFoods}} - {{this.name}} ({{this.portionSize}} {{this.portionUnit}}){{/each}}{{/if}}
 
-Your goal is to generate a few key insights. Examples of insights:
-- "Potential Trigger: Bloating was reported 3 out of 4 times within 2-4 hours after consuming meals containing garlic, even in small amounts." (Confidence: medium)
-- "Potential Safe Food: You've logged 'Oats with berries' (approx. 1/2 cup oats, 1/4 cup berries) 5 times without reporting subsequent symptoms. Consider marking this as a safe meal." (Confidence: medium)
-- "Observation: You frequently report gas after meals with high dairy content like 'Mac and Cheese' and 'Milkshake'." (Confidence: high)
-- "No Clear Pattern: There isn't a clear pattern linking specific foods to your reported headaches based on the current logs." (Confidence: low, Suggestion: "Try to log food and symptoms consistently for a week for better insights.")
+Generate 2-3 key insights as per the schema.
+Insight Examples:
+- Type: 'potential_trigger', Title: "Garlic & Bloating Link", Description: "Bloating reported 3/4 times within 2-4 hours post-garlic meals.", Confidence: 'medium'.
+- Type: 'potential_safe', Title: "Oats Seem Safe", Description: "'Oats with berries' logged 5 times, no subsequent symptoms. Consider marking safe.", Confidence: 'medium'.
+- Type: 'observation', Title: "Dairy & Gas", Description: "Frequent gas after high-dairy meals.", Confidence: 'high'.
+- Type: 'no_clear_pattern', Title: "Headaches Unclear", Description: "No clear food link to headaches in current logs.", Confidence: 'low', SuggestionToUser: "Log consistently for better insights."
 
-Prioritize insights with stronger correlations. Consider a typical symptom onset window of 1-4 hours after a meal, but be flexible.
-If a food is on the safe list, it's less likely to be a trigger unless consumed in much larger portions than saved.
-
-Generate a list of insights. Each insight should have a 'type', 'title', 'description', 'relatedFoodNames' (if applicable), 'relatedSymptoms' (if applicable), and optional 'confidence' and 'suggestionToUser'.
-Focus on 2-3 most relevant insights.
-If data is too sparse, generate an 'observation' insight stating more data is needed.
+Prioritize strong correlations. Safe foods are less likely triggers unless portion significantly increased.
+If data is sparse, provide an 'observation' insight about needing more data.
 `,
 });
 
 const symptomCorrelationFlow = ai.defineFlow(
   {
     name: 'symptomCorrelationFlow',
-    inputSchema: SymptomCorrelationInputSchema, // Uses internal schema
-    outputSchema: SymptomCorrelationOutputSchema, // Uses internal schema
+    inputSchema: SymptomCorrelationInputSchema,
+    outputSchema: SymptomCorrelationOutputSchema,
   },
   async (input: SymptomCorrelationInput): Promise<SymptomCorrelationOutput> => {
     try {

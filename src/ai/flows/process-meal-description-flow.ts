@@ -14,8 +14,6 @@ import { z } from 'genkit';
 
 const ProcessMealDescriptionInputSchema = z.object({
   mealDescription: z.string().describe('A natural language description of the meal, including ingredients and their approximate portion sizes. Example: "A large bowl of oatmeal made with 1/2 cup of rolled oats, 1 cup of water, a handful of blueberries, and a drizzle of honey."'),
-  // timeOfDay: z.string().optional().describe("Optional: The time of day the meal was consumed (e.g., 'morning', 'late night'). This can help with the witty name generation."),
-  // userHistorySummary: z.string().optional().describe("Optional: A brief summary of the user's recent logging habits or preferences, for context in witty name generation."),
 });
 export type ProcessMealDescriptionInput = z.infer<typeof ProcessMealDescriptionInputSchema>;
 
@@ -42,39 +40,31 @@ export async function processMealDescription(input: ProcessMealDescriptionInput)
 
 const processMealDescriptionGenkitPrompt = ai.definePrompt({
   name: 'processMealDescriptionPrompt',
+  model: 'googleai/gemini-1.5-flash-latest', // Explicitly set a capable model
   input: { schema: ProcessMealDescriptionInputSchema },
   output: { schema: ProcessMealDescriptionOutputSchema },
   config: {
-    temperature: 0.5, 
+    temperature: 0.5,
   },
   prompt: `You are an expert food analyst and a witty meal namer.
-Given a meal description, your tasks are to:
-1.  Generate a **witty, cheeky, or uniquely descriptive name** for the meal. Consider the ingredients, implied context (like portion size suggesting a large meal or a snack), and aim for a fun, memorable, or slightly edgy tone. Examples of witty names:
+Analyze the meal description: "{{{mealDescription}}}"
+Output a JSON object matching ProcessMealDescriptionOutputSchema.
+
+Tasks:
+1.  'wittyName': Generate a fun, memorable, or edgy name for the meal. Examples:
     *   "Greek Salad, large" -> "That Massive Bowl of Greek Purity"
     *   "Chicken Burrito, XL" -> "The Huge Mofo Chicken Wrap of Destiny"
-    *   "Fries + Ice Cream, late night" -> "The Midnight Mistake"
-    *   "Just lettuce" -> "Crisp Sadness"
-    *   "Oatmeal with 1/2 cup oats, 1 cup water, blueberries, honey" -> "Berry-Good Morning Fuel" or "Oatally Delicious Start"
-2.  Identify a concise, factual **primary food item name** that summarizes the meal for a follow-up FODMAP/nutritional analysis. This should be what the meal IS, not the witty name.
-    **CRITICAL for 'primaryFoodItemForAnalysis':**
-    1.  Accurately list ALL components and quantities mentioned in '{{{mealDescription}}}'.
-    2.  If the meal description names a standard item that *already includes* a component (e.g., "Egg McMuffin" includes an egg, "Sausage McMuffin with Egg" includes an egg), DO NOT add that component again unless the user explicitly states "extra [component]", "additional [component]", or provides a separate count for it.
-    3.  Example 1: User input "Sausage McMuffin with egg, plus an extra egg and a hashbrown". Output for 'primaryFoodItemForAnalysis' MUST be "Sausage McMuffin with egg, 1 extra egg, and 1 hashbrown".
-    4.  Example 2: User input "McDonald's Egg Sausage McMuffin with a hashbrown". Output for 'primaryFoodItemForAnalysis' should be "McDonald's Egg Sausage McMuffin and 1 hashbrown" (or similar, ensuring "Egg Sausage McMuffin" itself is treated as the item containing egg, and not adding another one).
-    5.  Example 3: User input "4 eggs and 50g toast". Output for 'primaryFoodItemForAnalysis' MUST be "4 eggs and 50g toast".
-    6.  This field must be a factual summary suitable for subsequent detailed nutritional analysis.
-3.  Create a **consolidated, comma-separated list of all significant ingredients** mentioned. (e.g., "rolled oats, water, blueberries, honey, chicken, rice, soy sauce").
-4.  Estimate a single, representative **overall portion size (numeric value)** for the entire meal described.
-5.  Estimate a single, representative **overall portion unit** for the entire meal described (e.g., "serving", "bowl", "g", "ml", "plate").
-    **When the meal description seems to refer to a standard single serving of a meal or a typical fast-food combo (e.g., 'Sausage McMuffin with egg and a hashbrown', 'Big Mac meal'), 'estimatedPortionSize' should default to '1' and 'estimatedPortionUnit' should default to 'serving' or 'meal', unless the user's description explicitly indicates multiple servings (e.g., 'two Sausage McMuffin meals').**
+    *   "Oatmeal with blueberries & honey" -> "Berry-Good Morning Fuel"
+2.  'primaryFoodItemForAnalysis': A concise, factual summary of the meal for subsequent nutritional analysis.
+    *   CRITICAL: Accurately list ALL components and quantities from '{{{mealDescription}}}'.
+    *   Preserve user-stated quantities and explicit additions (e.g., "Sausage McMuffin with egg, 1 extra egg, 1 hashbrown").
+    *   Avoid duplicating components implied in standard item names (e.g., "Egg McMuffin" already includes an egg). Do not add an egg unless "extra egg" is stated.
+    *   Example: "4 eggs and 50g toast" -> "4 eggs and 50g toast".
+3.  'consolidatedIngredients': Comma-separated list of all significant ingredients.
+4.  'estimatedPortionSize' & 'estimatedPortionUnit': Overall estimate for the entire meal.
+    *   If description implies a standard single serving (e.g., "Big Mac meal"), use '1' and 'serving' or 'meal', unless explicitly multiple servings are stated.
 
-The user described their meal as:
-"{{{mealDescription}}}"
-
-Focus on extracting the core components for the factual fields and be creative with the witty name.
-For 'primaryFoodItemForAnalysis', be descriptive but not overly long, and critically, PRESERVE USER-STATED QUANTITIES AND ADDITIONS while AVOIDING DUPLICATION OF IMPLIED COMPONENTS. It's the "common name" for the meal.
-For 'consolidatedIngredients', list distinct ingredients.
-For 'estimatedPortionSize' and 'estimatedPortionUnit', provide a sensible overall estimate for the entire meal content described.
+Adhere strictly to the schema. For 'primaryFoodItemForAnalysis', be factual and preserve user quantities/additions.
 `,
 });
 
