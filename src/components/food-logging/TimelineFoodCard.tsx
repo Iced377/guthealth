@@ -100,11 +100,11 @@ export default function TimelineFoodCard({
          )}
         <p className={cn("text-xs pt-1", mutedTextClass)}>Logged: {timeAgo}</p>
       </CardHeader>
-      <CardContent className="px-4 pt-2 pb-3 space-y-0"> {/* Adjusted space-y-2 to space-y-0 */}
+      <CardContent className="px-4 pt-2 pb-3 space-y-0"> 
         {item.isSimilarToSafe && !isManualMacroEntry && (
           <Badge
             variant="default"
-            className="text-sm mb-2" // Added mb-2 for spacing if it's present
+            className="text-sm mb-2" 
             style={{ 
               backgroundColor: 'var(--success-indicator-bg, #34C759)',
               color: 'var(--success-indicator-text, white)',
@@ -128,37 +128,47 @@ export default function TimelineFoodCard({
                 </p>
             </div>
         )}
-        {!isManualMacroEntry && item.fodmapData && (
-            <div className={cn("text-xs border-t pt-2 mt-2 flex flex-wrap items-center gap-2", "border-border/50")}>
-                <MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} />
-                <DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} />
-                <GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} />
-                <KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} />
-                <FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} />
-                <GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} />
-                {detectedAllergens && detectedAllergens.length > 0 &&
-                    detectedAllergens.map(allergen => (
-                        <TooltipProvider key={allergen}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Badge variant="destructive" className="text-xs bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30 flex items-center gap-1 cursor-default">
-                                  <AlertCircle className="h-3.5 w-3.5" /> {allergen}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-popover text-popover-foreground border-border">
-                              <p>Contains Allergen: {allergen}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                    ))
-                }
-            </div>
-        )}
         
-        {!isManualMacroEntry && aiSummaries && (
-          Object.values(aiSummaries).some(summary => summary && summary.length > 0) || item.fodmapData?.gutBacteriaImpact?.reasoning
-        ) && (
-          <Accordion type="single" collapsible className="w-full pt-2">
+        <Accordion type="single" collapsible className="w-full pt-2">
+          {!isManualMacroEntry && item.fodmapData && (
+            <AccordionItem value="health-indicators" className="border-b-0">
+              <AccordionTrigger className="text-xs font-semibold text-foreground/80 flex items-center py-1 hover:no-underline justify-between w-full group">
+                <span className="flex items-center">
+                  <Sparkles className="h-3.5 w-3.5 mr-1.5 text-primary/70 group-hover:text-primary"/>AI Health Indicators
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-0">
+                <div className={cn("text-xs pt-2 flex flex-wrap items-center gap-2")}>
+                    <MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} />
+                    <DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} />
+                    <GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} />
+                    <KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} />
+                    <FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} />
+                    <GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} />
+                    {detectedAllergens && detectedAllergens.length > 0 &&
+                        detectedAllergens.map(allergen => (
+                            <TooltipProvider key={allergen}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="destructive" className="text-xs bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30 flex items-center gap-1 cursor-default">
+                                      <AlertCircle className="h-3.5 w-3.5" /> {allergen}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-popover text-popover-foreground border-border">
+                                  <p>Contains Allergen: {allergen}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                        ))
+                    }
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {!isManualMacroEntry && aiSummaries && (
+            Object.values(aiSummaries).some(summary => summary && summary.length > 0) || item.fodmapData?.gutBacteriaImpact?.reasoning
+          ) && (
             <AccordionItem value="ai-notes" className="border-b-0">
               <AccordionTrigger className="text-xs font-semibold text-foreground/80 flex items-center py-1 hover:no-underline justify-between w-full group">
                 <span className="flex items-center">
@@ -185,12 +195,10 @@ export default function TimelineFoodCard({
                 )}
               </AccordionContent>
             </AccordionItem>
-          </Accordion>
-        )}
+          )}
 
-         {item.fodmapData?.ingredientFodmapScores && item.fodmapData.ingredientFodmapScores.length > 0 && !isManualMacroEntry && (
-           <Accordion type="single" collapsible className="w-full pt-2">
-            <AccordionItem value="ingredient-fodmaps" className="border-b-0">
+          {item.fodmapData?.ingredientFodmapScores && item.fodmapData.ingredientFodmapScores.length > 0 && !isManualMacroEntry && (
+           <AccordionItem value="ingredient-fodmaps" className="border-b-0">
               <AccordionTrigger className="text-xs font-semibold text-muted-foreground flex items-center py-1 hover:no-underline justify-between w-full group">
                 <span className="flex items-center">
                   <Leaf className="h-3.5 w-3.5 mr-1.5 text-green-500/70 group-hover:text-green-500"/>Ingredient FODMAPs
@@ -211,8 +219,8 @@ export default function TimelineFoodCard({
                 </div>
               </AccordionContent>
             </AccordionItem>
-           </Accordion>
-        )}
+           )}
+        </Accordion>
       </CardContent>
       {!isGuestView && ( 
         <CardFooter className="flex flex-wrap justify-between items-center px-4 pt-2 pb-3 gap-2 border-t border-border/50">
@@ -297,4 +305,3 @@ export default function TimelineFoodCard({
   );
 }
     
-
