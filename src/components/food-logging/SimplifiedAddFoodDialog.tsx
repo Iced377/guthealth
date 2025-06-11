@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sprout, Loader2, Edit, Info, CalendarIcon } from 'lucide-react';
+import { Sprout, Loader2, Edit, Info, CalendarIcon, ClockIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -60,6 +60,20 @@ interface SimplifiedAddFoodDialogProps {
   initialTimestamp?: Date;
 }
 
+const formatTimeToHHMM = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const combineDateAndTime = (date: Date, time: string): Date => {
+  const [hours, minutesValue] = time.split(':');
+  const newDate = new Date(date); // clone the date to avoid modifying the original
+  newDate.setHours(parseInt(hours, 10), parseInt(minutesValue, 10), 0, 0); // Set seconds and ms to 0
+  return newDate;
+};
+
+
 export default function SimplifiedAddFoodDialog({
   isOpen,
   onOpenChange,
@@ -74,7 +88,10 @@ export default function SimplifiedAddFoodDialog({
   const { toast } = useToast();
   const [userWantsToOverrideMacros, setUserWantsToOverrideMacros] = useState(initialMacrosOverridden);
   const { isDarkMode } = useTheme();
-  const [selectedDateForEdit, setSelectedDateForEdit] = useState<Date | undefined>(initialTimestamp);
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedTime, setSelectedTime] = useState<string>(formatTimeToHHMM(new Date()));
+
 
   const form = useForm<SimplifiedFoodLogFormValues>({
     resolver: zodResolver(simplifiedFoodLogSchema),
@@ -91,6 +108,10 @@ export default function SimplifiedAddFoodDialog({
 
   useEffect(() => {
     if (isOpen) {
+      const baseTimestamp = initialTimestamp ? new Date(initialTimestamp) : new Date();
+      setSelectedDate(baseTimestamp);
+      setSelectedTime(formatTimeToHHMM(baseTimestamp));
+
       if (isEditing && initialValues) {
         reset({
           mealDescription: initialValues.mealDescription || '',
@@ -100,11 +121,9 @@ export default function SimplifiedAddFoodDialog({
           fat: initialValues.fat,
         });
         setUserWantsToOverrideMacros(initialMacrosOverridden);
-        setSelectedDateForEdit(initialTimestamp ? new Date(initialTimestamp) : new Date());
       } else if (!isEditing) {
         reset({ mealDescription: '', calories: undefined, protein: undefined, carbs: undefined, fat: undefined });
         setUserWantsToOverrideMacros(false);
-        setSelectedDateForEdit(undefined); // No date pre-fill for new items via this dialog unless explicitly passed
       }
     }
   }, [isOpen, isEditing, initialValues, initialMacrosOverridden, initialTimestamp, reset]);
@@ -113,9 +132,13 @@ export default function SimplifiedAddFoodDialog({
   const handleDialogSubmit = async (data: SimplifiedFoodLogFormValues) => {
     setIsLoading(true);
     try {
-      // For editing, use selectedDateForEdit. For new entries, this will be undefined,
-      // and the parent component (page.tsx) will use selectedLogDateForPreviousMeal or current date.
-      const finalTimestamp = isEditing ? selectedDateForEdit : undefined;
+      let finalTimestamp: Date | undefined = undefined;
+      if (selectedDate && selectedTime) {
+        finalTimestamp = combineDateAndTime(selectedDate, selectedTime);
+      } else {
+        finalTimestamp = new Date(); // Fallback, though should ideally not happen with validation
+      }
+
       await onSubmitLog(data, userWantsToOverrideMacros, finalTimestamp);
       if (!isEditing) {
         reset();
@@ -164,39 +187,51 @@ export default function SimplifiedAddFoodDialog({
             {isGuestView
               ? "Tell us what you ate, including ingredients and their approximate portion sizes."
               : (isEditing
-                  ? "Update the description, date, or nutritional info below."
-                  : "Describe your meal in natural language. Our AI will estimate nutritional info.") 
+                  ? "Update the description, date, time, or nutritional info below."
+                  : "Describe your meal in natural language. Our AI will estimate nutritional info. You can also set the date and time.") 
             }
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(handleDialogSubmit)} className="space-y-4 pt-2 max-h-[calc(70vh-50px)] overflow-y-auto pr-2">
-          {isEditing && !isGuestView && (
-            <div className="mb-4">
-              <Label htmlFor="editDate" className={labelClasses}>Log Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal mt-1",
-                      !selectedDateForEdit && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDateForEdit ? format(selectedDateForEdit, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDateForEdit}
-                    onSelect={setSelectedDateForEdit}
-                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+        <form onSubmit={form.handleSubmit(handleDialogSubmit)} className="space-y-4 pt-2 max-h-[calc(80vh-120px)] overflow-y-auto pr-2">
+          {!isGuestView && (
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label htmlFor="logDateSimplified" className={labelClasses}>Log Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal mt-1",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                      initialFocus={isEditing}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label htmlFor="logTimeSimplified" className={labelClasses}>Log Time</Label>
+                <Input
+                  id="logTimeSimplified"
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className={cn("mt-1 w-full", inputClasses)}
+                />
+              </div>
             </div>
           )}
           
@@ -225,7 +260,7 @@ export default function SimplifiedAddFoodDialog({
             )}
           </div>
 
-          {(!isGuestView) && ( // Macros override only for logged-in users, can be enabled for guests if needed
+          {(!isGuestView) && ( 
             <div className="space-y-3 pt-3 border-t border-border/50 mt-3">
               <div className="flex items-center space-x-2">
                 <Checkbox

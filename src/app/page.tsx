@@ -88,6 +88,7 @@ export default function RootPage() {
 
   const [isAddFoodDialogOpenState, setIsAddFoodDialogOpenState] = useState(false);
   const setIsAddFoodDialogOpen = (val: boolean) => {
+    if (!val) setEditingItem(null); // Clear editing item when closing
     setIsAddFoodDialogOpenState(val);
   }
 
@@ -96,7 +97,9 @@ export default function RootPage() {
   const [isSymptomLogDialogOpen, setIsSymptomLogDialogOpen] = useState(false);
   const [isAddManualMacroDialogOpen, setIsAddManualMacroDialogOpen] = useState(false);
   const [isLogPreviousMealDialogOpen, setIsLogPreviousMealDialogOpen] = useState(false);
-  const [selectedLogDateForPreviousMeal, setSelectedLogDateForPreviousMeal] = useState<Date | undefined>(undefined);
+  
+  // This state now holds a full Date object, which dialogs can use to initialize their date AND time.
+  const [selectedLogTimestampForPreviousMeal, setSelectedLogTimestampForPreviousMeal] = useState<Date | undefined>(undefined);
 
 
   const [isDataLoading, setIsDataLoading] = useState(true);
@@ -112,7 +115,8 @@ export default function RootPage() {
   const openIdentifyByPhotoDialog = useCallback(() => setIsIdentifyByPhotoDialogOpen(true), []);
   const openSymptomLogDialog = useCallback(() => setIsSymptomLogDialogOpen(true), []);
   const openLogPreviousMealDialog = useCallback(() => {
-    setSelectedLogDateForPreviousMeal(new Date()); // Set default date when opening
+    // Initialize with current date and time for "Log Previous Meal" flow
+    setSelectedLogTimestampForPreviousMeal(new Date()); 
     setIsLogPreviousMealDialogOpen(true);
   }, []);
 
@@ -261,9 +265,10 @@ export default function RootPage() {
     }
   };
 
+  // newTimestamp is now the precise date and time from the dialog
   const handleSubmitFoodItem = async (
     foodItemData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'calories' | 'protein' | 'carbs' | 'fat' | 'sourceDescription' | 'userFeedback' | 'macrosOverridden'>,
-    newTimestamp?: Date // Changed from customTimestamp to newTimestamp
+    newTimestamp?: Date 
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
@@ -272,7 +277,7 @@ export default function RootPage() {
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
     let similarityOutput: FoodSimilarityOutput | undefined;
     
-    const logTimestamp = newTimestamp || (editingItem ? editingItem.timestamp : new Date());
+    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog, or now if not provided
 
 
     try {
@@ -283,7 +288,7 @@ export default function RootPage() {
         portionUnit: foodItemData.portionUnit,
       });
 
-      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(foodItemData.name);
+      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(foodItemData.name);
       let isSimilar = false;
       if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
         const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
@@ -341,7 +346,7 @@ export default function RootPage() {
       } else {
         addTimelineEntry(processedFoodItem);
       }
-      if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
+      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); // Clear if logging previous meal
        setIsAddFoodDialogOpen(false);
        setEditingItem(null);
 
@@ -370,13 +375,15 @@ export default function RootPage() {
       }
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
+       if (editingItem) setEditingItem(null);
     }
   };
 
+  // newTimestamp is now the precise date and time from the dialog
   const handleSubmitMealDescription = async (
     formData: SimplifiedFoodLogFormValues,
     userDidOverrideMacros: boolean,
-    newTimestamp?: Date // Changed from customTimestamp
+    newTimestamp?: Date 
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
@@ -385,7 +392,7 @@ export default function RootPage() {
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
     let similarityOutput: FoodSimilarityOutput | undefined;
     let processedFoodItem: LoggedFoodItem;
-    const logTimestamp = newTimestamp || (editingItem ? editingItem.timestamp : new Date());
+    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog, or now if not provided
 
     try {
       mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
@@ -396,7 +403,7 @@ export default function RootPage() {
         portionUnit: mealDescriptionOutput.estimatedPortionUnit,
       });
 
-      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
+      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
       let isSimilar = false;
       if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
          const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
@@ -472,7 +479,7 @@ export default function RootPage() {
       } else {
         addTimelineEntry(processedFoodItem);
       }
-      if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
+      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); 
       setIsSimplifiedAddFoodDialogOpen(false);
       setEditingItem(null);
 
@@ -508,12 +515,14 @@ export default function RootPage() {
         }
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
+       if (editingItem) setEditingItem(null);
     }
   };
 
+  // newTimestamp is now the precise date and time from the dialog (if this dialog gets time editing)
   const handleProcessAndLogPhotoIdentification = async (
     photoData: IdentifiedPhotoData,
-    newTimestamp?: Date // Changed from customTimestamp
+    newTimestamp?: Date 
   ) => {
     const currentItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
@@ -521,7 +530,7 @@ export default function RootPage() {
     let processedFoodItem: LoggedFoodItem;
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
     let similarityOutput: FoodSimilarityOutput | undefined;
-    const logTimestamp = newTimestamp || new Date();
+    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog (or log previous flow), or now
 
     try {
       fodmapAnalysis = await analyzeFoodItem({
@@ -531,7 +540,7 @@ export default function RootPage() {
         portionUnit: photoData.portionUnit,
       });
 
-      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(photoData.name);
+      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(photoData.name);
       let isSimilar = false;
       if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
         const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
@@ -583,7 +592,7 @@ export default function RootPage() {
       }
 
       addTimelineEntry(processedFoodItem);
-      if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
+      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); 
       setIsIdentifyByPhotoDialogOpen(false);
 
     } catch (error: any) {
@@ -612,13 +621,13 @@ export default function RootPage() {
     }
   };
 
-
+  // newTimestamp is now the precise date and time from the dialog
   const handleSubmitManualMacroEntry = async (
     entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback'> & { entryType: 'manual_macro' | 'food' },
-    newTimestamp?: Date // Changed from customTimestamp
+    newTimestamp?: Date 
   ) => {
     const currentItemId = editingItem ? editingItem.id : `macro-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const logTimestamp = newTimestamp || (editingItem ? editingItem.timestamp : new Date());
+    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog, or now if not provided
     const newEntry: LoggedFoodItem = {
       ...entryData,
       id: currentItemId,
@@ -667,22 +676,21 @@ export default function RootPage() {
     }
     setIsAddManualMacroDialogOpen(false);
     setEditingItem(null);
-    if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
+    if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); 
   };
 
   const handleEditTimelineEntry = (itemToEdit: LoggedFoodItem) => {
     setEditingItem(itemToEdit);
-    // No need to set selectedLogDateForPreviousMeal here, dialogs will use itemToEdit.timestamp
-    
+    //setSelectedLogTimestampForPreviousMeal(itemToEdit.timestamp); // Set initial timestamp for dialog
+
     if (itemToEdit.entryType === 'manual_macro') {
       setIsAddManualMacroDialogOpen(true);
     } else if (itemToEdit.entryType === 'food') {
-      // Determine if it was AI-processed (text or photo) or purely manual
-      const isAIProcessed = itemToEdit.fodmapData || 
-                            (itemToEdit.sourceDescription && itemToEdit.sourceDescription !== "Manually logged" && itemToEdit.sourceDescription !== "Manually logged (analysis failed)") ||
-                            (itemToEdit.sourceDescription && itemToEdit.sourceDescription.startsWith("Identified by photo"));
+      const isAIProcessed = itemToEdit.sourceDescription && 
+                           (itemToEdit.sourceDescription !== "Manually logged" && 
+                            itemToEdit.sourceDescription !== "Manually logged (analysis failed)");
 
-      if (isAIProcessed) {
+      if (isAIProcessed || itemToEdit.sourceDescription?.startsWith("Identified by photo")) {
         setIsSimplifiedAddFoodDialogOpen(true);
       } else { // Purely manual entry
         setIsAddFoodDialogOpen(true);
@@ -749,11 +757,11 @@ export default function RootPage() {
 
 
   const handleLogPreviousMealFlow = (logMethod: 'AI' | 'Manual' | 'Photo') => {
-    // Close any other potentially open food logging dialogs
+    // selectedLogTimestampForPreviousMeal is already set by LogPreviousMealDialog's onDateSelect
     setIsSimplifiedAddFoodDialogOpen(false);
     setIsAddFoodDialogOpen(false);
     setIsIdentifyByPhotoDialogOpen(false);
-    setEditingItem(null); // Clear any editing state
+    setEditingItem(null); 
 
     if (logMethod === 'AI') {
       openSimplifiedAddFoodDialog();
@@ -762,7 +770,7 @@ export default function RootPage() {
     } else if (logMethod === 'Photo') {
       openIdentifyByPhotoDialog();
     }
-    // The LogPreviousMealDialog itself will close via its onLogMethodSelect call
+    setIsLogPreviousMealDialogOpen(false); // Close this dialog after method selected
   };
 
 
@@ -840,7 +848,6 @@ export default function RootPage() {
     } catch (error: any) {
         console.error('Guest AI meal processing failed:', error);
         toast({ title: "Error Noting Meal", description: "Could not analyze meal.", variant: 'destructive' });
-        // Optionally set a fallback newFoodItem or clear lastGuestFoodItem
         setLastGuestFoodItem(null);
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [newItemId]: false }));
@@ -864,7 +871,7 @@ export default function RootPage() {
   const handleRepeatMeal = async (itemToRepeat: LoggedFoodItem) => {
     const newItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
-    const newTimestamp = new Date();
+    const newTimestamp = new Date(); // Repeated meals are for "now"
     let processedFoodItem: LoggedFoodItem;
 
     try {
@@ -875,15 +882,14 @@ export default function RootPage() {
       const baseRepetitionData = {
         id: newItemId,
         timestamp: newTimestamp,
-        isSimilarToSafe: false, // Will be re-evaluated
-        userFodmapProfile: null, // Will be re-evaluated
+        isSimilarToSafe: false, 
+        userFodmapProfile: null, 
         entryType: 'food' as 'food',
-        userFeedback: null, // New entry, no feedback yet
+        userFeedback: null, 
         macrosOverridden: itemToRepeat.macrosOverridden ?? false,
       };
 
-      if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo")) {
-        // Repeat an AI (text) logged meal
+      if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo") && itemToRepeat.sourceDescription !== "Manually logged" && itemToRepeat.sourceDescription !== "Manually logged (analysis failed)") {
         mealDescriptionOutput = await processMealDescription({ mealDescription: itemToRepeat.sourceDescription });
         fodmapAnalysis = await analyzeFoodItem({
           foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
@@ -892,7 +898,7 @@ export default function RootPage() {
           portionUnit: mealDescriptionOutput.estimatedPortionUnit,
         });
 
-        const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
+        const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
         if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
           similarityOutput = await isSimilarToSafeFoods({
             currentFoodItem: { name: mealDescriptionOutput.primaryFoodItemForAnalysis, portionSize: mealDescriptionOutput.estimatedPortionSize, portionUnit: mealDescriptionOutput.estimatedPortionUnit, fodmapProfile: itemFodmapProfileForSimilarity },
@@ -917,7 +923,7 @@ export default function RootPage() {
           fat: (itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat) ?? null,
         };
 
-      } else { // Repeat a manually logged meal or photo-logged meal
+      } else { 
         fodmapAnalysis = await analyzeFoodItem({
           foodItem: itemToRepeat.originalName || itemToRepeat.name,
           ingredients: itemToRepeat.ingredients,
@@ -925,7 +931,7 @@ export default function RootPage() {
           portionUnit: itemToRepeat.portionUnit,
         });
 
-        const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(itemToRepeat.originalName || itemToRepeat.name);
+        const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(itemToRepeat.originalName || itemToRepeat.name);
         if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
           similarityOutput = await isSimilarToSafeFoods({
             currentFoodItem: { name: itemToRepeat.originalName || itemToRepeat.name, portionSize: itemToRepeat.portionSize, portionUnit: itemToRepeat.portionUnit, fodmapProfile: itemFodmapProfileForSimilarity },
@@ -957,7 +963,6 @@ export default function RootPage() {
         await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
         toast({ title: "Meal Repeated & Saved", description: `"${processedFoodItem.name}" added with fresh AI analysis.` });
       } else {
-        // This case should ideally not happen for repeat if user is logged in for original item
         toast({ title: "Meal Repeated (Locally)", description: `"${processedFoodItem.name}" added. Login to save.` });
       }
       addTimelineEntry(processedFoodItem);
@@ -965,7 +970,7 @@ export default function RootPage() {
       console.error('Error repeating meal:', error);
       toast({ title: 'Error Repeating Meal', description: `Could not repeat the meal. AI analysis might have failed.`, variant: 'destructive' });
 
-       processedFoodItem = { // Fallback if AI fails
+       processedFoodItem = { 
         ...baseRepetitionData,
         name: itemToRepeat.name + " (Repeat Failed)",
         originalName: itemToRepeat.originalName ?? null,
@@ -1014,9 +1019,9 @@ export default function RootPage() {
         <SimplifiedAddFoodDialog
             isOpen={isGuestLogFoodDialogOpen}
             onOpenChange={setIsGuestLogFoodDialogOpen}
-            onSubmitLog={(data, userDidOverrideMacros) => handleGuestProcessMealDescription(data)} // userDidOverrideMacros is false for guest
+            onSubmitLog={(data, userDidOverrideMacros) => handleGuestProcessMealDescription(data)} 
             isGuestView={true}
-            key={editingItem ? `edit-${editingItem.id}` : 'guest-new'}
+            key={editingItem ? `edit-simplified-${editingItem.id}` : 'guest-new'}
         />
       </>
     );
@@ -1064,8 +1069,16 @@ export default function RootPage() {
     <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-hidden">
       <Navbar
         onOpenDashboardClick={() => setIsPremiumDashboardOpen(true)}
-        onLogFoodAIClick={openSimplifiedAddFoodDialog}
-        onIdentifyByPhotoClick={openIdentifyByPhotoDialog}
+        onLogFoodAIClick={() => {
+          setEditingItem(null);
+          setSelectedLogTimestampForPreviousMeal(undefined); // For "now"
+          openSimplifiedAddFoodDialog();
+        }}
+        onIdentifyByPhotoClick={() => {
+          setEditingItem(null);
+          setSelectedLogTimestampForPreviousMeal(undefined); // For "now"
+          openIdentifyByPhotoDialog();
+        }}
         onLogSymptomsClick={openSymptomLogDialog}
         onLogPreviousMealClick={openLogPreviousMealDialog}
         className="z-50"
@@ -1102,15 +1115,18 @@ export default function RootPage() {
         onOpenChange={(open) => {
           if (!open) {
             setEditingItem(null);
-            setSelectedLogDateForPreviousMeal(undefined);
+            setSelectedLogTimestampForPreviousMeal(undefined);
           }
           setIsSimplifiedAddFoodDialogOpen(open);
         }}
-        onSubmitLog={(data, userDidOverrideMacros, newDate) => handleSubmitMealDescription(data, userDidOverrideMacros, newDate || selectedLogDateForPreviousMeal)}
+        onSubmitLog={(data, userDidOverrideMacros, newDate) => handleSubmitMealDescription(data, userDidOverrideMacros, newDate)}
         isEditing={!!editingItem && editingItem.entryType === 'food'}
         initialValues={editingItem && editingItem.entryType === 'food' ?
             {
-              mealDescription: editingItem.sourceDescription || (editingItem.sourceDescription?.startsWith("Identified by photo") ? `${editingItem.originalName}. Ingredients: ${editingItem.ingredients}` : editingItem.originalName || ''),
+              mealDescription: editingItem.sourceDescription || 
+                               (itemToEdit.sourceDescription?.startsWith("Identified by photo") 
+                                 ? `${itemToEdit.originalName}. Ingredients: ${itemToEdit.ingredients}` 
+                                 : editingItem.originalName || ''),
               calories: editingItem.calories ?? undefined,
               protein: editingItem.protein ?? undefined,
               carbs: editingItem.carbs ?? undefined,
@@ -1118,34 +1134,36 @@ export default function RootPage() {
             }
             : { mealDescription: '' }}
         initialMacrosOverridden={editingItem?.macrosOverridden || false}
-        initialTimestamp={editingItem?.timestamp}
+        initialTimestamp={editingItem?.timestamp || selectedLogTimestampForPreviousMeal}
         isGuestView={false}
-        key={editingItem?.id ? `edit-simplified-${editingItem.id}` : 'new-simplified'}
+        key={editingItem?.id ? `edit-simplified-${editingItem.id}` : (selectedLogTimestampForPreviousMeal ? `new-prev-simplified-${selectedLogTimestampForPreviousMeal.toISOString()}` : 'new-simplified')}
       />
       <IdentifyFoodByPhotoDialog
         isOpen={isIdentifyByPhotoDialogOpen}
         onOpenChange={(open) => {
-          if (!open) setSelectedLogDateForPreviousMeal(undefined);
+          if (!open) setSelectedLogTimestampForPreviousMeal(undefined);
           setIsIdentifyByPhotoDialogOpen(open);
         }}
-        onFoodIdentified={(data) => handleProcessAndLogPhotoIdentification(data, selectedLogDateForPreviousMeal)}
+        onFoodIdentified={(data) => handleProcessAndLogPhotoIdentification(data, selectedLogTimestampForPreviousMeal)}
+        // Pass initialTimestamp to IdentifyFoodByPhotoDialog if it supports it for "Log Previous Meal"
+        // For now, handleProcessAndLogPhotoIdentification uses selectedLogTimestampForPreviousMeal directly.
       />
       <AddFoodItemDialog
           isOpen={isAddFoodDialogOpenState}
           onOpenChange={(open) => {
               if (!open) {
                 setEditingItem(null);
-                setSelectedLogDateForPreviousMeal(undefined);
+                setSelectedLogTimestampForPreviousMeal(undefined);
               }
               setIsAddFoodDialogOpen(open);
           }}
-          onSubmitFoodItem={(data, newDate) => handleSubmitFoodItem(data, newDate || selectedLogDateForPreviousMeal)}
+          onSubmitFoodItem={(data, newDate) => handleSubmitFoodItem(data, newDate)}
           isEditing={!!editingItem && editingItem.entryType === 'food'}
           initialValues={editingItem && editingItem.entryType === 'food'
                           ? { name: editingItem.name, ingredients: editingItem.ingredients, portionSize: editingItem.portionSize, portionUnit: editingItem.portionUnit }
                           : undefined}
-          initialTimestamp={editingItem?.timestamp}
-          key={editingItem?.id ? `edit-manual-${editingItem.id}` : 'new-manual'}
+          initialTimestamp={editingItem?.timestamp || selectedLogTimestampForPreviousMeal}
+          key={editingItem?.id ? `edit-manual-${editingItem.id}` : (selectedLogTimestampForPreviousMeal ? `new-prev-manual-${selectedLogTimestampForPreviousMeal.toISOString()}` : 'new-manual')}
       />
       <SymptomLoggingDialog
           isOpen={isSymptomLogDialogOpen}
@@ -1158,25 +1176,25 @@ export default function RootPage() {
           onOpenChange={(open) => {
               if (!open) {
                 setEditingItem(null);
-                setSelectedLogDateForPreviousMeal(undefined);
+                setSelectedLogTimestampForPreviousMeal(undefined);
               }
               setIsAddManualMacroDialogOpen(open);
           }}
-          onSubmitEntry={(data, newDate) => handleSubmitManualMacroEntry(data, newDate || selectedLogDateForPreviousMeal)}
+          onSubmitEntry={(data, newDate) => handleSubmitManualMacroEntry(data, newDate)}
           isEditing={!!editingItem && editingItem.entryType === 'manual_macro'}
           initialValues={editingItem && editingItem.entryType === 'manual_macro' ?
             { calories: editingItem.calories ?? undefined, protein: editingItem.protein ?? undefined, carbs: editingItem.carbs ?? undefined, fat: editingItem.fat ?? undefined, entryName: editingItem.name }
             : undefined
           }
-          initialTimestamp={editingItem?.timestamp}
-          key={editingItem?.id ? `edit-macro-${editingItem.id}` : 'new-macro'}
+          initialTimestamp={editingItem?.timestamp || selectedLogTimestampForPreviousMeal}
+          key={editingItem?.id ? `edit-macro-${editingItem.id}` : (selectedLogTimestampForPreviousMeal ? `new-prev-macro-${selectedLogTimestampForPreviousMeal.toISOString()}`: 'new-macro')}
       />
        <LogPreviousMealDialog
           isOpen={isLogPreviousMealDialogOpen}
           onOpenChange={setIsLogPreviousMealDialogOpen}
-          onDateSelect={setSelectedLogDateForPreviousMeal}
+          onDateSelect={setSelectedLogTimestampForPreviousMeal} // Now sets full Date object
           onLogMethodSelect={handleLogPreviousMealFlow}
-          currentSelectedDate={selectedLogDateForPreviousMeal}
+          currentSelectedDate={selectedLogTimestampForPreviousMeal}
       />
       {isAnyItemLoadingAi && (
           <div className="fixed bottom-20 right-4 bg-card text-card-foreground p-3 rounded-lg shadow-lg flex items-center space-x-2 z-50">

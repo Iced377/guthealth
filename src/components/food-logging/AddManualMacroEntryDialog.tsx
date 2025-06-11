@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Loader2, CalendarIcon } from 'lucide-react'; 
+import { Edit, Loader2, CalendarIcon, ClockIcon } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import type { LoggedFoodItem } from '@/types';
 import { Calendar } from '@/components/ui/calendar';
@@ -56,6 +56,19 @@ interface AddManualMacroEntryDialogProps {
   initialTimestamp?: Date; 
 }
 
+const formatTimeToHHMM = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const combineDateAndTime = (date: Date, time: string): Date => {
+  const [hours, minutesValue] = time.split(':');
+  const newDate = new Date(date);
+  newDate.setHours(parseInt(hours, 10), parseInt(minutesValue, 10), 0, 0);
+  return newDate;
+};
+
 export default function AddManualMacroEntryDialog({ 
   isOpen, 
   onOpenChange, 
@@ -66,7 +79,10 @@ export default function AddManualMacroEntryDialog({
 }: AddManualMacroEntryDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [selectedDateForEdit, setSelectedDateForEdit] = useState<Date | undefined>(initialTimestamp);
+
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedTime, setSelectedTime] = useState<string>(formatTimeToHHMM(new Date()));
+
 
   const form = useForm<ManualMacroFormValues>({
     resolver: zodResolver(manualMacroSchema),
@@ -81,12 +97,14 @@ export default function AddManualMacroEntryDialog({
 
   useEffect(() => {
     if (isOpen) {
+      const baseTimestamp = initialTimestamp ? new Date(initialTimestamp) : new Date();
+      setSelectedDate(baseTimestamp);
+      setSelectedTime(formatTimeToHHMM(baseTimestamp));
+      
       if (isEditing && initialValues) {
         form.reset(initialValues);
-        setSelectedDateForEdit(initialTimestamp ? new Date(initialTimestamp) : new Date());
       } else if (!isEditing) {
         form.reset({ calories: undefined, protein: undefined, carbs: undefined, fat: undefined, entryName: "Manual Macro Adjustment" });
-        setSelectedDateForEdit(undefined);
       }
     }
   }, [isOpen, isEditing, initialValues, initialTimestamp, form]);
@@ -95,6 +113,13 @@ export default function AddManualMacroEntryDialog({
   const handleSubmit = async (data: ManualMacroFormValues) => {
     setIsLoading(true);
     try {
+      let finalTimestamp: Date | undefined = undefined;
+      if (selectedDate && selectedTime) {
+        finalTimestamp = combineDateAndTime(selectedDate, selectedTime);
+      } else {
+        finalTimestamp = new Date(); // Fallback
+      }
+
       const entryData = {
         name: data.entryName || "Manual Macro Adjustment",
         calories: data.calories,
@@ -106,7 +131,7 @@ export default function AddManualMacroEntryDialog({
         portionUnit: "serving",
         entryType: 'manual_macro' as 'manual_macro',
       };
-      const finalTimestamp = isEditing ? selectedDateForEdit : undefined;
+      
       await onSubmitEntry(entryData, finalTimestamp);
       if (!isEditing) form.reset({ entryName: "Manual Macro Adjustment", calories: undefined, protein: undefined, carbs: undefined, fat: undefined });
       onOpenChange(false);
@@ -133,39 +158,49 @@ export default function AddManualMacroEntryDialog({
             <Edit className="mr-2 h-5 w-5 text-gray-400" /> {dialogTitleText}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {isEditing ? "Update the values and date for this manual macro entry." : "Manually log or adjust your macro totals for the day. This will be added as a separate entry."}
+            {isEditing ? "Update the values, date, and time for this manual macro entry." : "Manually log or adjust your macro totals. This will be added as a separate entry with the specified date and time."}
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2 max-h-[calc(70vh-50px)] overflow-y-auto pr-2">
-          {isEditing && (
-            <div className="mb-4">
-              <Label htmlFor="editDateMacro" className={labelClasses}>Log Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal mt-1",
-                      !selectedDateForEdit && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDateForEdit ? format(selectedDateForEdit, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDateForEdit}
-                    onSelect={setSelectedDateForEdit}
-                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2 max-h-[calc(80vh-120px)] overflow-y-auto pr-2">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label htmlFor="logDateMacro" className={labelClasses}>Log Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal mt-1",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                      initialFocus={isEditing}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label htmlFor="logTimeMacro" className={labelClasses}>Log Time</Label>
+                <Input
+                  id="logTimeMacro"
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className={cn("mt-1 w-full", "bg-input text-foreground placeholder:text-muted-foreground")}
+                />
+              </div>
             </div>
-          )}
 
           <div>
             <Label htmlFor="entryName" className={labelClasses}>Entry Name</Label>

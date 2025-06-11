@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { LoggedFoodItem } from '@/types';
-import { Sprout, Loader2, CalendarIcon } from 'lucide-react'; 
+import { Sprout, Loader2, CalendarIcon, ClockIcon } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -45,6 +45,19 @@ interface AddFoodItemDialogProps {
   initialTimestamp?: Date; 
 }
 
+const formatTimeToHHMM = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+const combineDateAndTime = (date: Date, time: string): Date => {
+  const [hours, minutesValue] = time.split(':');
+  const newDate = new Date(date);
+  newDate.setHours(parseInt(hours, 10), parseInt(minutesValue, 10), 0, 0);
+  return newDate;
+};
+
 export default function AddFoodItemDialog({
   isOpen,
   onOpenChange,
@@ -55,7 +68,9 @@ export default function AddFoodItemDialog({
 }: AddFoodItemDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [selectedDateForEdit, setSelectedDateForEdit] = useState<Date | undefined>(initialTimestamp);
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedTime, setSelectedTime] = useState<string>(formatTimeToHHMM(new Date()));
 
 
   const form = useForm<ManualEntryFormValues>({
@@ -70,12 +85,14 @@ export default function AddFoodItemDialog({
 
   useEffect(() => {
     if (isOpen) {
+      const baseTimestamp = initialTimestamp ? new Date(initialTimestamp) : new Date();
+      setSelectedDate(baseTimestamp);
+      setSelectedTime(formatTimeToHHMM(baseTimestamp));
+
       if (isEditing && initialValues) {
         form.reset(initialValues);
-        setSelectedDateForEdit(initialTimestamp ? new Date(initialTimestamp) : new Date());
       } else if (!isEditing) {
         form.reset({ name: '', ingredients: '', portionSize: '', portionUnit: '' });
-        setSelectedDateForEdit(undefined);
       }
     }
   }, [isOpen, isEditing, initialValues, initialTimestamp, form]);
@@ -83,13 +100,20 @@ export default function AddFoodItemDialog({
   const handleFormSubmit = async (data: ManualEntryFormValues) => {
     setIsLoading(true);
     try {
-      const finalTimestamp = isEditing ? selectedDateForEdit : undefined;
+      let finalTimestamp: Date | undefined = undefined;
+      if (selectedDate && selectedTime) {
+        finalTimestamp = combineDateAndTime(selectedDate, selectedTime);
+      } else {
+        finalTimestamp = new Date(); // Fallback
+      }
+
       await onSubmitFoodItem({
         name: data.name,
         ingredients: data.ingredients,
         portionSize: data.portionSize,
         portionUnit: data.portionUnit,
       }, finalTimestamp);
+
       if (!isEditing) form.reset();
       onOpenChange(false);
     } catch (error) {
@@ -115,39 +139,49 @@ export default function AddFoodItemDialog({
             <Sprout className="mr-2 h-6 w-6 text-gray-400" /> {dialogTitleText}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {isEditing ? "Update the details and date of this food item." : "Manually enter the details of your food item below."}
+            {isEditing ? "Update the details, date, and time of this food item." : "Manually enter the details, date, and time of your food item below."}
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2 max-h-[calc(70vh-50px)] overflow-y-auto pr-2">
-          {isEditing && (
-             <div className="mb-4">
-              <Label htmlFor="editDateManual" className={labelClasses}>Log Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal mt-1",
-                      !selectedDateForEdit && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDateForEdit ? format(selectedDateForEdit, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDateForEdit}
-                    onSelect={setSelectedDateForEdit}
-                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2 max-h-[calc(80vh-120px)] overflow-y-auto pr-2">
+           <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label htmlFor="logDateManual" className={labelClasses}>Log Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal mt-1",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                      initialFocus={isEditing}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label htmlFor="logTimeManual" className={labelClasses}>Log Time</Label>
+                <Input
+                  id="logTimeManual"
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className={cn("mt-1 w-full", "bg-input text-foreground placeholder:text-muted-foreground")}
+                />
+              </div>
             </div>
-          )}
 
           <div>
             <Label htmlFor="name" className={labelClasses}>Food Name</Label>
