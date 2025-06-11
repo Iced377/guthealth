@@ -136,41 +136,41 @@ export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<Anal
 
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
-  model: 'googleai/gemini-1.5-pro-latest', // Standardized model name
+  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily commented out to use default model for diagnostics
   input: {schema: AnalyzeFoodItemInputSchema},
   output: {schema: AnalyzeFoodItemOutputSchema},
   config: {
     temperature: 0.2,
   },
   prompt: `You are an expert AI for comprehensive, portion-aware food analysis for IBS users.
-Inputs: Food: '{{{foodItem}}}', Ingredients: '{{{ingredients}}}', Portion: '{{{portionSize}}} {{{portionUnit}}}'.
-Output a JSON object strictly adhering to the 'AnalyzeFoodItemOutputSchema'.
+Input: Food: '{{{foodItem}}}', Ingredients: '{{{ingredients}}}', Portion: '{{{portionSize}}} {{{portionUnit}}}'.
+Output a JSON object strictly adhering to 'AnalyzeFoodItemOutputSchema'.
 
 Key tasks:
-1.  **Portion-Specific Analysis:** All analyses (FODMAP, nutrition, etc.) must be for the specified overall portion ('{{{portionSize}}} {{{portionUnit}}}').
-    *   **FODMAPs:** Analyze each ingredient in '{{{ingredients}}}' for FODMAP content relative to the overall meal portion. Determine overall risk (Green, Yellow, Red) and provide a 'reason'. If possible, include 'detailedFodmapProfile'.
+1.  **Portion-Specific Analysis:** All analyses for '{{{portionSize}}} {{{portionUnit}}}'.
+    *   FODMAPs: For each ingredient in '{{{ingredients}}}', assess FODMAP content relative to the meal portion. Output 'overallRisk', 'reason', and if possible, 'detailedFodmapProfile'.
 
-2.  **Quantity Prioritization for Nutrition (Calories, Macros, Micronutrients):**
-    *   If 'Food Item: {{{foodItem}}}' specifies quantities for components (e.g., "4 eggs", "Sausage McMuffin with 1 extra egg"), these quantities MUST be used for calculating nutrition for those specific components.
-    *   The overall 'Portion: {{{portionSize}}} {{{portionUnit}}}' applies to the meal as a whole or to components without specific quantities mentioned in the 'foodItem' description.
-    *   For composite/branded items (e.g., "Sausage McMuffin with Egg, 1 hashbrown"), identify components, use general knowledge for branded values, and estimate any additions like "extra egg".
-    *   Ensure final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' sum all identified components, reflecting these specific quantities and the overall portion context.
+2.  **Quantity-Aware Nutrition (Calories, Macros, Micronutrients):**
+    *   Prioritize quantities in '{{{foodItem}}}' (e.g., "4 eggs") for component nutrition.
+    *   '{{{portionSize}}} {{{portionUnit}}}' applies to the whole meal or components without specific quantities.
+    *   For composite/branded items (e.g., "Sausage McMuffin with Egg, 1 hashbrown"), use general knowledge and estimate additions.
+    *   Ensure final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' sum all components accurately.
 
 3.  **Micronutrients ('micronutrientsInfo'):**
-    *   **User-Specified (from Ingredients):** If '{{{ingredients}}}' includes nutrients with specific quantities (e.g., "Vitamin D3 50,000 IU"), transcribe these name-quantity pairs accurately into 'MicronutrientDetailSchema.amount'. These MUST appear in 'notable' or 'fullList'. Calculate 'dailyValuePercent' only if confident; otherwise, omit or set to null.
-    *   **Naturally Occurring & Food Item Quantities:** For whole foods or components with quantities in '{{{foodItem}}}' (e.g., "4 eggs"), estimate key micronutrients.
-    *   **Icons:** Suggest 'iconName' per schema examples based on the nutrient's primary function.
+    *   User-Specified (from Ingredients): If '{{{ingredients}}}' contains nutrients with quantities (e.g., "Vitamin D3 50,000 IU"), accurately transcribe name-quantity pairs into 'MicronutrientDetailSchema.amount' (in 'notable' or 'fullList'). Calculate 'dailyValuePercent' only if confident.
+    *   Estimate key micronutrients for foods/quantities in '{{{foodItem}}}'.
+    *   Suggest 'iconName' based on nutrient function per schema.
 
-4.  **Other Health Indicators (all portion-specific):**
-    *   Glycemic Index ('glycemicIndexInfo'): Estimate value and level.
-    *   Dietary Fiber ('dietaryFiberInfo'): Estimate grams and quality.
-    *   Gut Bacteria Impact ('gutBacteriaImpact'): Estimate sentiment and provide 'reasoning'.
-    *   Keto-Friendliness ('ketoFriendliness'): Assess score, 'reasoning', and optionally 'estimatedNetCarbs'.
-    *   Allergens ('detectedAllergens'): List common allergens from '{{{ingredients}}}'.
+4.  **Other Health Indicators (Portion-Specific):**
+    *   'glycemicIndexInfo': Estimate value and level.
+    *   'dietaryFiberInfo': Estimate grams and quality.
+    *   'gutBacteriaImpact': Estimate sentiment and 'reasoning'.
+    *   'ketoFriendliness': Assess score, 'reasoning', and optional 'estimatedNetCarbs'.
+    *   'detectedAllergens': List common allergens from '{{{ingredients}}}'.
 
-5.  **AI Summaries ('aiSummaries'):** Provide concise textual summaries for each category. Acknowledge user-specified high-dose supplements in the micronutrient summary if they are significant.
+5.  **AI Summaries ('aiSummaries'):** Concise textual summaries for each category. Acknowledge significant user-specified high-dose supplements.
 
-Adhere strictly to the output schema. Omit optional sub-fields or set to null/default if not reasonably estimable. Ensure nutritional estimates reflect quantities in '{{{foodItem}}}' and are scaled to the overall '{{{portionSize}}} {{{portionUnit}}}'.
+Strictly follow output schema. Omit/default optional sub-fields if not estimable. Ensure nutrition reflects quantities in '{{{foodItem}}}', scaled to '{{{portionSize}}} {{{portionUnit}}}'.
 `,
 });
 
@@ -201,11 +201,11 @@ const analyzeFoodItemFlow = ai.defineFlow(
     } catch (error: any) {
       console.error('[AnalyzeFoodItemFlow] Error during AI processing:', error);
       const errorMessage = error.message || 'Unknown error';
-      const modelNotFoundError = errorMessage.includes("NOT_FOUND") || errorMessage.includes("Model not found");
+      const modelNotFoundError = errorMessage.includes("NOT_FOUND") || errorMessage.includes("Model not found") || errorMessage.includes("model"); // Broader check for model-related errors
       
       let specificSummaryMessage: string;
       if (modelNotFoundError) {
-        specificSummaryMessage = "AI Model not accessible. Please check configuration.";
+        specificSummaryMessage = "AI Model not accessible. Please check configuration or model name specified in the flow.";
       } else {
         specificSummaryMessage = `Analysis error: ${errorMessage}`;
       }
