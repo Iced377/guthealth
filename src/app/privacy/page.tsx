@@ -1,8 +1,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button'; // Import Button
-import { Home } from 'lucide-react'; // Import Home icon
+import { Button } from '@/components/ui/button'; 
+import { Home } from 'lucide-react'; 
 
 const PrivacyPage = () => {
   return (
@@ -137,7 +137,7 @@ const PrivacyPage = () => {
       </section>
 
       <div className="mt-8 text-sm text-gray-500">
-        <p>Last updated: June 8, 2025</p>
+        <p>Last updated: June 11, 2025</p>
       </div>
 
       <div className="mt-12 text-center">
