@@ -131,6 +131,7 @@ export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<Anal
 
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
+  model: 'gemini-1.5-pro-latest',
   input: {schema: AnalyzeFoodItemInputSchema},
   output: {schema: AnalyzeFoodItemOutputSchema},
   config: {
@@ -178,6 +179,10 @@ Your task is to provide:
         *   These user-specified nutrients from the ingredients list, with their user-provided amounts, MUST be listed in the 'notable' or 'fullList' arrays.
         *   For these user-specified amounts from ingredients, calculate 'dailyValuePercent' *only if you are extremely confident*. OMIT if unsure.
     *   **NATURALLY OCCURRING MICRONUTRIENTS & QUANTITIES FROM FOOD ITEM NAME:** *After* processing nutrients from the ingredients list, consider the 'Food Item: {{{foodItem}}}' (e.g., "4 eggs", "1 banana", "50g bread"). For common whole foods or distinct components described here WITH QUANTITIES, AIM TO PROVIDE A REASONABLE ESTIMATE FOR AT LEAST 2-3 KEY MICRONUTRIENTS present in significant amounts for the described portion and quantities. For example, for "4 eggs", provide key micronutrients for four eggs. For "50g bread", provide key micronutrients for 50g of that type of bread.
+    *   **Unit Preference for Estimated Micronutrients:** For naturally occurring micronutrients or general estimations (i.e., NOT those explicitly provided by the user with specific units in the ingredients list):
+        *   **Prioritize providing amounts as '%DV' (Daily Value percentage)** if you can reliably estimate this for an average adult. Populate the 'dailyValuePercent' field.
+        *   If '%DV' is not estimable, provide the amount in standard mass units: **'mg' (milligrams) or 'mcg' (micrograms)**. Populate the 'amount' field with this value and its unit (e.g., "10 mg", "50 mcg").
+        *   **Avoid using 'IU' (International Units)** for vitamins (like Vitamin A, D, E) for these estimations *unless it is the only unit available from your knowledge base for that specific food item and portion*. If 'IU' must be used for an estimation (and not a user-transcribed value), clearly state the unit as 'IU' in the 'amount' field (e.g., "1000 IU").
     *   **FOR COMPOSITE MEALS (like a McMuffin combo):** List notable micronutrients from EACH significant component (e.g., the McMuffin itself, the extra egg, the hashbrown). Aim for a combined list reflecting the whole meal. For instance, eggs provide B vitamins and selenium; potatoes (like hashbrowns) provide Vitamin C and Potassium. Ensure your \`micronutrientsInfo\` output reflects a broader range of expected micronutrients for such a meal, not just one or two.
     *   **Icons:** Suggest a relevant lucide-react icon name for \`iconName\` field for each micronutrient, based on its primary **supported body part or physiological function**. Examples: 'Bone' for Calcium, 'Activity' for Magnesium, 'Eye' for Vitamin A, 'ShieldCheck' for Vitamin C/D, 'Wind' for Iron. Use generic names like 'Atom' or 'Sparkles' if a specific functional icon is not available. If no good icon, omit.
 
@@ -248,3 +253,4 @@ const analyzeFoodItemFlow = ai.defineFlow(
 // Ensure the detailed profile type is exported if it's used elsewhere, though now the main output is extended.
 // The ExtendedAnalyzeFoodItemOutput from @/types is the primary export type for this flow's result.
 export type { FoodFODMAPProfile as DetailedFodmapProfileFromAI };
+
