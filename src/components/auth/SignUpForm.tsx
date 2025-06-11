@@ -43,7 +43,7 @@ export default function SignUpForm() {
     setLoading(true);
     const result = await signUpWithEmail(data.email, data.password);
     if ('user' in result) {
-      toast({ title: 'Sign Up Successful', description: 'Welcome to FODMAPSafe!' });
+      toast({ title: 'Sign Up Successful', description: 'Welcome to GutCheck!' });
       router.push('/');
     } else {
       toast({
