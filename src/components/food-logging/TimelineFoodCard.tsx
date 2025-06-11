@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { LoggedFoodItem } from '@/types';
@@ -14,6 +15,12 @@ import { ThumbsUp, ThumbsDown, Trash2, ListChecks, Loader2, Flame, Beef, Wheat, 
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'; 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface TimelineFoodCardProps {
   item: LoggedFoodItem;
@@ -93,11 +100,11 @@ export default function TimelineFoodCard({
          )}
         <p className={cn("text-xs pt-1", mutedTextClass)}>Logged: {timeAgo}</p>
       </CardHeader>
-      <CardContent className="px-4 pt-2 pb-3 space-y-2">
+      <CardContent className="px-4 pt-2 pb-3 space-y-0"> {/* Adjusted space-y-2 to space-y-0 */}
         {item.isSimilarToSafe && !isManualMacroEntry && (
           <Badge
             variant="default"
-            className="text-sm"
+            className="text-sm mb-2" // Added mb-2 for spacing if it's present
             style={{ 
               backgroundColor: 'var(--success-indicator-bg, #34C759)',
               color: 'var(--success-indicator-text, white)',
@@ -151,53 +158,60 @@ export default function TimelineFoodCard({
         {!isManualMacroEntry && aiSummaries && (
           Object.values(aiSummaries).some(summary => summary && summary.length > 0) || item.fodmapData?.gutBacteriaImpact?.reasoning
         ) && (
-          <div className={cn("text-xs border-t pt-2 mt-2 space-y-1.5", "border-border/50", mutedTextClass)}>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <h4 className="text-xs font-semibold text-foreground/80 flex items-center cursor-default">
-                    <MessageSquareText className="h-3.5 w-3.5 mr-1.5 text-primary/70"/>AI Notes:
-                  </h4>
-                </TooltipTrigger>
-                <TooltipContent className="bg-popover text-popover-foreground border-border max-w-xs">
-                  <p>AI-generated summaries for this item.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {aiSummaries.fodmapSummary && (
-              <p><strong className="text-foreground/70">FODMAP:</strong> {aiSummaries.fodmapSummary}</p>
-            )}
-            {aiSummaries.micronutrientSummary && (
-              <p><strong className="text-foreground/70">Micronutrients:</strong> {aiSummaries.micronutrientSummary}</p>
-            )}
-            {aiSummaries.glycemicIndexSummary && (
-              <p><strong className="text-foreground/70">Glycemic Index:</strong> {aiSummaries.glycemicIndexSummary}</p>
-            )}
-            {aiSummaries.ketoSummary && (
-              <p><strong className="text-foreground/70">Keto:</strong> {aiSummaries.ketoSummary}</p>
-            )}
-            {aiSummaries.gutImpactSummary ? ( 
-              <p><strong className="text-foreground/70">Gut Impact:</strong> {aiSummaries.gutImpactSummary}</p>
-            ) : item.fodmapData?.gutBacteriaImpact?.reasoning && !aiSummaries.gutImpactSummary && ( 
-              <p><strong className="text-foreground/70">Gut Impact:</strong> {item.fodmapData.gutBacteriaImpact.reasoning}</p>
-            )}
-          </div>
+          <Accordion type="single" collapsible className="w-full pt-2">
+            <AccordionItem value="ai-notes" className="border-b-0">
+              <AccordionTrigger className="text-xs font-semibold text-foreground/80 flex items-center py-1 hover:no-underline justify-between w-full group">
+                <span className="flex items-center">
+                  <MessageSquareText className="h-3.5 w-3.5 mr-1.5 text-primary/70 group-hover:text-primary"/>AI Notes
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-0 text-xs space-y-1.5 text-muted-foreground">
+                {aiSummaries.fodmapSummary && (
+                  <p><strong className="text-foreground/70">FODMAP:</strong> {aiSummaries.fodmapSummary}</p>
+                )}
+                {aiSummaries.micronutrientSummary && (
+                  <p><strong className="text-foreground/70">Micronutrients:</strong> {aiSummaries.micronutrientSummary}</p>
+                )}
+                {aiSummaries.glycemicIndexSummary && (
+                  <p><strong className="text-foreground/70">Glycemic Index:</strong> {aiSummaries.glycemicIndexSummary}</p>
+                )}
+                {aiSummaries.ketoSummary && (
+                  <p><strong className="text-foreground/70">Keto:</strong> {aiSummaries.ketoSummary}</p>
+                )}
+                {aiSummaries.gutImpactSummary ? ( 
+                  <p><strong className="text-foreground/70">Gut Impact:</strong> {aiSummaries.gutImpactSummary}</p>
+                ) : item.fodmapData?.gutBacteriaImpact?.reasoning && !aiSummaries.gutImpactSummary && ( 
+                  <p><strong className="text-foreground/70">Gut Impact:</strong> {item.fodmapData.gutBacteriaImpact.reasoning}</p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         )}
 
          {item.fodmapData?.ingredientFodmapScores && item.fodmapData.ingredientFodmapScores.length > 0 && !isManualMacroEntry && (
-          <div className="mt-2 max-h-24 overflow-y-auto pr-2 border-t pt-2 border-border/50">
-            <p className={cn("text-sm font-medium mb-1", mutedTextClass)}>Ingredient FODMAPs:</p>
-            <ul className="list-disc list-inside pl-1 space-y-0.5">
-              {item.fodmapData.ingredientFodmapScores.map((entry) => (
-                <li key={entry.ingredient} className={`text-sm ${
-                  entry.score === 'Green' ? 'text-green-500' : entry.score === 'Yellow' ? 'text-yellow-500' : 'text-red-500'
-                }`}>
-                  {entry.ingredient}: <span className="font-medium">{entry.score}</span>
-                  {entry.reason && <span className={cn("italic text-xs break-words", mutedTextClass)}> ({entry.reason})</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
+           <Accordion type="single" collapsible className="w-full pt-2">
+            <AccordionItem value="ingredient-fodmaps" className="border-b-0">
+              <AccordionTrigger className="text-xs font-semibold text-muted-foreground flex items-center py-1 hover:no-underline justify-between w-full group">
+                <span className="flex items-center">
+                  <Leaf className="h-3.5 w-3.5 mr-1.5 text-green-500/70 group-hover:text-green-500"/>Ingredient FODMAPs
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-0">
+                <div className="mt-0 max-h-24 overflow-y-auto pr-2">
+                  <ul className="list-disc list-inside pl-1 space-y-0.5">
+                    {item.fodmapData.ingredientFodmapScores.map((entry) => (
+                      <li key={entry.ingredient} className={`text-sm ${
+                        entry.score === 'Green' ? 'text-green-500' : entry.score === 'Yellow' ? 'text-yellow-500' : 'text-red-500'
+                      }`}>
+                        {entry.ingredient}: <span className="font-medium">{entry.score}</span>
+                        {entry.reason && <span className={cn("italic text-xs break-words", mutedTextClass)}> ({entry.reason})</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+           </Accordion>
         )}
       </CardContent>
       {!isGuestView && ( 
@@ -283,3 +297,4 @@ export default function TimelineFoodCard({
   );
 }
     
+

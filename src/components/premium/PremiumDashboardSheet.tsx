@@ -12,7 +12,7 @@ import TimelineSymptomCard from '@/components/food-logging/TimelineSymptomCard';
 import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, format } from 'date-fns';
 
 const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
   // General & Fallbacks
@@ -70,6 +70,18 @@ interface AchievedMicronutrient {
   totalDV: number;
 }
 
+const groupEntriesByDate = (entries: TimelineEntry[]) => {
+  const grouped: Record<string, TimelineEntry[]> = {};
+  entries.forEach(entry => {
+    const dateKey = format(new Date(entry.timestamp), "PPP"); // e.g., "Jun 10th, 2025"
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey].push(entry);
+  });
+  return grouped;
+};
+
 export default function PremiumDashboardSheet({
   children,
   isOpen,
@@ -123,6 +135,17 @@ export default function PremiumDashboardSheet({
       .sort((a,b) => b.totalDV - a.totalDV) 
       .slice(0, 5); 
   }, [timelineEntries]);
+
+  const groupedTimelineEntries = useMemo(() => groupEntriesByDate(timelineEntries), [timelineEntries]);
+  
+  const sortedDateKeys = useMemo(() => {
+    const dateKeys = new Set<string>();
+    timelineEntries.forEach(entry => {
+      dateKeys.add(format(new Date(entry.timestamp), "PPP"));
+    });
+    return Array.from(dateKeys); // Relies on original sort of timelineEntries (newest first)
+  }, [timelineEntries]);
+
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -187,32 +210,46 @@ export default function PremiumDashboardSheet({
               </p>
             </div>
           )}
-          <div className="space-y-4">
-            {timelineEntries.map(entry => {
-              if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-                return (
-                  <TimelineFoodCard
-                    key={entry.id}
-                    item={entry}
-                    onSetFeedback={onSetFeedback}
-                    onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                    onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
-                    isLoadingAi={!!isLoadingAi[entry.id]}
-                    onEditIngredients={onEditIngredients}
-                    onRepeatMeal={onRepeatMeal}
-                  />
-                );
-              }
-              if (entry.entryType === 'symptom') {
-                return (
-                  <TimelineSymptomCard
-                    key={entry.id}
-                    item={entry}
-                    onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                  />
-                );
-              }
-              return null;
+          <div className="space-y-0"> {/* Changed space-y-4 to space-y-0, mb-6 on group will handle it */}
+            {sortedDateKeys.map(dateKey => {
+              const entriesOnDate = groupedTimelineEntries[dateKey];
+              if (!entriesOnDate || entriesOnDate.length === 0) return null;
+              
+              return (
+                <div key={dateKey} className="mb-6">
+                  <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
+                    <h3 className="text-sm font-semibold text-foreground">{dateKey}</h3>
+                  </div>
+                  <div className="space-y-4"> {/* Added space-y-4 here for cards within a date group */}
+                    {entriesOnDate.map(entry => {
+                      if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
+                        return (
+                          <TimelineFoodCard
+                            key={entry.id}
+                            item={entry}
+                            onSetFeedback={onSetFeedback}
+                            onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                            onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
+                            isLoadingAi={!!isLoadingAi[entry.id]}
+                            onEditIngredients={onEditIngredients}
+                            onRepeatMeal={onRepeatMeal}
+                          />
+                        );
+                      }
+                      if (entry.entryType === 'symptom') {
+                        return (
+                          <TimelineSymptomCard
+                            key={entry.id}
+                            item={entry}
+                            onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                </div>
+              );
             })}
           </div>
         </ScrollArea>
