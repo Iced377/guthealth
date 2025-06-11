@@ -36,13 +36,13 @@ const DailyInsightsOutputSchema = z.object({
   triggerInsights: z
     .string()
     .describe(
-      'Insights about potential trigger foods or high-risk meals based on food log and symptoms.'
+      'Insights about potential trigger foods or high-risk meals based on food log and symptoms. E.g., "You had 3 high-risk meals today" or "Garlic appears to trigger symptoms."'
     ),
   micronutrientFeedback: z
     .string()
     .optional()
     .describe(
-      'Feedback on the user\'s micronutrient intake, highlighting areas of concern or sufficiency.'
+      'Feedback on the user\'s micronutrient intake, highlighting areas of concern or sufficiency. E.g., "Your Vitamin C intake was good, but you might need more Iron." If no summary is provided, this should state that micronutrient feedback is unavailable or be omitted.'
     ),
   overallSummary: z
     .string()
@@ -64,6 +64,7 @@ export async function getDailyInsights(input: DailyInsightsInput): Promise<Daily
 
 const dailyInsightsPrompt = ai.definePrompt({
   name: 'dailyInsightsPrompt',
+  model: 'gemini-1.5-pro-latest',
   input: {schema: DailyInsightsInputSchema},
   output: {schema: DailyInsightsOutputSchema},
   prompt: `Analyze the following food log, symptoms, and micronutrient summary to provide personalized insights to the user.
@@ -74,15 +75,24 @@ Symptoms: {{{symptoms}}}
 Micronutrient Summary: {{{micronutrientSummary}}}
 {{/if}}
 
-Provide the following insights:
-1.  **Trigger Insights**: Identify potential trigger foods or high-risk meals (e.g., "You had 3 high-risk meals today" or "Garlic appears to trigger symptoms.").
-2.  **Micronutrient Feedback**: Based on the micronutrient summary, provide feedback (e.g., "Your Vitamin C intake was good, but you might need more Iron."). If no summary is provided, state that micronutrient feedback is unavailable.
-3.  **Overall Summary**: Give a brief, general overview of the day, considering all provided information.
+Your task is to generate a JSON object adhering to the DailyInsightsOutputSchema. The JSON object should contain:
+1.  "triggerInsights": Insights about potential trigger foods or high-risk meals.
+2.  "micronutrientFeedback": Feedback on micronutrient intake. If no micronutrientSummary was provided in the input, set this field to "Micronutrient feedback not available as no summary was provided." or omit it if appropriate for the schema.
+3.  "overallSummary": A brief, general overview of the day.
 
-Respond in a structured format. For example:
-Trigger Insights: Your analysis here.
-Micronutrient Feedback: Your analysis here.
-Overall Summary: Your analysis here.
+Example Input:
+Food Log: "Breakfast: Oats with berries. Lunch: Chicken salad. Dinner: Spaghetti bolognese (with onion and garlic)."
+Symptoms: "Bloating after dinner."
+Micronutrient Summary: "High in Vitamin C, low in Iron."
+
+Example Output (JSON):
+{
+  "triggerInsights": "The spaghetti bolognese containing onion and garlic may have contributed to your bloating, as these are common FODMAP triggers.",
+  "micronutrientFeedback": "Your Vitamin C intake was good today. You might want to focus on iron-rich foods tomorrow.",
+  "overallSummary": "Today included a mix of meals. Bloating was noted after dinner, potentially linked to FODMAPs."
+}
+
+Ensure your output is a valid JSON object matching the schema.
 `,
 });
 
@@ -92,35 +102,41 @@ const dailyInsightsFlow = ai.defineFlow(
     inputSchema: DailyInsightsInputSchema,
     outputSchema: DailyInsightsOutputSchema,
   },
-  async input => {
+  async (input: DailyInsightsInput): Promise<DailyInsightsOutput> => {
     try {
       const {output} = await dailyInsightsPrompt(input);
-      // The prompt is asking for a specific string format, but the output schema is an object.
-      // We need to parse the AI's string output into the object structure.
-      // This is a simplification; a more robust solution would involve the AI generating JSON directly
-      // or more sophisticated parsing.
+      
       if (!output) {
         console.warn('[DailyInsightsFlow] AI prompt returned no output. Falling back to default error response.');
         return defaultErrorOutput;
       }
-      
-      if (output && typeof output.triggerInsights === 'string' && typeof output.overallSummary === 'string') {
-        // This case implies the AI might be directly returning the object structure, which is ideal.
+
+      // Output should now directly be the structured object
+      // Perform a basic check to ensure it matches the expected structure
+      if (
+        typeof output.triggerInsights === 'string' &&
+        typeof output.overallSummary === 'string' &&
+        (output.micronutrientFeedback === undefined || typeof output.micronutrientFeedback === 'string')
+      ) {
         return output as DailyInsightsOutput;
+      } else {
+        console.warn('[DailyInsightsFlow] AI output did not match expected schema. Output:', output);
+        // Attempt to provide a more specific error or fallback.
+        let triggerMsg = defaultErrorOutput.triggerInsights;
+        let microMsg = defaultErrorOutput.micronutrientFeedback;
+        let overallMsg = defaultErrorOutput.overallSummary;
+
+        if (output && typeof (output as any).triggerInsights === 'string') triggerMsg = (output as any).triggerInsights;
+        if (output && (output as any).micronutrientFeedback === undefined || typeof (output as any).micronutrientFeedback === 'string') microMsg = (output as any).micronutrientFeedback;
+        if (output && typeof (output as any).overallSummary === 'string') overallMsg = (output as any).overallSummary;
+        
+        return {
+            triggerInsights: triggerMsg,
+            micronutrientFeedback: microMsg,
+            overallSummary: overallMsg,
+        };
       }
 
-      // Fallback parsing if the output is a single string as per the prompt's example response.
-      // This is a naive parsing approach and might need refinement.
-      const insightsString = (output as any)?.insights || (output as any)?.toString() || "";
-      const triggerMatch = insightsString.match(/Trigger Insights: (.*?)(Micronutrient Feedback:|Overall Summary:|$)/s);
-      const micronutrientMatch = insightsString.match(/Micronutrient Feedback: (.*?)(Overall Summary:|$)/s);
-      const overallMatch = insightsString.match(/Overall Summary: (.*)/s);
-
-      return {
-        triggerInsights: triggerMatch ? triggerMatch[1].trim() : 'Could not determine trigger insights.',
-        micronutrientFeedback: micronutrientMatch ? micronutrientMatch[1].trim() : (input.micronutrientSummary ? 'Could not parse micronutrient feedback.' : 'Micronutrient feedback not available.'),
-        overallSummary: overallMatch ? overallMatch[1].trim() : 'Could not determine overall summary.',
-      };
     } catch (error: any) {
       console.error('[DailyInsightsFlow] Error during AI processing:', error);
       return {
