@@ -28,7 +28,7 @@ const IdentifyFoodFromImageOutputSchema = z.object({
   recognitionSuccess: z.boolean().describe('Whether the AI was able to confidently identify a food item and its details suitable for form population.'),
   errorMessage: z.string().optional().describe('An error message if identification failed or was problematic.'),
 });
-export type IdentifyFoodFromImageOutput = z.infer<typeof IdentifyFoodFromImageOutputSchema>;
+export type IdentifyFoodFromImageOutput = z.infer<typeof IdentifyFoodFromImageInputSchema>;
 
 export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): Promise<IdentifyFoodFromImageOutput> {
   return identifyFoodFromImageFlow(input);
@@ -41,54 +41,51 @@ const identifyFoodPrompt = ai.definePrompt({
   config: {
     temperature: 0.2, // Set low temperature for consistent identification
   },
-  prompt: `You are an expert food identification AI. Analyze the provided image.
+  prompt: `You are an expert food identification AI. Analyze the provided image and respond strictly according to the IdentifyFoodFromImageOutputSchema.
 User's locale (optional, for context): {{{userLocale}}}
 Image: {{media url=imageDataUri}}
 
-Your tasks are:
-1.  Identify the primary food item(s) in the image. If it's packaged, try to identify the product name. If it's a dish, identify the dish. Output this as 'identifiedFoodName'.
-    *   If the cooking method isn't perfectly clear (e.g., for eggs), use a general term like 'cooked eggs' or 'eggs' unless a specific method like 'fried' or 'scrambled' is very obvious.
-2.  Extract or infer a comma-separated list of main ingredients.
-    *   If it's a packaged item, attempt to OCR the ingredients list.
-    *   **CRITICAL FOR SUPPLEMENTS/NUTRITION PANELS:** If the image appears to be a supplement facts panel or nutrition label, and specific nutrient names with their exact quantities (e.g., "Vitamin D3 50000 IU", "Iron 10mg", "Omega-3 800mg (480 EPA, 320 DHA)") are clearly visible and OCR'd, YOU MUST include these exact strings as part of the comma-separated 'identifiedIngredients' output. Do not simplify, generalize, or omit these OCR'd quantities. Prioritize accurate transcription of this data from the image into the 'identifiedIngredients' field. For example, if "Vitamin D3 50,000 IU" is on the label, 'identifiedIngredients' should contain "Vitamin D3 50,000 IU".
-    *   If it's a dish, list common ingredients.
-    *   Output this as 'identifiedIngredients'.
-3.  Provide a very rough estimate for 'estimatedPortionSize' and 'estimatedPortionUnit'.
-    *   If multiple distinct, countable items are visible (e.g., 4 eggs, 2 slices of bread), try to use the count for 'estimatedPortionSize' (e.g., "4") and the item type for 'estimatedPortionUnit' (e.g., "eggs", "slices").
-    *   Otherwise, use general estimates (e.g., "1", "100" for size; "serving", "g", "piece", "item", "bowl" for unit). This is highly approximate; err on the side of generic units if unsure.
-4.  Extract any visible text from the image using OCR and provide it in 'ocrText'.
-5.  Set 'recognitionSuccess' to true if you are reasonably confident in the 'identifiedFoodName' and 'identifiedIngredients' such that they can be used to pre-fill a food logging form. Otherwise, set it to false.
-6.  If 'recognitionSuccess' is false or there's an issue, provide a brief 'errorMessage'.
+Your tasks:
+1.  **'identifiedFoodName'**: Identify the primary food item. If packaged, the product name. If a dish, its name. For ambiguous cooking (e.g., eggs), use general terms ('cooked eggs') unless method is obvious.
+2.  **'identifiedIngredients'**: Provide a comma-separated list of main ingredients.
+    *   **CRITICAL FOR SUPPLEMENTS/LABELS**: If OCR detects specific nutrient quantities (e.g., "Vitamin D3 50000 IU", "Iron 10mg"), these exact strings MUST be included in 'identifiedIngredients'. Do not alter or omit these OCR'd quantities.
+    *   For dishes, list common ingredients.
+3.  **'estimatedPortionSize' & 'estimatedPortionUnit'**: Provide rough estimates.
+    *   For multiple distinct, countable items (e.g., 4 eggs), use count for 'estimatedPortionSize' ("4") and item type for 'estimatedPortionUnit' ("eggs").
+    *   Otherwise, use general estimates (e.g., "1", "100" for size; "serving", "g", "piece", "item" for unit). Be generic if unsure.
+4.  **'ocrText'**: Extract all visible text using OCR.
+5.  **'recognitionSuccess'**: Set to true if 'identifiedFoodName' and 'identifiedIngredients' are confidently identified for form pre-filling. Otherwise, false.
+6.  **'errorMessage'**: If 'recognitionSuccess' is false or issues arise, briefly explain.
 
-Focus on providing practical values for 'identifiedFoodName', 'identifiedIngredients', 'estimatedPortionSize', and 'estimatedPortionUnit' that a user can then confirm or edit.
-If the image is unclear, or not food-related, set 'recognitionSuccess' to false and explain in 'errorMessage'.
+Prioritize practical values for form pre-filling. If image is unclear or not food, set 'recognitionSuccess' to false and provide an 'errorMessage'.
 
-Example for a picture of four cooked eggs:
-identifiedFoodName: "Cooked Eggs"
-identifiedIngredients: "Eggs"
-estimatedPortionSize: "4"
-estimatedPortionUnit: "eggs"
-recognitionSuccess: true
+Examples:
+- Picture of four cooked eggs:
+  identifiedFoodName: "Cooked Eggs"
+  identifiedIngredients: "Eggs"
+  estimatedPortionSize: "4"
+  estimatedPortionUnit: "eggs"
+  recognitionSuccess: true
 
-Example for a picture of a can of "Campbell's Chicken Noodle Soup":
-identifiedFoodName: "Campbell's Chicken Noodle Soup"
-identifiedIngredients: "Chicken stock, enriched egg noodles, chicken meat, water, salt, modified food starch, chicken fat, monosodium glutamate, dehydrated chicken broth, flavoring, beta carotene, dehydrated garlic, dehydrated onions" (or a summarized version if OCR'd)
-estimatedPortionSize: "1"
-estimatedPortionUnit: "can"
-ocrText: "Campbell's Chicken Noodle Soup..."
-recognitionSuccess: true
+- Picture of a can of "Campbell's Chicken Noodle Soup":
+  identifiedFoodName: "Campbell's Chicken Noodle Soup"
+  identifiedIngredients: "Chicken stock, enriched egg noodles, chicken meat, water, salt, modified food starch, chicken fat, monosodium glutamate, dehydrated chicken broth, flavoring, beta carotene, dehydrated garlic, dehydrated onions" (or summarized if OCR'd)
+  estimatedPortionSize: "1"
+  estimatedPortionUnit: "can"
+  ocrText: "Campbell's Chicken Noodle Soup..."
+  recognitionSuccess: true
 
-Example for a supplement label showing "Vitamin D3 50,000 IU" and "Calcium 200mg":
-identifiedFoodName: "Vitamin Supplement" (or product name if visible)
-identifiedIngredients: "Vitamin D3 50,000 IU, Calcium 200mg, other ingredients..." (ensure exact OCR'd quantities are preserved)
-estimatedPortionSize: "1"
-estimatedPortionUnit: "capsule" (or as seen on label)
-ocrText: "Supplement Facts Vitamin D3 50,000 IU Calcium 200mg..."
-recognitionSuccess: true
+- Supplement label showing "Vitamin D3 50,000 IU" and "Calcium 200mg":
+  identifiedFoodName: "Vitamin Supplement" (or product name if visible)
+  identifiedIngredients: "Vitamin D3 50,000 IU, Calcium 200mg, other ingredients..." (ensure exact OCR'd quantities are preserved)
+  estimatedPortionSize: "1"
+  estimatedPortionUnit: "capsule" (or as seen on label)
+  ocrText: "Supplement Facts Vitamin D3 50,000 IU Calcium 200mg..."
+  recognitionSuccess: true
 
-Example for a blurry image:
-recognitionSuccess: false
-errorMessage: "Image is too blurry to identify food."
+- Blurry image:
+  recognitionSuccess: false
+  errorMessage: "Image is too blurry to identify food."
 `,
 });
 
@@ -110,3 +107,4 @@ const identifyFoodFromImageFlow = ai.defineFlow(
   }
 );
 
+    
