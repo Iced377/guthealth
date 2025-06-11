@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.6";
+export const APP_VERSION = "Beta 3.6.7";
 
 interface ReleaseNote {
   version: string;
@@ -52,8 +52,17 @@ interface ReleaseNote {
 
 const releaseNotesData: ReleaseNote[] = [
   {
+    version: "Beta 3.6.7",
+    date: "June 08, 2025",
+    title: "Timeline Card Header Styling Enhancement",
+    description: [
+      "Updated the timeline food card headers to use the primary theme color for the background.",
+      "Adjusted icon and text colors within the header for optimal contrast and readability.",
+    ],
+  },
+  {
     version: "Beta 3.6.6",
-    date: "June 08, 2025", // Assuming date remains the same, adjust if needed
+    date: "June 08, 2025",
     title: "App Audit Fixes & Enhanced Timestamp Editing",
     description: [
       "Timestamp Control: Implemented precise date AND time selection for all food logging and editing actions.",
