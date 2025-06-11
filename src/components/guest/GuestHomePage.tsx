@@ -48,11 +48,11 @@ export default function GuestHomePage({
         onClick={handleMainButtonClick}
         className={cn(
           "rounded-full h-40 w-40 sm:h-44 sm:w-44 flex flex-col items-center justify-center text-center",
-          "bg-gradient-to-br from-primary to-primary/70",
+          "bg-gradient-to-br from-emerald-400 via-blue-400 to-violet-400", // Updated background
           "border-4 border-white/30",
           "drop-shadow-xl",
-          "hover:scale-105 hover:shadow-[0_0_30px_8px_hsla(var(--primary),0.5)]",
-          "focus:outline-none focus:ring-4 focus:ring-primary/40 focus:ring-offset-2 focus:ring-offset-background",
+          "hover:scale-105 hover:shadow-[0_0_30px_8px_rgba(74,222,128,0.4)]", // Updated hover shadow
+          "focus:outline-none focus:ring-4 focus:ring-emerald-500/40 focus:ring-offset-2 focus:ring-offset-background", // Updated focus ring
           "transition-all duration-300 ease-in-out group"
         )}
         aria-label="Quick-Check Your Meal"
@@ -76,11 +76,11 @@ export default function GuestHomePage({
         <a
           className={cn(
             "rounded-full h-40 w-40 sm:h-44 sm:w-44 flex flex-col items-center justify-center text-center",
-            "bg-gradient-to-br from-green-500 to-green-600", // Using a distinct green for join button
+            "bg-gradient-to-br from-emerald-400 via-blue-400 to-violet-400", // Updated background
             "border-4 border-white/30",
             "drop-shadow-xl",
-            "hover:scale-105 hover:shadow-[0_0_30px_8px_rgba(34,197,94,0.5)]", // Adjusted shadow color for green
-            "focus:outline-none focus:ring-4 focus:ring-green-500/40 focus:ring-offset-2 focus:ring-offset-background",
+            "hover:scale-105 hover:shadow-[0_0_30px_8px_rgba(74,222,128,0.4)]", // Updated hover shadow
+            "focus:outline-none focus:ring-4 focus:ring-emerald-500/40 focus:ring-offset-2 focus:ring-offset-background", // Updated focus ring
             "transition-all duration-300 ease-in-out group"
           )}
           aria-label="Join the Beta"
@@ -143,3 +143,4 @@ export default function GuestHomePage({
     </div>
   );
 }
+
