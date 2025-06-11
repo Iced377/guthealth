@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.7";
+export const APP_VERSION = "Beta 3.6.8";
 
 interface ReleaseNote {
   version: string;
@@ -51,6 +51,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.6.8",
+    date: "June 08, 2025",
+    title: "Landing Page UI Enhancements",
+    description: [
+      "Applied multi-color gradient text to various headings on the landing page for a more vibrant look.",
+      "Updated guest homepage hero buttons with a consistent multi-color gradient background and refined hover/focus styles.",
+    ],
+  },
   {
     version: "Beta 3.6.7",
     date: "June 08, 2025",
@@ -63,7 +72,7 @@ const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.6.6",
     date: "June 08, 2025",
-    title: "App Audit Fixes & Enhanced Timestamp Editing",
+    title: "App Audit & Timestamp Fixes",
     description: [
       "Timestamp Control: Implemented precise date AND time selection for all food logging and editing actions.",
       "Audit Fix - Consistent Editing: Standardized editing dialogs; AI-processed items (text/photo) now consistently use the appropriate dialog for re-analysis or detail adjustment.",
