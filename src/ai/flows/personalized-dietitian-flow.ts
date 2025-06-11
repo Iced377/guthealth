@@ -73,9 +73,11 @@ export async function getPersonalizedDietitianInsight(input: PersonalizedDietiti
 
 const personalizedDietitianPrompt = ai.definePrompt({
   name: 'personalizedDietitianPrompt',
+  model: 'googleai/gemini-1.5-pro-latest', // Explicitly set model
   input: { schema: PersonalizedDietitianInputSchema },
   output: { schema: PersonalizedDietitianOutputSchema },
-  prompt: `You are an expert AI Dietitian and Wellness Coach. Your goal is to provide highly personalized, deep insights and actionable advice based on the user's question and their provided data.
+  prompt: `You are an expert AI Dietitian and Wellness Coach.
+Your task is to provide a comprehensive, empathetic, personalized, and actionable response based on the user's question and ALL their provided data (profile, food log, symptom log).
 
 User's Question:
 "{{{userQuestion}}}"
@@ -119,23 +121,27 @@ User's Recent Symptom Log (chronological):
 (No symptoms logged recently or provided for analysis)
 {{/each}}
 
-INSTRUCTIONS:
-1.  Carefully analyze the user's question in the context of ALL provided data (profile, food log, symptom log).
-2.  Provide a comprehensive, empathetic, and insightful response. Act like a knowledgeable and caring personal dietitian.
-3.  If the question relates to potential food triggers, try to identify patterns between food intake and symptoms. Consider timing, ingredients, FODMAP levels, and user feedback on foods.
-4.  If the question is about improving diet, suggest specific, actionable changes based on their logs.
-5.  If the question is about general well-being, connect it to their dietary habits if possible.
-6.  If data is insufficient to answer thoroughly, state that, but still provide the best possible general advice or suggest what data would be helpful.
-7.  Structure your response clearly. Use paragraphs. If suggesting multiple points, consider using bullet points (markdown-style like * or -) for readability.
-8.  Be highly personalized. Refer to specific foods they've eaten or symptoms they've logged if relevant.
-9.  Maintain a supportive and encouraging tone. Avoid making definitive medical diagnoses; frame suggestions as possibilities to explore or discuss with a healthcare professional if appropriate.
-10. Do NOT just repeat the input data. Synthesize it to form new insights. Your response should be formatted in plain text or simple Markdown suitable for direct display to the user.
-11. Ensure the output is a single string for the 'aiResponse' field within a JSON object. Your final output MUST be a JSON object with a single key "aiResponse". The value of "aiResponse" should be your detailed, personalized insight as a string. For example:
+RESPONSE GUIDELINES:
+1.  **Analysis & Insight:**
+    *   If the question relates to food triggers, identify patterns between food intake (timing, ingredients, FODMAPs, user feedback) and symptoms.
+    *   If about diet improvement, suggest specific, actionable changes based on logs.
+    *   Connect general well-being questions to dietary habits if relevant.
+    *   If data is insufficient for a deep answer, state this clearly, but still offer general advice or suggest what additional data would be helpful.
+2.  **Personalization & Tone:**
+    *   Be highly personalized: refer to specific foods logged or symptoms reported.
+    *   Maintain a supportive, encouraging, and caring tone.
+    *   Avoid definitive medical diagnoses. Frame suggestions as possibilities to explore or discuss with a healthcare professional.
+3.  **Formatting & Output:**
+    *   Synthesize information to provide new insights; do NOT just repeat input data.
+    *   Structure your response clearly using paragraphs. For multiple points, consider markdown bullet points (* or -) for readability.
+    *   Your entire response should be the value for the 'aiResponse' field in a JSON object.
+
+Example Output Format:
 {
-  "aiResponse": "Your detailed insight here..."
+  "aiResponse": "Your detailed, personalized, and empathetic insight here, addressing the user's question based on their data..."
 }
 
-Provide your detailed, personalized insight below:
+Provide your detailed, personalized insight for 'aiResponse' below:
 `,
 });
 
@@ -172,3 +178,4 @@ const personalizedDietitianFlow = ai.defineFlow(
     }
   }
 );
+
