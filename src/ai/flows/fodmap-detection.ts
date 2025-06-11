@@ -80,10 +80,10 @@ const KetoFriendlinessInfoSchema = z.object({
 }).describe("Information about the food item's keto-friendliness.");
 
 const AISummariesSchema = z.object({
-  fodmapSummary: z.string().optional().describe("Optional concise summary of FODMAP analysis if the main `reason` is very detailed. E.g., 'Mainly low FODMAP but watch portion of X'."),
+  fodmapSummary: z.string().optional().describe("Optional concise summary of FODMAP analysis if the main 'reason' is very detailed. E.g., 'Mainly low FODMAP but watch portion of X'."),
   micronutrientSummary: z.string().optional().describe("Brief (1-2 sentence) textual summary of key micronutrients. E.g., 'Good source of Vitamin C and Iron.' or 'Notable for Calcium content.' If specific user-provided nutrients like '50,000 IU D3' were included, acknowledge these if they are significant (e.g., 'Primarily a high dose Vitamin D3 supplement as specified.')."),
   glycemicIndexSummary: z.string().optional().describe("Brief (1 sentence) textual summary of glycemic impact. E.g., 'Likely has a low glycemic impact based on its ingredients.'"),
-  gutImpactSummary: z.string().optional().describe("Optional concise summary of gut bacteria impact if `gutBacteriaImpact.reasoning` is detailed."),
+  gutImpactSummary: z.string().optional().describe("Optional concise summary of gut bacteria impact if 'gutBacteriaImpact.reasoning' is detailed."),
   ketoSummary: z.string().optional().describe("Brief (1-2 sentence) textual summary of keto-friendliness. E.g., 'Appears suitable for a strict keto diet.' or 'Too high in carbs for keto.'"),
 }).describe("Additional concise textual summaries for display in an 'AI Notes' section.");
 
@@ -100,11 +100,10 @@ const AnalyzeFoodItemOutputSchema = z.object({
   dietaryFiberInfo: DietaryFiberInfoSchema.optional().describe("Dietary fiber information."),
   micronutrientsInfo: MicronutrientsInfoSchema.optional().describe("Micronutrients overview."),
   gutBacteriaImpact: GutBacteriaImpactInfoSchema.optional().describe("Gut bacteria impact assessment."),
-  ketoFriendliness: KetoFriendlinessInfoSchema.optional().describe("Keto-friendliness assessment."), // Added Keto
+  ketoFriendliness: KetoFriendlinessInfoSchema.optional().describe("Keto-friendliness assessment."),
   detectedAllergens: z.array(z.string()).optional().describe("List of common allergens detected in the ingredients (e.g., Milk, Wheat, Soy). If none, can be empty or omitted."),
   aiSummaries: AISummariesSchema.optional().describe("Concise AI-generated textual summaries for display in notes."),
 });
-// The AnalyzeFoodItemOutput type is now imported from @/types where it's defined as ExtendedAnalyzeFoodItemOutput
 
 const defaultErrorOutput: AnalyzeFoodItemOutput = {
   ingredientFodmapScores: [],
@@ -121,7 +120,13 @@ const defaultErrorOutput: AnalyzeFoodItemOutput = {
   gutBacteriaImpact: { sentiment: 'Unknown', reasoning: 'Analysis incomplete.' },
   ketoFriendliness: { score: 'Unknown', reasoning: 'Analysis incomplete.' },
   detectedAllergens: [],
-  aiSummaries: { fodmapSummary: 'Analysis failed.', micronutrientSummary: 'Analysis failed.' },
+  aiSummaries: {
+    fodmapSummary: 'Analysis failed.',
+    micronutrientSummary: 'Analysis failed.',
+    glycemicIndexSummary: 'Analysis failed.',
+    gutImpactSummary: 'Analysis failed.',
+    ketoSummary: 'Analysis failed.'
+  },
 };
 
 
@@ -131,30 +136,30 @@ export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<Anal
 
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
-  model: 'gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro-latest', // Standardized model name
   input: {schema: AnalyzeFoodItemInputSchema},
   output: {schema: AnalyzeFoodItemOutputSchema},
   config: {
     temperature: 0.2,
   },
-  prompt: `You are an expert AI for comprehensive food analysis, portion-aware, for IBS users.
-Inputs: Food: {{{foodItem}}}, Ingredients: {{{ingredients}}}, Portion: {{{portionSize}}} {{{portionUnit}}}.
+  prompt: `You are an expert AI for comprehensive, portion-aware food analysis for IBS users.
+Inputs: Food: '{{{foodItem}}}', Ingredients: '{{{ingredients}}}', Portion: '{{{portionSize}}} {{{portionUnit}}}'.
+Output a JSON object strictly adhering to the 'AnalyzeFoodItemOutputSchema'.
 
-Analyze and generate a JSON object per AnalyzeFoodItemOutputSchema. Key considerations:
-
-1.  **Portion-Specific Analysis:** All analyses (FODMAP, nutrition, etc.) must be for the specified overall portion ({{{portionSize}}} {{{portionUnit}}}).
+Key tasks:
+1.  **Portion-Specific Analysis:** All analyses (FODMAP, nutrition, etc.) must be for the specified overall portion ('{{{portionSize}}} {{{portionUnit}}}').
     *   **FODMAPs:** Analyze each ingredient in '{{{ingredients}}}' for FODMAP content relative to the overall meal portion. Determine overall risk (Green, Yellow, Red) and provide a 'reason'. If possible, include 'detailedFodmapProfile'.
 
-2.  **Quantity Prioritization (Nutrition):**
-    *   If '{{{foodItem}}}' specifies quantities (e.g., "4 eggs"), use these for component-specific nutrition.
-    *   Overall 'Portion: {{{portionSize}}} {{{portionUnit}}}' applies to the meal or components without specific quantities in 'foodItem'.
-    *   For composite/branded items (e.g., "Sausage McMuffin with Egg, 1 hashbrown"), identify components, use general knowledge for branded values, and estimate additions.
-    *   Final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' must sum all identified components, reflecting these specific quantities.
+2.  **Quantity Prioritization for Nutrition (Calories, Macros, Micronutrients):**
+    *   If 'Food Item: {{{foodItem}}}' specifies quantities for components (e.g., "4 eggs", "Sausage McMuffin with 1 extra egg"), these quantities MUST be used for calculating nutrition for those specific components.
+    *   The overall 'Portion: {{{portionSize}}} {{{portionUnit}}}' applies to the meal as a whole or to components without specific quantities mentioned in the 'foodItem' description.
+    *   For composite/branded items (e.g., "Sausage McMuffin with Egg, 1 hashbrown"), identify components, use general knowledge for branded values, and estimate any additions like "extra egg".
+    *   Ensure final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' sum all identified components, reflecting these specific quantities and the overall portion context.
 
 3.  **Micronutrients ('micronutrientsInfo'):**
-    *   **User-Specified (from Ingredients):** If '{{{ingredients}}}' includes specific quantities (e.g., "Vitamin D3 50,000 IU"), transcribe these name-quantity pairs accurately into 'MicronutrientDetailSchema.amount'. These MUST appear in 'notable' or 'fullList'. Calculate 'dailyValuePercent' only if confident.
-    *   **Naturally Occurring & Food Item Quantities:** For whole foods/components with quantities in '{{{foodItem}}}' (e.g., "4 eggs"), estimate key micronutrients.
-    *   **Icons:** Suggest 'iconName' per schema examples based on nutrient's primary function.
+    *   **User-Specified (from Ingredients):** If '{{{ingredients}}}' includes nutrients with specific quantities (e.g., "Vitamin D3 50,000 IU"), transcribe these name-quantity pairs accurately into 'MicronutrientDetailSchema.amount'. These MUST appear in 'notable' or 'fullList'. Calculate 'dailyValuePercent' only if confident; otherwise, omit or set to null.
+    *   **Naturally Occurring & Food Item Quantities:** For whole foods or components with quantities in '{{{foodItem}}}' (e.g., "4 eggs"), estimate key micronutrients.
+    *   **Icons:** Suggest 'iconName' per schema examples based on the nutrient's primary function.
 
 4.  **Other Health Indicators (all portion-specific):**
     *   Glycemic Index ('glycemicIndexInfo'): Estimate value and level.
@@ -163,9 +168,9 @@ Analyze and generate a JSON object per AnalyzeFoodItemOutputSchema. Key consider
     *   Keto-Friendliness ('ketoFriendliness'): Assess score, 'reasoning', and optionally 'estimatedNetCarbs'.
     *   Allergens ('detectedAllergens'): List common allergens from '{{{ingredients}}}'.
 
-5.  **AI Summaries ('aiSummaries'):** Provide concise textual summaries for each category. Acknowledge user-specified high-dose supplements.
+5.  **AI Summaries ('aiSummaries'):** Provide concise textual summaries for each category. Acknowledge user-specified high-dose supplements in the micronutrient summary if they are significant.
 
-Adhere strictly to the output schema. Omit optional sub-fields or set to null/default if not reasonably estimable. Ensure nutritional estimates reflect quantities in '{{{foodItem}}}'.
+Adhere strictly to the output schema. Omit optional sub-fields or set to null/default if not reasonably estimable. Ensure nutritional estimates reflect quantities in '{{{foodItem}}}' and are scaled to the overall '{{{portionSize}}} {{{portionUnit}}}'.
 `,
 });
 
@@ -173,7 +178,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
   {
     name: 'analyzeFoodItemFlow',
     inputSchema: AnalyzeFoodItemInputSchema,
-    outputSchema: AnalyzeFoodItemOutputSchema, // Ensure this matches the extended schema for the prompt
+    outputSchema: AnalyzeFoodItemOutputSchema,
   },
   async (input): Promise<AnalyzeFoodItemOutput> => {
     try {
@@ -184,27 +189,40 @@ const analyzeFoodItemFlow = ai.defineFlow(
           ...defaultErrorOutput,
           reason: `AI analysis failed for item: "${input.foodItem}". No output from prompt.`,
           aiSummaries: {
-            ...defaultErrorOutput.aiSummaries,
-            fodmapSummary: `Analysis failed for "${input.foodItem}".`,
+            fodmapSummary: `FODMAP analysis failed for "${input.foodItem}".`,
+            micronutrientSummary: `Micronutrient analysis failed for "${input.foodItem}".`,
+            glycemicIndexSummary: `Glycemic Index analysis failed for "${input.foodItem}".`,
+            gutImpactSummary: `Gut Impact analysis failed for "${input.foodItem}".`,
+            ketoSummary: `Keto analysis failed for "${input.foodItem}".`,
           }
         };
       }
-      return output! as AnalyzeFoodItemOutput; // Cast to the extended type
+      return output! as AnalyzeFoodItemOutput;
     } catch (error: any) {
       console.error('[AnalyzeFoodItemFlow] Error during AI processing:', error);
+      const errorMessage = error.message || 'Unknown error';
+      const modelNotFoundError = errorMessage.includes("NOT_FOUND") || errorMessage.includes("Model not found");
+      
+      let specificSummaryMessage: string;
+      if (modelNotFoundError) {
+        specificSummaryMessage = "AI Model not accessible. Please check configuration.";
+      } else {
+        specificSummaryMessage = `Analysis error: ${errorMessage}`;
+      }
+
       return {
         ...defaultErrorOutput,
-        reason: `Error during AI analysis for "${input.foodItem}": ${error.message || 'Unknown error'}.`,
+        reason: `Error during AI analysis for "${input.foodItem}": ${errorMessage}.`,
         aiSummaries: {
-            ...defaultErrorOutput.aiSummaries,
-            fodmapSummary: `Analysis error for "${input.foodItem}": ${error.message || 'Unknown error'}.`,
+            fodmapSummary: `FODMAP: ${specificSummaryMessage}`,
+            micronutrientSummary: `Micronutrients: ${specificSummaryMessage}`,
+            glycemicIndexSummary: `Glycemic Index: ${specificSummaryMessage}`,
+            gutImpactSummary: `Gut Impact: ${specificSummaryMessage}`,
+            ketoSummary: `Keto: ${specificSummaryMessage}`,
         }
       };
     }
   }
 );
 
-// Ensure the detailed profile type is exported if it's used elsewhere, though now the main output is extended.
-// The ExtendedAnalyzeFoodItemOutput from @/types is the primary export type for this flow's result.
 export type { FoodFODMAPProfile as DetailedFodmapProfileFromAI };
-

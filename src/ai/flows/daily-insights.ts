@@ -64,11 +64,11 @@ export async function getDailyInsights(input: DailyInsightsInput): Promise<Daily
 
 const dailyInsightsPrompt = ai.definePrompt({
   name: 'dailyInsightsPrompt',
-  model: 'gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro-latest', // Standardized model name
   input: {schema: DailyInsightsInputSchema},
   output: {schema: DailyInsightsOutputSchema},
   prompt: `Analyze the user's daily food log, symptoms, and micronutrient summary (if provided) to generate personalized insights.
-Output a JSON object strictly adhering to the DailyInsightsOutputSchema.
+Output a JSON object strictly adhering to the 'DailyInsightsOutputSchema'.
 
 Food Log: {{{foodLog}}}
 Symptoms: {{{symptoms}}}
@@ -110,8 +110,6 @@ const dailyInsightsFlow = ai.defineFlow(
         return defaultErrorOutput;
       }
 
-      // Output should now directly be the structured object
-      // Perform a basic check to ensure it matches the expected structure
       if (
         typeof output.triggerInsights === 'string' &&
         typeof output.overallSummary === 'string' &&
@@ -120,7 +118,6 @@ const dailyInsightsFlow = ai.defineFlow(
         return output as DailyInsightsOutput;
       } else {
         console.warn('[DailyInsightsFlow] AI output did not match expected schema. Output:', output);
-        // Attempt to provide a more specific error or fallback.
         let triggerMsg = defaultErrorOutput.triggerInsights;
         let microMsg = defaultErrorOutput.micronutrientFeedback;
         let overallMsg = defaultErrorOutput.overallSummary;
