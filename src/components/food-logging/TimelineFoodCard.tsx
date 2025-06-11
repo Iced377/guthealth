@@ -328,9 +328,9 @@ export default function TimelineFoodCard({
                   onClick={() => onRepeatMeal(item)}
                   disabled={isLoadingAi}
                   className={cn("border-accent hover:bg-accent hover:text-accent-foreground", buttonTextClass)}
-                  aria-label="Log this meal to today"
+                  aria-label="Copy Meal"
                 >
-                  <Repeat className="mr-1.5 h-4 w-4" /> Log this meal to today
+                  <Repeat className="mr-1.5 h-4 w-4" /> Copy Meal
                 </Button>
               )}
           
@@ -339,6 +339,3 @@ export default function TimelineFoodCard({
     </Card>
   );
 }
-    
-
-    

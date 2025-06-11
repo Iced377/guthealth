@@ -218,7 +218,7 @@ export default function PremiumDashboardSheet({
               return (
                 <div key={dateKey} className="mb-6">
                   <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
-                    <h3 className="text-sm font-semibold text-foreground">{dateKey}</h3>
+                    <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
                   </div>
                   <div className="space-y-4"> {/* Added space-y-4 here for cards within a date group */}
                     {entriesOnDate.map(entry => {
@@ -262,4 +262,3 @@ export default function PremiumDashboardSheet({
     </Sheet>
   );
 }
-

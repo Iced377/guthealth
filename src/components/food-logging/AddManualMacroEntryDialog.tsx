@@ -164,14 +164,14 @@ export default function AddManualMacroEntryDialog({
         
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2 max-h-[calc(80vh-120px)] overflow-y-auto pr-2">
           <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
+              <div className="flex flex-col">
                 <Label htmlFor="logDateMacro" className={labelClasses}>Log Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full justify-start text-left font-normal mt-1",
+                        "w-full justify-start text-left font-normal mt-1 h-10", // Added h-10
                         !selectedDate && "text-muted-foreground"
                       )}
                     >
@@ -190,14 +190,14 @@ export default function AddManualMacroEntryDialog({
                   </PopoverContent>
                 </Popover>
               </div>
-              <div>
+              <div className="flex flex-col">
                 <Label htmlFor="logTimeMacro" className={labelClasses}>Log Time</Label>
                 <Input
                   id="logTimeMacro"
                   type="time"
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
-                  className={cn("mt-1 w-full", "bg-input text-foreground placeholder:text-muted-foreground")}
+                  className={cn("mt-1 w-full h-10", "bg-input text-foreground placeholder:text-muted-foreground")} // Added h-10
                 />
               </div>
             </div>
