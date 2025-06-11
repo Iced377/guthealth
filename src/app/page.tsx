@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { LoggedFoodItem, UserProfile, TimelineEntry, Symptom, SymptomLog, SafeFood, DailyNutritionSummary } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
-import { Loader2, PlusCircle, ListChecks, Pencil, CalendarDays, Edit3, ChevronUp, Repeat, Camera, LayoutGrid } from 'lucide-react';
+import { Loader2, PlusCircle, ListChecks, Pencil, CalendarDays, Edit3, ChevronUp, Repeat, Camera, LayoutGrid, CalendarIcon } from 'lucide-react';
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile as DetailedFodmapProfileFromAI } from '@/ai/flows/fodmap-detection';
 import { isSimilarToSafeFoods, type FoodFODMAPProfile, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/flows/process-meal-description-flow';
@@ -263,7 +263,7 @@ export default function RootPage() {
 
   const handleSubmitFoodItem = async (
     foodItemData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'calories' | 'protein' | 'carbs' | 'fat' | 'sourceDescription' | 'userFeedback' | 'macrosOverridden'>,
-    customTimestamp?: Date
+    newTimestamp?: Date // Changed from customTimestamp to newTimestamp
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
@@ -271,7 +271,8 @@ export default function RootPage() {
     let processedFoodItem: LoggedFoodItem;
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
     let similarityOutput: FoodSimilarityOutput | undefined;
-    const logTimestamp = customTimestamp || (editingItem ? editingItem.timestamp : new Date());
+    
+    const logTimestamp = newTimestamp || (editingItem ? editingItem.timestamp : new Date());
 
 
     try {
@@ -317,8 +318,8 @@ export default function RootPage() {
         entryType: 'food',
         userFeedback: editingItem ? editingItem.userFeedback : null,
         macrosOverridden: false,
-        originalName: foodItemData.name, // For manual entry, originalName is same as name unless AI changes it
-        sourceDescription: "Manually logged" // Default source for manual entries
+        originalName: foodItemData.name,
+        sourceDescription: "Manually logged"
       };
 
       if (authUser && authUser.uid !== 'guest-user') {
@@ -340,7 +341,7 @@ export default function RootPage() {
       } else {
         addTimelineEntry(processedFoodItem);
       }
-      if (customTimestamp) setSelectedLogDateForPreviousMeal(undefined);
+      if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
        setIsAddFoodDialogOpen(false);
        setEditingItem(null);
 
@@ -375,7 +376,7 @@ export default function RootPage() {
   const handleSubmitMealDescription = async (
     formData: SimplifiedFoodLogFormValues,
     userDidOverrideMacros: boolean,
-    customTimestamp?: Date
+    newTimestamp?: Date // Changed from customTimestamp
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
@@ -384,7 +385,7 @@ export default function RootPage() {
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
     let similarityOutput: FoodSimilarityOutput | undefined;
     let processedFoodItem: LoggedFoodItem;
-    const logTimestamp = customTimestamp || (editingItem ? editingItem.timestamp : new Date());
+    const logTimestamp = newTimestamp || (editingItem ? editingItem.timestamp : new Date());
 
     try {
       mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
@@ -471,7 +472,7 @@ export default function RootPage() {
       } else {
         addTimelineEntry(processedFoodItem);
       }
-      if (customTimestamp) setSelectedLogDateForPreviousMeal(undefined);
+      if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
       setIsSimplifiedAddFoodDialogOpen(false);
       setEditingItem(null);
 
@@ -512,7 +513,7 @@ export default function RootPage() {
 
   const handleProcessAndLogPhotoIdentification = async (
     photoData: IdentifiedPhotoData,
-    customTimestamp?: Date
+    newTimestamp?: Date // Changed from customTimestamp
   ) => {
     const currentItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
@@ -520,7 +521,7 @@ export default function RootPage() {
     let processedFoodItem: LoggedFoodItem;
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
     let similarityOutput: FoodSimilarityOutput | undefined;
-    const logTimestamp = customTimestamp || new Date();
+    const logTimestamp = newTimestamp || new Date();
 
     try {
       fodmapAnalysis = await analyzeFoodItem({
@@ -553,7 +554,7 @@ export default function RootPage() {
 
       processedFoodItem = {
         name: photoData.name,
-        originalName: photoData.name, // For photo, originalName is same as name unless AI changes it
+        originalName: photoData.name,
         ingredients: photoData.ingredients,
         portionSize: photoData.portionSize,
         portionUnit: photoData.portionUnit,
@@ -582,7 +583,7 @@ export default function RootPage() {
       }
 
       addTimelineEntry(processedFoodItem);
-      if (customTimestamp) setSelectedLogDateForPreviousMeal(undefined);
+      if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
       setIsIdentifyByPhotoDialogOpen(false);
 
     } catch (error: any) {
@@ -614,17 +615,17 @@ export default function RootPage() {
 
   const handleSubmitManualMacroEntry = async (
     entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback'> & { entryType: 'manual_macro' | 'food' },
-    customTimestamp?: Date
+    newTimestamp?: Date // Changed from customTimestamp
   ) => {
     const currentItemId = editingItem ? editingItem.id : `macro-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const logTimestamp = customTimestamp || (editingItem ? editingItem.timestamp : new Date());
+    const logTimestamp = newTimestamp || (editingItem ? editingItem.timestamp : new Date());
     const newEntry: LoggedFoodItem = {
       ...entryData,
       id: currentItemId,
       name: entryData.name || "Manual Macro Adjustment",
       timestamp: logTimestamp,
       entryType: 'manual_macro',
-      ingredients: "Manual entry",
+      ingredients: "Manual entry", 
       portionSize: "1",
       portionUnit: "serving",
       userFeedback: editingItem ? editingItem.userFeedback : null,
@@ -633,7 +634,7 @@ export default function RootPage() {
       protein: entryData.protein ?? null,
       carbs: entryData.carbs ?? null,
       fat: entryData.fat ?? null,
-      fodmapData: null, // Manual macros don't have FODMAP data
+      fodmapData: null, 
       userFodmapProfile: null,
       isSimilarToSafe: false,
       sourceDescription: "Manual macro entry"
@@ -666,17 +667,24 @@ export default function RootPage() {
     }
     setIsAddManualMacroDialogOpen(false);
     setEditingItem(null);
-    if (customTimestamp) setSelectedLogDateForPreviousMeal(undefined);
+    if (newTimestamp) setSelectedLogDateForPreviousMeal(undefined); // Clear if logging previous meal
   };
 
   const handleEditTimelineEntry = (itemToEdit: LoggedFoodItem) => {
     setEditingItem(itemToEdit);
+    // No need to set selectedLogDateForPreviousMeal here, dialogs will use itemToEdit.timestamp
+    
     if (itemToEdit.entryType === 'manual_macro') {
       setIsAddManualMacroDialogOpen(true);
     } else if (itemToEdit.entryType === 'food') {
-      if (itemToEdit.sourceDescription && !itemToEdit.sourceDescription.startsWith("Identified by photo")) {
+      // Determine if it was AI-processed (text or photo) or purely manual
+      const isAIProcessed = itemToEdit.fodmapData || 
+                            (itemToEdit.sourceDescription && itemToEdit.sourceDescription !== "Manually logged" && itemToEdit.sourceDescription !== "Manually logged (analysis failed)") ||
+                            (itemToEdit.sourceDescription && itemToEdit.sourceDescription.startsWith("Identified by photo"));
+
+      if (isAIProcessed) {
         setIsSimplifiedAddFoodDialogOpen(true);
-      } else {
+      } else { // Purely manual entry
         setIsAddFoodDialogOpen(true);
       }
     }
@@ -1098,11 +1106,11 @@ export default function RootPage() {
           }
           setIsSimplifiedAddFoodDialogOpen(open);
         }}
-        onSubmitLog={(data, userDidOverrideMacros) => handleSubmitMealDescription(data, userDidOverrideMacros, selectedLogDateForPreviousMeal)}
-        isEditing={!!editingItem && editingItem.entryType === 'food' && !!editingItem.sourceDescription && !editingItem.sourceDescription.startsWith("Identified by photo")}
-        initialValues={editingItem && editingItem.entryType === 'food' && editingItem.sourceDescription && !editingItem.sourceDescription.startsWith("Identified by photo") ?
+        onSubmitLog={(data, userDidOverrideMacros, newDate) => handleSubmitMealDescription(data, userDidOverrideMacros, newDate || selectedLogDateForPreviousMeal)}
+        isEditing={!!editingItem && editingItem.entryType === 'food'}
+        initialValues={editingItem && editingItem.entryType === 'food' ?
             {
-              mealDescription: editingItem.sourceDescription,
+              mealDescription: editingItem.sourceDescription || (editingItem.sourceDescription?.startsWith("Identified by photo") ? `${editingItem.originalName}. Ingredients: ${editingItem.ingredients}` : editingItem.originalName || ''),
               calories: editingItem.calories ?? undefined,
               protein: editingItem.protein ?? undefined,
               carbs: editingItem.carbs ?? undefined,
@@ -1110,6 +1118,7 @@ export default function RootPage() {
             }
             : { mealDescription: '' }}
         initialMacrosOverridden={editingItem?.macrosOverridden || false}
+        initialTimestamp={editingItem?.timestamp}
         isGuestView={false}
         key={editingItem?.id ? `edit-simplified-${editingItem.id}` : 'new-simplified'}
       />
@@ -1130,11 +1139,12 @@ export default function RootPage() {
               }
               setIsAddFoodDialogOpen(open);
           }}
-          onSubmitFoodItem={(data) => handleSubmitFoodItem(data, selectedLogDateForPreviousMeal)}
-          isEditing={!!editingItem && editingItem.entryType === 'food' && (!editingItem.sourceDescription || editingItem.sourceDescription.startsWith("Identified by photo"))}
-          initialValues={editingItem && editingItem.entryType === 'food' && (!editingItem.sourceDescription || editingItem.sourceDescription.startsWith("Identified by photo"))
+          onSubmitFoodItem={(data, newDate) => handleSubmitFoodItem(data, newDate || selectedLogDateForPreviousMeal)}
+          isEditing={!!editingItem && editingItem.entryType === 'food'}
+          initialValues={editingItem && editingItem.entryType === 'food'
                           ? { name: editingItem.name, ingredients: editingItem.ingredients, portionSize: editingItem.portionSize, portionUnit: editingItem.portionUnit }
                           : undefined}
+          initialTimestamp={editingItem?.timestamp}
           key={editingItem?.id ? `edit-manual-${editingItem.id}` : 'new-manual'}
       />
       <SymptomLoggingDialog
@@ -1152,12 +1162,13 @@ export default function RootPage() {
               }
               setIsAddManualMacroDialogOpen(open);
           }}
-          onSubmitEntry={(data) => handleSubmitManualMacroEntry(data, selectedLogDateForPreviousMeal)}
+          onSubmitEntry={(data, newDate) => handleSubmitManualMacroEntry(data, newDate || selectedLogDateForPreviousMeal)}
           isEditing={!!editingItem && editingItem.entryType === 'manual_macro'}
           initialValues={editingItem && editingItem.entryType === 'manual_macro' ?
             { calories: editingItem.calories ?? undefined, protein: editingItem.protein ?? undefined, carbs: editingItem.carbs ?? undefined, fat: editingItem.fat ?? undefined, entryName: editingItem.name }
             : undefined
           }
+          initialTimestamp={editingItem?.timestamp}
           key={editingItem?.id ? `edit-macro-${editingItem.id}` : 'new-macro'}
       />
        <LogPreviousMealDialog

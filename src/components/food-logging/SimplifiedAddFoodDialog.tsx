@@ -19,11 +19,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sprout, Loader2, Edit, Info } from 'lucide-react';
+import { Sprout, Loader2, Edit, Info, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
-
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 
 const simplifiedFoodLogSchema = z.object({
   mealDescription: z.string().min(10, { message: 'Please describe your meal in more detail (at least 10 characters).' }),
@@ -50,11 +52,12 @@ export type SimplifiedFoodLogFormValues = z.infer<typeof simplifiedFoodLogSchema
 interface SimplifiedAddFoodDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmitLog: (data: SimplifiedFoodLogFormValues, userDidOverrideMacros: boolean) => Promise<void>;
+  onSubmitLog: (data: SimplifiedFoodLogFormValues, userDidOverrideMacros: boolean, newDate?: Date) => Promise<void>;
   isGuestView?: boolean;
   isEditing?: boolean;
   initialValues?: Partial<SimplifiedFoodLogFormValues>;
   initialMacrosOverridden?: boolean;
+  initialTimestamp?: Date;
 }
 
 export default function SimplifiedAddFoodDialog({
@@ -65,14 +68,13 @@ export default function SimplifiedAddFoodDialog({
   isEditing = false,
   initialValues,
   initialMacrosOverridden = false,
+  initialTimestamp,
 }: SimplifiedAddFoodDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  
   const { toast } = useToast();
   const [userWantsToOverrideMacros, setUserWantsToOverrideMacros] = useState(initialMacrosOverridden);
   const { isDarkMode } = useTheme();
-
-
+  const [selectedDateForEdit, setSelectedDateForEdit] = useState<Date | undefined>(initialTimestamp);
 
   const form = useForm<SimplifiedFoodLogFormValues>({
     resolver: zodResolver(simplifiedFoodLogSchema),
@@ -98,19 +100,23 @@ export default function SimplifiedAddFoodDialog({
           fat: initialValues.fat,
         });
         setUserWantsToOverrideMacros(initialMacrosOverridden);
+        setSelectedDateForEdit(initialTimestamp ? new Date(initialTimestamp) : new Date());
       } else if (!isEditing) {
         reset({ mealDescription: '', calories: undefined, protein: undefined, carbs: undefined, fat: undefined });
         setUserWantsToOverrideMacros(false);
+        setSelectedDateForEdit(undefined); // No date pre-fill for new items via this dialog unless explicitly passed
       }
-      
     }
-  }, [isOpen, isEditing, initialValues, initialMacrosOverridden, reset]);
+  }, [isOpen, isEditing, initialValues, initialMacrosOverridden, initialTimestamp, reset]);
 
 
   const handleDialogSubmit = async (data: SimplifiedFoodLogFormValues) => {
     setIsLoading(true);
     try {
-      await onSubmitLog(data, userWantsToOverrideMacros);
+      // For editing, use selectedDateForEdit. For new entries, this will be undefined,
+      // and the parent component (page.tsx) will use selectedLogDateForPreviousMeal or current date.
+      const finalTimestamp = isEditing ? selectedDateForEdit : undefined;
+      await onSubmitLog(data, userWantsToOverrideMacros, finalTimestamp);
       if (!isEditing) {
         reset();
         setUserWantsToOverrideMacros(false);
@@ -128,8 +134,6 @@ export default function SimplifiedAddFoodDialog({
     }
   };
 
-
-
   const dialogContentClasses = cn("sm:max-w-lg", "bg-card text-card-foreground border-border");
   const titleClasses = cn("font-headline text-xl flex items-center", "text-foreground");
   const descriptionClasses = cn("text-muted-foreground");
@@ -137,7 +141,6 @@ export default function SimplifiedAddFoodDialog({
   const sproutSubmitIconClasses = cn("mr-2 h-5 w-5");
   const textAreaClasses = cn("mt-1 text-base min-h-[100px]", "bg-input text-foreground placeholder:text-muted-foreground border-input focus:ring-ring focus:border-ring");
   const inputClasses = cn("mt-1", "bg-input text-foreground placeholder:text-muted-foreground");
-
   const submitButtonClasses = cn("bg-primary text-primary-foreground hover:bg-primary/80");
   const labelClasses = cn("text-sm font-medium", "text-foreground");
   const checkboxErrorClasses = cn("text-xs mt-1", "text-destructive");
@@ -161,16 +164,41 @@ export default function SimplifiedAddFoodDialog({
             {isGuestView
               ? "Tell us what you ate, including ingredients and their approximate portion sizes."
               : (isEditing
-                  ? "Update the description. You can also manually adjust nutritional info below."
+                  ? "Update the description, date, or nutritional info below."
                   : "Describe your meal in natural language. Our AI will estimate nutritional info.") 
             }
           </DialogDescription>
         </DialogHeader>
-
         
-
-        <form onSubmit={form.handleSubmit(handleDialogSubmit)} className="space-y-4 pt-2 max-h-[calc(60vh-50px)] overflow-y-auto pr-2">
-         
+        <form onSubmit={form.handleSubmit(handleDialogSubmit)} className="space-y-4 pt-2 max-h-[calc(70vh-50px)] overflow-y-auto pr-2">
+          {isEditing && !isGuestView && (
+            <div className="mb-4">
+              <Label htmlFor="editDate" className={labelClasses}>Log Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal mt-1",
+                      !selectedDateForEdit && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDateForEdit ? format(selectedDateForEdit, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDateForEdit}
+                    onSelect={setSelectedDateForEdit}
+                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
           
           <div>
             <Label htmlFor="mealDescription" className={labelClasses}>Meal Description</Label>
@@ -197,63 +225,67 @@ export default function SimplifiedAddFoodDialog({
             )}
           </div>
 
-          {isEditing && !isGuestView && (
+          {(!isGuestView) && ( // Macros override only for logged-in users, can be enabled for guests if needed
             <div className="space-y-3 pt-3 border-t border-border/50 mt-3">
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="manualOverrideMacros"
+                  id="manualOverrideMacrosSimplified"
                   checked={userWantsToOverrideMacros}
                   onCheckedChange={(checked) => setUserWantsToOverrideMacros(Boolean(checked))}
                   className={cn("border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground")}
                 />
-                <Label htmlFor="manualOverrideMacros" className={cn(labelClasses, "flex items-center cursor-pointer")}>
+                <Label htmlFor="manualOverrideMacrosSimplified" className={cn(labelClasses, "flex items-center cursor-pointer")}>
                   <Edit className="w-4 h-4 mr-2 text-muted-foreground" />
-                  Manually set macronutrients
+                  Manually set/override macronutrients
                 </Label>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <div>
-                  <Label htmlFor="calories" className={cn(labelClasses, "text-xs", !userWantsToOverrideMacros && "text-muted-foreground/70")}>Calories (kcal)</Label>
-                  <Controller
-                    name="calories"
-                    control={control}
-                    render={({ field }) => <Input id="calories" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 500" className={cn(inputClasses, "h-9 text-sm")} disabled={!userWantsToOverrideMacros} />}
-                  />
-                  {errors.calories && <p className={cn("text-xs text-destructive mt-1")}>{errors.calories.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="protein" className={cn(labelClasses, "text-xs", !userWantsToOverrideMacros && "text-muted-foreground/70")}>Protein (g)</Label>
-                   <Controller
-                    name="protein"
-                    control={control}
-                    render={({ field }) => <Input id="protein" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 30" className={cn(inputClasses, "h-9 text-sm")} disabled={!userWantsToOverrideMacros} />}
-                  />
-                  {errors.protein && <p className={cn("text-xs text-destructive mt-1")}>{errors.protein.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="carbs" className={cn(labelClasses, "text-xs", !userWantsToOverrideMacros && "text-muted-foreground/70")}>Carbs (g)</Label>
-                  <Controller
-                    name="carbs"
-                    control={control}
-                    render={({ field }) => <Input id="carbs" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 50" className={cn(inputClasses, "h-9 text-sm")} disabled={!userWantsToOverrideMacros} />}
-                  />
-                  {errors.carbs && <p className={cn("text-xs text-destructive mt-1")}>{errors.carbs.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="fat" className={cn(labelClasses, "text-xs", !userWantsToOverrideMacros && "text-muted-foreground/70")}>Fat (g)</Label>
-                  <Controller
-                    name="fat"
-                    control={control}
-                    render={({ field }) => <Input id="fat" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 20" className={cn(inputClasses, "h-9 text-sm")} disabled={!userWantsToOverrideMacros} />}
-                  />
-                  {errors.fat && <p className={cn("text-xs text-destructive mt-1")}>{errors.fat.message}</p>}
-                </div>
-              </div>
-               <p className={cn("text-xs mt-1 flex items-start gap-1.5", "text-muted-foreground")}>
-                  <Info className="h-3 w-3 shrink-0 mt-0.5" />
-                  <span>If checked, values entered here will override AI estimates. If unchecked, AI will recalculate macros on update.</span>
-                </p>
+              {userWantsToOverrideMacros && (
+                <>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                    <div>
+                      <Label htmlFor="caloriesSimplified" className={cn(labelClasses, "text-xs")}>Calories (kcal)</Label>
+                      <Controller
+                        name="calories"
+                        control={control}
+                        render={({ field }) => <Input id="caloriesSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 500" className={cn(inputClasses, "h-9 text-sm")} />}
+                      />
+                      {errors.calories && <p className={cn("text-xs text-destructive mt-1")}>{errors.calories.message}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="proteinSimplified" className={cn(labelClasses, "text-xs")}>Protein (g)</Label>
+                       <Controller
+                        name="protein"
+                        control={control}
+                        render={({ field }) => <Input id="proteinSimplified" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 30" className={cn(inputClasses, "h-9 text-sm")} />}
+                      />
+                      {errors.protein && <p className={cn("text-xs text-destructive mt-1")}>{errors.protein.message}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="carbsSimplified" className={cn(labelClasses, "text-xs")}>Carbs (g)</Label>
+                      <Controller
+                        name="carbs"
+                        control={control}
+                        render={({ field }) => <Input id="carbsSimplified" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 50" className={cn(inputClasses, "h-9 text-sm")} />}
+                      />
+                      {errors.carbs && <p className={cn("text-xs text-destructive mt-1")}>{errors.carbs.message}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="fatSimplified" className={cn(labelClasses, "text-xs")}>Fat (g)</Label>
+                      <Controller
+                        name="fat"
+                        control={control}
+                        render={({ field }) => <Input id="fatSimplified" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 20" className={cn(inputClasses, "h-9 text-sm")} />}
+                      />
+                      {errors.fat && <p className={cn("text-xs text-destructive mt-1")}>{errors.fat.message}</p>}
+                    </div>
+                  </div>
+                   <p className={cn("text-xs mt-1 flex items-start gap-1.5", "text-muted-foreground")}>
+                      <Info className="h-3 w-3 shrink-0 mt-0.5" />
+                      <span>If checked, values entered here will override AI estimates. If unchecked, AI will recalculate macros on update.</span>
+                    </p>
+                </>
+              )}
             </div>
           )}
 
@@ -273,4 +305,3 @@ export default function SimplifiedAddFoodDialog({
     </Dialog>
   );
 }
-    

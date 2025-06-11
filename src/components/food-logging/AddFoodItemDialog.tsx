@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form'; // Added Controller
+import { useForm, Controller } from 'react-hook-form'; 
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { LoggedFoodItem } from '@/types';
-import { Sprout, Loader2 } from 'lucide-react'; 
+import { Sprout, Loader2, CalendarIcon } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
-
-import { useTheme } from '@/contexts/ThemeContext';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 
@@ -38,9 +39,10 @@ export type ManualEntryFormValues = z.infer<typeof manualEntrySchema>;
 interface AddFoodItemDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmitFoodItem: (foodItemData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType'>) => Promise<void>;
+  onSubmitFoodItem: (foodItemData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType'>, newDate?: Date) => Promise<void>;
   isEditing?: boolean;
   initialValues?: Partial<ManualEntryFormValues>;
+  initialTimestamp?: Date; 
 }
 
 export default function AddFoodItemDialog({
@@ -48,13 +50,12 @@ export default function AddFoodItemDialog({
   onOpenChange,
   onSubmitFoodItem,
   isEditing = false,
-  initialValues
+  initialValues,
+  initialTimestamp, 
 }: AddFoodItemDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { isDarkMode } = useTheme();
-
-
+  const [selectedDateForEdit, setSelectedDateForEdit] = useState<Date | undefined>(initialTimestamp);
 
 
   const form = useForm<ManualEntryFormValues>({
@@ -71,21 +72,24 @@ export default function AddFoodItemDialog({
     if (isOpen) {
       if (isEditing && initialValues) {
         form.reset(initialValues);
+        setSelectedDateForEdit(initialTimestamp ? new Date(initialTimestamp) : new Date());
       } else if (!isEditing) {
         form.reset({ name: '', ingredients: '', portionSize: '', portionUnit: '' });
+        setSelectedDateForEdit(undefined);
       }
     }
-  }, [isOpen, isEditing, initialValues, form]);
+  }, [isOpen, isEditing, initialValues, initialTimestamp, form]);
 
   const handleFormSubmit = async (data: ManualEntryFormValues) => {
     setIsLoading(true);
     try {
+      const finalTimestamp = isEditing ? selectedDateForEdit : undefined;
       await onSubmitFoodItem({
         name: data.name,
         ingredients: data.ingredients,
         portionSize: data.portionSize,
         portionUnit: data.portionUnit,
-      });
+      }, finalTimestamp);
       if (!isEditing) form.reset();
       onOpenChange(false);
     } catch (error) {
@@ -100,6 +104,7 @@ export default function AddFoodItemDialog({
   const submitButtonText = isLoading
     ? (isEditing ? 'Updating...' : 'Adding...')
     : (isEditing ? 'Update Food Item' : 'Add to Timeline');
+  const labelClasses = cn("text-sm font-medium", "text-foreground");
 
 
   return (
@@ -110,15 +115,42 @@ export default function AddFoodItemDialog({
             <Sprout className="mr-2 h-6 w-6 text-gray-400" /> {dialogTitleText}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {isEditing ? "Update the details of this food item." : "Manually enter the details of your food item below."}
+            {isEditing ? "Update the details and date of this food item." : "Manually enter the details of your food item below."}
           </DialogDescription>
         </DialogHeader>
-
         
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2 max-h-[calc(70vh-50px)] overflow-y-auto pr-2">
+          {isEditing && (
+             <div className="mb-4">
+              <Label htmlFor="editDateManual" className={labelClasses}>Log Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal mt-1",
+                      !selectedDateForEdit && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDateForEdit ? format(selectedDateForEdit, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDateForEdit}
+                    onSelect={setSelectedDateForEdit}
+                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
 
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2">
           <div>
-            <Label htmlFor="name" className="text-sm font-medium text-foreground">Food Name</Label>
+            <Label htmlFor="name" className={labelClasses}>Food Name</Label>
             <Input id="name" {...form.register('name')} placeholder="e.g., Chicken Salad Sandwich" className="mt-1 bg-input text-foreground placeholder:text-muted-foreground" />
             {form.formState.errors.name && (
               <p className="text-xs text-destructive mt-1">{form.formState.errors.name.message}</p>
@@ -127,14 +159,14 @@ export default function AddFoodItemDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="portionSize" className="text-sm font-medium text-foreground">Portion Size</Label>
+              <Label htmlFor="portionSize" className={labelClasses}>Portion Size</Label>
               <Input id="portionSize" {...form.register('portionSize')} placeholder="e.g., 1, 0.5, 100" className="mt-1 bg-input text-foreground placeholder:text-muted-foreground" />
               {form.formState.errors.portionSize && (
                 <p className="text-xs text-destructive mt-1">{form.formState.errors.portionSize.message}</p>
               )}
             </div>
             <div>
-              <Label htmlFor="portionUnit" className="text-sm font-medium text-foreground">Portion Unit</Label>
+              <Label htmlFor="portionUnit" className={labelClasses}>Portion Unit</Label>
               <Input id="portionUnit" {...form.register('portionUnit')} placeholder="e.g., slice, cup, g" className="mt-1 bg-input text-foreground placeholder:text-muted-foreground" />
               {form.formState.errors.portionUnit && (
                 <p className="text-xs text-destructive mt-1">{form.formState.errors.portionUnit.message}</p>
@@ -143,7 +175,7 @@ export default function AddFoodItemDialog({
           </div>
 
           <div>
-            <Label htmlFor="ingredients" className="text-sm font-medium text-foreground">Ingredients (comma-separated)</Label>
+            <Label htmlFor="ingredients" className={labelClasses}>Ingredients (comma-separated)</Label>
             <Controller
               name="ingredients"
               control={form.control}
@@ -161,7 +193,7 @@ export default function AddFoodItemDialog({
               <p className="text-xs text-destructive mt-1">{form.formState.errors.ingredients.message}</p>
             )}
           </div>
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 sticky bottom-0 bg-inherit">
              <DialogClose asChild>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
                 Cancel
