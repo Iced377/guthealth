@@ -138,7 +138,7 @@ export default function LandingPageClientContent({
             Track your gut. <span className="text-primary">Transform your health.</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Gutcheck helps you identify foods that trigger IBS and optimize your diet, effectively.
+            GutCheck helps you identify foods that trigger IBS and optimize your diet, effectively.
           </p>
           {betaUserMessage && (
             <div className="mt-6">
@@ -165,7 +165,7 @@ export default function LandingPageClientContent({
               layout="fill"
               objectFit="cover"
               className="opacity-75"
-              data-ai-hint="app logging infographic"
+              data-ai-hint="app infographic"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <p className="text-2xl font-semibold text-white">App Logging Infographic Placeholder</p>
@@ -181,10 +181,10 @@ export default function LandingPageClientContent({
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16 font-headline">How GutCheck Works</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: "Snap a Photo or Log a Meal", description: "Use your camera or write a short meal description. Gutcheck’s AI analyzes ingredients and serving size." },
-              { title: "Get Instant Deep Feedback", description: "Gutcheck uses deep analysis to provide insights about your meals and their impact on your Micronutrients, Guthealth, sugar spikes and more — adjusted to your portion." },
+              { title: "Snap a Photo or Log a Meal", description: "Use your camera or write a short meal description. GutCheck’s AI analyzes ingredients and serving size." },
+              { title: "Get Instant Deep Feedback", description: "GutCheck uses deep analysis to provide insights about your meals and their impact on your Micronutrients, Guthealth, sugar spikes and more — adjusted to your portion." },
               { title: "Track Your Reactions", description: "Log your digestive symptoms and track correlations over time. The app learns what works for you." },
-              { title: "Optimize with AI Recommendations", description: "Gutcheck identifies safe swaps, personalized patterns, and meals that support gut-friendly bacteria." },
+              { title: "Optimize with AI Recommendations", description: "GutCheck identifies safe swaps, personalized patterns, and meals that support gut-friendly bacteria." },
             ].map((step, index) => {
               const IconComponent = featureIcons[step.title] || ShieldCheck;
               const tooltipText = howItWorksTooltips[step.title] || "Learn more about this feature.";
@@ -231,7 +231,7 @@ export default function LandingPageClientContent({
               { id: "tip-2", title: "Use natural language", content: "E.g., ‘Grilled chicken salad with vinaigrette’ works better than just ‘salad’." },
               { id: "tip-3", title: "Specify portion size", content: "Portion size helps the AI adjust its risk estimate. Try adding size units like '1 cup' or '2 slices'." },
               { id: "tip-4", title: "Upload clear photos", content: "Upload photos in good lighting, and ensure full view of your plate." },
-              { id: "tip-5", title: "Log consistently", content: "The more you log, the more Gutcheck adapts to your unique responses." },
+              { id: "tip-5", title: "Log consistently", content: "The more you log, the more GutCheck adapts to your unique responses." },
             ].map((tip, index) => (
               <AccordionItem value={tip.id} key={tip.id} className={index === 0 ? "border-t-0" : ""}>
                 <AccordionTrigger className="text-lg font-semibold hover:text-primary text-left">{tip.title}</AccordionTrigger>
