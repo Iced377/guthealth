@@ -67,7 +67,8 @@ const dailyInsightsPrompt = ai.definePrompt({
   model: 'gemini-1.5-pro-latest',
   input: {schema: DailyInsightsInputSchema},
   output: {schema: DailyInsightsOutputSchema},
-  prompt: `Analyze the following food log, symptoms, and micronutrient summary to provide personalized insights to the user.
+  prompt: `Analyze the user's daily food log, symptoms, and micronutrient summary (if provided) to generate personalized insights.
+Output a JSON object strictly adhering to the DailyInsightsOutputSchema.
 
 Food Log: {{{foodLog}}}
 Symptoms: {{{symptoms}}}
@@ -75,10 +76,10 @@ Symptoms: {{{symptoms}}}
 Micronutrient Summary: {{{micronutrientSummary}}}
 {{/if}}
 
-Your task is to generate a JSON object adhering to the DailyInsightsOutputSchema. The JSON object should contain:
-1.  "triggerInsights": Insights about potential trigger foods or high-risk meals.
-2.  "micronutrientFeedback": Feedback on micronutrient intake. If no micronutrientSummary was provided in the input, set this field to "Micronutrient feedback not available as no summary was provided." or omit it if appropriate for the schema.
-3.  "overallSummary": A brief, general overview of the day.
+The output JSON should include:
+- 'triggerInsights': Identify potential trigger foods or high-risk meals.
+- 'micronutrientFeedback': Provide feedback on micronutrient intake. If no summary was provided, the schema description for this field guides the expected output.
+- 'overallSummary': A brief, general overview of the day.
 
 Example Input:
 Food Log: "Breakfast: Oats with berries. Lunch: Chicken salad. Dinner: Spaghetti bolognese (with onion and garlic)."
@@ -91,8 +92,6 @@ Example Output (JSON):
   "micronutrientFeedback": "Your Vitamin C intake was good today. You might want to focus on iron-rich foods tomorrow.",
   "overallSummary": "Today included a mix of meals. Bloating was noted after dinner, potentially linked to FODMAPs."
 }
-
-Ensure your output is a valid JSON object matching the schema.
 `,
 });
 
