@@ -9,6 +9,7 @@ import { Loader2, PlusCircle, ListChecks, Pencil, CalendarDays, Edit3, ChevronUp
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile as DetailedFodmapProfileFromAI } from '@/ai/flows/fodmap-detection';
 import { isSimilarToSafeFoods, type FoodFODMAPProfile, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/flows/process-meal-description-flow';
+import GradientText from '@/components/shared/GradientText';
 
 
 import { useToast } from '@/hooks/use-toast';
@@ -1030,7 +1031,7 @@ export default function RootPage() {
   const betaUserMessageContent = (
     <div className="mt-8 max-w-3xl mx-auto text-left sm:text-center bg-primary/5 p-6 rounded-lg border border-primary/20 shadow-sm">
       <h2 className="text-2xl font-semibold text-primary mb-4 font-headline">
-        Hey there, GutChecker! 👋
+        <GradientText>Hey there, GutChecker!</GradientText> 👋
       </h2>
       <p className="text-muted-foreground mb-3">
         A huge <strong className="text-foreground">thank you</strong> for joining the GutCheck beta and taking an active role in shaping its future! Your participation is incredibly valuable as we work to build the best tool to help you understand your gut.
