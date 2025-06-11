@@ -87,20 +87,11 @@ export default function TimelineFoodCard({
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className={cn("text-md sm:text-lg font-semibold font-headline break-words", primaryTextClass)}>{item.name}</CardTitle>
-            {item.originalName && item.originalName !== item.name && !isManualMacroEntry && (
-              <p className={cn("text-sm italic", mutedTextClass)}>(Analyzed as: {item.originalName})</p>
-            )}
-            {!isManualMacroEntry && <p className={cn("text-sm", mutedTextClass)}>Portion: {item.portionSize} {item.portionUnit}</p>}
           </div>
         </div>
-         {item.sourceDescription && !isManualMacroEntry ? (
-           <p className={cn("text-sm italic pt-1 break-words", mutedTextClass, "text-muted-foreground/70")}>{item.sourceDescription}</p>
-         ) : !isManualMacroEntry && (
-           <p className={cn("text-sm break-words pt-1", mutedTextClass)}>Ingredients: {item.ingredients || 'Not specified'}</p>
-         )}
         <p className={cn("text-xs pt-1", mutedTextClass)}>Logged: {timeAgo}</p>
       </CardHeader>
-      <CardContent className="px-4 pt-2 pb-3 space-y-0"> 
+      <CardContent className="px-4 pt-0 pb-3 space-y-0"> 
         {item.isSimilarToSafe && !isManualMacroEntry && (
           <Badge
             variant="default"
@@ -129,7 +120,28 @@ export default function TimelineFoodCard({
             </div>
         )}
         
-        <Accordion type="single" collapsible className="w-full pt-2">
+        <Accordion type="single" collapsible className="w-full pt-1">
+          {!isManualMacroEntry && (item.originalName && item.originalName !== item.name || item.sourceDescription) && (
+            <AccordionItem value="log-details" className="border-b-0">
+              <AccordionTrigger className="text-xs font-semibold text-foreground/80 flex items-center py-1 hover:no-underline justify-between w-full group">
+                <span className="flex items-center">
+                  <Info className="h-3.5 w-3.5 mr-1.5 text-primary/70 group-hover:text-primary"/>Log Details
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-0 text-sm text-muted-foreground space-y-0.5">
+                {item.originalName && item.originalName !== item.name && (
+                  <p>Analyzed as: {item.originalName}</p>
+                )}
+                <p>Portion: {item.portionSize} {item.portionUnit}</p>
+                {item.sourceDescription ? (
+                  <p className="italic text-muted-foreground/80">Original Description: {item.sourceDescription}</p>
+                 ) : (
+                   <p>Ingredients: {item.ingredients || 'Not specified'}</p>
+                 )}
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
           {!isManualMacroEntry && item.fodmapData && (
             <AccordionItem value="health-indicators" className="border-b-0">
               <AccordionTrigger className="text-xs font-semibold text-foreground/80 flex items-center py-1 hover:no-underline justify-between w-full group">
@@ -304,4 +316,6 @@ export default function TimelineFoodCard({
     </Card>
   );
 }
+    
+
     
