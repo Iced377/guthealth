@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -7,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield } from 'lucide-react'; 
 import Link from 'next/link';
+import GradientText from '@/components/shared/GradientText'; // Import the new component
 
 const featureIcons: Record<string, React.ElementType> = {
   "Snap a Photo or Log a Meal": ScrollText, 
@@ -135,7 +137,7 @@ export default function LandingPageClientContent({
       <section className="py-16 sm:py-24 bg-gradient-to-br from-primary/10 via-background to-background">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 tracking-tight">
-            Track your gut. <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">Transform your health.</span>
+            Track your gut. <GradientText>Transform your health.</GradientText>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
             GutCheck helps you identify foods that trigger IBS and optimize your diet, effectively.
