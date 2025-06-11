@@ -140,7 +140,7 @@ export default function LandingPageClientContent({
             Track your gut. <GradientText>Transform your health.</GradientText>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Log meals with AI, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.
+            Log meal conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.
           </p>
           {betaUserMessage && (
             <div className="mt-6">

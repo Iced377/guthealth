@@ -4,10 +4,10 @@ import LandingPageClientContent from '@/components/landing/LandingPageClientCont
 
 export const metadata: Metadata = {
   title: 'GutCheck - Track Your Gut, Transform Your Health',
-  description: 'Log meals with AI, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.',
+  description: 'Log meal conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.',
   openGraph: {
     title: 'GutCheck - Track Your Gut, Transform Your Health',
-    description: 'Log meals with AI, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.',
+    description: 'Log meal conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.',
     images: [
       {
         url: '/Gutcheck_logo.png', 
