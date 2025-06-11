@@ -63,33 +63,27 @@ const PrivacyPage = () => {
       <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-2">Data Security</h2>
         <p>
-          We implement robust security measures to protect your data from unauthorized access, alteration, disclosure, or destruction. These measures include, but are not limited to:
+          We are committed to protecting your data and implement robust security measures. These measures include, but are not limited to:
         </p>
         <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
           <li>
-            <strong>Authentication and Access Control:</strong> We utilize Google's robust authentication system for secure user management. Access to data is further controlled by Firestore Security Rules, ensuring users can only access their own information.
+            <strong>Authentication and Access Control:</strong> We utilize Firebase Authentication for secure user management. Access to your data within our database (Firestore) is strictly controlled by server-side Firestore Security Rules, ensuring users can only access their own information.
           </li>
           <li>
-            <strong>Protection Against Automated Abuse:</strong> Google's latest reCAPTCHA v3 technology is employed to protect our application from spam, malicious bots, and other forms of automated abuse without requiring user interaction.
+            <strong>Data Encryption:</strong> Your data is encrypted in transit using industry-standard SSL/TLS protocols. Data stored in Firestore is encrypted at rest by Google Cloud.
           </li>
           <li>
-            <strong>Data Transmission Security:</strong> All data transmitted between your device and our servers is encrypted using industry-standard SSL/TLS (Secure Sockets Layer/Transport Layer Security) protocols to prevent eavesdropping and tampering.
+            <strong>Secure Cloud Infrastructure:</strong> Our application is built on Google Cloud Platform (Firebase), which provides a secure and reliable infrastructure with comprehensive security controls and compliance certifications.
           </li>
           <li>
-            <strong>Backend Resource Protection:</strong> Firebase App Check is used to verify that requests to our backend services originate from authentic instances of our application, protecting against unauthorized access and abuse of backend resources.
+            <strong>Principle of Least Privilege:</strong> Our system architecture adheres to the principle of least privilege, meaning components and services are granted only the minimum access necessary to perform their functions.
           </li>
           <li>
-            <strong>Network and DNS Security:</strong> We utilize premium Domain Name System (DNS) services that include enhanced security features such as Distributed Denial of Service (DDoS) protection and DNS Security Extensions (DNSSEC) to ensure reliable and secure resolution of our application's domain.
-          </li>
-          <li>
-            <strong>Secure Cloud Infrastructure:</strong> Our application is hosted on Google Cloud Platform (GCP), which provides a secure and reliable infrastructure with comprehensive security controls and compliance certifications.
-          </li>
-          <li>
-            <strong>Principle of Least Privilege:</strong> Our system architecture adheres to the principle of least privilege, meaning components and services are granted only the minimum access necessary to perform their functions, reducing potential impact from any compromised component.
+            <strong>Regular Reviews:</strong> We aim to regularly review and update our security practices to adapt to new threats and best practices.
           </li>
         </ul>
         <p className="mt-2">
-          Despite these measures, no system is completely secure, and we cannot guarantee the absolute security of your information. We continuously strive to enhance our security practices.
+          Despite these measures, please remember that no system is completely impenetrable, and we cannot guarantee the absolute security of your information. We continuously strive to enhance our security practices.
         </p>
       </section>
 
@@ -113,19 +107,18 @@ const PrivacyPage = () => {
       <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-2">Cookies and Tracking Technologies</h2>
         <p>
-          Our application uses cookies and similar technologies like browser `localStorage` for essential functionality and to enhance your experience.
-          Specifically:
+          Our application uses essential data storage mechanisms like browser `localStorage` and technologies employed by Firebase Authentication to ensure functionality and enhance your experience. We do not use cookies for third-party advertising or extensive cross-site tracking.
         </p>
         <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
             <li>
-              <strong>Firebase Authentication:</strong> To manage your login sessions securely, Firebase Authentication may use cookies or browser local storage. These are essential for the application to function correctly for logged-in users.
+              <strong>Firebase Authentication:</strong> To manage your login sessions securely and remember your authentication state, Firebase Authentication utilizes browser storage mechanisms (such as `localStorage` or `IndexedDB`). These are essential for the application to function correctly for logged-in users.
             </li>
             <li>
-              <strong>User Preferences:</strong> We use `localStorage` to remember your preferences, such as your theme choice (light/dark mode) and your cookie consent status. This helps provide a consistent experience across your visits.
+              <strong>User Preferences:</strong> We use `localStorage` to remember your preferences, such as your theme choice (light/dark mode) and your cookie consent status. This helps provide a consistent experience across your visits without tracking you across other sites.
             </li>
         </ul>
         <p className="mt-2">
-          We do not currently use cookies for third-party advertising or extensive tracking beyond basic application functionality. You can typically manage cookie settings through your browser, though some essential cookies might be necessary for the app to work as intended.
+          You can typically manage settings related to browser storage and cookies through your browser's privacy settings. Disabling certain essential storage mechanisms may affect the application's functionality, particularly login persistence.
         </p>
       </section>
 
@@ -144,7 +137,7 @@ const PrivacyPage = () => {
       </section>
 
       <div className="mt-8 text-sm text-gray-500">
-        <p>Last updated: June 8, 2025</p> {/* Assuming date needs update with content change */}
+        <p>Last updated: June 8, 2025</p>
       </div>
 
       <div className="mt-12 text-center">
