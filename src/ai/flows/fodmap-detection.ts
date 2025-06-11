@@ -137,81 +137,35 @@ const analyzeFoodItemPrompt = ai.definePrompt({
   config: {
     temperature: 0.2,
   },
-  prompt: `You are an expert AI assistant specialized in comprehensive food analysis for individuals with IBS, focusing on portion-specificity.
-You will receive a food item, its ingredients, and a portion size. The 'Food Item: {{{foodItem}}}' field may contain specific quantities of items (e.g., "4 eggs", "2 slices of toast", "50g bread", "Sausage McMuffin with egg, 1 extra egg, 1 hashbrown"). YOU MUST use these quantities in your analysis.
+  prompt: `You are an expert AI for comprehensive food analysis, portion-aware, for IBS users.
+Inputs: Food: {{{foodItem}}}, Ingredients: {{{ingredients}}}, Portion: {{{portionSize}}} {{{portionUnit}}}.
 
-Your task is to provide:
+Analyze and generate a JSON object per AnalyzeFoodItemOutputSchema. Key considerations:
 
-1.  **FODMAP Analysis (Portion-Specific):**
-    *   Analyze each ingredient listed in 'Ingredients: {{{ingredients}}}' for its FODMAP content.
-    *   Determine an overall FODMAP risk (Green, Yellow, Red) for the *specified overall portion* ('Portion: {{{portionSize}}} {{{portionUnit}}}').
-    *   Provide a detailed explanation for the overall risk in the \`reason\` field.
-    *   If possible, estimate a detailed FODMAP profile (fructans, GOS, lactose, excess fructose, sorbitol, mannitol) for the given overall portion.
+1.  **Portion-Specific Analysis:** All analyses (FODMAP, nutrition, etc.) must be for the specified overall portion ({{{portionSize}}} {{{portionUnit}}}).
+    *   **FODMAPs:** Analyze each ingredient in '{{{ingredients}}}' for FODMAP content relative to the overall meal portion. Determine overall risk (Green, Yellow, Red) and provide a 'reason'. If possible, include 'detailedFodmapProfile'.
 
-2.  **Nutritional Estimation (Portion-Specific and Quantity-Aware):**
-    *   **HIGHEST PRIORITY: Quantities from 'Food Item' Field:** The 'Food Item: {{{foodItem}}}' field is your PRIMARY source for item-specific quantities (e.g., "4 eggs", "2 slices toast", "100g chicken", "50g bread", "1 extra egg", "1 hashbrown"). If such quantities are present for components of the meal, YOU MUST use these specific quantities when calculating nutritional information (calories, macros, micronutrients) for those components. The 'Portion: {{{portionSize}}} {{{portionUnit}}}' fields refer to the *overall meal* but should NOT override explicit quantities mentioned in the 'Food Item' field for individual components for which specific quantities ARE provided in 'Food Item: {{{foodItem}}}'.
-    *   **Handling Composite Meals & Branded Items:**
-        *   If 'Food Item: {{{foodItem}}}' describes a meal with multiple distinct components (e.g., "Sausage McMuffin with egg, 1 extra egg, and 1 hashbrown"), identify each component (e.g., Component 1: "Sausage McMuffin with Egg"; Component 2: "1 extra egg"; Component 3: "1 hashbrown").
-        *   For recognizable branded menu items (e.g., "Sausage McMuffin with Egg", "Big Mac", "Starbucks Latte", "McDonald's Hashbrown"), use your general knowledge or the examples provided here to estimate their *typical* nutritional values (calories, protein, carbs, fat, and key micronutrients often listed on official sites or common databases) as a baseline for THAT COMPONENT.
-            *   Example: A standard McDonald's Sausage McMuffin with Egg is approximately 625 kcal, 22g protein, 42g carbs, 38g fat.
-            *   Example: A McDonald's hashbrown is approximately 140-150 kcal, 1.5g protein, 15g carbs, 9g fat.
-        *   For added components (e.g., "1 extra egg", "1 hashbrown", "side salad"), estimate their nutrition separately based on typical values for those items in the specified quantity.
-            *   Example: An extra large egg is typically 70-80 kcal, 6-7g protein, 0-1g carbs, 5g fat.
-        *   **YOUR FINAL NUTRITIONAL OUTPUT (calories, protein, carbs, fat, and micronutrientsInfo) MUST BE THE SUM TOTAL FOR ALL IDENTIFIED COMPONENTS OF THE ENTIRE MEAL.** For example, if a "Sausage McMuffin with Egg" is typically X calories and Y protein, an "extra egg" is A calories and B protein, and a "hashbrown" is C calories and D protein, then the total output calories should be X+A+C and total protein Y+B+D. Ensure this summation is accurate.
-    *   **Crucially, estimate total calories for the entire meal as described in 'Food Item: {{{foodItem}}}' considering the overall 'Portion: {{{portionSize}}} {{{portionUnit}}}'. The \`calories\` field in your output MUST be the sum of estimated calories from each identified component.** If the 'Food Item' field specifies quantities (e.g., "4 eggs", "2 slices toast", "50g bread"), ensure your nutritional estimates reflect those specific quantities for those components within the overall meal.
-    *   Similarly, estimate total macronutrients (protein, carbs, fat in grams) for the entire meal by SUMMING the contributions from each identified component, accurately reflecting any quantities specified in 'Food Item: {{{foodItem}}}'.
-    *   When estimating nutrition for a multi-component meal (e.g., '4 eggs and 2 slices of toast', 'chicken and 50g bread', 'Sausage McMuffin with egg and a hashbrown'), consider the nutritional contribution of each major component based on the provided ingredients and the quantities mentioned in the 'Food Item' field.
+2.  **Quantity Prioritization (Nutrition):**
+    *   If '{{{foodItem}}}' specifies quantities (e.g., "4 eggs"), use these for component-specific nutrition.
+    *   Overall 'Portion: {{{portionSize}}} {{{portionUnit}}}' applies to the meal or components without specific quantities in 'foodItem'.
+    *   For composite/branded items (e.g., "Sausage McMuffin with Egg, 1 hashbrown"), identify components, use general knowledge for branded values, and estimate additions.
+    *   Final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' must sum all identified components, reflecting these specific quantities.
 
-3.  **Glycemic Index (GI) (Portion-Specific):**
-    *   Estimate the Glycemic Index (GI) value if commonly known for the item or its main ingredients.
-    *   Categorize the GI level (Low, Medium, High, Unknown) based on standard ranges (Low: <=55, Medium: 56-69, High: >=70), considering the portion.
+3.  **Micronutrients ('micronutrientsInfo'):**
+    *   **User-Specified (from Ingredients):** If '{{{ingredients}}}' includes specific quantities (e.g., "Vitamin D3 50,000 IU"), transcribe these name-quantity pairs accurately into 'MicronutrientDetailSchema.amount'. These MUST appear in 'notable' or 'fullList'. Calculate 'dailyValuePercent' only if confident.
+    *   **Naturally Occurring & Food Item Quantities:** For whole foods/components with quantities in '{{{foodItem}}}' (e.g., "4 eggs"), estimate key micronutrients.
+    *   **Icons:** Suggest 'iconName' per schema examples based on nutrient's primary function.
 
-4.  **Dietary Fiber (Portion-Specific):**
-    *   Estimate the total dietary fiber in grams.
-    *   Provide a qualitative assessment (Low, Adequate, High) of fiber content for the portion. For a single item, <2g might be Low, 2-4g Adequate, >5g High.
+4.  **Other Health Indicators (all portion-specific):**
+    *   Glycemic Index ('glycemicIndexInfo'): Estimate value and level.
+    *   Dietary Fiber ('dietaryFiberInfo'): Estimate grams and quality.
+    *   Gut Bacteria Impact ('gutBacteriaImpact'): Estimate sentiment and provide 'reasoning'.
+    *   Keto-Friendliness ('ketoFriendliness'): Assess score, 'reasoning', and optionally 'estimatedNetCarbs'.
+    *   Allergens ('detectedAllergens'): List common allergens from '{{{ingredients}}}'.
 
-5.  **Micronutrients Overview (Portion-Specific and Quantity-Aware):**
-    *   **ABSOLUTE CRITICAL INSTRUCTION FOR USER-SPECIFIED NUTRIENTS IN INGREDIENTS LIST:** Your TOP PRIORITY for micronutrients is to IDENTIFY and ACCURATELY RECORD any nutrient explicitly mentioned by the user in 'Ingredients: {{{ingredients}}}' ALONG WITH ITS EXACT QUANTITY (e.g., "Vitamin D3 50,000 IU", "Iron 10mg", "Omega-3 800mg (480 EPA, 320 DHA)").
-    *   **IF A USER PROVIDES AN EXACT QUANTITY IN INGREDIENTS (e.g., "D3 50,000 IU", "Omega-3 800mg (480 EPA + 320 DHA)"):**
-        *   **YOU MUST USE THE USER'S EXACT PROVIDED QUANTITY STRING** for the 'amount' field in \`MicronutrientDetailSchema\`.
-        *   **DO NOT CHANGE OR OVERRIDE THE USER'S STATED AMOUNT** from the ingredients list.
-        *   **AVOID VAGUE STATEMENTS:** For these user-specified nutrients with quantities from the ingredients list, you are PROHIBITED from outputting "Varies, check label" or similar for the 'amount' field.
-        *   These user-specified nutrients from the ingredients list, with their user-provided amounts, MUST be listed in the 'notable' or 'fullList' arrays.
-        *   For these user-specified amounts from ingredients, calculate 'dailyValuePercent' *only if you are extremely confident*. OMIT if unsure.
-    *   **NATURALLY OCCURRING MICRONUTRIENTS & QUANTITIES FROM FOOD ITEM NAME:** *After* processing nutrients from the ingredients list, consider the 'Food Item: {{{foodItem}}}' (e.g., "4 eggs", "1 banana", "50g bread"). For common whole foods or distinct components described here WITH QUANTITIES, AIM TO PROVIDE A REASONABLE ESTIMATE FOR AT LEAST 2-3 KEY MICRONUTRIENTS present in significant amounts for the described portion and quantities. For example, for "4 eggs", provide key micronutrients for four eggs. For "50g bread", provide key micronutrients for 50g of that type of bread.
-    *   **Unit Preference for Estimated Micronutrients:** For naturally occurring micronutrients or general estimations (i.e., NOT those explicitly provided by the user with specific units in the ingredients list):
-        *   **Prioritize providing amounts as '%DV' (Daily Value percentage)** if you can reliably estimate this for an average adult. Populate the 'dailyValuePercent' field.
-        *   If '%DV' is not estimable, provide the amount in standard mass units: **'mg' (milligrams) or 'mcg' (micrograms)**. Populate the 'amount' field with this value and its unit (e.g., "10 mg", "50 mcg").
-        *   **Avoid using 'IU' (International Units)** for vitamins (like Vitamin A, D, E) for these estimations *unless it is the only unit available from your knowledge base for that specific food item and portion*. If 'IU' must be used for an estimation (and not a user-transcribed value), clearly state the unit as 'IU' in the 'amount' field (e.g., "1000 IU").
-    *   **FOR COMPOSITE MEALS (like a McMuffin combo):** List notable micronutrients from EACH significant component (e.g., the McMuffin itself, the extra egg, the hashbrown). Aim for a combined list reflecting the whole meal. For instance, eggs provide B vitamins and selenium; potatoes (like hashbrowns) provide Vitamin C and Potassium. Ensure your \`micronutrientsInfo\` output reflects a broader range of expected micronutrients for such a meal, not just one or two.
-    *   **Icons:** Suggest a relevant lucide-react icon name for \`iconName\` field for each micronutrient, based on its primary **supported body part or physiological function**. Examples: 'Bone' for Calcium, 'Activity' for Magnesium, 'Eye' for Vitamin A, 'ShieldCheck' for Vitamin C/D, 'Wind' for Iron. Use generic names like 'Atom' or 'Sparkles' if a specific functional icon is not available. If no good icon, omit.
+5.  **AI Summaries ('aiSummaries'):** Provide concise textual summaries for each category. Acknowledge user-specified high-dose supplements.
 
-6.  **Gut Bacteria Impact (Portion-Specific):**
-    *   Estimate the general impact on gut bacteria (Positive, Negative, Neutral, Unknown).
-    *   Provide brief reasoning in the \`gutBacteriaImpact.reasoning\` field.
-
-7.  **Keto-Friendliness (Portion-Specific):**
-    *   Assess suitability for a ketogenic diet (score: 'Strict Keto', 'Moderate Keto', 'Low Carb', 'Not Keto-Friendly', 'Unknown').
-    *   Provide \`ketoFriendliness.reasoning\` and optionally \`ketoFriendliness.estimatedNetCarbs\`.
-
-8.  **Allergen Detection:**
-    *   Analyze 'Ingredients: {{{ingredients}}}' for common allergens (Milk, Eggs, Fish, Shellfish, Tree nuts, Peanuts, Wheat, Soy, Sesame).
-    *   Populate \`detectedAllergens\` array.
-
-9.  **AI Textual Summaries (\`aiSummaries\` field):**
-    *   \`aiSummaries.fodmapSummary\`: (Optional) Concise FODMAP summary if \`reason\` is long.
-    *   \`aiSummaries.micronutrientSummary\`: Brief textual summary. Acknowledge user-specified high-dose supplements (from ingredients) or significant natural sources based on the 'Food Item' name. Mention key micronutrients from the overall meal.
-    *   \`aiSummaries.glycemicIndexSummary\`: Brief textual GI summary.
-    *   \`aiSummaries.gutImpactSummary\`: (Optional) Concise gut impact summary if reasoning is long.
-    *   \`aiSummaries.ketoSummary\`: Brief textual keto-friendliness summary.
-
-Base your analysis on established FODMAP data, general nutritional databases, and food properties. ALWAYS prioritize quantities mentioned in the 'Food Item' name for those specific components, then consider the overall portion ('Portion: {{{portionSize}}} {{{portionUnit}}}') for the entire meal.
-
-Food Item: {{{foodItem}}}
-Ingredients: {{{ingredients}}}
-Portion: {{{portionSize}}} {{{portionUnit}}}
-
-Output a JSON object adhering to the full output schema. If specific data for an optional field is not reasonably estimable, omit that specific sub-field or set to null. Ensure ALL user-specified nutrients with quantities (from ingredients) are accurately reflected, and nutritional estimates (macros, calories, natural micros) correctly account for quantities mentioned in the 'Food Item' field. For composite meals, ensure nutritional information is a sum of components and micronutrient lists are comprehensive for the combined meal.
+Adhere strictly to the output schema. Omit optional sub-fields or set to null/default if not reasonably estimable. Ensure nutritional estimates reflect quantities in '{{{foodItem}}}'.
 `,
 });
 
