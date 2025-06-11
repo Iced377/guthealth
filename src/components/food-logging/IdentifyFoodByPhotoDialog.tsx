@@ -80,7 +80,9 @@ export default function IdentifyFoodByPhotoDialog({
       setImagePreview(imageDataUri);
       try {
         const result = await identifyFoodFromImage({ imageDataUri });
-        console.log('AI Image Identification Result:', result);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('AI Image Identification Result:', result);
+        }
         if (result.recognitionSuccess) {
           setIdentifiedData(result);
           toast({ title: "Food Identified!", description: "Review the details below and confirm." });

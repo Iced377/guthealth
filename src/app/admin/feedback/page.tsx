@@ -44,7 +44,9 @@ export default function AdminFeedbackPage() {
       let adminStatus = false;
 
       try {
-        console.log('[Admin Page] Checking admin status for UID:', authUser.uid);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Admin Page] Checking admin status for UID:', authUser.uid);
+        }
         const userProfileDocRef = doc(db, 'users', authUser.uid);
         const userProfileSnap = await getDoc(userProfileDocRef);
 
@@ -53,16 +55,22 @@ export default function AdminFeedbackPage() {
           if (userProfileData.isAdmin === true) {
             adminStatus = true;
             setIsCurrentUserAdmin(true);
-            console.log('[Admin Page] User is admin.');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[Admin Page] User is admin.');
+            }
           } else {
             setProfileError(`Your user profile does not have administrator privileges. 'isAdmin' flag is missing, not true (boolean), or profile incorrect. Current isAdmin value: ${userProfileData.isAdmin}`);
             setIsCurrentUserAdmin(false);
-            console.log('[Admin Page] User is not admin or isAdmin flag is not boolean true.');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[Admin Page] User is not admin or isAdmin flag is not boolean true.');
+            }
           }
         } else {
           setProfileError(`User profile not found for your account (UID: ${authUser.uid}). Ensure a user document exists in Firestore at 'users/${authUser.uid}' with an 'isAdmin' field set to boolean true.`);
           setIsCurrentUserAdmin(false);
-          console.log('[Admin Page] User profile not found.');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Admin Page] User profile not found.');
+          }
         }
       } catch (err: any) {
         console.error("[Admin Page] Error checking admin status (raw error):", JSON.stringify(err, Object.getOwnPropertyNames(err)));
@@ -73,7 +81,9 @@ export default function AdminFeedbackPage() {
 
       if (adminStatus) {
         try {
-          console.log('[Admin Page] Fetching feedback submissions.');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Admin Page] Fetching feedback submissions.');
+          }
           const feedbackQuery = query(collection(db, 'feedbackSubmissions'), orderBy('timestamp', 'desc'));
           const feedbackSnapshot = await getDocs(feedbackQuery);
           const items = feedbackSnapshot.docs.map(docSnap => ({
@@ -82,7 +92,9 @@ export default function AdminFeedbackPage() {
             timestamp: (docSnap.data().timestamp as Timestamp).toDate(),
           })) as FeedbackSubmission[];
           setFeedbackItems(items);
-          console.log('[Admin Page] Successfully fetched feedback submissions:', items.length);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Admin Page] Successfully fetched feedback submissions:', items.length);
+          }
         } catch (err: any) {
           console.error("[Admin Page] Error fetching feedback submissions:", err);
           setFeedbackError(`Failed to load feedback: ${err.message}. Code: ${err.code || 'N/A'}.`);
@@ -90,7 +102,9 @@ export default function AdminFeedbackPage() {
 
         // User count logic removed
         // try {
-        //   console.log('[Admin Page] Fetching user count.');
+        //   if (process.env.NODE_ENV === 'development') {
+        //     console.log('[Admin Page] Fetching user count.');
+        //   }
         //   const usersSnapshot = await getDocs(collection(db, 'users'));
         //   setTotalUsers(usersSnapshot.size);
         // } catch (err: any) {
