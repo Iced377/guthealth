@@ -7,7 +7,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import FeedbackWidget from '@/components/feedback/FeedbackWidget';
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner'; // Added import
-// import { GoogleAnalytics } from 'next/third-parties/google'; // Removed Google Analytics import
+// import { GoogleAnalytics } from 'next/third-parties/google'; // Re-commented Google Analytics import
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -40,7 +40,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID; // This line can remain for now, or be removed if not used elsewhere
+  const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -62,7 +62,7 @@ export default function RootLayout({
             <CookieConsentBanner /> {/* Added CookieConsentBanner */}
           </ThemeProvider>
         </AuthProvider>
-        {/* {gaId && <GoogleAnalytics gaId={gaId} />} */} {/* GA Component usage removed */}
+        {/* {gaId && <GoogleAnalytics gaId={gaId} />} */} {/* Re-commented GA Component usage */}
       </body>
     </html>
   );
