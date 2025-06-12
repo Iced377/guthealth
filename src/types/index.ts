@@ -80,6 +80,7 @@ export interface LoggedFoodItem {
   sourceDescription?: string;
   userFeedback?: 'safe' | 'unsafe' | null;
   macrosOverridden?: boolean;
+  isFavorite?: boolean; // Added for favorite functionality
 }
 
 export interface Symptom {

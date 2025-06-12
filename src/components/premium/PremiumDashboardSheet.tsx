@@ -44,6 +44,7 @@ const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
   VitaminB12: Brain,
   Biotin: Activity, 
   Folate: Baby, 
+  Omega3: Heart,
   // Common AI-suggested iconNames from the prompt (to ensure they are mapped)
   Bone: Bone, Nut: Nut, Activity: Activity, PersonStanding: PersonStanding, Eye: Eye, ShieldCheck: ShieldCheck, Droplet: Droplet, Wind: Wind, Brain: Brain, Baby: Baby, Heart: Heart, ShieldQuestion: ShieldQuestion, Network: Network, Target: Target
 };
@@ -62,6 +63,7 @@ interface PremiumDashboardSheetProps {
   onLogSymptomsForFood: (foodItemId?: string) => void;
   onEditIngredients?: (item: LoggedFoodItem) => void;
   onRepeatMeal?: (item: LoggedFoodItem) => void;
+  onToggleFavorite: (itemId: string, currentIsFavorite: boolean) => void; // Added prop
 }
 
 interface AchievedMicronutrient {
@@ -95,6 +97,7 @@ export default function PremiumDashboardSheet({
   onLogSymptomsForFood,
   onEditIngredients,
   onRepeatMeal,
+  onToggleFavorite, // Added prop
 }: PremiumDashboardSheetProps) {
 
   const achievedMicronutrients = useMemo<AchievedMicronutrient[]>(() => {
@@ -233,6 +236,7 @@ export default function PremiumDashboardSheet({
                             isLoadingAi={!!isLoadingAi[entry.id]}
                             onEditIngredients={onEditIngredients}
                             onRepeatMeal={onRepeatMeal}
+                            onToggleFavorite={onToggleFavorite} // Pass handler
                           />
                         );
                       }
@@ -262,3 +266,4 @@ export default function PremiumDashboardSheet({
     </Sheet>
   );
 }
+

@@ -11,7 +11,7 @@ import MicronutrientsIndicator from '@/components/shared/MicronutrientsIndicator
 import GutBacteriaIndicator from '@/components/shared/GutBacteriaIndicator';
 import KetoFriendlinessIndicator from '@/components/shared/KetoFriendlinessIndicator';
 import { Badge } from '@/components/ui/badge';
-import { ThumbsUp, ThumbsDown, Trash2, ListChecks, Loader2, Flame, Beef, Wheat, Droplet, Edit3, CheckCheck, PencilLine, Sparkles, Leaf, Users, Activity, Repeat, MessageSquareText, Info, AlertCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Trash2, ListChecks, Loader2, Flame, Beef, Wheat, Droplet, Edit3, CheckCheck, PencilLine, Sparkles, Leaf, Users, Activity, Repeat, MessageSquareText, Info, AlertCircle, Heart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'; 
@@ -31,6 +31,7 @@ interface TimelineFoodCardProps {
   onEditIngredients?: (item: LoggedFoodItem) => void;
   onRepeatMeal?: (item: LoggedFoodItem) => void;
   isGuestView?: boolean;
+  onToggleFavorite?: (itemId: string, currentIsFavorite: boolean) => void; // New prop
 }
 
 export default function TimelineFoodCard({
@@ -42,6 +43,7 @@ export default function TimelineFoodCard({
     onEditIngredients,
     onRepeatMeal,
     isGuestView = false,
+    onToggleFavorite, // New prop
 }: TimelineFoodCardProps) {
 
   const handleFeedback = (newFeedback: 'safe' | 'unsafe') => {
@@ -51,6 +53,11 @@ export default function TimelineFoodCard({
     } else {
       onSetFeedback(item.id, newFeedback);
     }
+  };
+
+  const handleFavoriteToggle = () => {
+    if (isGuestView || !onToggleFavorite) return;
+    onToggleFavorite(item.id, !!item.isFavorite);
   };
 
   const timeAgo = formatDistanceToNow(new Date(item.timestamp), { addSuffix: true });
@@ -89,6 +96,32 @@ export default function TimelineFoodCard({
           </div>
           {!isGuestView && (
             <div className="flex items-center gap-0.5 ml-2 shrink-0">
+              {!isManualMacroEntry && onToggleFavorite && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleFavoriteToggle}
+                        disabled={isLoadingAi}
+                        className={cn(
+                          "h-7 w-7",
+                          item.isFavorite
+                            ? 'bg-white/25 hover:bg-white/35 text-primary-foreground' // Style for favorited
+                            : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
+                        )}
+                        aria-label={item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}
+                      >
+                        <Heart className={cn("h-4 w-4", item.isFavorite ? 'fill-red-500 text-red-500' : '')} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover text-popover-foreground border-border">
+                      <p>{item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               {!isManualMacroEntry && onSetFeedback && (
                 <>
                 <TooltipProvider>

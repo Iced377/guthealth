@@ -266,9 +266,46 @@ export default function RootPage() {
     }
   };
 
+  const handleToggleFavoriteFoodItem = async (itemId: string, currentIsFavorite: boolean) => {
+    const itemIndex = timelineEntries.findIndex(e => e.id === itemId && (e.entryType === 'food' || e.entryType === 'manual_macro'));
+    if (itemIndex === -1) return;
+
+    const newIsFavorite = !currentIsFavorite;
+    const originalItem = timelineEntries[itemIndex] as LoggedFoodItem;
+    const updatedItem = { ...originalItem, isFavorite: newIsFavorite };
+
+    setTimelineEntries(prevEntries => {
+      const newEntries = [...prevEntries];
+      newEntries[itemIndex] = updatedItem;
+      return newEntries;
+    });
+
+    if (authUser && authUser.uid !== 'guest-user') {
+      const entryDocRef = doc(db, 'users', authUser.uid, 'timelineEntries', itemId);
+      try {
+        await updateDoc(entryDocRef, { isFavorite: newIsFavorite });
+        toast({
+          title: newIsFavorite ? "Added to Favorites" : "Removed from Favorites",
+          description: `${originalItem.name} ${newIsFavorite ? 'is now a favorite.' : 'is no longer a favorite.'}`
+        });
+      } catch (error) {
+        console.error("Error updating favorite status in Firestore:", error);
+        setTimelineEntries(prevEntries => { // Revert local state on error
+            const newEntries = [...prevEntries];
+            newEntries[itemIndex] = originalItem;
+            return newEntries;
+        });
+        toast({ title: 'Favorite Error', description: 'Could not update favorite status in cloud.', variant: 'destructive' });
+      }
+    } else {
+       toast({ title: 'Favorite Updated (Locally)', description: `Login to save favorite status permanently.` });
+    }
+  };
+
+
   // newTimestamp is now the precise date and time from the dialog
   const handleSubmitFoodItem = async (
-    foodItemData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'calories' | 'protein' | 'carbs' | 'fat' | 'sourceDescription' | 'userFeedback' | 'macrosOverridden'>,
+    foodItemData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'calories' | 'protein' | 'carbs' | 'fat' | 'sourceDescription' | 'userFeedback' | 'macrosOverridden' | 'isFavorite'>,
     newTimestamp?: Date 
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -325,7 +362,8 @@ export default function RootPage() {
         userFeedback: editingItem ? editingItem.userFeedback : null,
         macrosOverridden: false,
         originalName: foodItemData.name,
-        sourceDescription: "Manually logged"
+        sourceDescription: "Manually logged",
+        isFavorite: editingItem ? editingItem.isFavorite : false,
       };
 
       if (authUser && authUser.uid !== 'guest-user') {
@@ -367,7 +405,8 @@ export default function RootPage() {
         userFeedback: editingItem ? editingItem.userFeedback : null,
         macrosOverridden: false,
         originalName: foodItemData.name,
-        sourceDescription: "Manually logged (analysis failed)"
+        sourceDescription: "Manually logged (analysis failed)",
+        isFavorite: editingItem ? editingItem.isFavorite : false,
       };
        if (editingItem) {
         updateTimelineEntry(processedFoodItem);
@@ -459,6 +498,7 @@ export default function RootPage() {
         entryType: 'food',
         userFeedback: editingItem ? editingItem.userFeedback : null,
         macrosOverridden: userDidOverrideMacros ?? false,
+        isFavorite: editingItem ? editingItem.isFavorite : false,
       };
 
       if (authUser && authUser.uid !== 'guest-user') {
@@ -508,6 +548,7 @@ export default function RootPage() {
             entryType: 'food',
             userFeedback: editingItem ? editingItem.userFeedback : null,
             macrosOverridden: userDidOverrideMacros ?? false,
+            isFavorite: editingItem ? editingItem.isFavorite : false,
         };
         if (editingItem) {
             updateTimelineEntry(processedFoodItem);
@@ -581,6 +622,7 @@ export default function RootPage() {
         userFeedback: null,
         macrosOverridden: false,
         sourceDescription: "Identified by photo",
+        isFavorite: false,
       };
 
       if (authUser && authUser.uid !== 'guest-user') {
@@ -615,6 +657,7 @@ export default function RootPage() {
         userFeedback: null,
         macrosOverridden: false,
         sourceDescription: "Identified by photo (analysis partially failed)",
+        isFavorite: false,
       };
       addTimelineEntry(processedFoodItem);
     } finally {
@@ -624,7 +667,7 @@ export default function RootPage() {
 
   // newTimestamp is now the precise date and time from the dialog
   const handleSubmitManualMacroEntry = async (
-    entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback'> & { entryType: 'manual_macro' | 'food' },
+    entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback' | 'isFavorite'> & { entryType: 'manual_macro' | 'food' },
     newTimestamp?: Date 
   ) => {
     const currentItemId = editingItem ? editingItem.id : `macro-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -647,7 +690,8 @@ export default function RootPage() {
       fodmapData: null, 
       userFodmapProfile: null,
       isSimilarToSafe: false,
-      sourceDescription: "Manual macro entry"
+      sourceDescription: "Manual macro entry",
+      isFavorite: editingItem ? editingItem.isFavorite : false,
     };
 
     if (authUser && authUser.uid !== 'guest-user') {
@@ -842,6 +886,7 @@ export default function RootPage() {
         entryType: 'food',
         userFeedback: null,
         macrosOverridden: false,
+        isFavorite: false,
       };
       setLastGuestFoodItem(newFoodItem);
       toast({title: "Meal Noted (Locally)", description: "Sign in with Google to save and track!"});
@@ -888,6 +933,7 @@ export default function RootPage() {
         entryType: 'food' as 'food',
         userFeedback: null, 
         macrosOverridden: itemToRepeat.macrosOverridden ?? false,
+        isFavorite: itemToRepeat.isFavorite ?? false, // Carry over favorite status
       };
 
       if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo") && itemToRepeat.sourceDescription !== "Manually logged" && itemToRepeat.sourceDescription !== "Manually logged (analysis failed)") {
@@ -1031,7 +1077,7 @@ export default function RootPage() {
   const betaUserMessageContent = (
     <div className="mt-8 max-w-3xl mx-auto text-left sm:text-center bg-primary/5 p-6 rounded-lg border border-primary/20 shadow-sm">
       <h2 className="text-2xl font-semibold text-primary mb-4 font-headline">
-        <GradientText>Hey there, GutChecker!</GradientText> 👋
+        <GradientText>Hey there, GutChecker! 👋</GradientText>
       </h2>
       <p className="text-muted-foreground mb-3">
         A huge <strong className="text-foreground">thank you</strong> for joining the GutCheck beta and taking an active role in shaping its future! Your participation is incredibly valuable as we work to build the best tool to help you understand your gut.
@@ -1105,6 +1151,7 @@ export default function RootPage() {
         onLogSymptomsForFood={openSymptomLogDialog}
         onEditIngredients={handleEditTimelineEntry}
         onRepeatMeal={handleRepeatMeal}
+        onToggleFavorite={handleToggleFavoriteFoodItem} // Pass new handler
       >
 
       </PremiumDashboardSheet>
@@ -1206,3 +1253,4 @@ export default function RootPage() {
     </div>
   );
 }
+

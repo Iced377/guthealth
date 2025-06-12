@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle } from 'lucide-react';
+import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { signOutUser } from '@/lib/firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -341,6 +341,19 @@ export default function Navbar({
     router.push(pathname === '/ai-insights' ? '/?openDashboard=true' : '/ai-insights');
   };
 
+  const favoritesLinkHandler = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // For now, this doesn't go anywhere specific, but could open dashboard or a future /favorites page
+    if (onOpenDashboardClick) {
+        onOpenDashboardClick(); // Or router.push('/favorites') if page exists
+        toast({title: "Favorites", description: "Favorites page/section coming soon!", duration: 3000});
+    } else {
+        router.push('/#favorites'); // Fallback if no dashboard handler
+        toast({title: "Favorites", description: "Favorites page/section coming soon!", duration: 3000});
+    }
+  };
+
+
   const handleReleaseNotesToggle = (open: boolean) => {
     if (open) {
       if (typeof window !== 'undefined') {
@@ -497,6 +510,9 @@ export default function Navbar({
                         <LayoutGrid className="h-5 w-5" />
                       </Button>
                     )}
+                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/#favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
+                      <Heart className="h-5 w-5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" onClick={trendsLinkHandler}>
                       <BarChart3 className="h-5 w-5" />
                     </Button>
@@ -597,6 +613,10 @@ export default function Navbar({
                           <span>Dashboard</span>
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuItem onClick={favoritesLinkHandler} className="cursor-pointer">
+                        <Heart className="mr-2 h-4 w-4" />
+                        <span>Favorites</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={trendsLinkHandler} className="cursor-pointer">
                         <BarChart3 className="mr-2 h-4 w-4" />
                         <span>Trends</span>
@@ -644,3 +664,4 @@ export default function Navbar({
     </header>
   );
 }
+
