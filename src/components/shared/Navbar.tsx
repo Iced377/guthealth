@@ -573,10 +573,12 @@ export default function Navbar({
                           <span>Admin Dashboard</span>
                         </DropdownMenuItem>
                        )}
+                      {/*
                       <DropdownMenuItem onClick={() => router.push('/account/subscription')} className="cursor-pointer">
                          <CreditCard className="mr-2 h-4 w-4" />
                          <span>Subscription</span>
                       </DropdownMenuItem>
+                      */}
                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
                          <Shield className="mr-2 h-4 w-4" />
                          <span>Privacy Notice</span>
@@ -650,10 +652,12 @@ export default function Navbar({
                           <span>Admin Dashboard</span>
                         </DropdownMenuItem>
                       )}
+                      {/*
                       <DropdownMenuItem onClick={() => router.push('/account/subscription')} className="cursor-pointer">
                         <CreditCard className="mr-2 h-4 w-4" />
                         <span>Subscription</span>
                       </DropdownMenuItem>
+                      */}
                        <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
                          <Shield className="mr-2 h-4 w-4" />
                          <span>Privacy Notice</span>
