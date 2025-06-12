@@ -54,10 +54,10 @@ const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.6.9",
     date: "June 08, 2025",
-    title: "Food Item Favoriting Feature",
+    title: "Food Item Favoriting Feature & Micros enhancements",
     description: [
+      "Enhanced the accuracy of micros tracking.",
       "Added a 'heart' icon to food cards allowing users to mark items as favorites.",
-      "Favorited status is saved per user.",
       "Added a 'Favorites' link to the navbar (functionality to view favorites list is upcoming).",
     ],
   },
