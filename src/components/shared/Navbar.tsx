@@ -353,14 +353,7 @@ export default function Navbar({
 
   const favoritesLinkHandler = (e: React.MouseEvent) => {
     e.preventDefault();
-    // For now, this doesn't go anywhere specific, but could open dashboard or a future /favorites page
-    if (onOpenDashboardClick) {
-        onOpenDashboardClick(); // Or router.push('/favorites') if page exists
-        toast({title: "Favorites", description: "Favorites page/section coming soon!", duration: 3000});
-    } else {
-        router.push('/#favorites'); // Fallback if no dashboard handler
-        toast({title: "Favorites", description: "Favorites page/section coming soon!", duration: 3000});
-    }
+    router.push('/favorites');
   };
 
 
@@ -520,7 +513,7 @@ export default function Navbar({
                         <LayoutGrid className="h-5 w-5" />
                       </Button>
                     )}
-                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/#favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
+                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
                       <Heart className="h-5 w-5" />
                     </Button>
                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" onClick={trendsLinkHandler}>
