@@ -106,15 +106,9 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Micronutrients] Fetching data for user:', userId);
-      }
       try {
         const todayStart = startOfDay(new Date());
         const todayEnd = endOfDay(new Date());
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Micronutrients] Date range:', todayStart, 'to', todayEnd);
-        }
 
         const entriesColRef = collection(db, 'users', userId, 'timelineEntries');
         const q = query(
@@ -132,19 +126,12 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
             timestamp: (data.timestamp as Timestamp).toDate(),
           } as TimelineEntry;
         });
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Micronutrients] Fetched timeline entries for today:', fetchedEntries.length);
-        }
 
         const foodItemsToday = fetchedEntries.filter(
           (entry): entry is LoggedFoodItem => entry.entryType === 'food' || entry.entryType === 'manual_macro'
         );
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Micronutrients] Filtered food items for today:', foodItemsToday.length);
-        }
 
         const dailyTotals: UserMicronutrientProgress = {};
-
         KEY_MICRONUTRIENTS_CONFIG.forEach(keyMicro => {
           dailyTotals[keyMicro.name] = {
             name: keyMicro.displayName || keyMicro.name,
@@ -157,112 +144,89 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
         });
         
         foodItemsToday.forEach(item => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`[Micronutrients] Processing food item: ${item.name} (ID: ${item.id})`);
-          }
           const microsInfo = item.fodmapData?.micronutrientsInfo;
           if (microsInfo) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[Micronutrients] Item ${item.name} has micronutrientInfo:`, JSON.stringify(microsInfo, null, 2));
-            }
-            
-            // Combine notable and fullList
             const combinedMicrosRaw: MicronutrientDetail[] = [
               ...(microsInfo.notable || []),
               ...(microsInfo.fullList || []),
             ];
 
-            // Deduplicate based on nutrient name (case-insensitive)
-            const uniqueMicrosByName = new Map<string, MicronutrientDetail>();
-            combinedMicrosRaw.forEach(micro => {
-              const normalizedName = micro.name.toLowerCase();
-              if (!uniqueMicrosByName.has(normalizedName)) {
-                uniqueMicrosByName.set(normalizedName, micro);
-              } else {
-                // If duplicate, prefer entry with dailyValuePercent if current doesn't have it
-                const existing = uniqueMicrosByName.get(normalizedName)!;
-                if (micro.dailyValuePercent !== undefined && existing.dailyValuePercent === undefined) {
-                  uniqueMicrosByName.set(normalizedName, micro);
+            // Summarize nutrients within this single food item first
+            const perItemSummarizedMicros = new Map<string, {
+                name: string; // Original casing for display
+                totalAmountMg: number;
+                totalAmountMcg: number;
+                totalAmountIu: number; // Basic sum, actual biological availability varies
+                totalDVPercent: number;
+                iconName?: string;
+            }>();
+
+            combinedMicrosRaw.forEach(microDetail => {
+                const normalizedName = microDetail.name.toLowerCase();
+                let entry = perItemSummarizedMicros.get(normalizedName);
+                if (!entry) {
+                    entry = {
+                        name: microDetail.name,
+                        totalAmountMg: 0,
+                        totalAmountMcg: 0,
+                        totalAmountIu: 0,
+                        totalDVPercent: 0,
+                        iconName: microDetail.iconName,
+                    };
+                    perItemSummarizedMicros.set(normalizedName, entry);
                 }
-                // Add more sophisticated merging if needed, e.g. summing amounts if units are compatible
-              }
+
+                if (microDetail.dailyValuePercent !== undefined) {
+                    entry.totalDVPercent += microDetail.dailyValuePercent;
+                }
+
+                if (microDetail.amount) {
+                    const amountString = String(microDetail.amount).toLowerCase();
+                    const amountValue = parseFloat(amountString);
+                    if (!isNaN(amountValue)) {
+                        if (amountString.includes("mcg") || amountString.includes("µg")) {
+                            entry.totalAmountMcg += amountValue;
+                        } else if (amountString.includes("mg")) {
+                            entry.totalAmountMg += amountValue;
+                        } else if (amountString.includes("iu")) {
+                            entry.totalAmountIu += amountValue;
+                        }
+                    }
+                }
+                if (microDetail.iconName && !entry.iconName) {
+                    entry.iconName = microDetail.iconName;
+                }
             });
-            const allMicrosFromItem: MicronutrientDetail[] = Array.from(uniqueMicrosByName.values());
             
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[Micronutrients]   De-duplicated micros for item ${item.name}:`, JSON.stringify(allMicrosFromItem, null, 2));
-            }
+            // Add summarized nutrients from this item to daily totals
+            Array.from(perItemSummarizedMicros.values()).forEach(summedMicro => {
+                const configEntry = KEY_MICRONUTRIENTS_CONFIG.find(km =>
+                    km.name.toLowerCase() === summedMicro.name.toLowerCase() ||
+                    (km.displayName && km.displayName.toLowerCase() === summedMicro.name.toLowerCase())
+                );
 
-            allMicrosFromItem.forEach(microDetail => {
-              if (process.env.NODE_ENV === 'development') {
-                console.log(`[Micronutrients]   Processing microDetail: ${microDetail.name}, Amount: ${microDetail.amount}, %DV: ${microDetail.dailyValuePercent}`);
-              }
-              const configEntry = KEY_MICRONUTRIENTS_CONFIG.find(km => 
-                km.name.toLowerCase() === microDetail.name.toLowerCase() || 
-                (km.displayName && km.displayName.toLowerCase() === microDetail.name.toLowerCase())
-              );
+                if (configEntry && dailyTotals[configEntry.name]) {
+                    const targetEntry = dailyTotals[configEntry.name];
 
-              if (configEntry && dailyTotals[configEntry.name]) {
-                const targetEntry = dailyTotals[configEntry.name];
-                if (process.env.NODE_ENV === 'development') {
-                  console.log(`[Micronutrients]     Matched configEntry: ${configEntry.name}, Unit: ${targetEntry.unit}`);
-                }
-                if (targetEntry.unit === 'mg' && microDetail.amount) {
-                  // Attempt to parse amount like "10 mg", "10mcg", "10"
-                  const amountString = String(microDetail.amount).toLowerCase();
-                  const amountValue = parseFloat(amountString); 
-                  
-                  if (!isNaN(amountValue)) {
-                    let multiplier = 1;
-                    if (amountString.includes('mcg') || amountString.includes('µg')) {
-                        multiplier = 0.001; // mcg to mg
+                    if (targetEntry.unit === 'mg') {
+                        let valueInMg = summedMicro.totalAmountMg;
+                        valueInMg += summedMicro.totalAmountMcg * 0.001; // Convert mcg to mg
+                        targetEntry.achievedValue = (targetEntry.achievedValue || 0) + valueInMg;
+                    } else if (targetEntry.unit === '%') {
+                        targetEntry.achievedDV += summedMicro.totalDVPercent;
                     }
-                    // Note: IU conversion is complex and nutrient-specific, not handled here.
                     
-                    const valueInMg = amountValue * multiplier;
-                    targetEntry.achievedValue = (targetEntry.achievedValue || 0) + valueInMg;
-                    if (process.env.NODE_ENV === 'development') {
-                      console.log(`[Micronutrients]       Added ${valueInMg}mg to ${configEntry.name}. New total: ${targetEntry.achievedValue}mg`);
+                    const iconFromSummed = summedMicro.iconName ? RepresentativeLucideIcons[summedMicro.iconName] : undefined;
+                    const iconFromConfig = RepresentativeLucideIcons[configEntry.name];
+                    if (iconFromSummed) {
+                        targetEntry.icon = iconFromSummed;
+                    } else if (iconFromConfig && targetEntry.icon === Atom) { // Only update if default icon
+                        targetEntry.icon = iconFromConfig;
                     }
-                  } else {
-                    if (process.env.NODE_ENV === 'development') {
-                       console.log(`[Micronutrients]       Could not parse amount for ${microDetail.name}: ${microDetail.amount}`);
-                    }
-                  }
-                } else if (targetEntry.unit === '%' && typeof microDetail.dailyValuePercent === 'number') {
-                  targetEntry.achievedDV += microDetail.dailyValuePercent;
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log(`[Micronutrients]       Added ${microDetail.dailyValuePercent}% DV to ${configEntry.name}. New total: ${targetEntry.achievedDV}%`);
-                  }
-                } else {
-                  if (process.env.NODE_ENV === 'development') {
-                     console.log(`[Micronutrients]       Skipped ${microDetail.name}: Unit mismatch or missing %DV (Config unit: ${targetEntry.unit}, AI %DV: ${microDetail.dailyValuePercent})`);
-                  }
                 }
-                
-                const iconFromAIName = microDetail.iconName ? RepresentativeLucideIcons[microDetail.iconName] : undefined;
-                const iconFromNutrientNameKey = RepresentativeLucideIcons[configEntry.name]; 
-                
-                if (iconFromAIName) {
-                   targetEntry.icon = iconFromAIName;
-                } else if (iconFromNutrientNameKey) {
-                   targetEntry.icon = iconFromNutrientNameKey;
-                }
-              } else {
-                if (process.env.NODE_ENV === 'development') {
-                   console.log(`[Micronutrients]     No matching configEntry for AI nutrient: ${microDetail.name}`);
-                }
-              }
             });
-          } else {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[Micronutrients] Item ${item.name} has NO micronutrientInfo.`);
-            }
           }
         });
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Micronutrients] Final dailyTotals:', JSON.stringify(dailyTotals, null, 2));
-        }
         setProgressData(dailyTotals);
       } catch (err) {
         console.error("[Micronutrients] Error fetching micronutrient data:", err);
@@ -348,7 +312,3 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
     </div>
   );
 }
-
-    
-
-

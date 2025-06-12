@@ -157,7 +157,7 @@ Key tasks:
     *   Ensure final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' sum all components accurately.
 
 3.  **Micronutrients ('micronutrientsInfo'):**
-    *   User-Specified (from Ingredients): If '{{{ingredients}}}' contains nutrients with quantities (e.g., "Vitamin D3 50,000 IU"), accurately transcribe name-quantity pairs into 'MicronutrientDetailSchema.amount' (in 'notable' or 'fullList'). Calculate 'dailyValuePercent' only if confident.
+    *   User-Specified (from Ingredients): If '{{{ingredients}}}' contains nutrients with quantities (e.g., "Vitamin D3 50,000 IU", "B6 7mg", "B6 10.5mg"), accurately transcribe these. If multiple entries for the SAME nutrient with compatible units (e.g., all mg or all mcg) are found, sum them into a single 'MicronutrientDetailSchema.amount' string (e.g., "17.5 mg for B6" from the example). Otherwise, list them as separate 'MicronutrientDetail' entries. Ensure the 'amount' string reflects the quantity and unit from the input. Calculate 'dailyValuePercent' only if confident.
     *   Estimate key micronutrients for foods/quantities in '{{{foodItem}}}'.
     *   Suggest 'iconName' based on nutrient function per schema.
 
