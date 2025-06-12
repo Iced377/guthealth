@@ -28,14 +28,15 @@ const IdentifyFoodFromImageOutputSchema = z.object({
   recognitionSuccess: z.boolean().describe('Whether the AI was able to confidently identify a food item and its details suitable for form population.'),
   errorMessage: z.string().optional().describe('An error message if identification failed or was problematic.'),
 });
-export type IdentifyFoodFromImageOutput = z.infer<typeof IdentifyFoodFromImageInputSchema>;
+export type IdentifyFoodFromImageOutput = z.infer<typeof IdentifyFoodFromImageInputSchema>; // This should be IdentifyFoodFromImageOutputSchema
 
-export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): Promise<IdentifyFoodFromImageOutput> {
+export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): Promise<IdentifyFoodFromImageOutput> { // This should return IdentifyFoodFromImageOutput
   return identifyFoodFromImageFlow(input);
 }
 
 const identifyFoodPrompt = ai.definePrompt({
   name: 'identifyFoodFromImagePrompt',
+  model: 'googleai/gemini-1.5-flash-latest', // Explicitly set model for potential speed improvement
   input: { schema: IdentifyFoodFromImageInputSchema },
   output: { schema: IdentifyFoodFromImageOutputSchema },
   config: {
@@ -99,12 +100,25 @@ const identifyFoodFromImageFlow = ai.defineFlow(
     const { output } = await identifyFoodPrompt(input);
     if (!output) {
       return {
+        // Make sure all fields from IdentifyFoodFromImageOutputSchema are present or optional
+        identifiedFoodName: undefined,
+        identifiedIngredients: undefined,
+        estimatedPortionSize: undefined,
+        estimatedPortionUnit: undefined,
+        ocrText: undefined,
         recognitionSuccess: false,
         errorMessage: 'AI processing failed to return an output.',
-      };
+      } as IdentifyFoodFromImageOutput; // Cast to ensure type conformity
     }
-    return output;
+    // Ensure all fields are present in the output or explicitly set to undefined if optional
+    return {
+        identifiedFoodName: output.identifiedFoodName,
+        identifiedIngredients: output.identifiedIngredients,
+        estimatedPortionSize: output.estimatedPortionSize,
+        estimatedPortionUnit: output.estimatedPortionUnit,
+        ocrText: output.ocrText,
+        recognitionSuccess: output.recognitionSuccess,
+        errorMessage: output.errorMessage,
+    } as IdentifyFoodFromImageOutput; // Cast to ensure type conformity
   }
 );
-
-    
