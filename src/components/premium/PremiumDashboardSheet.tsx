@@ -224,29 +224,39 @@ export default function PremiumDashboardSheet({
                     <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
                   </div>
                   <div className="space-y-4"> {/* Added space-y-4 here for cards within a date group */}
-                    {entriesOnDate.map(entry => {
+                    {entriesOnDate.map((entry, entryIndex) => { // Added entryIndex
                       if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
                         return (
-                          <TimelineFoodCard
+                          <div
                             key={entry.id}
-                            item={entry}
-                            onSetFeedback={onSetFeedback}
-                            onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                            onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
-                            isLoadingAi={!!isLoadingAi[entry.id]}
-                            onEditIngredients={onEditIngredients}
-                            onRepeatMeal={onRepeatMeal}
-                            onToggleFavorite={onToggleFavorite} // Pass handler
-                          />
+                            className="card-reveal-animation"
+                            style={{ animationDelay: `${entryIndex * 0.07}s` }}
+                          >
+                            <TimelineFoodCard
+                              item={entry}
+                              onSetFeedback={onSetFeedback}
+                              onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                              onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
+                              isLoadingAi={!!isLoadingAi[entry.id]}
+                              onEditIngredients={onEditIngredients}
+                              onRepeatMeal={onRepeatMeal}
+                              onToggleFavorite={onToggleFavorite} // Pass handler
+                            />
+                          </div>
                         );
                       }
                       if (entry.entryType === 'symptom') {
                         return (
-                          <TimelineSymptomCard
+                          <div
                             key={entry.id}
-                            item={entry}
-                            onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                          />
+                            className="card-reveal-animation"
+                            style={{ animationDelay: `${entryIndex * 0.07}s` }}
+                          >
+                            <TimelineSymptomCard
+                              item={entry}
+                              onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                            />
+                          </div>
                         );
                       }
                       return null;
@@ -266,4 +276,3 @@ export default function PremiumDashboardSheet({
     </Sheet>
   );
 }
-
