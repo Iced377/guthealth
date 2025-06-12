@@ -40,8 +40,8 @@ const AvatarFallback = React.forwardRef<
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
-      "flex h-full w-full items-center justify-center rounded-full", // Removed bg-muted from here
-      className
+      "flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground", // Directly apply themed styles as default
+      className // Allow overrides if className prop provides other bg/text colors
     )}
     {...props}
   />
@@ -49,3 +49,4 @@ const AvatarFallback = React.forwardRef<
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 export { Avatar, AvatarImage, AvatarFallback }
+
