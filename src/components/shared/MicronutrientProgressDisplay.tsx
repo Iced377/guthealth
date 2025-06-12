@@ -8,7 +8,7 @@ import type { TimelineEntry, LoggedFoodItem, MicronutrientDetail, UserMicronutri
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 import {
-  Atom, Sparkles, Bone, Activity, PersonStanding, Eye, ShieldCheck, Droplet, Wind, Brain, Heart, ShieldQuestion, Network, Target, HelpCircle, Nut
+  Atom, Sparkles, Bone, Activity, PersonStanding, Eye, ShieldCheck, Droplet, Wind, Brain, Heart, ShieldQuestion, Network, Target, HelpCircle, Nut, Sun
 } from 'lucide-react';
 import { startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -21,23 +21,17 @@ const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
   // Functional Icons based on nutrient name
   VitaminA: Eye,
   VitaminC: ShieldCheck,
-  VitaminD: ShieldCheck,
+  VitaminD: Sun, // Changed icon for Vitamin D
   VitaminE: ShieldQuestion,
   VitaminK: Heart,
-  // Thiamin: Brain, // B1 - REMOVED from tracking
   Riboflavin: Activity, // B2
-  // Niacin: Activity, // B3 - REMOVED from tracking
-  // PantothenicAcid: Activity, // B5 - REMOVED from tracking
   VitaminB6: Brain,
   VitaminB12: Brain,
-  // Choline: Brain, - REMOVED from tracking
 
   Calcium: Bone,
   Magnesium: Activity,
   Iron: Wind,
   Zinc: PersonStanding,
-  // Manganese: Bone, - REMOVED from tracking
-  // Selenium: ShieldCheck, - REMOVED from tracking
   Chromium: Target,
   Potassium: Droplet,
   Sodium: Droplet,
@@ -46,16 +40,16 @@ const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
   // AI-suggested functional icon names (ensure these are mapped if AI uses them)
   Bone: Bone, Activity: Activity, PersonStanding: PersonStanding, Eye: Eye, ShieldCheck: ShieldCheck,
   Droplet: Droplet, Wind: Wind, Brain: Brain, Heart: Heart, ShieldQuestion: ShieldQuestion,
-  Network: Network, Target: Target, Nut: Nut,
+  Network: Network, Target: Target, Nut: Nut, Sun: Sun, // Added Sun
   // Fallback / General Icons
   Atom, Sparkles, HelpCircle,
 };
 
-const KEY_MICRONUTRIENTS_CONFIG: Array<{ name: string; displayName?: string; targetDV?: number; unit?: 'mg' | '%'; icon?: React.ElementType }> = [
+const KEY_MICRONUTRIENTS_CONFIG: Array<{ name: string; displayName?: string; targetDV?: number; unit?: 'mg' | '%' | 'IU'; icon?: React.ElementType }> = [
   // Vitamins
   { name: 'VitaminA', displayName: 'Vitamin A', targetDV: 100, unit: '%' },
   { name: 'VitaminC', displayName: 'Vitamin C', targetDV: 100, unit: '%' },
-  { name: 'VitaminD', displayName: 'Vitamin D', targetDV: 100, unit: '%' },
+  { name: 'VitaminD', displayName: 'Vitamin D', targetDV: 800, unit: 'IU', icon: RepresentativeLucideIcons.Sun }, // Updated Vitamin D
   { name: 'VitaminE', displayName: 'Vitamin E', targetDV: 100, unit: '%' },
   { name: 'VitaminK', displayName: 'Vitamin K', targetDV: 100, unit: '%' },
   { name: 'Riboflavin', displayName: 'Riboflavin (B2)', targetDV: 100, unit: '%' },
@@ -66,7 +60,7 @@ const KEY_MICRONUTRIENTS_CONFIG: Array<{ name: string; displayName?: string; tar
   { name: 'Magnesium', displayName: 'Magnesium', targetDV: 420, unit: 'mg' },
   { name: 'Iron', displayName: 'Iron', targetDV: 100, unit: '%' },
   { name: 'Zinc', displayName: 'Zinc', targetDV: 11, unit: 'mg' },
-  { name: 'Chromium', displayName: 'Chromium', targetDV: 0.035, unit: 'mg' }, // 35mcg
+  { name: 'Chromium', displayName: 'Chromium', targetDV: 0.035, unit: 'mg' },
   { name: 'Potassium', displayName: 'Potassium', targetDV: 100, unit: '%' },
   { name: 'Sodium', displayName: 'Sodium', targetDV: 2300, unit: 'mg' },
   // Added Omega-3
@@ -121,7 +115,7 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
             achievedValue: 0,
             achievedDV: 0,
             icon: keyMicro.icon || RepresentativeLucideIcons[keyMicro.name] || Atom,
-            targetDV: keyMicro.targetDV || (keyMicro.unit === 'mg' ? 0 : 100),
+            targetDV: keyMicro.targetDV || (keyMicro.unit === 'mg' || keyMicro.unit === 'IU' ? 0 : 100),
             unit: keyMicro.unit || '%',
           };
         });
@@ -129,7 +123,6 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
         foodItemsToday.forEach(item => {
           const microsInfo = item.fodmapData?.micronutrientsInfo;
           if (microsInfo) {
-            // Consolidate nutrients from notable and fullList, then sum them per item
             const perItemSummarizedMicros = new Map<string, {
                 name: string;
                 totalAmountMg: number;
@@ -149,7 +142,7 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
                 let entry = perItemSummarizedMicros.get(normalizedName);
                 if (!entry) {
                     entry = {
-                        name: microDetail.name, // Keep original casing for display/matching later
+                        name: microDetail.name,
                         totalAmountMg: 0,
                         totalAmountMcg: 0,
                         totalAmountIu: 0,
@@ -176,22 +169,19 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
                         }
                     }
                 }
-                if (microDetail.iconName && !entry.iconName) { // Prioritize first icon if multiple
+                if (microDetail.iconName && !entry.iconName) { 
                     entry.iconName = microDetail.iconName;
                 }
             });
 
 
-            // Add summarized per-item nutrients to daily totals
             Array.from(perItemSummarizedMicros.values()).forEach(summedMicroFromItem => {
                 const normalizedSummedName = summedMicroFromItem.name.toLowerCase();
                 let matchedConfigKey: string | undefined = undefined;
 
-                // Handle EPA/DHA summing into Omega3
                 if ((normalizedSummedName === 'epa' || normalizedSummedName === 'dha') && dailyTotals['Omega3']) {
                     matchedConfigKey = 'Omega3';
                 } else {
-                    // Find the nutrient in our KEY_MICRONUTRIENTS_CONFIG
                     const configEntry = KEY_MICRONUTRIENTS_CONFIG.find(km =>
                         km.name.toLowerCase() === normalizedSummedName ||
                         (km.displayName && km.displayName.toLowerCase() === normalizedSummedName)
@@ -208,18 +198,20 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
                     if (targetDailyEntry.unit === 'mg' || matchedConfigKey === 'Omega3') {
                         valueToAdd = summedMicroFromItem.totalAmountMg + (summedMicroFromItem.totalAmountMcg * 0.001);
                         targetDailyEntry.achievedValue = (targetDailyEntry.achievedValue || 0) + valueToAdd;
+                    } else if (targetDailyEntry.unit === 'IU') { // Added case for IU
+                        valueToAdd = summedMicroFromItem.totalAmountIu;
+                        targetDailyEntry.achievedValue = (targetDailyEntry.achievedValue || 0) + valueToAdd;
                     } else if (targetDailyEntry.unit === '%') {
                         valueToAdd = summedMicroFromItem.totalDVPercent;
                         targetDailyEntry.achievedDV = (targetDailyEntry.achievedDV || 0) + valueToAdd;
                     }
 
-                    // Icon handling (prioritize AI-suggested if valid, then config, then default)
                     const iconFromSummed = summedMicroFromItem.iconName ? RepresentativeLucideIcons[summedMicroFromItem.iconName] : undefined;
                     const iconFromConfigOrKey = targetDailyEntry.icon !== Atom ? targetDailyEntry.icon : (RepresentativeLucideIcons[matchedConfigKey] || Atom);
 
                     if (iconFromSummed) {
                         targetDailyEntry.icon = iconFromSummed;
-                    } else if (iconFromConfigOrKey && targetDailyEntry.icon === Atom) { // Only override if current is default Atom
+                    } else if (iconFromConfigOrKey && targetDailyEntry.icon === Atom) { 
                         targetDailyEntry.icon = iconFromConfigOrKey;
                     }
                 }
@@ -275,6 +267,10 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
             percentage = target > 0 ? Math.min(100, ((micro.achievedValue || 0) / target) * 100) : 0;
             displayAchieved = `${Math.round(micro.achievedValue || 0)}mg`;
             displayTarget = `${Math.round(target)}mg`;
+          } else if (micro.unit === 'IU') { // Added case for IU display
+            percentage = target > 0 ? Math.min(100, ((micro.achievedValue || 0) / target) * 100) : 0;
+            displayAchieved = `${Math.round(micro.achievedValue || 0)} IU`;
+            displayTarget = `${Math.round(target)} IU`;
           } else { // unit is '%'
             percentage = Math.min(100, micro.achievedDV);
             displayAchieved = `${Math.round(micro.achievedDV)}%`;
@@ -311,5 +307,3 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
     </div>
   );
 }
-
-    
