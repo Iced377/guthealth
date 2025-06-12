@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.8";
+export const APP_VERSION = "Beta 3.6.9";
 
 interface ReleaseNote {
   version: string;
@@ -51,6 +51,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.6.9",
+    date: "June 08, 2025",
+    title: "Food Item Favoriting Feature",
+    description: [
+      "Added a 'heart' icon to food cards allowing users to mark items as favorites.",
+      "Favorited status is saved per user.",
+      "Added a 'Favorites' link to the navbar (functionality to view favorites list is upcoming).",
+    ],
+  },
   {
     version: "Beta 3.6.8",
     date: "June 08, 2025",
