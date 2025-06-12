@@ -68,25 +68,25 @@ const KEY_MICRONUTRIENTS_CONFIG: Array<{ name: string; displayName?: string; tar
   { name: 'Riboflavin', displayName: 'Riboflavin (B2)', targetDV: 100, unit: '%' },
   { name: 'Niacin', displayName: 'Niacin (B3)', targetDV: 100, unit: '%' },
   { name: 'PantothenicAcid', displayName: 'Pantothenic Acid (B5)', targetDV: 100, unit: '%' },
-  { name: 'VitaminB6', displayName: 'Vitamin B6', targetDV: 100, unit: '%' },
+  { name: 'VitaminB6', displayName: 'Vitamin B6', targetDV: 1.7, unit: 'mg' }, // Updated: RDI ~1.7mg
   { name: 'Biotin', displayName: 'Biotin (B7)', targetDV: 100, unit: '%' },
   { name: 'Folate', displayName: 'Folate (B9)', targetDV: 100, unit: '%' },
   { name: 'VitaminB12', displayName: 'Vitamin B12', targetDV: 100, unit: '%' },
-  { name: 'Choline', displayName: 'Choline', targetDV: 550, unit: 'mg' }, // Choline has an AI in mg usually
+  { name: 'Choline', displayName: 'Choline', targetDV: 550, unit: 'mg' },
   // Minerals
-  { name: 'Calcium', displayName: 'Calcium', targetDV: 100, unit: '%' },
+  { name: 'Calcium', displayName: 'Calcium', targetDV: 1000, unit: 'mg' },          // Updated: RDI ~1000mg
   { name: 'Phosphorus', displayName: 'Phosphorus', targetDV: 100, unit: '%' },
-  { name: 'Magnesium', displayName: 'Magnesium', targetDV: 100, unit: '%' },
+  { name: 'Magnesium', displayName: 'Magnesium', targetDV: 420, unit: 'mg' },       // Updated: RDI ~420mg
   { name: 'Iron', displayName: 'Iron', targetDV: 100, unit: '%' },
-  { name: 'Zinc', displayName: 'Zinc', targetDV: 100, unit: '%' },
+  { name: 'Zinc', displayName: 'Zinc', targetDV: 11, unit: 'mg' },                // Updated: RDI ~11mg
   { name: 'Copper', displayName: 'Copper', targetDV: 100, unit: '%' },
   { name: 'Manganese', displayName: 'Manganese', targetDV: 100, unit: '%' },
   { name: 'Selenium', displayName: 'Selenium', targetDV: 100, unit: '%' },
   { name: 'Iodine', displayName: 'Iodine', targetDV: 100, unit: '%' },
-  { name: 'Chromium', displayName: 'Chromium', targetDV: 100, unit: '%' },
+  { name: 'Chromium', displayName: 'Chromium', targetDV: 0.035, unit: 'mg' },      // Updated: RDI ~35mcg = 0.035mg
   { name: 'Molybdenum', displayName: 'Molybdenum', targetDV: 100, unit: '%' },
-  { name: 'Potassium', displayName: 'Potassium', targetDV: 100, unit: '%' }, // Often underconsumed, DV usually in mg, but AI gives %
-  { name: 'Sodium', displayName: 'Sodium', targetDV: 2300, unit: 'mg' }, // Target is upper limit
+  { name: 'Potassium', displayName: 'Potassium', targetDV: 100, unit: '%' }, 
+  { name: 'Sodium', displayName: 'Sodium', targetDV: 2300, unit: 'mg' }, 
   { name: 'Chloride', displayName: 'Chloride', targetDV: 100, unit: '%' },
 ];
 
@@ -327,3 +327,4 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
 }
 
     
+
