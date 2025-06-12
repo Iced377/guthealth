@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -39,7 +40,7 @@ const AvatarFallback = React.forwardRef<
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      "flex h-full w-full items-center justify-center rounded-full", // Removed bg-muted from here
       className
     )}
     {...props}
