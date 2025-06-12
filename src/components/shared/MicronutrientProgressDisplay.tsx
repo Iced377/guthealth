@@ -68,22 +68,22 @@ const KEY_MICRONUTRIENTS_CONFIG: Array<{ name: string; displayName?: string; tar
   { name: 'Riboflavin', displayName: 'Riboflavin (B2)', targetDV: 100, unit: '%' },
   { name: 'Niacin', displayName: 'Niacin (B3)', targetDV: 100, unit: '%' },
   { name: 'PantothenicAcid', displayName: 'Pantothenic Acid (B5)', targetDV: 100, unit: '%' },
-  { name: 'VitaminB6', displayName: 'Vitamin B6', targetDV: 1.7, unit: 'mg' }, // Updated: RDI ~1.7mg
+  { name: 'VitaminB6', displayName: 'Vitamin B6', targetDV: 1.7, unit: 'mg' },
   { name: 'Biotin', displayName: 'Biotin (B7)', targetDV: 100, unit: '%' },
   { name: 'Folate', displayName: 'Folate (B9)', targetDV: 100, unit: '%' },
   { name: 'VitaminB12', displayName: 'Vitamin B12', targetDV: 100, unit: '%' },
   { name: 'Choline', displayName: 'Choline', targetDV: 550, unit: 'mg' },
   // Minerals
-  { name: 'Calcium', displayName: 'Calcium', targetDV: 1000, unit: 'mg' },          // Updated: RDI ~1000mg
+  { name: 'Calcium', displayName: 'Calcium', targetDV: 1000, unit: 'mg' },
   { name: 'Phosphorus', displayName: 'Phosphorus', targetDV: 100, unit: '%' },
-  { name: 'Magnesium', displayName: 'Magnesium', targetDV: 420, unit: 'mg' },       // Updated: RDI ~420mg
+  { name: 'Magnesium', displayName: 'Magnesium', targetDV: 420, unit: 'mg' },
   { name: 'Iron', displayName: 'Iron', targetDV: 100, unit: '%' },
-  { name: 'Zinc', displayName: 'Zinc', targetDV: 11, unit: 'mg' },                // Updated: RDI ~11mg
+  { name: 'Zinc', displayName: 'Zinc', targetDV: 11, unit: 'mg' },
   { name: 'Copper', displayName: 'Copper', targetDV: 100, unit: '%' },
   { name: 'Manganese', displayName: 'Manganese', targetDV: 100, unit: '%' },
   { name: 'Selenium', displayName: 'Selenium', targetDV: 100, unit: '%' },
   { name: 'Iodine', displayName: 'Iodine', targetDV: 100, unit: '%' },
-  { name: 'Chromium', displayName: 'Chromium', targetDV: 0.035, unit: 'mg' },      // Updated: RDI ~35mcg = 0.035mg
+  { name: 'Chromium', displayName: 'Chromium', targetDV: 0.035, unit: 'mg' },
   { name: 'Molybdenum', displayName: 'Molybdenum', targetDV: 100, unit: '%' },
   { name: 'Potassium', displayName: 'Potassium', targetDV: 100, unit: '%' }, 
   { name: 'Sodium', displayName: 'Sodium', targetDV: 2300, unit: 'mg' }, 
@@ -165,11 +165,34 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
             if (process.env.NODE_ENV === 'development') {
               console.log(`[Micronutrients] Item ${item.name} has micronutrientInfo:`, JSON.stringify(microsInfo, null, 2));
             }
-            const allMicrosFromItem: MicronutrientDetail[] = [
+            
+            // Combine notable and fullList
+            const combinedMicrosRaw: MicronutrientDetail[] = [
               ...(microsInfo.notable || []),
               ...(microsInfo.fullList || []),
             ];
+
+            // Deduplicate based on nutrient name (case-insensitive)
+            const uniqueMicrosByName = new Map<string, MicronutrientDetail>();
+            combinedMicrosRaw.forEach(micro => {
+              const normalizedName = micro.name.toLowerCase();
+              if (!uniqueMicrosByName.has(normalizedName)) {
+                uniqueMicrosByName.set(normalizedName, micro);
+              } else {
+                // If duplicate, prefer entry with dailyValuePercent if current doesn't have it
+                const existing = uniqueMicrosByName.get(normalizedName)!;
+                if (micro.dailyValuePercent !== undefined && existing.dailyValuePercent === undefined) {
+                  uniqueMicrosByName.set(normalizedName, micro);
+                }
+                // Add more sophisticated merging if needed, e.g. summing amounts if units are compatible
+              }
+            });
+            const allMicrosFromItem: MicronutrientDetail[] = Array.from(uniqueMicrosByName.values());
             
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[Micronutrients]   De-duplicated micros for item ${item.name}:`, JSON.stringify(allMicrosFromItem, null, 2));
+            }
+
             allMicrosFromItem.forEach(microDetail => {
               if (process.env.NODE_ENV === 'development') {
                 console.log(`[Micronutrients]   Processing microDetail: ${microDetail.name}, Amount: ${microDetail.amount}, %DV: ${microDetail.dailyValuePercent}`);
@@ -327,4 +350,5 @@ export default function MicronutrientProgressDisplay({ userId }: MicronutrientPr
 }
 
     
+
 
