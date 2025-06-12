@@ -7,6 +7,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import FeedbackWidget from '@/components/feedback/FeedbackWidget';
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner'; // Added import
+// import { GoogleAnalytics } from 'next/third-parties/google'; // Removed Google Analytics import
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -39,6 +40,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID; // This line can remain for now, or be removed if not used elsewhere
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -47,7 +50,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        {/* AdSense script removed */}
       </head>
       <body className={`${inter.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground`}>
         <AuthProvider>
@@ -60,6 +62,7 @@ export default function RootLayout({
             <CookieConsentBanner /> {/* Added CookieConsentBanner */}
           </ThemeProvider>
         </AuthProvider>
+        {/* {gaId && <GoogleAnalytics gaId={gaId} />} */} {/* GA Component usage removed */}
       </body>
     </html>
   );
