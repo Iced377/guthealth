@@ -553,7 +553,7 @@ export default function Navbar({
                       <Button variant="ghost" className={cn("relative h-9 w-9 rounded-full border-2 border-current p-0 hover:bg-primary/10 hover:text-primary hover:border-primary")}>
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
-                          <AvatarFallback className="bg-muted text-muted-foreground">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
                               {authUser.photoURL ? getInitials(authUser.displayName) : <User className="h-4 w-4" />}
                           </AvatarFallback>
                         </Avatar>
@@ -605,7 +605,7 @@ export default function Navbar({
                           <div className="flex items-center space-x-2">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
-                              <AvatarFallback className="bg-muted text-muted-foreground">
+                              <AvatarFallback className="bg-primary text-primary-foreground">
                                 {authUser.photoURL ? getInitials(authUser.displayName) : <User className="h-4 w-4" />}
                               </AvatarFallback>
                             </Avatar>
