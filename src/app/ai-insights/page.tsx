@@ -113,23 +113,45 @@ export default function AIInsightsPage() {
         getDocs(symptomLogQuery)
       ]);
 
-      const foodLogData: LoggedFoodItem[] = foodLogSnapshot.docs.map(d => ({...d.data(), id: d.id, timestamp: (d.data().timestamp as Timestamp).toDate() } as LoggedFoodItem));
-      const symptomLogData: SymptomLog[] = symptomLogSnapshot.docs.map(d => ({...d.data(), id: d.id, timestamp: (d.data().timestamp as Timestamp).toDate() } as SymptomLog));
+      const foodLogData: LoggedFoodItem[] = foodLogSnapshot.docs.map(d => {
+        const data = d.data();
+        let timestamp;
+        if (data.timestamp && typeof (data.timestamp as Timestamp).toDate === 'function') {
+          timestamp = (data.timestamp as Timestamp).toDate();
+        } else {
+          console.warn(`Invalid or missing timestamp for food item ${d.id}, using current date as fallback.`);
+          timestamp = new Date(); // Fallback or consider filtering out
+        }
+        return {...data, id: d.id, timestamp } as LoggedFoodItem;
+      }).filter(item => item.timestamp); // Filter out items where timestamp conversion might have failed if fallback wasn't desired
+
+
+      const symptomLogData: SymptomLog[] = symptomLogSnapshot.docs.map(d => {
+        const data = d.data();
+        let timestamp;
+        if (data.timestamp && typeof (data.timestamp as Timestamp).toDate === 'function') {
+          timestamp = (data.timestamp as Timestamp).toDate();
+        } else {
+          console.warn(`Invalid or missing timestamp for symptom log ${d.id}, using current date as fallback.`);
+          timestamp = new Date(); // Fallback or consider filtering out
+        }
+        return {...data, id: d.id, timestamp } as SymptomLog;
+      }).filter(item => item.timestamp);
       
       const processedFoodLog = foodLogData.map(item => ({
           name: item.name,
-          originalName: item.originalName,
+          originalName: item.originalName ?? undefined,
           ingredients: item.ingredients,
           portionSize: item.portionSize,
           portionUnit: item.portionUnit,
           timestamp: item.timestamp.toISOString(),
-          overallFodmapRisk: item.fodmapData?.overallRisk,
-          calories: item.calories,
-          protein: item.protein,
-          carbs: item.carbs,
-          fat: item.fat,
-          userFeedback: item.userFeedback,
-          sourceDescription: item.sourceDescription
+          overallFodmapRisk: item.fodmapData?.overallRisk ?? undefined,
+          calories: item.calories ?? undefined,
+          protein: item.protein ?? undefined,
+          carbs: item.carbs ?? undefined,
+          fat: item.fat ?? undefined,
+          userFeedback: item.userFeedback, 
+          sourceDescription: item.sourceDescription ?? undefined
       }));
 
       const processedSymptomLog = symptomLogData.map(symptomEntry => {
@@ -144,10 +166,10 @@ export default function AIInsightsPage() {
           
           return {
               symptoms: symptomEntry.symptoms.map(s => ({ name: s.name })),
-              severity: symptomEntry.severity,
-              notes: symptomEntry.notes,
+              severity: symptomEntry.severity ?? undefined,
+              notes: symptomEntry.notes ?? undefined,
               timestamp: symptomEntry.timestamp.toISOString(),
-              linkedFoodItemIds: finalLinkedIds,
+              linkedFoodItemIds: finalLinkedIds.length > 0 ? finalLinkedIds : undefined, // Send undefined if empty, to match .optional()
           };
       });
       
@@ -156,9 +178,9 @@ export default function AIInsightsPage() {
         foodLog: processedFoodLog,
         symptomLog: processedSymptomLog,
         userProfile: userProfile ? {
-            displayName: userProfile.displayName,
+            displayName: userProfile.displayName ?? undefined,
             safeFoods: userProfile.safeFoods.map(sf => ({ name: sf.name, portionSize: sf.portionSize, portionUnit: sf.portionUnit })),
-            premium: userProfile.premium
+            premium: userProfile.premium ?? undefined
         } : undefined,
       };
 
