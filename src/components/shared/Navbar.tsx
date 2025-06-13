@@ -53,16 +53,16 @@ interface ReleaseNote {
 const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.6.10",
-    date: "June 08, 2025", // Assuming today's date or adjust as needed
-    title: "Version Increment",
+    date: "June 13, 2025", // Assuming today's date or adjust as needed
+    title: "Favorites",
     description: [
-      "Updated app version.",
-      "General maintenance and minor updates.",
+      "Implemented the Favorites function",
+    
     ],
   },
   {
     version: "Beta 3.6.9",
-    date: "June 08, 2025",
+    date: "June 12, 2025",
     title: "Food Item Favoriting Feature & Micros enhancements",
     description: [
       "Enhanced the accuracy of micros tracking.",
@@ -72,7 +72,7 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.8",
-    date: "June 08, 2025",
+    date: "June 11, 2025",
     title: "Landing Page UI Enhancements",
     description: [
       "Applied multi-color gradient text to various headings on the landing page for a more vibrant look.",
@@ -81,7 +81,7 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.7",
-    date: "June 08, 2025",
+    date: "June 11, 2025",
     title: "Timeline Card Header Styling Enhancement",
     description: [
       "Updated the timeline food card headers to use the primary theme color for the background.",
@@ -90,7 +90,7 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.6",
-    date: "June 08, 2025",
+    date: "June 11, 2025",
     title: "App Audit & Timestamp Fixes",
     description: [
       "Timestamp Control: Implemented precise date AND time selection for all food logging and editing actions.",
@@ -101,7 +101,7 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.5",
-    date: "June 08, 2025",
+    date: "June 10, 2025",
     title: "Cookie Policy Update",
     description: [
       "Updated the 'Cookies and Tracking Technologies' section of the Privacy Policy to accurately reflect current cookie usage (Firebase Authentication for sessions, localStorage for theme/consent preferences), explicitly noting the absence of third-party advertising cookies.",
@@ -109,7 +109,7 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.4",
-    date: "June 08, 2025",
+    date: "June 10, 2025",
     title: "Enhanced Data Security Information",
     description: [
       "Added a comprehensive 'Data Security' section to the landing page (visible to both guest and logged-in users), detailing key security measures like reCAPTCHA, Google Authentication, SSL, AppCheck, Premium DNS, and Firestore Security Rules.",
@@ -118,7 +118,7 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.3",
-    date: "June 08, 2025",
+    date: "June 09, 2025",
     title: "AI Meal Interpretation & Branded Item Accuracy",
     description: [
       "Improved AI text logging to correctly interpret standard meal descriptions (e.g., 'Sausage McMuffin with hashbrown') as a single serving, not 1.5 servings.",
