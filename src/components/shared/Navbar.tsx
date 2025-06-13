@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.9";
+export const APP_VERSION = "Beta 3.6.10";
 
 interface ReleaseNote {
   version: string;
@@ -51,6 +51,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.6.10",
+    date: "June 08, 2025", // Assuming today's date or adjust as needed
+    title: "Version Increment",
+    description: [
+      "Updated app version.",
+      "General maintenance and minor updates.",
+    ],
+  },
   {
     version: "Beta 3.6.9",
     date: "June 08, 2025",
@@ -547,7 +556,7 @@ export default function Navbar({
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
-                              {authUser.photoURL ? getInitials(authUser.displayName) : <User className="h-4 w-4" />}
+                              {getInitials(authUser.displayName)}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
@@ -566,12 +575,6 @@ export default function Navbar({
                           <span>Admin Dashboard</span>
                         </DropdownMenuItem>
                        )}
-                      {/*
-                      <DropdownMenuItem onClick={() => router.push('/account/subscription')} className="cursor-pointer">
-                         <CreditCard className="mr-2 h-4 w-4" />
-                         <span>Subscription</span>
-                      </DropdownMenuItem>
-                      */}
                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
                          <Shield className="mr-2 h-4 w-4" />
                          <span>Privacy Notice</span>
@@ -601,7 +604,7 @@ export default function Navbar({
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
                               <AvatarFallback className="bg-primary text-primary-foreground">
-                                {authUser.photoURL ? getInitials(authUser.displayName) : <User className="h-4 w-4" />}
+                                {getInitials(authUser.displayName)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
@@ -645,12 +648,6 @@ export default function Navbar({
                           <span>Admin Dashboard</span>
                         </DropdownMenuItem>
                       )}
-                      {/*
-                      <DropdownMenuItem onClick={() => router.push('/account/subscription')} className="cursor-pointer">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        <span>Subscription</span>
-                      </DropdownMenuItem>
-                      */}
                        <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
                          <Shield className="mr-2 h-4 w-4" />
                          <span>Privacy Notice</span>
