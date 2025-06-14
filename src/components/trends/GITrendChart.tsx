@@ -5,15 +5,14 @@ import type { GIPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'; // Changed LineChart/Line to BarChart/Bar
 
 interface GITrendChartProps {
   data: GIPoint[]; 
-  // theme: string; // Removed unused theme prop
   isDarkMode: boolean;
 }
 
-const getGIColors = (isDarkMode: boolean) => { // Removed theme parameter
+const getGIColors = (isDarkMode: boolean) => {
   const baseColors = {
     gi: isDarkMode ? 'hsl(var(--chart-3))' : 'hsl(var(--chart-3))', 
     grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
@@ -26,7 +25,7 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
   const colors = getGIColors(isDarkMode);
   
   const chartConfig = {
-    gi: { label: "Glycemic Index", color: colors.gi },
+    gi: { label: "Avg. Glycemic Index", color: colors.gi }, // Updated label for clarity with bars
   } satisfies import("@/components/ui/chart").ChartConfig;
 
   if (!data || data.length === 0) {
@@ -39,7 +38,7 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-      <LineChart
+      <BarChart // Changed from LineChart
         accessibilityLayer
         data={data}
         margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
@@ -62,21 +61,20 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
             tickMargin={8} 
             stroke={colors.text}
             domain={yAxisDomain}
-            label={{ value: 'GI Value', angle: -90, position: 'insideLeft', fill: colors.text, dy: 40, dx: -5}}
+            label={{ value: 'Avg. GI Value', angle: -90, position: 'insideLeft', fill: colors.text, dy: 40, dx: -5}}
         />
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [value, chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
         />
-        <Line
+        <Bar // Changed from Line
           dataKey="gi"
-          type="monotone"
-          stroke={colors.gi}
-          strokeWidth={2.5}
-          dot={true}
+          fill={colors.gi} // Use fill for bars
+          radius={[4, 4, 0, 0]} // Optional: rounded tops for bars
         />
         <ChartLegend content={<ChartLegendContent />} />
-      </LineChart>
+      </BarChart>
     </ChartContainer>
   );
 }
+
