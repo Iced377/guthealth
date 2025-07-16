@@ -9,8 +9,6 @@ import type { LoggedFoodItem } from '@/types';
 import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
 import { cn } from "@/lib/utils";
 
-// GuestButtonScheme interface removed
-
 interface GuestLastLogSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -18,7 +16,6 @@ interface GuestLastLogSheetProps {
   onSetFeedback: (itemId: string, feedback: 'safe' | 'unsafe' | null) => void;
   onRemoveItem: (itemId: string) => void;
   isLoadingAi: boolean;
-  // activeColorScheme prop removed
 }
 
 export default function GuestLastLogSheet({
@@ -28,14 +25,12 @@ export default function GuestLastLogSheet({
   onSetFeedback,
   onRemoveItem,
   isLoadingAi,
-  // activeColorScheme, // Removed
 }: GuestLastLogSheetProps) {
 
-  // Button classes now rely on primary theme color
   const buttonClasses = cn(
     buttonVariants({ variant: "default", size: "lg" }),
     "w-full max-w-xs mx-auto flex items-center justify-center",
-    "bg-primary text-primary-foreground hover:bg-primary/90" // Using themed primary
+    "bg-primary text-primary-foreground hover:bg-primary/90"
   );
 
   return (
@@ -70,7 +65,7 @@ export default function GuestLastLogSheet({
             </p>
              <Link
               href="/login"
-              className={buttonClasses} // Using themed button classes
+              className={buttonClasses}
             >
               <UserPlus className="mr-2 h-5 w-5" />
               Sign In / Sign Up
