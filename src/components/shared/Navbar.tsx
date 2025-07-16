@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.11";
+export const APP_VERSION = "Beta 3.7.1";
 
 interface ReleaseNote {
   version: string;
@@ -51,6 +51,26 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.7.1",
+    date: "July 16, 2025",
+    title: "Dashboard Scrolling & FAB Fix",
+    description: [
+      "Resolved a persistent layout issue that prevented the main dashboard sheet from being scrollable.",
+      "Fixed the positioning and z-index of the Floating Action Button (FAB) to ensure it is always visible and functional on the dashboard.",
+      "Grouped timeline entries by date for a clearer, day-by-day view in the dashboard.",
+    ],
+  },
+  {
+    version: "Beta 3.7.0",
+    date: "July 16, 2025",
+    title: "Dashboard UX Enhancements",
+    description: [
+      "Added a Floating Action Button (FAB) to the main dashboard sheet, allowing users to log new entries without closing the view.",
+      "The FAB includes quick access to log via AI (Text), Photo, Symptoms, or Previous Meal.",
+      "Meal and macro entries now automatically open the dashboard upon submission for immediate feedback.",
+    ],
+  },
   {
     version: "Beta 3.6.11",
     date: "June 13, 2025",
