@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    // Enable polling for file watching, which is necessary in some Docker/containerized environments
+    if (!isServer) {
+      config.watchOptions = {
+        poll: 1000, // Check for changes every second
+        aggregateTimeout: 200, // delay before rebuilding
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
