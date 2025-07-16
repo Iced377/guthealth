@@ -73,13 +73,14 @@ export default function GuestLastLogSheet({
           </div>
         </div>
          <SheetFooter className="p-3 border-t border-border sticky bottom-0 bg-card">
-            <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="w-full"
-            >
-                Close
-            </Button>
+            <SheetClose asChild>
+                <Button
+                    variant="outline"
+                    className="w-full"
+                >
+                    Close
+                </Button>
+            </SheetClose>
         </SheetFooter>
       </SheetContent>
     </Sheet>
