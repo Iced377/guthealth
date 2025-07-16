@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.6.10";
+export const APP_VERSION = "Beta 3.6.11";
 
 interface ReleaseNote {
   version: string;
@@ -52,8 +52,18 @@ interface ReleaseNote {
 
 const releaseNotesData: ReleaseNote[] = [
   {
+    version: "Beta 3.6.11",
+    date: "June 13, 2025",
+    title: "Stability & Bug Fixes",
+    description: [
+      "Resolved a WebSocket connection issue to improve hot-reloading in development.",
+      "Fixed an issue preventing the guest user pop-up from closing correctly on mobile.",
+      "Addressed various font loading and image serving errors in the dev environment.",
+    ],
+  },
+  {
     version: "Beta 3.6.10",
-    date: "June 13, 2025", // Assuming today's date or adjust as needed
+    date: "June 13, 2025", 
     title: "Favorites",
     description: [
       "Implemented the Favorites function",
@@ -668,4 +678,3 @@ export default function Navbar({
     </header>
   );
 }
-
