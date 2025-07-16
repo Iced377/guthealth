@@ -384,6 +384,7 @@ export default function RootPage() {
         updateTimelineEntry(processedFoodItem);
       } else {
         addTimelineEntry(processedFoodItem);
+        setIsPremiumDashboardOpen(true);
       }
       if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); // Clear if logging previous meal
        setIsAddFoodDialogOpen(false);
@@ -519,6 +520,7 @@ export default function RootPage() {
         updateTimelineEntry(processedFoodItem);
       } else {
         addTimelineEntry(processedFoodItem);
+        setIsPremiumDashboardOpen(true);
       }
       if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); 
       setIsSimplifiedAddFoodDialogOpen(false);
@@ -635,6 +637,7 @@ export default function RootPage() {
       }
 
       addTimelineEntry(processedFoodItem);
+      setIsPremiumDashboardOpen(true);
       if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); 
       setIsIdentifyByPhotoDialogOpen(false);
 
@@ -718,6 +721,7 @@ export default function RootPage() {
       updateTimelineEntry(newEntry);
     } else {
       addTimelineEntry(newEntry);
+      setIsPremiumDashboardOpen(true);
     }
     setIsAddManualMacroDialogOpen(false);
     setEditingItem(null);
@@ -1253,4 +1257,3 @@ export default function RootPage() {
     </div>
   );
 }
-
