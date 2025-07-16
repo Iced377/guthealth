@@ -18,7 +18,7 @@ export default function GuestHomePage({
   onLogFoodClick,
   lastLoggedItem,
   isSheetOpen,
-  onOpenChange,
+  onSheetOpenChange,
   onSetFeedback,
   onRemoveItem,
   isLoadingAiForItem,
@@ -26,7 +26,7 @@ export default function GuestHomePage({
   onLogFoodClick: () => void;
   lastLoggedItem: LoggedFoodItem | null;
   isSheetOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onSheetOpenChange: (isOpen: boolean) => void;
   onSetFeedback: (itemId: string, feedback: 'safe' | 'unsafe' | null) => void;
   onRemoveItem: (itemId: string) => void;
   isLoadingAiForItem: boolean;
@@ -131,7 +131,7 @@ export default function GuestHomePage({
       {lastLoggedItem && !isSheetOpen && (
         <div
           className="fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-pointer animate-bounce z-10"
-          onClick={() => onOpenChange(true)}
+          onClick={() => onSheetOpenChange(true)}
         >
           <ChevronUp className="h-6 w-6 text-muted-foreground/70 animate-neon-chevron-pulse" />
           <span className="text-xs text-muted-foreground/70">Swipe Up or Tap to View the Meal</span>
@@ -140,7 +140,7 @@ export default function GuestHomePage({
 
       <GuestLastLogSheet
         isOpen={isSheetOpen}
-        onOpenChange={onOpenChange}
+        onOpenChange={onSheetOpenChange}
         lastLoggedItem={lastLoggedItem}
         onSetFeedback={onSetFeedback}
         onRemoveItem={onRemoveItem}
