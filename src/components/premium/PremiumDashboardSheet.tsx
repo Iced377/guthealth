@@ -1,15 +1,14 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-// Navbar import removed
 import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail } from '@/types';
 import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
 import TimelineSymptomCard from '@/components/food-logging/TimelineSymptomCard';
-import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle } from 'lucide-react';
+import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle, Plus, PlusCircle, Camera, ListChecks, CalendarDays } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { startOfDay, endOfDay, format } from 'date-fns';
@@ -63,7 +62,11 @@ interface PremiumDashboardSheetProps {
   onLogSymptomsForFood: (foodItemId?: string) => void;
   onEditIngredients?: (item: LoggedFoodItem) => void;
   onRepeatMeal?: (item: LoggedFoodItem) => void;
-  onToggleFavorite: (itemId: string, currentIsFavorite: boolean) => void; // Added prop
+  onToggleFavorite: (itemId: string, currentIsFavorite: boolean) => void;
+  onLogFoodAIClick?: () => void;
+  onIdentifyByPhotoClick?: () => void;
+  onLogSymptomsClick?: () => void;
+  onLogPreviousMealClick?: () => void;
 }
 
 interface AchievedMicronutrient {
@@ -97,8 +100,21 @@ export default function PremiumDashboardSheet({
   onLogSymptomsForFood,
   onEditIngredients,
   onRepeatMeal,
-  onToggleFavorite, // Added prop
+  onToggleFavorite,
+  onLogFoodAIClick,
+  onIdentifyByPhotoClick,
+  onLogSymptomsClick,
+  onLogPreviousMealClick,
 }: PremiumDashboardSheetProps) {
+
+  const [isFabPopoverOpen, setIsFabPopoverOpen] = useState(false);
+
+  const handleFabActionClick = (action?: () => void) => {
+    if(action) {
+      action();
+    }
+    setIsFabPopoverOpen(false);
+  }
 
   const achievedMicronutrients = useMemo<AchievedMicronutrient[]>(() => {
     const todayStart = startOfDay(new Date());
@@ -154,7 +170,6 @@ export default function PremiumDashboardSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-dvh flex flex-col py-0 px-0 bg-background text-foreground border-t-2 border-border">
         <SheetHeader className="p-0">
-          {/* Navbar removed from here */}
           <SheetTitle className="sr-only">Main Dashboard and Timeline</SheetTitle>
         </SheetHeader>
 
@@ -203,70 +218,100 @@ export default function PremiumDashboardSheet({
             </div>
         </div>
 
-        <ScrollArea className="flex-grow py-4 px-4">
-          {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
-            <div className="text-center py-12">
-              <Utensils className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
-              <p className="text-muted-foreground">
-                {userProfile.premium ? "Log food or symptoms using the central button." : "Log food or symptoms. Data is retained for 2 days for free users."}
-              </p>
+        <div className="flex-1 relative">
+          <ScrollArea className="absolute inset-0 py-4 px-4">
+            {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
+              <div className="text-center py-12">
+                <Utensils className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <h2 className="text-2xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
+                <p className="text-muted-foreground">
+                  {userProfile.premium ? "Log food or symptoms using the central button." : "Log food or symptoms. Data is retained for 2 days for free users."}
+                </p>
+              </div>
+            )}
+            <div className="space-y-0"> {/* Changed space-y-4 to space-y-0, mb-6 on group will handle it */}
+              {sortedDateKeys.map(dateKey => {
+                const entriesOnDate = groupedTimelineEntries[dateKey];
+                if (!entriesOnDate || entriesOnDate.length === 0) return null;
+                
+                return (
+                  <div key={dateKey} className="mb-6">
+                    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
+                      <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
+                    </div>
+                    <div className="space-y-4"> {/* Added space-y-4 here for cards within a date group */}
+                      {entriesOnDate.map((entry, entryIndex) => { // Added entryIndex
+                        if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
+                          return (
+                            <div
+                              key={entry.id}
+                              className="card-reveal-animation"
+                              style={{ animationDelay: `${entryIndex * 0.07}s` }}
+                            >
+                              <TimelineFoodCard
+                                item={entry}
+                                onSetFeedback={onSetFeedback}
+                                onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                                onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
+                                isLoadingAi={!!isLoadingAi[entry.id]}
+                                onEditIngredients={onEditIngredients}
+                                onRepeatMeal={onRepeatMeal}
+                                onToggleFavorite={onToggleFavorite} // Pass handler
+                              />
+                            </div>
+                          );
+                        }
+                        if (entry.entryType === 'symptom') {
+                          return (
+                            <div
+                              key={entry.id}
+                              className="card-reveal-animation"
+                              style={{ animationDelay: `${entryIndex * 0.07}s` }}
+                            >
+                              <TimelineSymptomCard
+                                item={entry}
+                                onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                              />
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
-          <div className="space-y-0"> {/* Changed space-y-4 to space-y-0, mb-6 on group will handle it */}
-            {sortedDateKeys.map(dateKey => {
-              const entriesOnDate = groupedTimelineEntries[dateKey];
-              if (!entriesOnDate || entriesOnDate.length === 0) return null;
-              
-              return (
-                <div key={dateKey} className="mb-6">
-                  <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
-                    <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
-                  </div>
-                  <div className="space-y-4"> {/* Added space-y-4 here for cards within a date group */}
-                    {entriesOnDate.map((entry, entryIndex) => { // Added entryIndex
-                      if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-                        return (
-                          <div
-                            key={entry.id}
-                            className="card-reveal-animation"
-                            style={{ animationDelay: `${entryIndex * 0.07}s` }}
-                          >
-                            <TimelineFoodCard
-                              item={entry}
-                              onSetFeedback={onSetFeedback}
-                              onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                              onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
-                              isLoadingAi={!!isLoadingAi[entry.id]}
-                              onEditIngredients={onEditIngredients}
-                              onRepeatMeal={onRepeatMeal}
-                              onToggleFavorite={onToggleFavorite} // Pass handler
-                            />
-                          </div>
-                        );
-                      }
-                      if (entry.entryType === 'symptom') {
-                        return (
-                          <div
-                            key={entry.id}
-                            className="card-reveal-animation"
-                            style={{ animationDelay: `${entryIndex * 0.07}s` }}
-                          >
-                            <TimelineSymptomCard
-                              item={entry}
-                              onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                            />
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
+          </ScrollArea>
+           <Popover open={isFabPopoverOpen} onOpenChange={setIsFabPopoverOpen}>
+            <PopoverTrigger asChild>
+                <Button variant="default" className="absolute bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-20" size="icon">
+                  <Plus className="h-8 w-8" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                side="top"
+                align="end"
+                className="w-auto bg-card text-card-foreground border-border shadow-xl rounded-xl p-0 mb-2"
+              >
+                <div className="flex flex-col gap-1 p-2">
+                  <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
+                    <PlusCircle className="mr-3 h-5 w-5" /> Log Food (AI Text)
+                  </Button>
+                  <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
+                    <Camera className="mr-3 h-5 w-5" /> Identify by Photo
+                  </Button>
+                  <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogSymptomsClick)}>
+                    <ListChecks className="mr-3 h-5 w-5" /> Log Symptoms
+                  </Button>
+                  <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogPreviousMealClick)}>
+                    <CalendarDays className="mr-3 h-5 w-5" /> Log Previous Meal
+                  </Button>
                 </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
+              </PopoverContent>
+            </Popover>
+        </div>
+        
          <SheetFooter className="p-3 border-t border-border sticky bottom-0 bg-card">
             <SheetClose asChild>
                 <Button variant="outline" className="w-full">Close Dashboard</Button>

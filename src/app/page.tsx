@@ -112,8 +112,16 @@ export default function RootPage() {
 
   const [editingItem, setEditingItem] = useState<LoggedFoodItem | null>(null);
 
-  const openSimplifiedAddFoodDialog = useCallback(() => setIsSimplifiedAddFoodDialogOpen(true), []);
-  const openIdentifyByPhotoDialog = useCallback(() => setIsIdentifyByPhotoDialogOpen(true), []);
+  const openSimplifiedAddFoodDialog = useCallback(() => {
+    setEditingItem(null);
+    setSelectedLogTimestampForPreviousMeal(undefined);
+    setIsSimplifiedAddFoodDialogOpen(true);
+  }, []);
+  const openIdentifyByPhotoDialog = useCallback(() => {
+    setEditingItem(null);
+    setSelectedLogTimestampForPreviousMeal(undefined);
+    setIsIdentifyByPhotoDialogOpen(true);
+  }, []);
   const openSymptomLogDialog = useCallback(() => setIsSymptomLogDialogOpen(true), []);
   const openLogPreviousMealDialog = useCallback(() => {
     // Initialize with current date and time for "Log Previous Meal" flow
@@ -1155,7 +1163,11 @@ export default function RootPage() {
         onLogSymptomsForFood={openSymptomLogDialog}
         onEditIngredients={handleEditTimelineEntry}
         onRepeatMeal={handleRepeatMeal}
-        onToggleFavorite={handleToggleFavoriteFoodItem} // Pass new handler
+        onToggleFavorite={handleToggleFavoriteFoodItem}
+        onLogFoodAIClick={openSimplifiedAddFoodDialog}
+        onIdentifyByPhotoClick={openIdentifyByPhotoDialog}
+        onLogSymptomsClick={openSymptomLogDialog}
+        onLogPreviousMealClick={openLogPreviousMealDialog}
       >
 
       </PremiumDashboardSheet>
