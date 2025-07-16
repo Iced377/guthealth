@@ -1,15 +1,14 @@
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+// Removed 'Inter' from 'next/font/google' to load it directly
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import FeedbackWidget from '@/components/feedback/FeedbackWidget';
-import CookieConsentBanner from '@/components/shared/CookieConsentBanner'; // Added import
-// import { GoogleAnalytics } from 'next/third-parties/google'; // Re-commented Google Analytics import
+import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+// `inter` variable is no longer needed here
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002'),
@@ -47,11 +46,13 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#27AE60" />
+        {/* Direct link to Google Fonts for Inter */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground`}>
+      {/* Removed the inter.variable class name from the body */}
+      <body className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">
         <AuthProvider>
           <ThemeProvider>
             <main className="flex-grow w-full">
@@ -59,10 +60,10 @@ export default function RootLayout({
             </main>
             <Toaster />
             <FeedbackWidget />
-            <CookieConsentBanner /> {/* Added CookieConsentBanner */}
+            <CookieConsentBanner />
           </ThemeProvider>
         </AuthProvider>
-        {/* {gaId && <GoogleAnalytics gaId={gaId} />} */} {/* Re-commented GA Component usage */}
+        {/* {gaId && <GoogleAnalytics gaId={gaId} />} */}
       </body>
     </html>
   );
