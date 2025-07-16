@@ -67,6 +67,8 @@ interface PremiumDashboardSheetProps {
   onIdentifyByPhotoClick?: () => void;
   onLogSymptomsClick?: () => void;
   onLogPreviousMealClick?: () => void;
+  // This prop will now come from page.tsx
+  groupedTimelineEntries: Record<string, TimelineEntry[]>;
 }
 
 interface AchievedMicronutrient {
@@ -74,18 +76,6 @@ interface AchievedMicronutrient {
   iconName?: string;
   totalDV: number;
 }
-
-const groupEntriesByDate = (entries: TimelineEntry[]) => {
-  const grouped: Record<string, TimelineEntry[]> = {};
-  entries.forEach(entry => {
-    const dateKey = format(new Date(entry.timestamp), "PPP"); // e.g., "Jun 10th, 2025"
-    if (!grouped[dateKey]) {
-      grouped[dateKey] = [];
-    }
-    grouped[dateKey].push(entry);
-  });
-  return grouped;
-};
 
 export default function PremiumDashboardSheet({
   children,
@@ -105,6 +95,7 @@ export default function PremiumDashboardSheet({
   onIdentifyByPhotoClick,
   onLogSymptomsClick,
   onLogPreviousMealClick,
+  groupedTimelineEntries,
 }: PremiumDashboardSheetProps) {
 
   const [isFabPopoverOpen, setIsFabPopoverOpen] = useState(false);
@@ -154,26 +145,25 @@ export default function PremiumDashboardSheet({
       .sort((a,b) => b.totalDV - a.totalDV) 
       .slice(0, 5); 
   }, [timelineEntries]);
-
-  const groupedTimelineEntries = useMemo(() => groupEntriesByDate(timelineEntries), [timelineEntries]);
   
   const sortedDateKeys = useMemo(() => {
-    const dateKeys = new Set<string>();
-    timelineEntries.forEach(entry => {
-      dateKeys.add(format(new Date(entry.timestamp), "PPP"));
+    return Object.keys(groupedTimelineEntries).sort((a, b) => {
+      // Find the latest timestamp for each date group to sort the groups themselves
+      const lastTimeA = new Date(groupedTimelineEntries[a][0].timestamp).getTime();
+      const lastTimeB = new Date(groupedTimelineEntries[b][0].timestamp).getTime();
+      return lastTimeB - lastTimeA;
     });
-    return Array.from(dateKeys); // Relies on original sort of timelineEntries (newest first)
-  }, [timelineEntries]);
+  }, [groupedTimelineEntries]);
 
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-dvh flex flex-col py-0 px-0 bg-background text-foreground border-t-2 border-border">
-        <SheetHeader className="p-0">
+        <SheetHeader className="p-0 shrink-0">
           <SheetTitle className="sr-only">Main Dashboard and Timeline</SheetTitle>
         </SheetHeader>
 
-        <div className="border-b border-border/50 py-3 px-4">
+        <div className="border-b border-border/50 py-3 px-4 shrink-0">
             <div className="flex flex-row flex-wrap justify-around items-center gap-x-2 sm:gap-x-3 gap-y-2 text-center">
                 <div className="flex flex-col items-center">
                   <Flame className="h-5 w-5 text-orange-400 mb-0.5" />
@@ -218,18 +208,18 @@ export default function PremiumDashboardSheet({
             </div>
         </div>
 
-        <div className="flex-1 relative">
-          <ScrollArea className="absolute inset-0 py-4 px-4">
-            {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
-              <div className="text-center py-12">
-                <Utensils className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <h2 className="text-2xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
-                <p className="text-muted-foreground">
-                  {userProfile.premium ? "Log food or symptoms using the central button." : "Log food or symptoms. Data is retained for 2 days for free users."}
-                </p>
-              </div>
-            )}
-            <div className="space-y-0"> {/* Changed space-y-4 to space-y-0, mb-6 on group will handle it */}
+        <div className="flex-1 relative min-h-0">
+          <ScrollArea className="absolute inset-0">
+            <div className="px-4 py-4 space-y-0">
+              {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
+                <div className="text-center py-12">
+                  <Utensils className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                  <h2 className="text-2xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
+                  <p className="text-muted-foreground">
+                    {userProfile.premium ? "Log food or symptoms using the central button." : "Log food or symptoms. Data is retained for 2 days for free users."}
+                  </p>
+                </div>
+              )}
               {sortedDateKeys.map(dateKey => {
                 const entriesOnDate = groupedTimelineEntries[dateKey];
                 if (!entriesOnDate || entriesOnDate.length === 0) return null;
@@ -239,8 +229,8 @@ export default function PremiumDashboardSheet({
                     <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
                       <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
                     </div>
-                    <div className="space-y-4"> {/* Added space-y-4 here for cards within a date group */}
-                      {entriesOnDate.map((entry, entryIndex) => { // Added entryIndex
+                    <div className="space-y-4">
+                      {entriesOnDate.map((entry, entryIndex) => {
                         if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
                           return (
                             <div
@@ -256,7 +246,7 @@ export default function PremiumDashboardSheet({
                                 isLoadingAi={!!isLoadingAi[entry.id]}
                                 onEditIngredients={onEditIngredients}
                                 onRepeatMeal={onRepeatMeal}
-                                onToggleFavorite={onToggleFavorite} // Pass handler
+                                onToggleFavorite={onToggleFavorite}
                               />
                             </div>
                           );
@@ -312,7 +302,7 @@ export default function PremiumDashboardSheet({
             </Popover>
         </div>
         
-         <SheetFooter className="p-3 border-t border-border sticky bottom-0 bg-card">
+         <SheetFooter className="p-3 border-t border-border sticky bottom-0 bg-card shrink-0">
             <SheetClose asChild>
                 <Button variant="outline" className="w-full">Close Dashboard</Button>
             </SheetClose>

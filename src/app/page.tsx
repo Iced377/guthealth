@@ -43,6 +43,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import PremiumDashboardSheet from '@/components/premium/PremiumDashboardSheet';
 import LandingPageClientContent from '@/components/landing/LandingPageClientContent';
+import { format } from 'date-fns';
 
 const TEMPORARILY_UNLOCK_ALL_FEATURES = true;
 
@@ -73,6 +74,21 @@ const initialGuestProfile: UserProfile = {
   displayName: 'Guest User',
   safeFoods: [],
   premium: false,
+};
+
+
+const groupEntriesByDate = (entries: TimelineEntry[]) => {
+  const grouped: Record<string, TimelineEntry[]> = {};
+  entries.forEach(entry => {
+    // Sort entries within the group as they are added
+    const dateKey = format(new Date(entry.timestamp), "PPP"); // e.g., "Jun 10th, 2025"
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey].push(entry);
+    grouped[dateKey].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  });
+  return grouped;
 };
 
 
@@ -1051,6 +1067,8 @@ export default function RootPage() {
     }
   };
 
+  const groupedTimelineEntries = useMemo(() => groupEntriesByDate(timelineEntries), [timelineEntries]);
+
 
   if (authLoading || (isDataLoading && authUser) ) {
      return (
@@ -1168,8 +1186,10 @@ export default function RootPage() {
         onIdentifyByPhotoClick={openIdentifyByPhotoDialog}
         onLogSymptomsClick={openSymptomLogDialog}
         onLogPreviousMealClick={openLogPreviousMealDialog}
+        groupedTimelineEntries={groupedTimelineEntries}
       >
-
+        {/* Children prop is not used, but required by the interface */}
+        <></>
       </PremiumDashboardSheet>
 
 
