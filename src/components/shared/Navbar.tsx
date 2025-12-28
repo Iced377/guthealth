@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -41,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.7.1";
+export const APP_VERSION = "v3.7.2";
 
 interface ReleaseNote {
   version: string;
@@ -85,11 +86,11 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.6.10",
-    date: "June 13, 2025", 
+    date: "June 13, 2025",
     title: "Favorites",
     description: [
       "Implemented the Favorites function",
-    
+
     ],
   },
   {
@@ -460,7 +461,7 @@ export default function Navbar({
             <DialogContent className="sm:max-w-lg bg-card text-card-foreground border-border">
               <DialogHeader>
                 <DialogTitle className="font-headline text-xl flex items-center">
-                   <ScrollText className="mr-2 h-5 w-5" /> Release Notes
+                  <ScrollText className="mr-2 h-5 w-5" /> Release Notes
                 </DialogTitle>
               </DialogHeader>
               <ScrollArea className="max-h-[60vh] pr-2 -mr-2 py-2">
@@ -500,7 +501,7 @@ export default function Navbar({
         <div className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
           {isGuest ? (
             <div className="flex items-center space-x-2 sm:space-x-3">
-               <span className="hidden sm:inline text-sm text-foreground font-medium">Ready for More?</span>
+              <span className="hidden sm:inline text-sm text-foreground font-medium">Ready for More?</span>
               <Button
                 onClick={() => router.push('/login')}
                 className={cn(
@@ -554,7 +555,7 @@ export default function Navbar({
                         <LayoutGrid className="h-5 w-5" />
                       </Button>
                     )}
-                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
                       <Heart className="h-5 w-5" />
                     </Button>
                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" onClick={trendsLinkHandler}>
@@ -588,7 +589,7 @@ export default function Navbar({
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
-                              {getInitials(authUser.displayName)}
+                            {getInitials(authUser.displayName)}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
@@ -601,19 +602,19 @@ export default function Navbar({
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                       {isCurrentUserAdmin && (
-                         <DropdownMenuItem onClick={() => router.push('/admin/feedback')} className="cursor-pointer">
+                      {isCurrentUserAdmin && (
+                        <DropdownMenuItem onClick={() => router.push('/admin/feedback')} className="cursor-pointer">
                           <AdminIcon className="mr-2 h-4 w-4" />
                           <span>Admin Dashboard</span>
                         </DropdownMenuItem>
-                       )}
+                      )}
                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
-                         <Shield className="mr-2 h-4 w-4" />
-                         <span>Privacy Notice</span>
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Privacy Notice</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => router.push('/terms')} className="cursor-pointer">
-                         <FileText className="mr-2 h-4 w-4" />
-                         <span>Terms of Use</span>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Terms of Use</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
@@ -684,13 +685,13 @@ export default function Navbar({
                           <span>Admin Dashboard</span>
                         </DropdownMenuItem>
                       )}
-                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
-                         <Shield className="mr-2 h-4 w-4" />
-                         <span>Privacy Notice</span>
+                      <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Privacy Notice</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => router.push('/terms')} className="cursor-pointer">
-                         <FileText className="mr-2 h-4 w-4" />
-                         <span>Terms of Use</span>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Terms of Use</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
@@ -709,4 +710,3 @@ export default function Navbar({
   );
 }
 
-    

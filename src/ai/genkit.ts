@@ -1,11 +1,11 @@
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
+import { genkit } from 'genkit';
+import { googleAI, gemini15Flash, gemini15Pro } from '@genkit-ai/googleai';
 
 const rawModelId =
   process.env.GENKIT_GOOGLE_MODEL ||
   process.env.GOOGLE_GENAI_MODEL ||
   process.env.GEMINI_MODEL ||
-  'gemini-1.5-flash-001';
+  'gemini-2.5-flash';
 
 const normalizedModelId = normalizeModelId(rawModelId);
 

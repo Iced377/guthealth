@@ -10,8 +10,8 @@
  * - AnalyzeFoodItemOutput - The return type for the analyzeFoodItem function. (Now ExtendedAnalyzeFoodItemOutput from types)
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const DetailedFoodFODMAPProfileSchema = z.object({
   fructans: z.number().optional().describe('Estimated Fructans content in the given portion (e.g., in grams or a relative scale 0-10).'),
@@ -55,7 +55,14 @@ const DietaryFiberInfoSchema = z.object({
   quality: z.enum(['Low', 'Adequate', 'High']).optional().describe("Qualitative assessment of fiber content (Low, Adequate, High) for the portion based on general dietary recommendations (e.g., a few grams is low, 5-7g is adequate, >7g is high for a single item).")
 }).describe("Information about the food item's estimated dietary fiber content.");
 
-const MicronutrientDetailSchema = z.object({
+const MicronutrientDetailSchemaNotable = z.object({
+  name: z.string().describe("Name of the micronutrient, e.g., 'Iron', 'Vitamin C', 'Calcium', 'Potassium', 'Magnesium', 'Vitamin B12', 'Vitamin D3', 'Omega-3', 'EPA', 'DHA'."),
+  amount: z.string().optional().describe("Estimated amount of the micronutrient in the portion, with units (e.g., '10 mg', '90 mcg', '50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'). If the user input specified a quantity (e.g., 'Vitamin D3 50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'), YOU MUST use that exact user-provided string or the correctly summed/transcribed value here (e.g., '50000 IU' for D3, or '800 mg' for Omega-3 if it's a sum of EPA/DHA). DO NOT use vague phrases like 'Varies, check label' or 'Varies by dose' if the user provided a specific quantity."),
+  dailyValuePercent: z.number().optional().describe("Estimated percentage of Daily Value (%DV) for the micronutrient, if applicable and known for an average adult. If a specific amount was provided by the user (e.g. '50000 IU Vitamin D3') and you cannot confidently convert this to %DV, omit this field or set to null."),
+  iconName: z.string().optional().describe("A suggested relevant lucide-react icon name based on the nutrient's primary **supported body part or physiological function**. Examples: 'Bone' for Calcium or Phosphorus, 'Activity' for Magnesium (muscle/nerve function), 'PersonStanding' for Zinc (growth), 'Eye' for Vitamin A, 'ShieldCheck' for Vitamin C & D (immune support), 'Droplet' for Potassium & Sodium (electrolyte balance), 'Wind' for Iron (oxygen transport), 'Brain' for B12 & Iodine, 'Baby' for Folate (development), 'Heart' for Vitamin K, Omega-3, EPA, DHA (cardiovascular support). Use generic names like 'Atom' or 'Sparkles' if a specific, intuitive functional icon is not available. If no good icon, omit."),
+}).describe("Details for a specific micronutrient.");
+
+const MicronutrientDetailSchemaFull = z.object({
   name: z.string().describe("Name of the micronutrient, e.g., 'Iron', 'Vitamin C', 'Calcium', 'Potassium', 'Magnesium', 'Vitamin B12', 'Vitamin D3', 'Omega-3', 'EPA', 'DHA'."),
   amount: z.string().optional().describe("Estimated amount of the micronutrient in the portion, with units (e.g., '10 mg', '90 mcg', '50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'). If the user input specified a quantity (e.g., 'Vitamin D3 50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'), YOU MUST use that exact user-provided string or the correctly summed/transcribed value here (e.g., '50000 IU' for D3, or '800 mg' for Omega-3 if it's a sum of EPA/DHA). DO NOT use vague phrases like 'Varies, check label' or 'Varies by dose' if the user provided a specific quantity."),
   dailyValuePercent: z.number().optional().describe("Estimated percentage of Daily Value (%DV) for the micronutrient, if applicable and known for an average adult. If a specific amount was provided by the user (e.g. '50000 IU Vitamin D3') and you cannot confidently convert this to %DV, omit this field or set to null."),
@@ -63,8 +70,8 @@ const MicronutrientDetailSchema = z.object({
 }).describe("Details for a specific micronutrient.");
 
 const MicronutrientsInfoSchema = z.object({
-  notable: z.array(MicronutrientDetailSchema).optional().describe("Up to 3-5 most notable or abundant micronutrients in the food item for the given portion, OR THOSE EXPLICITLY MENTIONED BY THE USER WITH QUANTITIES. User-specified nutrients (like 'D3 50,000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)') MUST appear here with their user-specified amounts."),
-  fullList: z.array(MicronutrientDetailSchema).optional().describe("Optionally, a more comprehensive list of micronutrients if readily available and concise, including any user-specified nutrients. Any user-specified nutrient with a quantity MUST be accurately represented here, including specific forms like EPA and DHA if detailed by the user."),
+  notable: z.array(MicronutrientDetailSchemaNotable).optional().describe("Up to 3-5 most notable or abundant micronutrients in the food item for the given portion, OR THOSE EXPLICITLY MENTIONED BY THE USER WITH QUANTITIES. User-specified nutrients (like 'D3 50,000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)') MUST appear here with their user-specified amounts."),
+  fullList: z.array(MicronutrientDetailSchemaFull).optional().describe("Optionally, a more comprehensive list of micronutrients if readily available and concise, including any user-specified nutrients. Any user-specified nutrient with a quantity MUST be accurately represented here, including specific forms like EPA and DHA if detailed by the user."),
 }).describe("Overview of key micronutrients in the food item.");
 
 const GutBacteriaImpactInfoSchema = z.object({
@@ -73,9 +80,9 @@ const GutBacteriaImpactInfoSchema = z.object({
 }).describe("Estimated impact of the food item on gut bacteria.");
 
 const KetoFriendlinessInfoSchema = z.object({
-    score: z.enum(['Strict Keto', 'Moderate Keto', 'Low Carb', 'Not Keto-Friendly', 'Unknown']).describe("Assessment of the food's suitability for a ketogenic diet for the given portion."),
-    reasoning: z.string().optional().describe("Brief explanation for the keto score (e.g., 'High in net carbs due to X', 'Low carb, suitable for keto in moderation', 'Mainly fats and protein, good for keto')."),
-    estimatedNetCarbs: z.number().optional().describe("Optional estimated net carbs in grams for the portion, if calculable (Total Carbs - Fiber).")
+  score: z.enum(['Strict Keto', 'Moderate Keto', 'Low Carb', 'Not Keto-Friendly', 'Unknown']).describe("Assessment of the food's suitability for a ketogenic diet for the given portion."),
+  reasoning: z.string().optional().describe("Brief explanation for the keto score (e.g., 'High in net carbs due to X', 'Low carb, suitable for keto in moderation', 'Mainly fats and protein, good for keto')."),
+  estimatedNetCarbs: z.number().optional().describe("Optional estimated net carbs in grams for the portion, if calculable (Total Carbs - Fiber).")
 }).describe("Information about the food item's keto-friendliness.");
 
 const AISummariesSchema = z.object({
@@ -138,8 +145,8 @@ export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<Anal
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
   // Model is inherited from genkit.ts
-  input: {schema: AnalyzeFoodItemInputSchema},
-  output: {schema: AnalyzeFoodItemOutputSchema},
+  input: { schema: AnalyzeFoodItemInputSchema },
+  output: { schema: AnalyzeFoodItemOutputSchema },
   config: {
     temperature: 0.2,
   },
@@ -183,7 +190,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
   },
   async (input): Promise<AnalyzeFoodItemOutput> => {
     try {
-      const {output} = await analyzeFoodItemPrompt(input);
+      const { output } = await analyzeFoodItemPrompt(input);
       if (!output) {
         console.warn('[AnalyzeFoodItemFlow] AI prompt returned no output. Falling back to default error response.');
         return {
@@ -200,7 +207,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
       console.error('[AnalyzeFoodItemFlow] Error during AI processing:', error);
       const errorMessage = error.message || 'Unknown error';
       const modelNotFoundError = errorMessage.includes("NOT_FOUND") || errorMessage.includes("model not found") || errorMessage.includes("model"); // Broader check
-      
+
       let specificSummaryMessage: string;
       if (modelNotFoundError) {
         specificSummaryMessage = "AI Model not accessible. Please check configuration or model name specified in the flow.";
@@ -212,11 +219,11 @@ const analyzeFoodItemFlow = ai.defineFlow(
         ...defaultErrorOutput,
         reason: `Error during AI analysis for "${input.foodItem}": ${errorMessage}.`,
         aiSummaries: {
-            fodmapSummary: `FODMAP: ${specificSummaryMessage}`,
-            micronutrientSummary: `Micronutrients: ${specificSummaryMessage}`,
-            glycemicIndexSummary: `Glycemic Index: ${specificSummaryMessage}`,
-            gutImpactSummary: `Gut Impact: ${specificSummaryMessage}`,
-            ketoSummary: `Keto: ${specificSummaryMessage}`,
+          fodmapSummary: `FODMAP: ${specificSummaryMessage}`,
+          micronutrientSummary: `Micronutrients: ${specificSummaryMessage}`,
+          glycemicIndexSummary: `Glycemic Index: ${specificSummaryMessage}`,
+          gutImpactSummary: `Gut Impact: ${specificSummaryMessage}`,
+          ketoSummary: `Keto: ${specificSummaryMessage}`,
         }
       };
     }
