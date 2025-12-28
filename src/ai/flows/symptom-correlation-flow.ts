@@ -83,7 +83,7 @@ export async function getSymptomCorrelations(input: SymptomCorrelationInput): Pr
 
 const symptomCorrelationPrompt = ai.definePrompt({
   name: 'symptomCorrelationPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  // Model is inherited from genkit.ts
   input: {schema: SymptomCorrelationInputSchema},
   output: {schema: SymptomCorrelationOutputSchema},
   prompt: `You are an AI assistant for IBS pattern identification.
@@ -123,10 +123,10 @@ const symptomCorrelationFlow = ai.defineFlow(
           insights: [{ ...defaultErrorOutput.insights[0], description: "Symptom correlation analysis did not produce a valid result."}]
         };
       }
-      return output!;
+      return output;
     } catch (error: any) {
       console.error('[SymptomCorrelationFlow] Error during AI processing:', error);
-      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("Model not found");
+      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("model not found");
       let specificDescription = `Error during symptom correlation: ${error.message || 'Unknown error'}.`;
       if (modelNotFoundError) {
         specificDescription = "Symptom correlation analysis failed: The configured AI model is not accessible. Please check API key and project settings.";

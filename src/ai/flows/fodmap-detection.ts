@@ -136,7 +136,7 @@ export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<Anal
 
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  // Model is inherited from genkit.ts
   input: {schema: AnalyzeFoodItemInputSchema},
   output: {schema: AnalyzeFoodItemOutputSchema},
   config: {
@@ -189,19 +189,16 @@ const analyzeFoodItemFlow = ai.defineFlow(
           ...defaultErrorOutput,
           reason: `AI analysis failed for item: "${input.foodItem}". No output from prompt.`,
           aiSummaries: {
+            ...defaultErrorOutput.aiSummaries,
             fodmapSummary: `FODMAP analysis failed for "${input.foodItem}".`,
-            micronutrientSummary: `Micronutrient analysis failed for "${input.foodItem}".`,
-            glycemicIndexSummary: `Glycemic Index analysis failed for "${input.foodItem}".`,
-            gutImpactSummary: `Gut Impact analysis failed for "${input.foodItem}".`,
-            ketoSummary: `Keto analysis failed for "${input.foodItem}".`,
           }
         };
       }
-      return output! as AnalyzeFoodItemOutput;
+      return output;
     } catch (error: any) {
       console.error('[AnalyzeFoodItemFlow] Error during AI processing:', error);
       const errorMessage = error.message || 'Unknown error';
-      const modelNotFoundError = errorMessage.includes("NOT_FOUND") || errorMessage.includes("Model not found") || errorMessage.includes("model"); // Broader check for model-related errors
+      const modelNotFoundError = errorMessage.includes("NOT_FOUND") || errorMessage.includes("model not found") || errorMessage.includes("model"); // Broader check
       
       let specificSummaryMessage: string;
       if (modelNotFoundError) {

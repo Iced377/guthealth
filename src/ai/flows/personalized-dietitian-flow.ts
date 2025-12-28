@@ -67,13 +67,18 @@ const PersonalizedDietitianOutputSchema = z.object({
 });
 export type PersonalizedDietitianOutput = z.infer<typeof PersonalizedDietitianOutputSchema>;
 
+const defaultErrorOutput: PersonalizedDietitianOutput = {
+    aiResponse: "I apologize, the AI dietitian couldn't generate a specific response at this time. This might be due to a temporary issue or the nature of the query. Please try rephrasing or check back later."
+};
+
+
 export async function getPersonalizedDietitianInsight(input: PersonalizedDietitianInput): Promise<PersonalizedDietitianOutput> {
   return personalizedDietitianFlow(input);
 }
 
 const personalizedDietitianPrompt = ai.definePrompt({
   name: 'personalizedDietitianPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  // Model is inherited from genkit.ts
   input: { schema: PersonalizedDietitianInputSchema },
   output: { schema: PersonalizedDietitianOutputSchema },
   prompt: `You are an expert AI Dietitian and Wellness Coach.
@@ -161,12 +166,12 @@ const personalizedDietitianFlow = ai.defineFlow(
 
       const { output } = await personalizedDietitianPrompt(transformedInput);
       if (!output || !output.aiResponse) {
-        return { aiResponse: "I apologize, the AI dietitian couldn't generate a specific response at this time. This might be due to a temporary issue or the nature of the query. Please try rephrasing or check back later." };
+        return defaultErrorOutput;
       }
       return output;
     } catch (error: any) {
       console.error('[PersonalizedDietitianFlow] Error during AI processing:', error);
-      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("Model not found");
+      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("model not found");
       let specificResponseMessage = `An error occurred while consulting the AI dietitian: ${error.message || 'Unknown AI error'}. Please try again later.`;
       if (modelNotFoundError) {
         specificResponseMessage = "AI Dietitian analysis failed: The configured AI model is not accessible. Please check API key and project settings.";

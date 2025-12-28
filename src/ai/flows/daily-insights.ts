@@ -55,7 +55,7 @@ export type DailyInsightsOutput = z.infer<typeof DailyInsightsOutputSchema>;
 const defaultErrorOutput: DailyInsightsOutput = {
   triggerInsights: 'Could not determine trigger insights due to an analysis error.',
   micronutrientFeedback: 'Micronutrient feedback unavailable due to an analysis error.',
-  overallSummary: 'Could not determine overall summary due to an analysis error.',
+  overallSummary: 'Could not generate a daily summary at this time. Please try again later.',
 };
 
 export async function getDailyInsights(input: DailyInsightsInput): Promise<DailyInsightsOutput> {
@@ -64,7 +64,7 @@ export async function getDailyInsights(input: DailyInsightsInput): Promise<Daily
 
 const dailyInsightsPrompt = ai.definePrompt({
   name: 'dailyInsightsPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  // Model will be inherited from the ai object in genkit.ts
   input: {schema: DailyInsightsInputSchema},
   output: {schema: DailyInsightsOutputSchema},
   prompt: `Analyze the user's daily food log, symptoms, and (if provided) micronutrient summary.
@@ -96,33 +96,11 @@ const dailyInsightsFlow = ai.defineFlow(
         console.warn('[DailyInsightsFlow] AI prompt returned no output. Falling back to default error response.');
         return defaultErrorOutput;
       }
-
-      if (
-        typeof output.triggerInsights === 'string' &&
-        typeof output.overallSummary === 'string' &&
-        (output.micronutrientFeedback === undefined || typeof output.micronutrientFeedback === 'string')
-      ) {
-        return output as DailyInsightsOutput;
-      } else {
-        console.warn('[DailyInsightsFlow] AI output did not match expected schema. Output:', output);
-        let triggerMsg = defaultErrorOutput.triggerInsights;
-        let microMsg = defaultErrorOutput.micronutrientFeedback;
-        let overallMsg = defaultErrorOutput.overallSummary;
-
-        if (output && typeof (output as any).triggerInsights === 'string') triggerMsg = (output as any).triggerInsights;
-        if (output && (output as any).micronutrientFeedback === undefined || typeof (output as any).micronutrientFeedback === 'string') microMsg = (output as any).micronutrientFeedback;
-        if (output && typeof (output as any).overallSummary === 'string') overallMsg = (output as any).overallSummary;
-        
-        return {
-            triggerInsights: triggerMsg,
-            micronutrientFeedback: microMsg,
-            overallSummary: overallMsg,
-        };
-      }
+      return output;
 
     } catch (error: any) {
       console.error('[DailyInsightsFlow] Error during AI processing:', error);
-      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("Model not found");
+      const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("model not found");
       let specificSummaryMessage = `Error during daily insights analysis: ${error.message || 'Unknown error'}.`;
       if (modelNotFoundError) {
         specificSummaryMessage = "Daily insights analysis failed: The configured AI model is not accessible. Please check API key and project settings.";

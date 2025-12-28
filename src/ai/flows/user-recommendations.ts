@@ -31,7 +31,7 @@ export async function getUserRecommendation(input: UserRecommendationInput): Pro
 
 const userRecommendationPrompt = ai.definePrompt({
   name: 'userRecommendationPrompt',
-  // Uses default model from genkit.ts
+  // Model is inherited from genkit.ts
   input: { schema: UserRecommendationInputSchema },
   output: { schema: UserRecommendationOutputSchema },
   prompt: `Generate a short (1-2 sentences), friendly, actionable wellness recommendation.
@@ -70,7 +70,7 @@ const userRecommendationFlow = ai.defineFlow(
         console.warn('[UserRecommendationFlow] AI prompt returned no or invalid output. Falling back to default error response.');
         return defaultErrorOutput;
       }
-      return output!;
+      return output;
     } catch (error: any) {
       console.error('[UserRecommendationFlow] Error during AI processing:', error);
       return {

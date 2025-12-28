@@ -28,15 +28,16 @@ const IdentifyFoodFromImageOutputSchema = z.object({
   recognitionSuccess: z.boolean().describe('Whether the AI was able to confidently identify a food item and its details suitable for form population.'),
   errorMessage: z.string().optional().describe('An error message if identification failed or was problematic.'),
 });
-export type IdentifyFoodFromImageOutput = z.infer<typeof IdentifyFoodFromImageInputSchema>; // This should be IdentifyFoodFromImageOutputSchema
+export type IdentifyFoodFromImageOutput = z.infer<typeof IdentifyFoodFromImageOutputSchema>;
 
-export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): Promise<IdentifyFoodFromImageOutput> { // This should return IdentifyFoodFromImageOutput
+export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): Promise<IdentifyFoodFromImageOutput> {
   return identifyFoodFromImageFlow(input);
 }
 
 const identifyFoodPrompt = ai.definePrompt({
   name: 'identifyFoodFromImagePrompt',
-  model: 'googleai/gemini-1.5-flash-latest', // Explicitly set model for potential speed improvement
+  // Using flash model for potential speed improvement
+  model: 'googleai/gemini-1.5-flash-latest', 
   input: { schema: IdentifyFoodFromImageInputSchema },
   output: { schema: IdentifyFoodFromImageOutputSchema },
   config: {
@@ -90,35 +91,35 @@ Examples:
 `,
 });
 
+const defaultErrorOutput: IdentifyFoodFromImageOutput = {
+    identifiedFoodName: undefined,
+    identifiedIngredients: undefined,
+    estimatedPortionSize: undefined,
+    estimatedPortionUnit: undefined,
+    ocrText: undefined,
+    recognitionSuccess: false,
+    errorMessage: 'AI processing failed to return an output.',
+};
+
 const identifyFoodFromImageFlow = ai.defineFlow(
   {
     name: 'identifyFoodFromImageFlow',
     inputSchema: IdentifyFoodFromImageInputSchema,
     outputSchema: IdentifyFoodFromImageOutputSchema,
   },
-  async (input) => {
-    const { output } = await identifyFoodPrompt(input);
-    if (!output) {
+  async (input): Promise<IdentifyFoodFromImageOutput> => {
+    try {
+      const { output } = await identifyFoodPrompt(input);
+      if (!output) {
+        return defaultErrorOutput;
+      }
+      return output;
+    } catch(err: any) {
+      console.error("[IdentifyFoodByPhotoFlow] Error during AI processing:", err);
       return {
-        // Make sure all fields from IdentifyFoodFromImageOutputSchema are present or optional
-        identifiedFoodName: undefined,
-        identifiedIngredients: undefined,
-        estimatedPortionSize: undefined,
-        estimatedPortionUnit: undefined,
-        ocrText: undefined,
-        recognitionSuccess: false,
-        errorMessage: 'AI processing failed to return an output.',
-      } as IdentifyFoodFromImageOutput; // Cast to ensure type conformity
+        ...defaultErrorOutput,
+        errorMessage: `AI analysis error: ${err.message || 'Unknown error.'}`
+      }
     }
-    // Ensure all fields are present in the output or explicitly set to undefined if optional
-    return {
-        identifiedFoodName: output.identifiedFoodName,
-        identifiedIngredients: output.identifiedIngredients,
-        estimatedPortionSize: output.estimatedPortionSize,
-        estimatedPortionUnit: output.estimatedPortionUnit,
-        ocrText: output.ocrText,
-        recognitionSuccess: output.recognitionSuccess,
-        errorMessage: output.errorMessage,
-    } as IdentifyFoodFromImageOutput; // Cast to ensure type conformity
   }
 );

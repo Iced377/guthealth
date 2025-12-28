@@ -134,7 +134,7 @@ const foodSimilarityFlow = ai.defineFlow(
           similarityReason: `Similarity analysis failed for "${input.currentFoodItem.name}". No output from prompt.`,
         };
       }
-      return output!;
+      return output;
     } catch (error: any) {
       console.error('[FoodSimilarityFlow] Error during AI processing:', error);
       return {
