@@ -22,8 +22,9 @@ import GITrendChart from '@/components/trends/GITrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, AlertTriangle, BarChart3, Award } from 'lucide-react'; 
+import { Loader2, AlertTriangle, BarChart3, Award, Zap } from 'lucide-react'; 
 import { subDays, subMonths, subYears, formatISO, startOfDay, endOfDay, parseISO, getHours, format } from 'date-fns'; 
+import { useSearchParams } from 'next/navigation';
 
 // --- TEMPORARY FEATURE UNLOCK FLAG ---
 const TEMPORARILY_UNLOCK_ALL_FEATURES = true; // Kept true as per previous state
@@ -33,11 +34,29 @@ export default function TrendsPage() {
   const { user, loading: authLoading } = useAuth();
   const { isDarkMode } = useTheme(); // Removed currentTheme as it's no longer used for charts
   const { toast } = useToast(); 
+  const searchParams = useSearchParams();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null); 
   const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('30D');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fitbitStatus = searchParams.get('fitbit');
+    if (fitbitStatus === 'success') {
+      toast({
+        title: 'Fitbit Connected!',
+        description: 'Your Fitbit account has been successfully linked.',
+        variant: 'default',
+      });
+    } else if (fitbitStatus === 'error') {
+      toast({
+        title: 'Fitbit Connection Failed',
+        description: 'There was a problem linking your Fitbit account. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [searchParams, toast]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -263,7 +282,7 @@ export default function TrendsPage() {
     });
 
     return Object.entries(achievementCounts)
-      .map(([name, data]) => ({ name, achievedDays: data.achievedDays, iconName: data.iconName }))
+      .map(([name, data]) => ({ name, data.achievedDays, iconName: data.iconName }))
       .sort((a, b) => b.achievedDays - a.achievedDays);
   }, [filteredEntries]);
 
@@ -333,7 +352,14 @@ export default function TrendsPage() {
       <Navbar />
       <ScrollArea className="flex-grow">
         <main className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-6 text-foreground">Trends Dashboard</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
+            <Button asChild>
+              <Link href="/api/fitbit/auth">
+                <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
+              </Link>
+            </Button>
+          </div>
           <div className="mb-8">
             <TimeRangeToggle selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
           </div>

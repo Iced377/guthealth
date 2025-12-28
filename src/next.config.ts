@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -23,6 +24,18 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+   async redirects() {
+    return [
+      // This is a temporary redirect for the Fitbit integration until a dedicated UI is built.
+      // It redirects the user from the root to the Fitbit auth flow.
+      // We can remove this later.
+      // {
+      //   source: '/connect-fitbit-redirect',
+      //   destination: '/api/fitbit/auth',
+      //   permanent: false,
+      // },
+    ]
   },
   webpack: (config, { isServer }) => {
     // Enable polling for file watching, which is necessary in some Docker/containerized environments

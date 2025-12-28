@@ -190,7 +190,7 @@ export interface SingleMicronutrientProgress {
   achievedDV: number;
   icon: React.ElementType;
   targetDV: number;
-  unit: '%' | 'mg';
+  unit: '%' | 'mg' | 'IU';
 }
 
 export type UserMicronutrientProgress = Record<string, SingleMicronutrientProgress>;
@@ -221,5 +221,3 @@ export interface AIInsight {
   timestamp: Date;
   read: boolean;
 }
-
-    
