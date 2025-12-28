@@ -49,7 +49,7 @@ Image: {{media url=imageDataUri}}
 Your tasks:
 1.  **'identifiedFoodName'**: Identify the primary food item. If packaged, the product name. If a dish, its name. For ambiguous cooking (e.g., eggs), use general terms ('cooked eggs') unless method is obvious.
 2.  **'identifiedIngredients'**: Provide a comma-separated list of main ingredients.
-    *   **CRITICAL FOR SUPPLEMENTS/LABELS**: If OCR detects specific nutrient quantities (e.g., "Vitamin D3 50000 IU", "Iron 10mg"), these exact strings MUST be included in 'identifiedIngredients'. Do not alter or omit these OCR'd quantities.
+    *   **CRITICAL FOR SUPPLEMENTS/LABELS**: If OCR detects specific nutrient quantities (e.g., "Vitamin D3 50,000 IU", "Iron 10mg"), these exact strings MUST be included in 'identifiedIngredients'. Do not alter or omit these OCR'd quantities.
     *   For dishes, list common ingredients.
 3.  **'estimatedPortionSize' & 'estimatedPortionUnit'**: Provide rough estimates.
     *   For multiple distinct, countable items (e.g., 4 eggs), use count for 'estimatedPortionSize' ("4") and item type for 'estimatedPortionUnit' ("eggs").
