@@ -41,7 +41,7 @@ export async function processMealDescription(input: ProcessMealDescriptionInput)
 const processMealDescriptionGenkitPrompt = ai.definePrompt({
   name: 'processMealDescriptionPrompt',
   // Using flash model for potential speed improvement
-  model: 'googleai/gemini-1.5-flash-latest', 
+  model: 'googleai/gemini-1.5-flash', 
   input: { schema: ProcessMealDescriptionInputSchema },
   output: { schema: ProcessMealDescriptionOutputSchema },
   config: {

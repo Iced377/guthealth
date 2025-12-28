@@ -37,7 +37,7 @@ export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): 
 const identifyFoodPrompt = ai.definePrompt({
   name: 'identifyFoodFromImagePrompt',
   // Using flash model for potential speed improvement
-  model: 'googleai/gemini-1.5-flash-latest', 
+  model: 'googleai/gemini-1.5-flash', 
   input: { schema: IdentifyFoodFromImageInputSchema },
   output: { schema: IdentifyFoodFromImageOutputSchema },
   config: {
