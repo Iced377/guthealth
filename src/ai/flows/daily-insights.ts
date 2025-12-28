@@ -64,7 +64,7 @@ export async function getDailyInsights(input: DailyInsightsInput): Promise<Daily
 
 const dailyInsightsPrompt = ai.definePrompt({
   name: 'dailyInsightsPrompt',
-  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily use default model
+  model: 'googleai/gemini-1.5-pro-latest',
   input: {schema: DailyInsightsInputSchema},
   output: {schema: DailyInsightsOutputSchema},
   prompt: `Analyze the user's daily food log, symptoms, and (if provided) micronutrient summary.

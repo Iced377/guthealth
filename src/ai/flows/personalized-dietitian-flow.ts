@@ -73,7 +73,7 @@ export async function getPersonalizedDietitianInsight(input: PersonalizedDietiti
 
 const personalizedDietitianPrompt = ai.definePrompt({
   name: 'personalizedDietitianPrompt',
-  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily use default model
+  model: 'googleai/gemini-1.5-pro-latest',
   input: { schema: PersonalizedDietitianInputSchema },
   output: { schema: PersonalizedDietitianOutputSchema },
   prompt: `You are an expert AI Dietitian and Wellness Coach.

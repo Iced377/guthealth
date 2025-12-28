@@ -136,7 +136,7 @@ export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<Anal
 
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
-  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily commented out to use default model for diagnostics
+  model: 'googleai/gemini-1.5-pro-latest',
   input: {schema: AnalyzeFoodItemInputSchema},
   output: {schema: AnalyzeFoodItemOutputSchema},
   config: {

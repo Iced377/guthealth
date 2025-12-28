@@ -83,7 +83,7 @@ export async function getSymptomCorrelations(input: SymptomCorrelationInput): Pr
 
 const symptomCorrelationPrompt = ai.definePrompt({
   name: 'symptomCorrelationPrompt',
-  // model: 'googleai/gemini-1.5-pro-latest', // Temporarily use default model
+  model: 'googleai/gemini-1.5-pro-latest',
   input: {schema: SymptomCorrelationInputSchema},
   output: {schema: SymptomCorrelationOutputSchema},
   prompt: `You are an AI assistant for IBS pattern identification.
