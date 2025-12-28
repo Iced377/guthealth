@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
   const { user, loading } = useAuthContext();
@@ -43,12 +44,13 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
-          <LifeBuoy className="h-7 w-7 text-primary" /> 
+          <LifeBuoy className="h-7 w-7 text-primary" />
           <span className="font-bold font-headline sm:inline-block text-xl text-foreground">
             FODMAPSafe
           </span>
+          <Badge variant="secondary" className="hidden sm:inline-flex h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted">v3.7.2</Badge>
         </Link>
-        
+
         <div className="flex flex-1 items-center justify-end space-x-4">
           {!loading && user ? (
             <DropdownMenu>
