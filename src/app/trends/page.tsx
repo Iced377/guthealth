@@ -282,7 +282,7 @@ export default function TrendsPage() {
     });
 
     return Object.entries(achievementCounts)
-      .map(([name, data]) => ({ name, data.achievedDays, iconName: data.iconName }))
+      .map(([name, data]) => ({ name, achievedDays: data.achievedDays, iconName: data.iconName }))
       .sort((a, b) => b.achievedDays - a.achievedDays);
   }, [filteredEntries]);
 
@@ -439,3 +439,5 @@ const getPathname = () => {
   }
   return "";
 };
+
+    
