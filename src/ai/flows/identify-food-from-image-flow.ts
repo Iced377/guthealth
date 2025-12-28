@@ -8,7 +8,7 @@
  * - IdentifyFoodFromImageOutput - Output schema for the flow.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, DEFAULT_AI_MODEL } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const IdentifyFoodFromImageInputSchema = z.object({
@@ -36,7 +36,7 @@ export async function identifyFoodFromImage(input: IdentifyFoodFromImageInput): 
 
 const identifyFoodPrompt = ai.definePrompt({
   name: 'identifyFoodFromImagePrompt',
-  model: 'googleai/gemini-pro-vision', 
+  model: DEFAULT_AI_MODEL,
   input: { schema: IdentifyFoodFromImageInputSchema },
   output: { schema: IdentifyFoodFromImageOutputSchema },
   config: {

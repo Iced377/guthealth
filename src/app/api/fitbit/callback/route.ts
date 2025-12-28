@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state'); // For security, you should validate this state
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const codeVerifier = cookieStore.get('fitbit_code_verifier')?.value;
   const sessionCookie = cookieStore.get('__session')?.value;
 
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!tokenResponse.ok) {
-      const errorBody = await tokenResponse.json();
+      const errorBody = (await tokenResponse.json()) as { errors?: { message?: string }[] };
       console.error('Fitbit token exchange failed:', errorBody);
       throw new Error(`Fitbit API error: ${errorBody.errors?.[0]?.message || 'Failed to get access token'}`);
     }

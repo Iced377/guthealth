@@ -12,7 +12,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { ExtendedAnalyzeFoodItemOutput as AnalyzeFoodItemOutput } from '@/types'; // Import the extended type
 
 const DetailedFoodFODMAPProfileSchema = z.object({
   fructans: z.number().optional().describe('Estimated Fructans content in the given portion (e.g., in grams or a relative scale 0-10).'),
@@ -104,6 +103,8 @@ const AnalyzeFoodItemOutputSchema = z.object({
   detectedAllergens: z.array(z.string()).optional().describe("List of common allergens detected in the ingredients (e.g., Milk, Wheat, Soy). If none, can be empty or omitted."),
   aiSummaries: AISummariesSchema.optional().describe("Concise AI-generated textual summaries for display in notes."),
 });
+
+export type AnalyzeFoodItemOutput = z.infer<typeof AnalyzeFoodItemOutputSchema>;
 
 const defaultErrorOutput: AnalyzeFoodItemOutput = {
   ingredientFodmapScores: [],

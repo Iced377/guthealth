@@ -158,10 +158,8 @@ export default function AIInsightsPage() {
           let finalLinkedIds: string[] = [];
           const rawLinkedIds = symptomEntry.linkedFoodItemIds;
 
-           if (Array.isArray(rawLinkedIds)) {
-              finalLinkedIds = rawLinkedIds.filter(id => typeof id === 'string' && id.trim().length > 0);
-          } else if (typeof rawLinkedIds === 'string' && rawLinkedIds.trim().length > 0) {
-              finalLinkedIds = [rawLinkedIds.trim()];
+          if (Array.isArray(rawLinkedIds)) {
+            finalLinkedIds = rawLinkedIds.filter(id => typeof id === 'string' && id.trim().length > 0);
           }
           
           return {

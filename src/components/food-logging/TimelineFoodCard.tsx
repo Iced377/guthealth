@@ -63,10 +63,10 @@ export default function TimelineFoodCard({
   const timeAgo = formatDistanceToNow(new Date(item.timestamp), { addSuffix: true });
 
   const macroParts: string[] = [];
-  if (item.calories !== undefined) macroParts.push(`Cal: ${Math.round(item.calories)}`);
-  if (item.protein !== undefined) macroParts.push(`P: ${Math.round(item.protein)}g`);
-  if (item.carbs !== undefined) macroParts.push(`C: ${Math.round(item.carbs)}g`);
-  if (item.fat !== undefined) macroParts.push(`F: ${Math.round(item.fat)}g`);
+  if (item.calories != null) macroParts.push(`Cal: ${Math.round(item.calories)}`);
+  if (item.protein != null) macroParts.push(`P: ${Math.round(item.protein)}g`);
+  if (item.carbs != null) macroParts.push(`C: ${Math.round(item.carbs)}g`);
+  if (item.fat != null) macroParts.push(`F: ${Math.round(item.fat)}g`);
 
   const isManualMacroEntry = item.entryType === 'manual_macro';
 
@@ -83,7 +83,11 @@ export default function TimelineFoodCard({
 
   const hasLogDetails = !isManualMacroEntry && (item.originalName && item.originalName !== item.name || item.sourceDescription);
   const hasHealthIndicators = !isManualMacroEntry && item.fodmapData;
-  const hasAiNotes = !isManualMacroEntry && aiSummaries && (Object.values(aiSummaries).some(summary => summary && summary.length > 0) || item.fodmapData?.gutBacteriaImpact?.reasoning);
+  const hasAiNotes =
+    !isManualMacroEntry &&
+    aiSummaries &&
+    (Object.values(aiSummaries).some(summary => typeof summary === 'string' && summary.trim().length > 0) ||
+      (item.fodmapData?.gutBacteriaImpact?.reasoning ?? '').toString().trim().length > 0);
   const hasIngredientFodmaps = !isManualMacroEntry && item.fodmapData?.ingredientFodmapScores && item.fodmapData.ingredientFodmapScores.length > 0;
   const hasAnyDetails = hasLogDetails || hasHealthIndicators || hasAiNotes || hasIngredientFodmaps;
 
@@ -213,10 +217,10 @@ export default function TimelineFoodCard({
         {macroParts.length > 0 && (
             <div className={cn("text-sm border-t pt-2", mutedTextClass, "border-border/50")}>
                 <p className="flex items-center gap-x-2 sm:gap-x-3 flex-wrap">
-                    {item.calories !== undefined && <span className="flex items-center"><Flame className="w-3.5 h-3.5 mr-1 text-orange-400"/>{Math.round(item.calories)} kcal</span>}
-                    {item.protein !== undefined && <span className="flex items-center"><Beef className="w-3.5 h-3.5 mr-1 text-red-400"/>{Math.round(item.protein)}g P</span>}
-                    {item.carbs !== undefined && <span className="flex items-center"><Wheat className="w-3.5 h-3.5 mr-1 text-yellow-400"/>{Math.round(item.carbs)}g C</span>}
-                    {item.fat !== undefined && <span className="flex items-center"><Droplet className="w-3.5 h-3.5 mr-1 text-blue-400"/>{Math.round(item.fat)}g F</span>}
+                    {item.calories != null && <span className="flex items-center"><Flame className="w-3.5 h-3.5 mr-1 text-orange-400"/>{Math.round(item.calories)} kcal</span>}
+                    {item.protein != null && <span className="flex items-center"><Beef className="w-3.5 h-3.5 mr-1 text-red-400"/>{Math.round(item.protein)}g P</span>}
+                    {item.carbs != null && <span className="flex items-center"><Wheat className="w-3.5 h-3.5 mr-1 text-yellow-400"/>{Math.round(item.carbs)}g C</span>}
+                    {item.fat != null && <span className="flex items-center"><Droplet className="w-3.5 h-3.5 mr-1 text-blue-400"/>{Math.round(item.fat)}g F</span>}
                     {item.macrosOverridden && <span className="flex items-center text-orange-500"><PencilLine className="w-3.5 h-3.5 mr-1"/>Edited</span>}
                 </p>
             </div>
@@ -248,7 +252,7 @@ export default function TimelineFoodCard({
                   </div>
                 )}
 
-                {hasHealthIndicators && (
+                {hasHealthIndicators && item.fodmapData && (
                   <div>
                     <h4 className="text-xs font-semibold text-foreground/80 flex items-center mt-2 mb-1"><Sparkles className="h-3.5 w-3.5 mr-1.5 text-primary/70"/>AI Health Indicators</h4>
                     <div className={cn("text-xs pt-0 flex flex-wrap items-center gap-2 pl-5")}>
@@ -259,7 +263,7 @@ export default function TimelineFoodCard({
                         <FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} />
                         <GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} />
                         {detectedAllergens && detectedAllergens.length > 0 &&
-                            detectedAllergens.map(allergen => (
+                            detectedAllergens.map((allergen: string) => (
                                 <TooltipProvider key={allergen}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -308,7 +312,7 @@ export default function TimelineFoodCard({
                     <h4 className="text-xs font-semibold text-foreground/80 flex items-center mt-2 mb-0.5"><Leaf className="h-3.5 w-3.5 mr-1.5 text-green-500/70"/>Ingredient FODMAPs</h4>
                     <div className="mt-0 max-h-24 overflow-y-auto pr-2 pl-5">
                       <ul className="list-disc list-inside pl-1 space-y-0.5">
-                        {item.fodmapData?.ingredientFodmapScores?.map((entry) => (
+                        {item.fodmapData?.ingredientFodmapScores?.map((entry: { ingredient: string; score: string; reason?: string }) => (
                           <li key={entry.ingredient} className={`text-sm ${
                             entry.score === 'Green' ? 'text-green-500' : entry.score === 'Yellow' ? 'text-yellow-500' : 'text-red-500'
                           }`}>

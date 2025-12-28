@@ -64,20 +64,21 @@ export type ExtendedAnalyzeFoodItemOutput = OriginalAnalyzeFoodItemOutput & {
 export interface LoggedFoodItem {
   id: string;
   name: string;
-  originalName?: string;
+  originalName?: string | null;
   ingredients: string;
   portionSize: string;
   portionUnit: string;
   timestamp: Date;
-  fodmapData?: ExtendedAnalyzeFoodItemOutput; // Use the extended output type here
+  fodmapData?: ExtendedAnalyzeFoodItemOutput | null; // Use the extended output type here
   isSimilarToSafe?: boolean;
-  userFodmapProfile?: FoodFODMAPProfile;
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
+  userFodmapProfile?: FoodFODMAPProfile | null;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
   entryType: 'food' | 'manual_macro';
-  sourceDescription?: string;
+  mealType?: string;
+  sourceDescription?: string | null;
   userFeedback?: 'safe' | 'unsafe' | null;
   macrosOverridden?: boolean;
   isFavorite?: boolean; // Added for favorite functionality

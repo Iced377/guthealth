@@ -32,33 +32,33 @@ export default function GutBacteriaIndicator({ gutImpact }: GutBacteriaIndicator
   let IconComponent;
   let colorClass = 'border-muted-foreground/30 text-muted-foreground bg-muted/20';
   let iconColor = 'text-gray-500';
-  let sentimentText = sentiment;
+  let displayText: string = sentiment ?? 'Unknown';
 
   switch (sentiment) {
     case 'Positive':
       IconComponent = Smile;
       colorClass = 'border-green-500/50 text-green-700 dark:text-green-400 bg-green-500/10';
       iconColor = 'text-green-500';
-      sentimentText = "+ Gut Health";
+      displayText = "+ Gut Health";
       break;
     case 'Negative':
       IconComponent = Frown;
       colorClass = 'border-red-500/50 text-red-700 dark:text-red-400 bg-red-500/10';
       iconColor = 'text-red-500';
-      sentimentText = "– Gut Health";
+      displayText = "– Gut Health";
       break;
     case 'Neutral':
       IconComponent = Meh;
       colorClass = 'border-gray-500/50 text-gray-700 dark:text-gray-400 bg-gray-500/10';
       iconColor = 'text-gray-500';
-      sentimentText = "Neutral Impact";
+      displayText = "Neutral Impact";
       break;
     case 'Unknown':
     default:
       IconComponent = HelpCircle;
       colorClass = 'border-muted-foreground/30 text-muted-foreground bg-muted/20';
       iconColor = 'text-muted-foreground';
-      sentimentText = "Impact Unknown";
+      displayText = "Impact Unknown";
       break;
   }
 
@@ -67,7 +67,7 @@ export default function GutBacteriaIndicator({ gutImpact }: GutBacteriaIndicator
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge variant="outline" className={`text-xs flex items-center gap-1 ${colorClass}`}>
-            <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} /> {sentimentText}
+            <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} /> {displayText}
           </Badge>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs bg-popover text-popover-foreground border-border p-3">
