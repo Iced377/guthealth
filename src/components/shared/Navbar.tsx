@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart } from 'lucide-react';
+import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { signOutUser } from '@/lib/firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.7.0";
+export const APP_VERSION = "Beta 3.7.1";
 
 interface ReleaseNote {
   version: string;
@@ -53,13 +53,24 @@ interface ReleaseNote {
 const releaseNotesData: ReleaseNote[] = [
 
   {
+    version: "Beta 3.7.1",
+    date: "July 16, 2025",
+    title: "Terms of Use Page & Menu Link",
+    description: [
+      "Added a new 'Terms of Use' page with zero-liability disclaimers.",
+      "Included a link to the new Terms page in the user profile dropdown menu.",
+      "Corrected the previous version number in the release notes.",
+    ]
+  },
+  {
     version: "Beta 3.7.0",
     date: "July 16, 2025",
-    title: "Dashboard UX Enhancements",
+    title: "Dashboard UX Enhancements & Fixes",
     description: [
-      "Added a Floating Action Button (FAB) to the main dashboard sheet, allowing users to log new entries without closing the view.",
-      "The FAB includes quick access to log via AI (Text), Photo, Symptoms, or Previous Meal.",
-      "Meal and macro entries now automatically open the dashboard upon submission for immediate feedback.",
+      "Added a Floating Action Button (FAB) to the main dashboard sheet for quick logging.",
+      "Resolved a critical bug that prevented the dashboard timeline from being scrollable.",
+      "Fixed a layout issue where the FAB was not visible.",
+      "Grouped timeline entries by date for a more organized view.",
     ],
   },
   {
@@ -600,6 +611,10 @@ export default function Navbar({
                          <Shield className="mr-2 h-4 w-4" />
                          <span>Privacy Notice</span>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push('/terms')} className="cursor-pointer">
+                         <FileText className="mr-2 h-4 w-4" />
+                         <span>Terms of Use</span>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
@@ -673,6 +688,10 @@ export default function Navbar({
                          <Shield className="mr-2 h-4 w-4" />
                          <span>Privacy Notice</span>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push('/terms')} className="cursor-pointer">
+                         <FileText className="mr-2 h-4 w-4" />
+                         <span>Terms of Use</span>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
@@ -689,3 +708,5 @@ export default function Navbar({
     </header>
   );
 }
+
+    
