@@ -41,7 +41,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.7.1";
+export const APP_VERSION = "Beta 3.7.0";
 
 interface ReleaseNote {
   version: string;
@@ -51,16 +51,7 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
-  {
-    version: "Beta 3.7.1",
-    date: "July 16, 2025",
-    title: "Dashboard Scrolling & FAB Fix",
-    description: [
-      "Resolved a persistent layout issue that prevented the main dashboard sheet from being scrollable.",
-      "Fixed the positioning and z-index of the Floating Action Button (FAB) to ensure it is always visible and functional on the dashboard.",
-      "Grouped timeline entries by date for a clearer, day-by-day view in the dashboard.",
-    ],
-  },
+
   {
     version: "Beta 3.7.0",
     date: "July 16, 2025",

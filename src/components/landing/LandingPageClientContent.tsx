@@ -309,7 +309,10 @@ export default function LandingPageClientContent({
         <div className="container mx-auto px-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} GutCheck. All Rights Reserved.</p>
           <p className="mt-1">This app is a non-commercial project intended for informational purposes only and not a substitute for professional medical advice.</p>
-          <Link href="/privacy" className="underline hover:text-primary mt-2 inline-block">Privacy Notice</Link>
+          <div className="flex justify-center gap-4 mt-2">
+            <Link href="/privacy" className="underline hover:text-primary">Privacy Notice</Link>
+            <Link href="/terms" className="underline hover:text-primary">Terms of Use</Link>
+          </div>
         </div>
       </footer>
     </main>
