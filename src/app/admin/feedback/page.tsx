@@ -86,11 +86,20 @@ export default function AdminFeedbackPage() {
           }
           const feedbackQuery = query(collection(db, 'feedbackSubmissions'), orderBy('timestamp', 'desc'));
           const feedbackSnapshot = await getDocs(feedbackQuery);
-          const items = feedbackSnapshot.docs.map(docSnap => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-            timestamp: (docSnap.data().timestamp as Timestamp).toDate(),
-          })) as FeedbackSubmission[];
+          const items = feedbackSnapshot.docs.map(docSnap => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              userId: data.userId ?? 'anonymous',
+              timestamp: data.timestamp as Timestamp,
+              feedbackText: data.feedbackText ?? '',
+              category: data.category ?? 'Not specified',
+              route: data.route ?? 'unknown',
+              status: data.status ?? 'new',
+              aiAnalysis: data.aiAnalysis ?? null,
+              adminNotes: data.adminNotes,
+            } satisfies FeedbackSubmission;
+          });
           setFeedbackItems(items);
           if (process.env.NODE_ENV === 'development') {
             console.log('[Admin Page] Successfully fetched feedback submissions:', items.length);
@@ -240,7 +249,7 @@ export default function AdminFeedbackPage() {
                   <TableBody>
                     {feedbackItems.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="px-2 py-2 whitespace-nowrap">{format(new Date(item.timestamp), 'MMM d, yyyy HH:mm')}</TableCell>
+                        <TableCell className="px-2 py-2 whitespace-nowrap">{format(item.timestamp.toDate(), 'MMM d, yyyy HH:mm')}</TableCell>
                         <TableCell className="px-2 py-2 break-all">{item.userId === 'anonymous' ? 'Anonymous' : item.userId}</TableCell>
                         <TableCell className="px-2 py-2">{item.category || 'N/A'}</TableCell>
                         <TableCell className="px-2 py-2 whitespace-normal break-words">

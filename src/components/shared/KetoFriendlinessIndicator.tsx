@@ -58,7 +58,7 @@ export default function KetoFriendlinessIndicator({ ketoInfo }: KetoFriendliness
     case 'Unknown':
     default:
       IconComponent = HelpCircle;
-      scoreText = "Keto: Unknown";
+      scoreText = 'Unknown';
       break;
   }
 

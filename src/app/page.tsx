@@ -947,22 +947,21 @@ export default function RootPage() {
     setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
     const newTimestamp = new Date(); // Repeated meals are for "now"
     let processedFoodItem: LoggedFoodItem;
+    const baseRepetitionData = {
+      id: newItemId,
+      timestamp: newTimestamp,
+      isSimilarToSafe: false,
+      userFodmapProfile: null,
+      entryType: 'food' as const,
+      userFeedback: null,
+      macrosOverridden: itemToRepeat.macrosOverridden ?? false,
+      isFavorite: itemToRepeat.isFavorite ?? false, // Carry over favorite status
+    };
 
     try {
       let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
       let similarityOutput: FoodSimilarityOutput | undefined;
       let mealDescriptionOutput: ProcessMealDescriptionOutput | undefined;
-
-      const baseRepetitionData = {
-        id: newItemId,
-        timestamp: newTimestamp,
-        isSimilarToSafe: false, 
-        userFodmapProfile: null, 
-        entryType: 'food' as 'food',
-        userFeedback: null, 
-        macrosOverridden: itemToRepeat.macrosOverridden ?? false,
-        isFavorite: itemToRepeat.isFavorite ?? false, // Carry over favorite status
-      };
 
       if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo") && itemToRepeat.sourceDescription !== "Manually logged" && itemToRepeat.sourceDescription !== "Manually logged (analysis failed)") {
         mealDescriptionOutput = await processMealDescription({ mealDescription: itemToRepeat.sourceDescription });
@@ -1158,7 +1157,6 @@ export default function RootPage() {
         }}
         onLogSymptomsClick={openSymptomLogDialog}
         onLogPreviousMealClick={openLogPreviousMealDialog}
-        className="z-50"
       />
 
 
@@ -1207,9 +1205,9 @@ export default function RootPage() {
         isEditing={!!editingItem && editingItem.entryType === 'food'}
         initialValues={editingItem && editingItem.entryType === 'food' ?
             {
-              mealDescription: editingItem.sourceDescription || 
-                               (itemToEdit.sourceDescription?.startsWith("Identified by photo") 
-                                 ? `${itemToEdit.originalName}. Ingredients: ${itemToEdit.ingredients}` 
+              mealDescription: editingItem.sourceDescription ||
+                               (editingItem.sourceDescription?.startsWith("Identified by photo")
+                                 ? `${editingItem.originalName}. Ingredients: ${editingItem.ingredients}`
                                  : editingItem.originalName || ''),
               calories: editingItem.calories ?? undefined,
               protein: editingItem.protein ?? undefined,

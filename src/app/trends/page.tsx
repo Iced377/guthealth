@@ -152,7 +152,7 @@ export default function TrendsPage() {
   }, [timelineEntries, selectedTimeRange]);
 
 
-  const aggregateDataByDay = <T extends {calories?: number; protein?: number; carbs?: number; fat?: number; userFeedback?: 'safe' | 'unsafe' | null}>(
+  const aggregateDataByDay = <T extends {calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; userFeedback?: 'safe' | 'unsafe' | null}>(
     entries: (LoggedFoodItem & T)[],
     mapper: (date: string, itemsOnDate: (LoggedFoodItem & T)[]) => any
   ) => {
@@ -175,9 +175,9 @@ export default function TrendsPage() {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
     return aggregateDataByDay(foodEntries, (date, items) => ({
       date,
-      protein: items.reduce((sum, item) => sum + (item.protein || 0), 0),
-      carbs: items.reduce((sum, item) => sum + (item.carbs || 0), 0),
-      fat: items.reduce((sum, item) => sum + (item.fat || 0), 0),
+      protein: items.reduce((sum, item) => sum + (item.protein ?? 0), 0),
+      carbs: items.reduce((sum, item) => sum + (item.carbs ?? 0), 0),
+      fat: items.reduce((sum, item) => sum + (item.fat ?? 0), 0),
     }));
   }, [filteredEntries]);
 
@@ -185,7 +185,7 @@ export default function TrendsPage() {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
     return aggregateDataByDay(foodEntries, (date, items) => ({
       date,
-      calories: items.reduce((sum, item) => sum + (item.calories || 0), 0),
+      calories: items.reduce((sum, item) => sum + (item.calories ?? 0), 0),
     }));
   }, [filteredEntries]);
 

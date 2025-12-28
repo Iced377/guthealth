@@ -30,9 +30,9 @@ const generateMockFodmapProfile = (foodName: string): FoodFODMAPProfile => {
   return {
     fructans: pseudoRandom(hash + 1) * 5,
     galactans: pseudoRandom(hash + 2) * 5,
-    polyols: pseudoRandom(hash + 3) * 5,
-    lactose: pseudoRandom(hash + 4) * 5,
-    mannitol: pseudoRandom(hash + 5) * 5,
+    polyolsSorbitol: pseudoRandom(hash + 3) * 5,
+    polyolsMannitol: pseudoRandom(hash + 4) * 5,
+    lactose: pseudoRandom(hash + 5) * 5,
     fructose: pseudoRandom(hash + 6) * 5,
   };
 };
@@ -76,7 +76,7 @@ export default function FoodItemCard({ item, onMarkAsSafe, onRemoveItem, isSafeF
           <div className="mt-2">
             <p className="text-xs font-medium text-muted-foreground mb-1">Ingredient Analysis:</p>
             <ul className="list-disc list-inside pl-1 space-y-0.5">
-              {item.fodmapData.ingredientFodmapScores.map((entry) => (
+              {item.fodmapData.ingredientFodmapScores.map((entry: { ingredient: string; score: string }) => (
                 <li key={entry.ingredient} className={`text-xs ${
                   entry.score === 'Green' ? 'text-green-600' : entry.score === 'Yellow' ? 'text-yellow-600' : 'text-red-600'
                 }`}>

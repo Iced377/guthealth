@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 // useRouter is no longer needed here for direct redirection on popup success.
 // AuthProvider and the auth pages will handle the auth state changes.
 
-interface GoogleSignInButtonProps extends Omit<ButtonProps, 'onClick' | 'disabled' | 'children'> {
+interface GoogleSignInButtonProps
+  extends Omit<ButtonProps, 'onClick' | 'disabled' | 'children' | 'variant'> {
   variant?: ButtonProps['variant'] | 'guest';
 }
 
