@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [redirectLoading, setRedirectLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const { toast } = useToast();
-  const router = useRouter(); 
+  const router = useRouter();
 
   useEffect(() => {
     let unsub: ReturnType<typeof onAuthStateChanged>;
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .then((result) => {
         if (result?.user) {
-          setUser(result.user); 
+          setUser(result.user);
           toast({ title: 'Welcome back!', description: result.user.displayName || 'Successfully signed in.' });
           router.push('/'); // Redirect to home after successful Google redirect
         }
@@ -57,9 +57,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRedirectLoading(false);
       });
 
-    unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser); 
-      setAuthLoading(false); 
+    unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const token = await firebaseUser.getIdToken();
+          // Sync session cookie with server
+          await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: token }),
+          });
+        } catch (error) {
+          console.error('Failed to sync session cookie:', error);
+        }
+      } else {
+        // Clear session cookie on server
+        await fetch('/api/auth/logout', { method: 'POST' });
+      }
+
+      setUser(firebaseUser);
+      setAuthLoading(false);
     });
 
     return () => {
@@ -67,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsub();
       }
     };
-  }, [toast, router]); 
+  }, [toast, router]);
 
   const loading = redirectLoading || authLoading;
 
