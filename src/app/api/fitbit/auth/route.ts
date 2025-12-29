@@ -1,6 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import { getAdminApp } from '@/lib/firebase/admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 export async function GET() {
   const clientId = process.env.FITBIT_CLIENT_ID;
@@ -11,24 +13,34 @@ export async function GET() {
     return new NextResponse('Fitbit environment variables are not configured.', { status: 500 });
   }
 
-  // Generate a secure random string for the state parameter to prevent CSRF attacks
+  // Generate a secure random string for the state parameter
   const state = randomBytes(16).toString('hex');
   const codeVerifier = randomBytes(32).toString('hex'); // For PKCE
-  
-  // Store verifier in a secure, httpOnly cookie to retrieve in the callback
-  const codeVerifierCookie = `fitbit_code_verifier=${codeVerifier}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax; Secure`;
+
+  // Store state and verifier in Firestore to retrieve in the callback
+  // We use Firestore because Firebase Hosting strips custom cookies (only __session is allowed)
+  try {
+    const adminApp = getAdminApp();
+    const db = getFirestore(adminApp);
+
+    await db.collection('fitbit_auth_states').doc(state).set({
+      codeVerifier,
+      createdAt: new Date(),
+    });
+
+  } catch (error) {
+    console.error("Error storing Fitbit auth state:", error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
 
   const fitbitAuthUrl = new URL('https://www.fitbit.com/oauth2/authorize');
   fitbitAuthUrl.searchParams.append('response_type', 'code');
   fitbitAuthUrl.searchParams.append('client_id', clientId);
   fitbitAuthUrl.searchParams.append('redirect_uri', redirectUri);
   fitbitAuthUrl.searchParams.append('scope', scopes);
-  fitbitAuthUrl.searchParams.append('state', state); // Although we are not using it, it's good practice
+  fitbitAuthUrl.searchParams.append('state', state);
   fitbitAuthUrl.searchParams.append('code_challenge', codeVerifier); // PKCE
   fitbitAuthUrl.searchParams.append('code_challenge_method', 'plain'); // PKCE
 
-  const response = NextResponse.redirect(fitbitAuthUrl.toString());
-  response.headers.set('Set-Cookie', codeVerifierCookie);
-  
-  return response;
+  return NextResponse.redirect(fitbitAuthUrl.toString());
 }

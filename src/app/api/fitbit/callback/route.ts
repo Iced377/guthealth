@@ -1,9 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/config/firebase';
+import { db } from '@/config/firebase'; // Client SDK for user data (or can use admin SDK for consistency)
 import { doc, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
 import fetch from 'node-fetch';
 
@@ -11,22 +12,44 @@ import fetch from 'node-fetch';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
-  const state = searchParams.get('state'); // For security, you should validate this state
+  const state = searchParams.get('state');
 
   const cookieStore = await cookies();
-  const codeVerifier = cookieStore.get('fitbit_code_verifier')?.value;
   const sessionCookie = cookieStore.get('__session')?.value;
 
   if (!code) {
     return new NextResponse('Authorization code not found in request.', { status: 400 });
   }
-   if (!codeVerifier) {
-    return new NextResponse('Code verifier not found. Authorization flow may have expired.', { status: 400 });
+
+  if (!state) {
+    return new NextResponse('State parameter not found.', { status: 400 });
+  }
+
+  // Retrieve code verifier from Firestore using state
+  let codeVerifier: string | undefined;
+  try {
+    const adminApp = getAdminApp();
+    const adminDb = getFirestore(adminApp);
+    const stateDocRef = adminDb.collection('fitbit_auth_states').doc(state);
+    const stateDoc = await stateDocRef.get();
+
+    if (stateDoc.exists) {
+      codeVerifier = stateDoc.data()?.codeVerifier;
+      // Clean up the used state
+      await stateDocRef.delete();
+    }
+  } catch (error) {
+    console.error("Error retrieving Fitbit auth state:", error);
+    return new NextResponse('Error validating auth state.', { status: 500 });
+  }
+
+  if (!codeVerifier) {
+    return new NextResponse('Code verifier not found or expired. Please try authorizing again.', { status: 400 });
   }
   if (!sessionCookie) {
     return new NextResponse('User session not found. Please log in first.', { status: 401 });
   }
-  
+
   // Verify the session cookie and get the UID
   let uid: string;
   try {
@@ -83,7 +106,7 @@ export async function GET(req: NextRequest) {
       scopes: process.env.FITBIT_SCOPES,
       lastUpdated: new Date(),
     };
-    
+
     // Store it under a private subcollection for the user
     const userDocRef = doc(db, 'users', uid);
     const privateDataRef = doc(userDocRef, 'private', 'fitbit');
@@ -96,10 +119,6 @@ export async function GET(req: NextRequest) {
     console.error('Error during Fitbit callback processing:', error);
     return NextResponse.redirect(new URL('/trends?fitbit=error', req.url));
   } finally {
-     // Clear the verifier cookie
-     const clearCookie = `fitbit_code_verifier=; HttpOnly; Path=/; Max-Age=0;`;
-     // The response is already sent, but we can try to set it for the next one.
-     // In a real app, middleware might be better for this.
-     // For now, we rely on the short Max-Age of the cookie.
+    // No clean up needed
   }
 }
