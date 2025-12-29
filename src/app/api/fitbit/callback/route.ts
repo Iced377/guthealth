@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state');
 
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('__session')?.value;
+  // const cookieStore = await cookies();
+  // const sessionCookie = cookieStore.get('__session')?.value;
 
   if (!code) {
     return new NextResponse('Authorization code not found in request.', { status: 400 });
@@ -25,8 +25,10 @@ export async function GET(req: NextRequest) {
     return new NextResponse('State parameter not found.', { status: 400 });
   }
 
-  // Retrieve code verifier from Firestore using state
+  // Retrieve code verifier and UID from Firestore using state
   let codeVerifier: string | undefined;
+  let uid: string | undefined;
+
   try {
     const adminApp = getAdminApp();
     const adminDb = getFirestore(adminApp);
@@ -34,7 +36,9 @@ export async function GET(req: NextRequest) {
     const stateDoc = await stateDocRef.get();
 
     if (stateDoc.exists) {
-      codeVerifier = stateDoc.data()?.codeVerifier;
+      const data = stateDoc.data();
+      codeVerifier = data?.codeVerifier;
+      uid = data?.uid;
       // Clean up the used state
       await stateDocRef.delete();
     }
@@ -43,23 +47,13 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Error validating auth state.', { status: 500 });
   }
 
-  if (!codeVerifier) {
-    return new NextResponse('Code verifier not found or expired. Please try authorizing again.', { status: 400 });
-  }
-  if (!sessionCookie) {
-    return new NextResponse('User session not found. Please log in first.', { status: 401 });
+  if (!codeVerifier || !uid) {
+    return new NextResponse('Invalid state or code verifier. The authorization session may have expired.', { status: 400 });
   }
 
-  // Verify the session cookie and get the UID
-  let uid: string;
-  try {
-    const adminApp = getAdminApp();
-    const decodedToken = await getAuth(adminApp).verifySessionCookie(sessionCookie, true);
-    uid = decodedToken.uid;
-  } catch (error) {
-    console.error("Error verifying session cookie:", error);
-    return NextResponse.redirect(new URL('/login?error=session_expired', req.url));
-  }
+  // NOTE: We no longer depend on the session cookie here, because the `state` 
+  // proves the user initiated this specific flow and we have their UID from step 1.
+
 
 
   const clientId = process.env.FITBIT_CLIENT_ID;

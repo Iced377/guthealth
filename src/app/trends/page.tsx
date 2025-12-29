@@ -4,11 +4,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
-import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore'; 
-import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile } from '@/types'; 
+import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useToast } from '@/hooks/use-toast'; 
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -18,12 +18,12 @@ import DailyMacrosTrendChart from '@/components/trends/DailyMacrosTrendChart';
 import DailyCaloriesTrendChart from '@/components/trends/DailyCaloriesTrendChart';
 import LoggedSafetyTrendChart from '@/components/trends/LoggedSafetyTrendChart';
 import SymptomOccurrenceChart from '@/components/trends/SymptomOccurrenceChart';
-import GITrendChart from '@/components/trends/GITrendChart'; 
-import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList'; 
+import GITrendChart from '@/components/trends/GITrendChart';
+import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, AlertTriangle, BarChart3, Award, Zap } from 'lucide-react'; 
-import { subDays, subMonths, subYears, formatISO, startOfDay, endOfDay, parseISO, getHours, format } from 'date-fns'; 
+import { Loader2, AlertTriangle, BarChart3, Award, Zap } from 'lucide-react';
+import { subDays, subMonths, subYears, formatISO, startOfDay, endOfDay, parseISO, getHours, format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 
 // --- TEMPORARY FEATURE UNLOCK FLAG ---
@@ -33,9 +33,9 @@ const TEMPORARILY_UNLOCK_ALL_FEATURES = true; // Kept true as per previous state
 export default function TrendsPage() {
   const { user, loading: authLoading } = useAuth();
   const { isDarkMode } = useTheme(); // Removed currentTheme as it's no longer used for charts
-  const { toast } = useToast(); 
+  const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); 
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('30D');
@@ -91,7 +91,7 @@ export default function TrendsPage() {
           q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
           // Removed the upgrade prompt toast
         }
-        
+
         const querySnapshot = await getDocs(q);
         const fetchedEntries: TimelineEntry[] = querySnapshot.docs.map(docSnap => {
           const data = docSnap.data();
@@ -111,7 +111,35 @@ export default function TrendsPage() {
     };
 
     fetchData();
-  }, [user, authLoading, toast]); 
+  }, [user, authLoading, toast]);
+
+  const handleConnectFitbit = async () => {
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/fitbit/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to initiate Fitbit connection');
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error("Error connecting to Fitbit:", error);
+      toast({
+        title: 'Connection Error',
+        description: 'Failed to start Fitbit connection. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
@@ -140,9 +168,9 @@ export default function TrendsPage() {
         break;
       case 'ALL':
       default:
-        return timelineEntries; 
+        return timelineEntries;
     }
-    
+
     const endDate = selectedTimeRange === '1D' ? endOfDay(now) : now;
 
     return timelineEntries.filter(entry => {
@@ -152,7 +180,7 @@ export default function TrendsPage() {
   }, [timelineEntries, selectedTimeRange]);
 
 
-  const aggregateDataByDay = <T extends {calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; userFeedback?: 'safe' | 'unsafe' | null}>(
+  const aggregateDataByDay = <T extends { calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; userFeedback?: 'safe' | 'unsafe' | null }>(
     entries: (LoggedFoodItem & T)[],
     mapper: (date: string, itemsOnDate: (LoggedFoodItem & T)[]) => any
   ) => {
@@ -170,7 +198,7 @@ export default function TrendsPage() {
     const sortedDays = Object.keys(groupedByDay).sort((a, b) => parseISO(a).getTime() - parseISO(b).getTime());
     return sortedDays.map(dayKey => mapper(dayKey, groupedByDay[dayKey]));
   };
-  
+
   const macroData = useMemo<MacroPoint[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
     return aggregateDataByDay(foodEntries, (date, items) => ({
@@ -190,7 +218,7 @@ export default function TrendsPage() {
   }, [filteredEntries]);
 
   const safetyData = useMemo<SafetyPoint[]>(() => {
-     const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
+    const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
     return aggregateDataByDay(foodEntries, (date, items) => ({
       date,
       safe: items.filter(item => item.userFeedback === 'safe').length,
@@ -218,8 +246,8 @@ export default function TrendsPage() {
     for (let i = 0; i < 24; i++) {
       const data = hourlyGiTotals[i];
       result.push({
-        hour: format(new Date(0, 0, 0, i), 'HH:mm'), 
-        gi: data ? data.sum / data.count : 0, 
+        hour: format(new Date(0, 0, 0, i), 'HH:mm'),
+        gi: data ? data.sum / data.count : 0,
       });
     }
     return result;
@@ -238,7 +266,7 @@ export default function TrendsPage() {
 
   const micronutrientAchievementData = useMemo<MicronutrientAchievement[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
-    const dailyMicronutrientTotals: Record<string, Record<string, { dv: number, iconName?: string }>> = {}; 
+    const dailyMicronutrientTotals: Record<string, Record<string, { dv: number, iconName?: string }>> = {};
 
     foodEntries.forEach(entry => {
       const dayKey = formatISO(new Date(entry.timestamp), { representation: 'date' });
@@ -251,7 +279,7 @@ export default function TrendsPage() {
         const allMicros: MicronutrientDetail[] = [];
         if (microsInfo.notable) allMicros.push(...microsInfo.notable);
         if (microsInfo.fullList) allMicros.push(...microsInfo.fullList);
-        
+
         allMicros.forEach(micro => {
           if (micro.dailyValuePercent !== undefined) {
             if (!dailyMicronutrientTotals[dayKey][micro.name]) {
@@ -259,7 +287,7 @@ export default function TrendsPage() {
             }
             dailyMicronutrientTotals[dayKey][micro.name].dv += micro.dailyValuePercent;
             if (micro.iconName && !dailyMicronutrientTotals[dayKey][micro.name].iconName) {
-               dailyMicronutrientTotals[dayKey][micro.name].iconName = micro.iconName;
+              dailyMicronutrientTotals[dayKey][micro.name].iconName = micro.iconName;
             }
           }
         });
@@ -301,31 +329,31 @@ export default function TrendsPage() {
 
   if (!user) {
     return (
-       <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
-            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-            <h2 className="text-2xl font-semibold mb-2 text-foreground">Access Denied</h2>
-            <p className="text-muted-foreground">Please log in to view your trends.</p>
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-2xl font-semibold mb-2 text-foreground">Access Denied</h2>
+          <p className="text-muted-foreground">Please log in to view your trends.</p>
         </div>
       </div>
     );
   }
-  
+
   if (error) {
-     return (
-       <div className="flex flex-col min-h-screen">
+    return (
+      <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
-            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-            <h2 className="text-2xl font-semibold mb-2 text-foreground">Error Loading Trends</h2>
-            <p className="text-muted-foreground">{error}</p>
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-2xl font-semibold mb-2 text-foreground">Error Loading Trends</h2>
+          <p className="text-muted-foreground">{error}</p>
         </div>
       </div>
     );
   }
-  
-   if (timelineEntries.length === 0) {
+
+  if (timelineEntries.length === 0) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -336,7 +364,7 @@ export default function TrendsPage() {
             Not enough data yet. Start logging your meals and symptoms to see your trends over time!
             {!TEMPORARILY_UNLOCK_ALL_FEATURES && !userProfile?.premium && " (Free users: trends based on last 2 days of data)"}
           </p>
-           <div className="mt-12 text-center">
+          <div className="mt-12 text-center">
             <Button asChild variant="outline">
               <Link href="/?openDashboard=true">Return to Dashboard</Link>
             </Button>
@@ -354,16 +382,14 @@ export default function TrendsPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
-            <Button asChild>
-              <Link href="/api/fitbit/auth">
-                <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
-              </Link>
+            <Button onClick={handleConnectFitbit} disabled={authLoading}>
+              <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
             </Button>
           </div>
           <div className="mb-8">
             <TimeRangeToggle selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
           </div>
-           {/* Removed upgrade prompt */}
+          {/* Removed upgrade prompt */}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-card shadow-lg border-border">
@@ -380,7 +406,7 @@ export default function TrendsPage() {
                 <CardTitle className="text-xl font-semibold text-foreground">Daily Macronutrient Trends</CardTitle>
               </CardHeader>
               <CardContent>
-                 {macroData.length > 0 ? <DailyMacrosTrendChart data={macroData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No macronutrient data for this period.</p>}
+                {macroData.length > 0 ? <DailyMacrosTrendChart data={macroData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No macronutrient data for this period.</p>}
               </CardContent>
             </Card>
 
@@ -407,11 +433,11 @@ export default function TrendsPage() {
                 <CardTitle className="text-xl font-semibold text-foreground">Symptom Occurrence</CardTitle>
               </CardHeader>
               <CardContent className="h-[350px] flex items-center justify-center">
-                 {symptomFrequencyData.length > 0 ? <SymptomOccurrenceChart data={symptomFrequencyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No symptoms logged for this period.</p>}
+                {symptomFrequencyData.length > 0 ? <SymptomOccurrenceChart data={symptomFrequencyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No symptoms logged for this period.</p>}
               </CardContent>
             </Card>
-            
-            <Card className="bg-card shadow-lg border-border lg:col-span-2"> 
+
+            <Card className="bg-card shadow-lg border-border lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-xl font-semibold text-foreground flex items-center">
                   <Award className="mr-2 h-6 w-6 text-yellow-500" /> Micronutrient Target Achievements
@@ -440,4 +466,3 @@ const getPathname = () => {
   return "";
 };
 
-    
