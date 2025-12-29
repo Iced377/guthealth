@@ -107,11 +107,15 @@ export async function GET(req: NextRequest) {
     await setDoc(privateDataRef, fitbitData, { merge: true });
 
     // Redirect user back to a success page or dashboard
-    return NextResponse.redirect(new URL('/trends?fitbit=success', req.url));
+    // Use NEXT_PUBLIC_BASE_URL if set, or hardcode production domain, or fall back to request origin if not 0.0.0.0
+    // The "0.0.0.0" error happens because req.url internal to the container might be 0.0.0.0.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygutcheck.app';
+    return NextResponse.redirect(new URL('/trends?fitbit=success', baseUrl));
 
   } catch (error) {
     console.error('Error during Fitbit callback processing:', error);
-    return NextResponse.redirect(new URL('/trends?fitbit=error', req.url));
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygutcheck.app';
+    return NextResponse.redirect(new URL('/trends?fitbit=error', baseUrl));
   } finally {
     // No clean up needed
   }
