@@ -8,14 +8,15 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
 let adminApp: admin.app.App;
 
 export function getAdminApp(): admin.app.App {
-  if (!serviceAccount) {
-    throw new Error('Firebase service account key not found. Please set the FIREBASE_SERVICE_ACCOUNT_KEY environment variable.');
-  }
-
   if (!admin.apps.length) {
-    adminApp = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
+    if (serviceAccount) {
+      adminApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } else {
+      // Fallback to Application Default Credentials (ADC) for production environments (like Firebase Functions/Cloud Run)
+      adminApp = admin.initializeApp();
+    }
   } else {
     adminApp = admin.app();
   }
