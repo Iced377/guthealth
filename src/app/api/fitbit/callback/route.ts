@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/config/firebase'; // Client SDK for user data (or can use admin SDK for consistency)
-import { doc, setDoc } from 'firebase/firestore';
+// import { db } from '@/config/firebase'; // REMOVED: Unused Client SDK
+// import { doc, setDoc } from 'firebase/firestore'; // REMOVED: Unused Client SDK
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -103,9 +103,12 @@ export async function GET(req: NextRequest) {
     };
 
     // Store it under a private subcollection for the user
-    const userDocRef = doc(db, 'users', uid);
-    const privateDataRef = doc(userDocRef, 'private', 'fitbit');
-    await setDoc(privateDataRef, fitbitData, { merge: true });
+    // CRITICAL FIX: Use Admin SDK (adminDb) to bypass security rules.
+    const adminApp = getAdminApp();
+    const adminDb = getFirestore(adminApp);
+    const userDocRef = adminDb.collection('users').doc(uid);
+    const privateDataRef = userDocRef.collection('private').doc('fitbit');
+    await privateDataRef.set(fitbitData, { merge: true });
 
     // Redirect user back to a success page or dashboard
     // Use NEXT_PUBLIC_BASE_URL if set, or hardcode production domain, or fall back to request origin if not 0.0.0.0
