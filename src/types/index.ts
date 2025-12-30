@@ -116,6 +116,7 @@ export interface FitbitLog {
   timestamp: Date;
   entryType: 'fitbit_data';
   weight?: number; // kg
+  fatPercent?: number; // %
   steps?: number;
   caloriesBurned?: number;
 }
@@ -174,6 +175,8 @@ export interface CaloriePoint {
 export interface WeightPoint {
   date: string;
   weight: number;
+  fatPercent?: number;
+  fatMass?: number;
 }
 
 export interface ActivityPoint {

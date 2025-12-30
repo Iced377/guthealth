@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "v3.7.14";
+export const APP_VERSION = "v3.7.15";
 
 interface ReleaseNote {
   version: string;

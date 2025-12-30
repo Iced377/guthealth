@@ -23,6 +23,7 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
 
     const chartConfig = {
         weight: { label: "Weight (kg)", color: colors.weight },
+        fatMass: { label: "Fat Mass (kg)", color: "hsl(var(--chart-2))" },
     } satisfies import("@/components/ui/chart").ChartConfig;
 
     if (!data || data.length === 0) {
@@ -82,14 +83,40 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
                             stopOpacity={0.1}
                         />
                     </linearGradient>
+                    <linearGradient id="fillFatMass" x1="0" y1="0" x2="0" y2="1">
+                        <stop
+                            offset="5%"
+                            stopColor="var(--color-fatMass)"
+                            stopOpacity={0.8}
+                        />
+                        <stop
+                            offset="95%"
+                            stopColor="var(--color-fatMass)"
+                            stopOpacity={0.1}
+                        />
+                    </linearGradient>
                 </defs>
+                {/* Fat Mass first so it's behind? No, weight is larger, so weight behind.
+                    Actually, if we stack, they stack on top. If not stacked, they overlay.
+                    Weight is total. Fat Mass is part.
+                    If I put FatMass AFTER Weight, it draws ON TOP of Weight. 
+                    So Weight (Background) -> Fat Mass (Foreground).
+                */}
                 <Area
                     dataKey="weight"
                     type="monotone"
                     fill="url(#fillWeight)"
                     stroke="var(--color-weight)"
                     strokeWidth={2.5}
-                    stackId="a"
+                    stackId="a" // Stacked? No, if stacked, they add up. Total would be Weight + Fat.
+                // We want them separate. Remove stackId.
+                />
+                <Area
+                    dataKey="fatMass"
+                    type="monotone"
+                    fill="url(#fillFatMass)"
+                    stroke="var(--color-fatMass)"
+                    strokeWidth={2.5}
                 />
                 <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>

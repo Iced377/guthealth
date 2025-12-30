@@ -316,11 +316,15 @@ export default function TrendsPage() {
   const weightData = useMemo<WeightPoint[]>(() => {
     const weightEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data') as FitbitLog[];
     return aggregateGenericByDay(weightEntries, (date, items) => {
-      // Use the latest weight logged for that day
       const latest = items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
+      const weight = latest?.weight || 0;
+      const fatPercent = latest?.fatPercent;
+      const fatMass = (weight && fatPercent) ? (weight * fatPercent / 100) : undefined;
       return {
         date,
-        weight: latest?.weight || 0
+        weight,
+        fatPercent,
+        fatMass
       };
     }).filter(p => p.weight > 0); // Only show days experienced weight
   }, [filteredEntries]);

@@ -4,7 +4,7 @@ import { getAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import fetch from 'node-fetch';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 export async function POST(req: NextRequest) {
     try {
@@ -79,73 +79,111 @@ export async function POST(req: NextRequest) {
             console.log("Fitbit token refreshed.");
         }
 
-        // 4. Fetch Data (Today)
-        // We fetch for "today"
-        const today = new Date();
-        const dateStr = format(today, 'yyyy-MM-dd');
+        // 4. Fetch History Data (Last 30 Days)
+        // We use 'today/30d' to get the last 30 days including today.
+        // APIs:
+        // Weight Logs (includes BMI, Fat): /1/user/-/body/log/weight/date/today/30d.json
+        // Steps Time Series: /1/user/-/activities/steps/date/today/30d.json
+        // Calories Time Series: /1/user/-/activities/calories/date/today/30d.json
 
-        // Parallel fetch for Weight and Activity
-        const [weightRes, activityRes] = await Promise.all([
-            fetch(`https://api.fitbit.com/1/user/-/body/log/weight/date/${dateStr}.json`, {
+        const [weightRes, stepsRes, caloriesRes] = await Promise.all([
+            fetch(`https://api.fitbit.com/1/user/-/body/log/weight/date/today/30d.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/date/${dateStr}.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/today/30d.json`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            }),
+            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/today/30d.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             })
         ]);
 
-        let weightLog = 0;
-        let steps = 0;
-        let caloriesBurned = 0;
+        const dailyMap: Record<string, { weight?: number; fatPercent?: number; steps?: number; caloriesBurned?: number }> = {};
 
+        // Process Weight
         if (weightRes.ok) {
-            const weightData = await weightRes.json() as any;
-            // weightData.weight is an array of entries
-            if (weightData.weight && weightData.weight.length > 0) {
-                // Take the last entry? Or average? Let's take the last one.
-                weightLog = weightData.weight[weightData.weight.length - 1].weight;
+            const data = await weightRes.json() as any;
+            // data.weight is array of { date: 'YYYY-MM-DD', weight: 80, fat: 20, ... }
+            if (data.weight && Array.isArray(data.weight)) {
+                data.weight.forEach((entry: any) => {
+                    const date = entry.date;
+                    if (!dailyMap[date]) dailyMap[date] = {};
+                    dailyMap[date].weight = entry.weight;
+                    if (entry.fat) dailyMap[date].fatPercent = entry.fat;
+                });
             }
+        } else {
+            console.warn("Failed to fetch weight history", await weightRes.text());
         }
 
-        if (activityRes.ok) {
-            const activityData = await activityRes.json() as any;
-            if (activityData.summary) {
-                steps = activityData.summary.steps || 0;
-                caloriesBurned = activityData.summary.caloriesOut || 0;
+        // Process Steps
+        if (stepsRes.ok) {
+            const data = await stepsRes.json() as any;
+            // data['activities-steps'] is array of { dateTime: 'YYYY-MM-DD', value: '123' }
+            const stepsArr = data['activities-steps'];
+            if (stepsArr && Array.isArray(stepsArr)) {
+                stepsArr.forEach((entry: any) => {
+                    const date = entry.dateTime;
+                    if (!dailyMap[date]) dailyMap[date] = {};
+                    dailyMap[date].steps = parseInt(entry.value, 10);
+                });
             }
+        } else {
+            console.warn("Failed to fetch steps history", await stepsRes.text());
         }
 
-        // 5. Save to Timeline
-        // Create a FitbitLog entry
-        // We use a specific ID based on date to avoid duplicates for the same day
-        const entryId = `fitbit_${dateStr}`;
-        const timelineRef = userDocRef.collection('timelineEntries').doc(entryId);
+        // Process Calories
+        if (caloriesRes.ok) {
+            const data = await caloriesRes.json() as any;
+            const calArr = data['activities-calories'];
+            if (calArr && Array.isArray(calArr)) {
+                calArr.forEach((entry: any) => {
+                    const date = entry.dateTime;
+                    if (!dailyMap[date]) dailyMap[date] = {};
+                    dailyMap[date].caloriesBurned = parseInt(entry.value, 10);
+                });
+            }
+        } else {
+            console.warn("Failed to fetch calories history", await caloriesRes.text());
+        }
 
-        // If neither weight nor activity, maybe don't save? 
-        // But user might want to see 0 steps if they did nothing.
-        // Let's save if we got a successful response, even if 0.
+        // 5. Batch Write to Firestore
+        const batch = db.batch();
+        const timelineColRef = userDocRef.collection('timelineEntries');
+        let operationCount = 0;
 
-        const newEntry = {
-            id: entryId,
-            timestamp: new Date(), // Current time of sync, OR date of data? 
-            // Better to set timestamp to end of the day or just now? 
-            // The charts use timestamp. If we sync multiple times a day, we update the same entry.
-            // Let's keep the timestamp as "now" so it shows up at the top? 
-            // OR preserve the date. Let's use the date we fetched for.
-            // Actually, if I update it, I want it to be reflective of that day.
-            // Let's set it to noon of that day to avoid timezone weirdness or just use `today`.
+        Object.entries(dailyMap).forEach(([dateStr, data]) => {
+            // Only save if we have at least one data point
+            if (data.weight === undefined && data.steps === undefined && data.caloriesBurned === undefined) return;
 
-            entryType: 'fitbit_data',
-            weight: weightLog,
-            steps: steps,
-            caloriesBurned: caloriesBurned,
-            lastSynced: new Date()
-        };
+            // Skip "0" steps/calories if that's all we have? 
+            // No, 0 steps is valid data for history (maybe didn't wear it), but typically we want real data.
+            // Let's save whatever Fitbit returned.
 
-        // We merge true so we don't overwrite if we add other fields later
-        await timelineRef.set(newEntry, { merge: true });
+            const entryId = `fitbit_${dateStr}`;
+            const docRef = timelineColRef.doc(entryId);
 
-        return NextResponse.json({ success: true, weight: weightLog, steps, caloriesBurned });
+            // We set the timestamp to NOON of that day to avoid timezone shifting it to prev/next day in UI
+            const timestamp = parseISO(dateStr);
+            timestamp.setHours(12, 0, 0, 0);
+
+            const newEntry = {
+                id: entryId,
+                timestamp: timestamp,
+                entryType: 'fitbit_data',
+                lastSynced: new Date(),
+                ...data // merges weight, fatPercent, steps, caloriesBurned
+            };
+
+            batch.set(docRef, newEntry, { merge: true });
+            operationCount++;
+        });
+
+        if (operationCount > 0) {
+            await batch.commit();
+        }
+
+        return NextResponse.json({ success: true, syncedDays: operationCount });
 
     } catch (error: any) {
         console.error('Error syncing Fitbit data:', error);
