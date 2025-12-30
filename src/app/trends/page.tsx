@@ -11,6 +11,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { MouseEvent } from 'react';
 
 import Navbar from '@/components/shared/Navbar';
 import TimeRangeToggle from '@/components/trends/TimeRangeToggle';
@@ -113,7 +114,10 @@ export default function TrendsPage() {
     fetchData();
   }, [user, authLoading, toast]);
 
-  const handleConnectFitbit = async () => {
+  const handleConnectFitbit = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!user) return;
     try {
       const idToken = await user.getIdToken();
@@ -384,7 +388,7 @@ export default function TrendsPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
-            <Button onClick={handleConnectFitbit} disabled={authLoading}>
+            <Button onClick={handleConnectFitbit} disabled={authLoading} type="button">
               <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
             </Button>
           </div>
