@@ -113,10 +113,10 @@ export async function GET(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygutcheck.app';
     return NextResponse.redirect(new URL('/trends?fitbit=success', baseUrl));
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during Fitbit callback processing:', error);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygutcheck.app';
-    return NextResponse.redirect(new URL('/trends?fitbit=error', baseUrl));
+    return NextResponse.redirect(new URL(`/trends?fitbit=error&message=${encodeURIComponent(error.message || 'Unknown error')}`, baseUrl));
   } finally {
     // No clean up needed
   }

@@ -51,9 +51,10 @@ export default function TrendsPage() {
         variant: 'default',
       });
     } else if (fitbitStatus === 'error') {
+      const message = searchParams.get('message');
       toast({
         title: 'Fitbit Connection Failed',
-        description: 'There was a problem linking your Fitbit account. Please try again.',
+        description: message ? `Error: ${decodeURIComponent(message)}` : 'There was a problem linking your Fitbit account. Please try again.',
         variant: 'destructive',
       });
     }
