@@ -20,8 +20,15 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
 
-        // 2. Generate PKCE Verifier & Challenge
-        const codeVerifier = crypto.randomBytes(32).toString('hex');
+        // 2. Generate PKCE Verifier & Challenge (RFC 7636)
+        // Verifier: High-entropy cryptographic random string (43-128 chars)
+        // We use URL-Safe Base64 to match the tutorial's example style and standard.
+        const codeVerifier = crypto.randomBytes(32)
+            .toString('base64')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+
         const codeChallenge = crypto
             .createHash('sha256')
             .update(codeVerifier)
