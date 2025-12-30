@@ -51,7 +51,10 @@ export async function POST(req: NextRequest) {
         const redirectUri = process.env.FITBIT_REDIRECT_URI;
 
         if (!clientId || !redirectUri) {
-            throw new Error("Missing FITBIT_CLIENT_ID or FITBIT_REDIRECT_URI env vars");
+            const missing = [];
+            if (!clientId) missing.push('FITBIT_CLIENT_ID');
+            if (!redirectUri) missing.push('FITBIT_REDIRECT_URI');
+            throw new Error(`Missing environment variables: ${missing.join(', ')}`);
         }
 
         const scope = process.env.FITBIT_SCOPES || 'activity nutrition weight profile';
@@ -60,8 +63,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ url });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error initiating Fitbit flow:', error);
-        return new NextResponse('Internal Server Error', { status: 500 });
+        return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 });
     }
 }

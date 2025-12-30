@@ -133,9 +133,10 @@ export default function TrendsPage() {
       window.location.href = url;
     } catch (error) {
       console.error("Error connecting to Fitbit:", error);
+      // alert(`Debug Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast({
         title: 'Connection Error',
-        description: 'Failed to start Fitbit connection. Please try again.',
+        description: `Failed to start Fitbit connection: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     }
