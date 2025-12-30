@@ -111,7 +111,16 @@ export interface SymptomLog {
   entryType: 'symptom';
 }
 
-export type TimelineEntry = LoggedFoodItem | SymptomLog;
+export interface FitbitLog {
+  id: string;
+  timestamp: Date;
+  entryType: 'fitbit_data';
+  weight?: number; // kg
+  steps?: number;
+  caloriesBurned?: number;
+}
+
+export type TimelineEntry = LoggedFoodItem | SymptomLog | FitbitLog;
 
 
 export interface SafeFood {
@@ -160,6 +169,17 @@ export interface MacroPoint {
 export interface CaloriePoint {
   date: string;
   calories: number;
+}
+
+export interface WeightPoint {
+  date: string;
+  weight: number;
+}
+
+export interface ActivityPoint {
+  date: string;
+  steps: number;
+  burned: number;
 }
 
 export interface SafetyPoint {

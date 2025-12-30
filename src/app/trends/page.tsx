@@ -5,13 +5,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
-import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile } from '@/types';
+import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { MouseEvent } from 'react';
+import { MouseEvent, useCallback } from 'react';
 
 import Navbar from '@/components/shared/Navbar';
 import TimeRangeToggle from '@/components/trends/TimeRangeToggle';
@@ -20,6 +20,8 @@ import DailyCaloriesTrendChart from '@/components/trends/DailyCaloriesTrendChart
 import LoggedSafetyTrendChart from '@/components/trends/LoggedSafetyTrendChart';
 import SymptomOccurrenceChart from '@/components/trends/SymptomOccurrenceChart';
 import GITrendChart from '@/components/trends/GITrendChart';
+import WeightTrendChart from '@/components/trends/WeightTrendChart';
+import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,6 +44,93 @@ export default function TrendsPage() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('30D');
   const [error, setError] = useState<string | null>(null);
 
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    setIsLoadingData(true);
+    setError(null);
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      let isPremium = false;
+      if (userDocSnap.exists()) {
+        const profileData = userDocSnap.data() as UserProfile;
+        setUserProfile(profileData);
+        isPremium = profileData.premium || false;
+      } else {
+        setUserProfile({ uid: user.uid, email: user.email, displayName: user.displayName, safeFoods: [], premium: false });
+      }
+
+      const entriesColRef = collection(db, 'users', user.uid, 'timelineEntries');
+      let q;
+
+      if (TEMPORARILY_UNLOCK_ALL_FEATURES || isPremium) {
+        q = query(entriesColRef, orderBy('timestamp', 'desc'));
+      } else {
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
+      }
+
+      const querySnapshot = await getDocs(q);
+      const fetchedEntries: TimelineEntry[] = querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          ...data,
+          id: docSnap.id,
+          timestamp: (data.timestamp as Timestamp).toDate(),
+        } as TimelineEntry;
+      });
+      setTimelineEntries(fetchedEntries);
+    } catch (err: any) {
+      console.error("Error fetching timeline data for trends:", err);
+      setError("Could not load your data for trend analysis. Please try again later.");
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setIsLoadingData(false);
+      return;
+    }
+    fetchData();
+  }, [user, authLoading, fetchData]);
+
+  const syncFitbitData = useCallback(async () => {
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      toast({
+        title: 'Syncing Fitbit...',
+        description: 'Fetching your weight and activity data.',
+      });
+
+      const res = await fetch('/api/fitbit/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+
+      if (!res.ok) throw new Error("Sync failed");
+
+      toast({
+        title: 'Sync Complete!',
+        description: 'Your dashboard has been updated.',
+        variant: 'default'
+      });
+      fetchData(); // Reload data
+    } catch (err) {
+      console.error("Fitbit sync error:", err);
+      toast({
+        title: 'Sync Error',
+        description: 'Could not fetch Fitbit data.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, toast, fetchData]);
+
   useEffect(() => {
     const fitbitStatus = searchParams.get('fitbit');
     if (fitbitStatus === 'success') {
@@ -50,6 +139,8 @@ export default function TrendsPage() {
         description: 'Your Fitbit account has been successfully linked.',
         variant: 'default',
       });
+      // Trigger sync automatically
+      syncFitbitData();
     } else if (fitbitStatus === 'error') {
       const message = searchParams.get('message');
       toast({
@@ -58,62 +149,7 @@ export default function TrendsPage() {
         variant: 'destructive',
       });
     }
-  }, [searchParams, toast]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setIsLoadingData(false);
-      return;
-    }
-
-    const fetchData = async () => {
-      setIsLoadingData(true);
-      setError(null);
-      try {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        let isPremium = false;
-        if (userDocSnap.exists()) {
-          const profileData = userDocSnap.data() as UserProfile;
-          setUserProfile(profileData);
-          isPremium = profileData.premium || false;
-        } else {
-          setUserProfile({ uid: user.uid, email: user.email, displayName: user.displayName, safeFoods: [], premium: false });
-        }
-
-        const entriesColRef = collection(db, 'users', user.uid, 'timelineEntries');
-        let q;
-
-        if (TEMPORARILY_UNLOCK_ALL_FEATURES || isPremium) {
-          q = query(entriesColRef, orderBy('timestamp', 'desc'));
-        } else {
-          const twoDaysAgo = new Date();
-          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-          q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
-          // Removed the upgrade prompt toast
-        }
-
-        const querySnapshot = await getDocs(q);
-        const fetchedEntries: TimelineEntry[] = querySnapshot.docs.map(docSnap => {
-          const data = docSnap.data();
-          return {
-            ...data,
-            id: docSnap.id,
-            timestamp: (data.timestamp as Timestamp).toDate(),
-          } as TimelineEntry;
-        });
-        setTimelineEntries(fetchedEntries);
-      } catch (err: any) {
-        console.error("Error fetching timeline data for trends:", err);
-        setError("Could not load your data for trend analysis. Please try again later.");
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
-    fetchData();
-  }, [user, authLoading, toast]);
+  }, [searchParams, toast, syncFitbitData]);
 
   const handleConnectFitbit = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -258,6 +294,48 @@ export default function TrendsPage() {
       });
     }
     return result;
+  }, [filteredEntries]);
+
+  const aggregateGenericByDay = <T extends { timestamp: Date }>(
+    entries: T[],
+    mapper: (date: string, itemsOnDate: T[]) => any
+  ) => {
+    const groupedByDay: Record<string, T[]> = {};
+    entries.forEach(entry => {
+      const dayKey = formatISO(new Date(entry.timestamp), { representation: 'date' });
+      if (!groupedByDay[dayKey]) {
+        groupedByDay[dayKey] = [];
+      }
+      groupedByDay[dayKey].push(entry);
+    });
+
+    const sortedDays = Object.keys(groupedByDay).sort((a, b) => parseISO(a).getTime() - parseISO(b).getTime());
+    return sortedDays.map(dayKey => mapper(dayKey, groupedByDay[dayKey]));
+  };
+
+  const weightData = useMemo<WeightPoint[]>(() => {
+    const weightEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data') as FitbitLog[];
+    return aggregateGenericByDay(weightEntries, (date, items) => {
+      // Use the latest weight logged for that day
+      const latest = items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
+      return {
+        date,
+        weight: latest?.weight || 0
+      };
+    }).filter(p => p.weight > 0); // Only show days experienced weight
+  }, [filteredEntries]);
+
+  const activityData = useMemo<ActivityPoint[]>(() => {
+    const activityEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data') as FitbitLog[];
+    return aggregateGenericByDay(activityEntries, (date, items) => {
+      // Activity is usually a daily summary, but if multiple, maybe max?
+      const latest = items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
+      return {
+        date,
+        steps: latest?.steps || 0,
+        burned: latest?.caloriesBurned || 0,
+      };
+    }).filter(p => p.steps > 0);
   }, [filteredEntries]);
 
   const symptomFrequencyData = useMemo<SymptomFrequency[]>(() => {
@@ -432,6 +510,24 @@ export default function TrendsPage() {
               </CardHeader>
               <CardContent>
                 {safetyData.length > 0 ? <LoggedSafetyTrendChart data={safetyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No food safety feedback logged for this period.</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {weightData.length > 0 ? <WeightTrendChart data={weightData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No weight data (Sync Fitbit to see).</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Daily Activity (Steps)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activityData.length > 0 ? <ActivityTrendChart data={activityData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No activity data (Sync Fitbit to see).</p>}
               </CardContent>
             </Card>
 
