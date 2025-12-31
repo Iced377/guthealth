@@ -80,23 +80,27 @@ export async function POST(req: NextRequest) {
         }
 
         // 4. Fetch History Data (Last 1 Year)
-        // We use Time Series endpoints to support longer ranges (up to 1 year or more vs 30 days for logs)
-        // Weight: /1/user/-/body/weight/date/today/1y.json
-        // Fat: /1/user/-/body/fat/date/today/1y.json
-        // Steps: /1/user/-/activities/steps/date/today/1y.json
-        // Calories: /1/user/-/activities/calories/date/today/1y.json
+        // We use Time Series endpoints to support longer ranges.
+        // ERROR FIX: 'today/1y' fetches 1 year starting from today (future).
+        // We want 1 year ENDING today, so we start from 1 year ago.
 
+        const today = new Date();
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
+        const startDateStr = format(oneYearAgo, 'yyyy-MM-dd');
+
+        // Weight: /1/user/-/body/weight/date/[startDate]/1y.json
         const [weightRes, fatRes, stepsRes, caloriesRes] = await Promise.all([
-            fetch(`https://api.fitbit.com/1/user/-/body/weight/date/today/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/body/weight/date/${startDateStr}/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/body/fat/date/today/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/body/fat/date/${startDateStr}/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/today/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/${startDateStr}/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/today/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/${startDateStr}/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             })
         ]);

@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.14";
+export const APP_VERSION = "Beta 3.8.15";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +54,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.15",
+    date: "December 31, 2025",
+    title: "Sync Fix",
+    description: [
+      "Bug Fix: Fixed an issue where Fitbit Sync was checking for future data instead of past data.",
+    ]
+  },
   {
     version: "Beta 3.8.14",
     date: "December 31, 2025",
