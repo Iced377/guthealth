@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText } from 'lucide-react';
+import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { signOutUser } from '@/lib/firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "v3.7.15";
+export const APP_VERSION = "Beta 3.8.1";
 
 interface ReleaseNote {
   version: string;
@@ -52,7 +52,18 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
-
+  {
+    version: "Beta 3.8.1",
+    date: "December 30, 2025",
+    title: "The Dashboard Update",
+    description: [
+      "Dashboard 2.0: A completely new Nutrition Overview section displaying real-time calorie and macro progress.",
+      "Date Navigation: Navigate back in time to view your macros and micronutrients for any past date.",
+      "Timeline Refinements: Cleaner layout with macros in the header; empty days are now automatically hidden.",
+      "Fitbit Integration 2.0: Improved auto-sync reliability and added manual sync triggers.",
+      "UI Polish: Premium watermark icons for macro cards and consistent badge styling.",
+    ]
+  },
   {
     version: "Beta 3.7.1",
     date: "July 16, 2025",
@@ -398,6 +409,16 @@ export default function Navbar({
     router.push('/favorites');
   };
 
+  const aboutLinkHandler = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push('/about');
+  };
+
+  const dashboardLinkHandler = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push('/');
+  };
+
 
   const handleReleaseNotesToggle = (open: boolean) => {
     if (open) {
@@ -550,11 +571,9 @@ export default function Navbar({
               <div className="hidden md:flex items-center space-x-0.5 sm:space-x-1">
                 {!authLoading && authUser && (
                   <>
-                    {onOpenDashboardClick && (
-                      <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-current hover:text-primary hover:bg-primary/10")} aria-label="Open Dashboard" onClick={onOpenDashboardClick}>
-                        <LayoutGrid className="h-5 w-5" />
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Dashboard" onClick={dashboardLinkHandler}>
+                      <LayoutGrid className="h-5 w-5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
                       <Heart className="h-5 w-5" />
                     </Button>
@@ -575,6 +594,9 @@ export default function Navbar({
                         <Lightbulb className="h-5 w-5" />
                       </Button>
                     </div>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/about' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="About" onClick={aboutLinkHandler}>
+                      <Info className="h-5 w-5" />
+                    </Button>
                   </>
                 )}
 

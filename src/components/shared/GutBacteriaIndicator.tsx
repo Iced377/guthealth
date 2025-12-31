@@ -4,7 +4,7 @@
 import type { GutBacteriaImpactInfo } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Smile, Frown, Meh, HelpCircle, Users } from 'lucide-react'; // Using Users as a generic gut icon
+import { Smile, Frown, Meh, HelpCircle, Users, Dna } from 'lucide-react'; // Using Dna as a proxy for gut health
 
 interface GutBacteriaIndicatorProps {
   gutImpact?: GutBacteriaImpactInfo;
@@ -17,7 +17,7 @@ export default function GutBacteriaIndicator({ gutImpact }: GutBacteriaIndicator
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1">
-               <Users className="h-3 w-3" /> Gut Impact: N/A
+              <Users className="h-3 w-3" /> Gut Impact: N/A
             </Badge>
           </TooltipTrigger>
           <TooltipContent className="bg-popover text-popover-foreground border-border">
@@ -48,10 +48,10 @@ export default function GutBacteriaIndicator({ gutImpact }: GutBacteriaIndicator
       displayText = "– Gut Health";
       break;
     case 'Neutral':
-      IconComponent = Meh;
+      IconComponent = Dna;
       colorClass = 'border-gray-500/50 text-gray-700 dark:text-gray-400 bg-gray-500/10';
       iconColor = 'text-gray-500';
-      displayText = "Neutral Impact";
+      displayText = "Neutral Gut-Health";
       break;
     case 'Unknown':
     default:
