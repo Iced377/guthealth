@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.7";
+export const APP_VERSION = "Beta 3.8.8";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +52,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.8",
+    date: "December 31, 2025",
+    title: "Enhanced Animation Visibility",
+    description: [
+      "Interactions: Increased animation scale factor to 1.05x to ensure hover effects are clearly visible on small icons.",
+    ]
+  },
   {
     version: "Beta 3.8.7",
     date: "December 31, 2025",

@@ -95,7 +95,7 @@ const DropdownMenuItem = React.forwardRef<
         inset && "pl-8",
         className
       )}
-      whileHover={{ scale: 1.02, backgroundColor: "var(--accent)" }}
+      whileHover={{ scale: 1.05, backgroundColor: "var(--accent)" }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
       {...motionProps}
