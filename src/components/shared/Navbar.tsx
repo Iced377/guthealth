@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.12";
+export const APP_VERSION = "Beta 3.8.13";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +54,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.13",
+    date: "December 31, 2025",
+    title: "Refined Actions",
+    description: [
+      "Visuals: Updated Floating Action Button to Primary Green with White Border for better contrast against page content.",
+    ]
+  },
   {
     version: "Beta 3.8.12",
     date: "December 31, 2025",

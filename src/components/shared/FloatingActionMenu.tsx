@@ -111,7 +111,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
             <motion.button
                 className={cn(
                     "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center pointer-events-auto relative overflow-hidden transition-all duration-200",
-                    isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-white text-primary hover:bg-white/90 border-2 border-primary"
+                    isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-white"
                 )}
                 onClick={toggleMenu}
                 whileHover={{ scale: 1.1 }}

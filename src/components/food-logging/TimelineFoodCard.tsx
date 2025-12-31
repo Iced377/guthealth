@@ -133,7 +133,7 @@ export default function TimelineFoodCard({
                     {item.protein != null && <span className="flex items-center"><Beef className="w-3.5 h-3.5 mr-1 text-red-200" />{Math.round(item.protein)}P</span>}
                     {item.carbs != null && <span className="flex items-center"><Wheat className="w-3.5 h-3.5 mr-1 text-yellow-200" />{Math.round(item.carbs)}C</span>}
                     {item.fat != null && <span className="flex items-center"><Droplet className="w-3.5 h-3.5 mr-1 text-blue-200" />{Math.round(item.fat)}F</span>}
-                    {item.macrosOverridden && <span className="flex items-center text-orange-200"><PencilLine className="w-3.5 h-3.5 mr-1" />Edited</span>}
+
                   </>
                 ) : (
                   <span className="opacity-50 italic text-xs">No macros</span>
@@ -241,10 +241,15 @@ export default function TimelineFoodCard({
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); onLogSymptoms(item.id); }}
                               disabled={isLoadingAi}
-                              className={iconButtonClass}
+                              className={cn(
+                                "h-7 w-7",
+                                (item.symptoms && item.symptoms.length > 0)
+                                  ? 'bg-white text-primary hover:bg-white/90 border-2 border-primary'
+                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
+                              )}
                               aria-label="Log Symptoms"
                             >
-                              <ListChecks className="h-4 w-4" />
+                              <ListChecks className={cn("h-4 w-4", (item.symptoms && item.symptoms.length > 0) ? "fill-primary text-primary" : "")} />
                             </Button>
                           </span>
                         </TooltipTrigger>
@@ -267,10 +272,15 @@ export default function TimelineFoodCard({
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); onEditIngredients(item); }}
                               disabled={isLoadingAi}
-                              className={iconButtonClass}
+                              className={cn(
+                                "h-7 w-7",
+                                item.macrosOverridden
+                                  ? 'bg-white text-primary hover:bg-white/90 border-2 border-primary'
+                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
+                              )}
                               aria-label="Edit Item"
                             >
-                              <Edit3 className="h-4 w-4" />
+                              <Edit3 className={cn("h-4 w-4", item.macrosOverridden ? "fill-primary text-primary" : "")} />
                             </Button>
                           </span>
                         </TooltipTrigger>

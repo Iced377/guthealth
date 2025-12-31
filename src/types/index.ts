@@ -82,6 +82,7 @@ export interface LoggedFoodItem {
   userFeedback?: 'safe' | 'unsafe' | null;
   macrosOverridden?: boolean;
   isFavorite?: boolean; // Added for favorite functionality
+  symptoms?: string[]; // List of symptom IDs
 }
 
 export interface Symptom {
