@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.4";
+export const APP_VERSION = "Beta 3.8.5";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +52,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.5",
+    date: "December 31, 2025",
+    title: "Global Animations",
+    description: [
+      "Interactions: Global button animations (hover scale, tap effect) now applied to all cards, navigation, and menu items.",
+    ]
+  },
   {
     version: "Beta 3.8.4",
     date: "December 31, 2025",
