@@ -251,7 +251,7 @@ export default function DashboardContent({
                                                 return (
                                                     <div
                                                         key={entry.id}
-                                                        className="card-reveal-animation"
+                                                        className="card-reveal-animation h-full"
                                                         style={{ animationDelay: `${entryIndex * 0.05}s` }}
                                                     >
                                                         <TimelineFoodCard

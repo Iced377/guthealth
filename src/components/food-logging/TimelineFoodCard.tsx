@@ -95,7 +95,7 @@ export default function TimelineFoodCard({
 
   const cardClasses = cn(
     "mb-4 shadow-lg hover:shadow-xl transition-shadow duration-200 relative overflow-hidden",
-    "bg-card text-card-foreground border-border"
+    "bg-card text-card-foreground border-border h-full flex flex-col"
   );
 
   const detectedAllergens = item.fodmapData?.detectedAllergens;
