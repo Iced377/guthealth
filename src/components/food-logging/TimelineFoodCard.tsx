@@ -112,7 +112,12 @@ export default function TimelineFoodCard({
               {/* Title - Aligned with Top Row Actions */}
               <div className="flex items-center h-7">
                 <DialogTrigger asChild>
-                  <Button variant="link" className={cn("p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left hover:underline decoration-white/50 underline-offset-4 leading-none justify-start")}>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left text-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
+                    )}
+                  >
                     {item.name}
                   </Button>
                 </DialogTrigger>
