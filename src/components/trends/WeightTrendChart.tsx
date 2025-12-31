@@ -22,7 +22,7 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
     const colors = getColors(isDarkMode);
 
     const chartConfig = {
-        weight: { label: "Weight (kg)", color: colors.weight },
+        weight: { label: "Weight (kg)", color: "hsl(var(--chart-3))" }, // Matches 'not marked'
         fatMass: { label: "Fat Mass (kg)", color: "hsl(var(--chart-2))" },
     } satisfies import("@/components/ui/chart").ChartConfig;
 
@@ -33,12 +33,18 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
     // Adaptive domain for weight
     const minWeight = Math.min(...data.map(d => d.weight));
     const maxWeight = Math.max(...data.map(d => d.weight));
-    const padding = (maxWeight - minWeight) * 0.1 || 5;
+    const weightPadding = (maxWeight - minWeight) * 0.1 || 5;
+    const weightDomain = [Math.max(0, Math.floor(minWeight - weightPadding)), Math.ceil(maxWeight + weightPadding)];
 
-    const yAxisDomain = [
-        Math.max(0, Math.floor(minWeight - padding)),
-        Math.ceil(maxWeight + padding)
-    ];
+    // Adaptive domain for fat mass
+    const fatMassData = data.map(d => d.fatMass || 0); // Handle potentially undefined
+    const minFat = Math.min(...fatMassData);
+    const maxFat = Math.max(...fatMassData);
+    const fatPadding = (maxFat - minFat) * 0.1 || 2;
+    // If no fat data, default to 0-10 or similar to avoid chart errors
+    const fatDomain = maxFat > 0
+        ? [Math.max(0, Math.floor(minFat - fatPadding)), Math.ceil(maxFat + fatPadding)]
+        : [0, 10];
 
     return (
         <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
@@ -60,11 +66,25 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
                     height={data.length > 10 ? 50 : 30}
                 />
                 <YAxis
+                    yAxisId="weight"
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
                     stroke={colors.text}
-                    domain={yAxisDomain}
+                    domain={weightDomain}
+                    label={{ value: 'Weight (kg)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: colors.text, fontSize: 12 } }}
+                    width={50}
+                />
+                <YAxis
+                    yAxisId="fat"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    stroke={colors.text} // Functionally same color for text, or use fat color?
+                    domain={fatDomain}
+                    label={{ value: 'Fat Mass (kg)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: colors.text, fontSize: 12 } }}
+                    width={50}
                 />
                 <ChartTooltip
                     cursor={true}
@@ -96,22 +116,16 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
                         />
                     </linearGradient>
                 </defs>
-                {/* Fat Mass first so it's behind? No, weight is larger, so weight behind.
-                    Actually, if we stack, they stack on top. If not stacked, they overlay.
-                    Weight is total. Fat Mass is part.
-                    If I put FatMass AFTER Weight, it draws ON TOP of Weight. 
-                    So Weight (Background) -> Fat Mass (Foreground).
-                */}
                 <Area
+                    yAxisId="weight"
                     dataKey="weight"
                     type="monotone"
                     fill="url(#fillWeight)"
                     stroke="var(--color-weight)"
                     strokeWidth={2.5}
-                    stackId="a" // Stacked? No, if stacked, they add up. Total would be Weight + Fat.
-                // We want them separate. Remove stackId.
                 />
                 <Area
+                    yAxisId="fat"
                     dataKey="fatMass"
                     type="monotone"
                     fill="url(#fillFatMass)"

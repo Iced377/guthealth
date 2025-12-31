@@ -79,41 +79,58 @@ export async function POST(req: NextRequest) {
             console.log("Fitbit token refreshed.");
         }
 
-        // 4. Fetch History Data (Last 30 Days)
-        // We use 'today/30d' to get the last 30 days including today.
-        // APIs:
-        // Weight Logs (includes BMI, Fat): /1/user/-/body/log/weight/date/today/30d.json
-        // Steps Time Series: /1/user/-/activities/steps/date/today/30d.json
-        // Calories Time Series: /1/user/-/activities/calories/date/today/30d.json
+        // 4. Fetch History Data (Last 1 Year)
+        // We use Time Series endpoints to support longer ranges (up to 1 year or more vs 30 days for logs)
+        // Weight: /1/user/-/body/weight/date/today/1y.json
+        // Fat: /1/user/-/body/fat/date/today/1y.json
+        // Steps: /1/user/-/activities/steps/date/today/1y.json
+        // Calories: /1/user/-/activities/calories/date/today/1y.json
 
-        const [weightRes, stepsRes, caloriesRes] = await Promise.all([
-            fetch(`https://api.fitbit.com/1/user/-/body/log/weight/date/today/30d.json`, {
+        const [weightRes, fatRes, stepsRes, caloriesRes] = await Promise.all([
+            fetch(`https://api.fitbit.com/1/user/-/body/weight/date/today/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/today/30d.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/body/fat/date/today/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/today/30d.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/today/1y.json`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            }),
+            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/today/1y.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             })
         ]);
 
         const dailyMap: Record<string, { weight?: number; fatPercent?: number; steps?: number; caloriesBurned?: number }> = {};
 
-        // Process Weight
+        // Process Weight Time Series
         if (weightRes.ok) {
             const data = await weightRes.json() as any;
-            // data.weight is array of { date: 'YYYY-MM-DD', weight: 80, fat: 20, ... }
-            if (data.weight && Array.isArray(data.weight)) {
-                data.weight.forEach((entry: any) => {
-                    const date = entry.date;
+            const weightArr = data['body-weight'];
+            if (weightArr && Array.isArray(weightArr)) {
+                weightArr.forEach((entry: any) => {
+                    const date = entry.dateTime;
                     if (!dailyMap[date]) dailyMap[date] = {};
-                    dailyMap[date].weight = entry.weight;
-                    if (entry.fat) dailyMap[date].fatPercent = entry.fat;
+                    dailyMap[date].weight = parseFloat(entry.value);
                 });
             }
         } else {
             console.warn("Failed to fetch weight history", await weightRes.text());
+        }
+
+        // Process Fat Time Series
+        if (fatRes.ok) {
+            const data = await fatRes.json() as any;
+            const fatArr = data['body-fat'];
+            if (fatArr && Array.isArray(fatArr)) {
+                fatArr.forEach((entry: any) => {
+                    const date = entry.dateTime;
+                    if (!dailyMap[date]) dailyMap[date] = {};
+                    dailyMap[date].fatPercent = parseFloat(entry.value);
+                });
+            }
+        } else {
+            console.warn("Failed to fetch fat history", await fatRes.text());
         }
 
         // Process Steps

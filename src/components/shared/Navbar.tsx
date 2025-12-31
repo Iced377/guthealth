@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.1";
+export const APP_VERSION = "Beta 3.8.2";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +52,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.2",
+    date: "December 31, 2025",
+    title: "Trends & Fitbit Enhancements",
+    description: [
+      "Trends: Body Weight graph now features dual axes to clearly show Weight vs. Fat Mass.",
+      "Trends: Extended Fitbit data synchronization history from 30 days to 1 year.",
+      "Visuals: Adjusted Body Weight graph colors for better consistency with safety charts.",
+    ]
+  },
   {
     version: "Beta 3.8.1",
     date: "December 30, 2025",
