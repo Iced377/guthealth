@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingActionMenu } from './FloatingActionMenu';
+import { BottomActionBar } from './BottomActionBar';
+import FeedbackWidget from '../feedback/FeedbackWidget';
 // ... existing imports ...
 import { useAuth } from '@/components/auth/AuthProvider';
 import { signOutUser } from '@/lib/firebase/auth';
@@ -44,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.16";
+export const APP_VERSION = "Beta 3.8.17";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.17",
+    date: "December 31, 2025",
+    title: "Critical Fix",
+    description: [
+      "Bug Fix: Resolved a runtime error caused by missing layout components.",
+    ]
+  },
   {
     version: "Beta 3.8.16",
     date: "December 31, 2025",
