@@ -191,7 +191,7 @@ export default function TimelineFoodCard({
                                 className={cn(
                                   "h-7 w-7",
                                   item.userFeedback === 'safe'
-                                    ? 'bg-white/20 hover:bg-white/30 text-primary-foreground'
+                                    ? 'bg-white/20 hover:bg-white/10 text-primary-foreground'
                                     : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
                                 )}
                                 aria-label="Mark as Safe"
@@ -215,7 +215,7 @@ export default function TimelineFoodCard({
                                 className={cn(
                                   "h-7 w-7",
                                   item.userFeedback === 'unsafe'
-                                    ? 'bg-red-700/60 hover:bg-red-700/80 text-primary-foreground'
+                                    ? 'bg-red-700/60 hover:bg-white/10 text-primary-foreground'
                                     : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
                                 )}
                                 aria-label="Mark as Unsafe"

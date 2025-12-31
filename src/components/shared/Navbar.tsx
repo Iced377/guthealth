@@ -1,9 +1,11 @@
-
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FloatingActionMenu } from './FloatingActionMenu';
+// ... existing imports ...
 import { useAuth } from '@/components/auth/AuthProvider';
 import { signOutUser } from '@/lib/firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -42,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.8";
+export const APP_VERSION = "Beta 3.8.9";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +54,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.9",
+    date: "December 31, 2025",
+    title: "UI/UX Overhaul: FAB & Animations",
+    description: [
+      "Navigation: Replaced Navbar 'Add' button with a new Floating Action Menu (FAB) for quick access to logging.",
+      "Menu: Mobile menu now opens with a smooth staggered animation and occupies the top half of the screen.",
+      "Feedback: Refined button hover states for a cleaner, less intrusive look.",
+    ]
+  },
   {
     version: "Beta 3.8.8",
     date: "December 31, 2025",
@@ -382,6 +394,7 @@ export default function Navbar({
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
@@ -441,33 +454,33 @@ export default function Navbar({
     return (names[0][0]?.toUpperCase() || '') + (names[names.length - 1][0]?.toUpperCase() || '');
   };
 
-  const trendsLinkHandler = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const trendsLinkHandler = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     router.push(pathname === '/trends' ? '/?openDashboard=true' : '/trends');
   };
 
-  const micronutrientsLinkHandler = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const micronutrientsLinkHandler = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     router.push(pathname === '/micronutrients' ? '/?openDashboard=true' : '/micronutrients');
   };
 
-  const aiInsightsLinkHandler = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const aiInsightsLinkHandler = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     router.push(pathname === '/ai-insights' ? '/?openDashboard=true' : '/ai-insights');
   };
 
-  const favoritesLinkHandler = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const favoritesLinkHandler = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     router.push('/favorites');
   };
 
-  const aboutLinkHandler = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const aboutLinkHandler = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     router.push('/about');
   };
 
-  const dashboardLinkHandler = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const dashboardLinkHandler = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     router.push('/');
   };
 
@@ -590,36 +603,7 @@ export default function Navbar({
           ) : (
             <>
               {!authLoading && authUser && (
-                <Popover open={isActionPopoverOpen} onOpenChange={setIsActionPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <span className="inline-block" tabIndex={-1}>
-                      <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary hover:text-primary/90 hover:bg-primary/10")} aria-label="Add Entry">
-                        <Plus className="h-6 w-6" strokeWidth={3} />
-                      </Button>
-                    </span>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    side="bottom"
-                    align="center"
-                    className="w-auto bg-card text-card-foreground border-border shadow-xl rounded-xl p-0"
-                    onInteractOutside={() => setIsActionPopoverOpen(false)}
-                  >
-                    <div className="flex flex-col gap-1 p-2">
-                      <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleGenericActionItemClick(onLogFoodAIClick, 'logFoodAI')}>
-                        <PlusCircle className="mr-3 h-5 w-5" /> Log Food (AI Text)
-                      </Button>
-                      <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleGenericActionItemClick(onIdentifyByPhotoClick, 'logPhoto')}>
-                        <Camera className="mr-3 h-5 w-5" /> Identify by Photo
-                      </Button>
-                      <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleGenericActionItemClick(onLogSymptomsClick, 'logSymptoms')}>
-                        <ListChecks className="mr-3 h-5 w-5" /> Log Symptoms
-                      </Button>
-                      <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleGenericActionItemClick(onLogPreviousMealClick, 'logPrevious')}>
-                        <CalendarDays className="mr-3 h-5 w-5" /> Log Previous Meal
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                {/* Add Entry Popover Removed - Replaced by FloatingActionMenu */ }
               )}
 
               <div className="hidden md:flex items-center space-x-0.5 sm:space-x-1">
@@ -704,86 +688,118 @@ export default function Navbar({
 
               {!authLoading && authUser && (
                 <div className="md:hidden">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-current hover:text-primary hover:bg-primary/10" aria-label="Open menu">
-                        <Menu className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
-                              <AvatarFallback className="bg-primary text-primary-foreground">
-                                {getInitials(authUser.displayName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium leading-none text-foreground">{authUser.displayName || 'User'}</p>
-                              <p className="text-xs leading-none text-muted-foreground">{authUser.email}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={onOpenDashboardClick || dashboardLinkHandler} className="cursor-pointer">
-                        <LayoutGrid className="mr-2 h-4 w-4" />
-                        <span>Dashboard</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={favoritesLinkHandler} className="cursor-pointer">
-                        <Heart className="mr-2 h-4 w-4" />
-                        <span>Favorites</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={trendsLinkHandler} className="cursor-pointer">
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        <span>Trends</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={micronutrientsLinkHandler} className="cursor-pointer">
-                        <Atom className="mr-2 h-4 w-4" />
-                        <span>Micronutrients</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={aiInsightsLinkHandler} className="cursor-pointer">
-                        <Lightbulb className="mr-2 h-4 w-4" />
-                        <span>AI Insights</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={aboutLinkHandler} className="cursor-pointer">
-                        <Info className="mr-2 h-4 w-4" />
-                        <span>About</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={toggleDarkMode} className="cursor-pointer">
-                        {isDarkMode ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                        <span>Toggle Theme</span>
-                      </DropdownMenuItem>
-                      {isCurrentUserAdmin && (
-                        <DropdownMenuItem onClick={() => router.push('/admin/feedback')} className="cursor-pointer">
-                          <AdminIcon className="mr-2 h-4 w-4" />
-                          <span>Admin Dashboard</span>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Privacy Notice</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push('/terms')} className="cursor-pointer">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span>Terms of Use</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-current hover:text-primary hover:bg-primary/10"
+                    aria-label="Open menu"
+                    onClick={() => setIsMobileMenuOpen(true)}
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ y: "-100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "-100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed top-0 left-0 right-0 h-[50vh] bg-background border-b border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-b-xl"
+            >
+              <div className="p-4 flex items-center justify-between border-b border-border bg-muted/20">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-10 w-10 border border-border">
+                    <AvatarImage src={authUser?.photoURL || undefined} alt={authUser?.displayName || 'User'} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(authUser?.displayName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{authUser?.displayName || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{authUser?.email}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-2">
+                <motion.div
+                  className="flex flex-col space-y-1"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+                  }}
+                >
+                  {[{ icon: LayoutGrid, label: "Dashboard", onClick: () => { setIsMobileMenuOpen(false); dashboardLinkHandler(); } },
+                  { icon: Heart, label: "Favorites", onClick: () => { setIsMobileMenuOpen(false); favoritesLinkHandler(); } },
+                  { icon: BarChart3, label: "Trends", onClick: () => { setIsMobileMenuOpen(false); trendsLinkHandler(); } },
+                  { icon: Atom, label: "Micronutrients", onClick: () => { setIsMobileMenuOpen(false); micronutrientsLinkHandler(); } },
+                  { icon: Lightbulb, label: "AI Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
+                  { icon: Info, label: "About", onClick: () => { setIsMobileMenuOpen(false); aboutLinkHandler(); } },
+                  ].map((item, idx) => (
+                    <motion.div key={idx} variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={item.onClick}>
+                        <item.icon className="mr-3 h-5 w-5 text-muted-foreground" /> {item.label}
+                      </Button>
+                    </motion.div>
+                  ))}
+
+                  <div className="my-2 border-t border-border/50" />
+
+                  <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={toggleDarkMode}>
+                      {isDarkMode ? <Sun className="mr-3 h-5 w-5" /> : <Moon className="mr-3 h-5 w-5" />} Toggle Theme
+                    </Button>
+                  </motion.div>
+
+                  {isCurrentUserAdmin && (
+                    <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => { setIsMobileMenuOpen(false); router.push('/admin/feedback'); }}>
+                        <AdminIcon className="mr-3 h-5 w-5" /> Admin Dashboard
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  <div className="my-2 border-t border-border/50" />
+
+                  <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut}>
+                      <LogOut className="mr-3 h-5 w-5" /> Log out
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {!authLoading && authUser && !isGuest && (
+        <FloatingActionMenu
+          onLogFoodAIClick={() => handleGenericActionItemClick(onLogFoodAIClick, 'logFoodAI')}
+          onScanBarcodeClick={() => handleGenericActionItemClick(onIdentifyByPhotoClick, 'logPhoto')} // Previous mapping was Scan Barcode -> Identify by Photo? Verify functionality later.
+          onLogSymptomsClick={() => handleGenericActionItemClick(onLogSymptomsClick, 'logSymptoms')}
+          onAddManualEntryClick={() => handleGenericActionItemClick(onLogPreviousMealClick, 'logPrevious')} // Mapping "Manual" to "Previous" as it was the 4th item.
+        />
+      )}
     </header>
   );
 }
