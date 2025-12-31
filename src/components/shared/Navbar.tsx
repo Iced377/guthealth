@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.5";
+export const APP_VERSION = "Beta 3.8.7";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +52,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.7",
+    date: "December 31, 2025",
+    title: "Animation Stability Fixes",
+    description: [
+      "Interactions: Fixed missing animations on card icons and navbar triggers by isolating animation logic from tooltip logic.",
+    ]
+  },
   {
     version: "Beta 3.8.5",
     date: "December 31, 2025",
@@ -576,9 +584,11 @@ export default function Navbar({
               {!authLoading && authUser && (
                 <Popover open={isActionPopoverOpen} onOpenChange={setIsActionPopoverOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary hover:text-primary/90 hover:bg-primary/10")} aria-label="Add Entry">
-                      <Plus className="h-6 w-6" strokeWidth={3} />
-                    </Button>
+                    <span className="inline-block" tabIndex={-1}>
+                      <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary hover:text-primary/90 hover:bg-primary/10")} aria-label="Add Entry">
+                        <Plus className="h-6 w-6" strokeWidth={3} />
+                      </Button>
+                    </span>
                   </PopoverTrigger>
                   <PopoverContent
                     side="bottom"

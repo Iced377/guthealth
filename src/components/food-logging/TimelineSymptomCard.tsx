@@ -69,9 +69,11 @@ export default function TimelineSymptomCard({ item, onRemoveItem }: TimelineSymp
       <CardFooter className="flex justify-end items-center px-4 pt-2 pb-3">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/20">
-              <Trash2 className="mr-2 h-4 w-4" /> Remove Log
-            </Button>
+            <span className="inline-block" tabIndex={-1}>
+              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/20">
+                <Trash2 className="mr-2 h-4 w-4" /> Remove Log
+              </Button>
+            </span>
           </AlertDialogTrigger>
           <AlertDialogContent className="bg-card text-card-foreground border-border">
             <AlertDialogHeader>

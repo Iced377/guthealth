@@ -112,14 +112,16 @@ export default function TimelineFoodCard({
               {/* Title - Aligned with Top Row Actions */}
               <div className="flex items-center h-7">
                 <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left text-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
-                    )}
-                  >
-                    {item.name}
-                  </Button>
+                  <span className="inline-block">
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left text-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
+                      )}
+                    >
+                      {item.name}
+                    </Button>
+                  </span>
                 </DialogTrigger>
               </div>
 
@@ -149,21 +151,23 @@ export default function TimelineFoodCard({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleFavoriteToggle}
-                            disabled={isLoadingAi}
-                            className={cn(
-                              "h-7 w-7",
-                              item.isFavorite
-                                ? 'bg-white/25 hover:bg-white/35 text-primary-foreground'
-                                : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                            )}
-                            aria-label={item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}
-                          >
-                            <Heart className={cn("h-4 w-4", item.isFavorite ? 'fill-red-500 text-red-500' : '')} />
-                          </Button>
+                          <span className="inline-block" tabIndex={-1}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleFavoriteToggle}
+                              disabled={isLoadingAi}
+                              className={cn(
+                                "h-7 w-7",
+                                item.isFavorite
+                                  ? 'bg-white/25 hover:bg-white/35 text-primary-foreground'
+                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
+                              )}
+                              aria-label={item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}
+                            >
+                              <Heart className={cn("h-4 w-4", item.isFavorite ? 'fill-red-500 text-red-500' : '')} />
+                            </Button>
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent className="bg-popover text-popover-foreground border-border">
                           <p>{item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}</p>
@@ -178,21 +182,23 @@ export default function TimelineFoodCard({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => { e.stopPropagation(); handleFeedback('safe'); }}
-                              disabled={isLoadingAi}
-                              className={cn(
-                                "h-7 w-7",
-                                item.userFeedback === 'safe'
-                                  ? 'bg-white/20 hover:bg-white/30 text-primary-foreground'
-                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                              )}
-                              aria-label="Mark as Safe"
-                            >
-                              <ThumbsUp className={cn("h-4 w-4", item.userFeedback === 'safe' ? 'fill-primary-foreground/70' : '')} />
-                            </Button>
+                            <span className="inline-block" tabIndex={-1}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => { e.stopPropagation(); handleFeedback('safe'); }}
+                                disabled={isLoadingAi}
+                                className={cn(
+                                  "h-7 w-7",
+                                  item.userFeedback === 'safe'
+                                    ? 'bg-white/20 hover:bg-white/30 text-primary-foreground'
+                                    : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
+                                )}
+                                aria-label="Mark as Safe"
+                              >
+                                <ThumbsUp className={cn("h-4 w-4", item.userFeedback === 'safe' ? 'fill-primary-foreground/70' : '')} />
+                              </Button>
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Safe</p></TooltipContent>
                         </Tooltip>
@@ -200,21 +206,23 @@ export default function TimelineFoodCard({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => { e.stopPropagation(); handleFeedback('unsafe'); }}
-                              disabled={isLoadingAi}
-                              className={cn(
-                                "h-7 w-7",
-                                item.userFeedback === 'unsafe'
-                                  ? 'bg-red-700/60 hover:bg-red-700/80 text-primary-foreground'
-                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                              )}
-                              aria-label="Mark as Unsafe"
-                            >
-                              <ThumbsDown className={cn("h-4 w-4", item.userFeedback === 'unsafe' ? 'fill-primary-foreground/70' : '')} />
-                            </Button>
+                            <span className="inline-block" tabIndex={-1}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => { e.stopPropagation(); handleFeedback('unsafe'); }}
+                                disabled={isLoadingAi}
+                                className={cn(
+                                  "h-7 w-7",
+                                  item.userFeedback === 'unsafe'
+                                    ? 'bg-red-700/60 hover:bg-red-700/80 text-primary-foreground'
+                                    : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
+                                )}
+                                aria-label="Mark as Unsafe"
+                              >
+                                <ThumbsDown className={cn("h-4 w-4", item.userFeedback === 'unsafe' ? 'fill-primary-foreground/70' : '')} />
+                              </Button>
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Unsafe</p></TooltipContent>
                         </Tooltip>
@@ -227,16 +235,18 @@ export default function TimelineFoodCard({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); onLogSymptoms(item.id); }}
-                            disabled={isLoadingAi}
-                            className={iconButtonClass}
-                            aria-label="Log Symptoms"
-                          >
-                            <ListChecks className="h-4 w-4" />
-                          </Button>
+                          <span className="inline-block" tabIndex={-1}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => { e.stopPropagation(); onLogSymptoms(item.id); }}
+                              disabled={isLoadingAi}
+                              className={iconButtonClass}
+                              aria-label="Log Symptoms"
+                            >
+                              <ListChecks className="h-4 w-4" />
+                            </Button>
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Log Symptoms</p></TooltipContent>
                       </Tooltip>
@@ -251,16 +261,18 @@ export default function TimelineFoodCard({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); onEditIngredients(item); }}
-                            disabled={isLoadingAi}
-                            className={iconButtonClass}
-                            aria-label="Edit Item"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
+                          <span className="inline-block" tabIndex={-1}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => { e.stopPropagation(); onEditIngredients(item); }}
+                              disabled={isLoadingAi}
+                              className={iconButtonClass}
+                              aria-label="Edit Item"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Edit Item</p></TooltipContent>
                       </Tooltip>
@@ -272,16 +284,18 @@ export default function TimelineFoodCard({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); onRepeatMeal(item); }}
-                            disabled={isLoadingAi}
-                            className={iconButtonClass}
-                            aria-label="Copy Meal"
-                          >
-                            <Repeat className="h-4 w-4" />
-                          </Button>
+                          <span className="inline-block" tabIndex={-1}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => { e.stopPropagation(); onRepeatMeal(item); }}
+                              disabled={isLoadingAi}
+                              className={iconButtonClass}
+                              aria-label="Copy Meal"
+                            >
+                              <Repeat className="h-4 w-4" />
+                            </Button>
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Copy Meal</p></TooltipContent>
                       </Tooltip>
@@ -295,9 +309,11 @@ export default function TimelineFoodCard({
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); /* Dialog handles opening */ }} className="text-red-300 hover:text-red-200 hover:bg-white/10 h-7 w-7" disabled={isLoadingAi} aria-label="Remove this item">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <span className="inline-block" tabIndex={-1}>
+                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); /* Dialog handles opening */ }} className="text-red-300 hover:text-red-200 hover:bg-white/10 h-7 w-7" disabled={isLoadingAi} aria-label="Remove this item">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </span>
                             </AlertDialogTrigger>
                           </TooltipTrigger>
                           <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Remove Item</p></TooltipContent>
