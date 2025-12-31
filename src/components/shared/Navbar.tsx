@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.3";
+export const APP_VERSION = "Beta 3.8.4";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +52,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.4",
+    date: "December 31, 2025",
+    title: "Mobile UI Fixes",
+    description: [
+      "Resolved an issue where timeline cards were truncated on smaller mobile screens.",
+    ]
+  },
   {
     version: "Beta 3.8.3",
     date: "December 31, 2025",

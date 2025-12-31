@@ -245,7 +245,7 @@ export default function DashboardContent({
                                             {dateKey}
                                         </h3>
                                     </div>
-                                    <div className="grid gap-4 sm:grid-cols-[repeat(auto-fill,minmax(340px,1fr))]">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
                                         {displayableEntries.map((entry, entryIndex) => {
                                             if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
                                                 return (
