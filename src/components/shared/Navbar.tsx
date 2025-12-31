@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.21";
+export const APP_VERSION = "Beta 3.8.22";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.22",
+    date: "December 31, 2025",
+    title: "Timeline Design",
+    description: [
+      "UI: Overhauled the Dashboard Layout into a structured Vertical Timeline for a cleaner, professional look.",
+    ]
+  },
   {
     version: "Beta 3.8.21",
     date: "December 31, 2025",
