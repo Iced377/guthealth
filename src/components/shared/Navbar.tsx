@@ -42,7 +42,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.2";
+export const APP_VERSION = "Beta 3.8.3";
 
 interface ReleaseNote {
   version: string;
@@ -52,6 +52,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.3",
+    date: "December 31, 2025",
+    title: "UX Refinements & Fixes",
+    description: [
+      "Navigation: Added 'About' and ensured 'Dashboard' are always visible in the mobile menu.",
+      "Safety: Added confirmation dialogs when deleting food or symptom entries to prevent accidental loss.",
+      "Branding: Fixed issue where default favicon might show instead of the app logo.",
+    ]
+  },
   {
     version: "Beta 3.8.2",
     date: "December 31, 2025",
@@ -684,12 +694,10 @@ export default function Navbar({
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      {onOpenDashboardClick && (
-                        <DropdownMenuItem onClick={onOpenDashboardClick} className="cursor-pointer">
-                          <LayoutGrid className="mr-2 h-4 w-4" />
-                          <span>Dashboard</span>
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuItem onClick={onOpenDashboardClick || dashboardLinkHandler} className="cursor-pointer">
+                        <LayoutGrid className="mr-2 h-4 w-4" />
+                        <span>Dashboard</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={favoritesLinkHandler} className="cursor-pointer">
                         <Heart className="mr-2 h-4 w-4" />
                         <span>Favorites</span>
@@ -705,6 +713,10 @@ export default function Navbar({
                       <DropdownMenuItem onClick={aiInsightsLinkHandler} className="cursor-pointer">
                         <Lightbulb className="mr-2 h-4 w-4" />
                         <span>AI Insights</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={aboutLinkHandler} className="cursor-pointer">
+                        <Info className="mr-2 h-4 w-4" />
+                        <span>About</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={toggleDarkMode} className="cursor-pointer">
