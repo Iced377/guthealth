@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.11";
+export const APP_VERSION = "Beta 3.8.12";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +54,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.12",
+    date: "December 31, 2025",
+    title: "Streamlined Indicators",
+    description: [
+      "Visuals: Removed text indicators for 'Edited'.",
+      "Action: Edit button now highlights white when an item has been modified.",
+      "Action: Symptoms button now highlights white when symptoms are logged.",
+    ]
+  },
   {
     version: "Beta 3.8.11",
     date: "December 31, 2025",
