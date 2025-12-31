@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.9";
+export const APP_VERSION = "Beta 3.8.10";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +54,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.10",
+    date: "December 31, 2025",
+    title: "Checking Visibility",
+    description: [
+      "Visuals: Adjusted colors for FAB and Food Cards to improve contrast against the green theme.",
+      "Visuals: Card titles are now white for better readability.",
+    ]
+  },
   {
     version: "Beta 3.8.9",
     date: "December 31, 2025",
@@ -602,9 +611,7 @@ export default function Navbar({
             </div>
           ) : (
             <>
-              {!authLoading && authUser && (
-                {/* Add Entry Popover Removed - Replaced by FloatingActionMenu */ }
-              )}
+              {!authLoading && authUser && null}
 
               <div className="hidden md:flex items-center space-x-0.5 sm:space-x-1">
                 {!authLoading && authUser && (

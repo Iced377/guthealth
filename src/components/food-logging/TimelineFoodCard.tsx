@@ -116,7 +116,7 @@ export default function TimelineFoodCard({
                     <Button
                       variant="ghost"
                       className={cn(
-                        "p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left text-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
+                        "p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left text-primary-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
                       )}
                     >
                       {item.name}
@@ -191,12 +191,12 @@ export default function TimelineFoodCard({
                                 className={cn(
                                   "h-7 w-7",
                                   item.userFeedback === 'safe'
-                                    ? 'bg-white/20 hover:bg-white/10 text-primary-foreground'
+                                    ? 'bg-white text-primary hover:bg-white/90'
                                     : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
                                 )}
                                 aria-label="Mark as Safe"
                               >
-                                <ThumbsUp className={cn("h-4 w-4", item.userFeedback === 'safe' ? 'fill-primary-foreground/70' : '')} />
+                                <ThumbsUp className={cn("h-4 w-4", item.userFeedback === 'safe' ? 'fill-primary text-primary' : '')} />
                               </Button>
                             </span>
                           </TooltipTrigger>
@@ -215,12 +215,12 @@ export default function TimelineFoodCard({
                                 className={cn(
                                   "h-7 w-7",
                                   item.userFeedback === 'unsafe'
-                                    ? 'bg-red-700/60 hover:bg-white/10 text-primary-foreground'
+                                    ? 'bg-white text-red-600 hover:bg-white/90'
                                     : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
                                 )}
                                 aria-label="Mark as Unsafe"
                               >
-                                <ThumbsDown className={cn("h-4 w-4", item.userFeedback === 'unsafe' ? 'fill-primary-foreground/70' : '')} />
+                                <ThumbsDown className={cn("h-4 w-4", item.userFeedback === 'unsafe' ? 'fill-red-600 text-red-600' : '')} />
                               </Button>
                             </span>
                           </TooltipTrigger>
