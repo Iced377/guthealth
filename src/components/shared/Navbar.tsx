@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.10";
+export const APP_VERSION = "Beta 3.8.11";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +54,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.11",
+    date: "December 31, 2025",
+    title: "Visual Prominence Update",
+    description: [
+      "Visuals: Added prominent outlines to the Add Button and Feedback actions to make them visually distinct and cohesive.",
+    ]
+  },
   {
     version: "Beta 3.8.10",
     date: "December 31, 2025",
