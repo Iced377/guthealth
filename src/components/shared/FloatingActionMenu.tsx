@@ -50,58 +50,58 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         animate="visible"
                         exit="hidden"
                         variants={menuVariants}
-                        className="absolute bottom-full right-0 mb-4 flex flex-col items-end gap-3 min-w-[max-content]"
+                        className={cn(
+                            "absolute bottom-full right-0 mb-4 flex flex-col gap-1 p-2 min-w-[200px]",
+                            "bg-secondary/70 backdrop-blur-xl border border-border/40 shadow-2xl rounded-2xl"
+                        )}
                     >
                         {/* Sub-Item 4: Manual/Recent */}
-                        <motion.div variants={itemVariants} className="flex items-center gap-2">
-                            <span className="text-sm font-medium bg-background/90 text-foreground px-2 py-1 rounded shadow-sm backdrop-blur-sm">Manual Entry</span>
-                            <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-10 w-10 rounded-full shadow-lg"
-                                onClick={() => { setIsOpen(false); onAddManualEntryClick(); }}
-                            >
+                        <motion.button
+                            variants={itemVariants}
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            onClick={() => { setIsOpen(false); onAddManualEntryClick(); }}
+                        >
+                            <span className="text-sm font-medium mr-3">Manual Entry</span>
+                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <CalendarDays className="h-5 w-5" />
-                            </Button>
-                        </motion.div>
+                            </div>
+                        </motion.button>
 
                         {/* Sub-Item 3: Symptoms */}
-                        <motion.div variants={itemVariants} className="flex items-center gap-2">
-                            <span className="text-sm font-medium bg-background/90 text-foreground px-2 py-1 rounded shadow-sm backdrop-blur-sm">Log Symptoms</span>
-                            <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-10 w-10 rounded-full shadow-lg"
-                                onClick={() => { setIsOpen(false); onLogSymptomsClick(); }}
-                            >
+                        <motion.button
+                            variants={itemVariants}
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            onClick={() => { setIsOpen(false); onLogSymptomsClick(); }}
+                        >
+                            <span className="text-sm font-medium mr-3">Log Symptoms</span>
+                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <ListChecks className="h-5 w-5" />
-                            </Button>
-                        </motion.div>
+                            </div>
+                        </motion.button>
 
                         {/* Sub-Item 2: Photo/Barcode */}
-                        <motion.div variants={itemVariants} className="flex items-center gap-2">
-                            <span className="text-sm font-medium bg-background/90 text-foreground px-2 py-1 rounded shadow-sm backdrop-blur-sm">Scan / Photo</span>
-                            <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-10 w-10 rounded-full shadow-lg"
-                                onClick={() => { setIsOpen(false); onScanBarcodeClick(); }}
-                            >
+                        <motion.button
+                            variants={itemVariants}
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            onClick={() => { setIsOpen(false); onScanBarcodeClick(); }}
+                        >
+                            <span className="text-sm font-medium mr-3">Scan / Photo</span>
+                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <Camera className="h-5 w-5" />
-                            </Button>
-                        </motion.div>
+                            </div>
+                        </motion.button>
 
-                        {/* Sub-Item 1: AI Log (Primary Action) */}
-                        <motion.div variants={itemVariants} className="flex items-center gap-2">
-                            <span className="text-sm font-medium bg-background/90 text-foreground px-2 py-1 rounded shadow-sm backdrop-blur-sm">AI Food Log</span>
-                            <Button
-                                size="icon"
-                                className="h-10 w-10 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white"
-                                onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
-                            >
+                        {/* Sub-Item 1: AI Log */}
+                        <motion.button
+                            variants={itemVariants}
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
+                        >
+                            <span className="text-sm font-medium mr-3">AI Food Log</span>
+                            <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:bg-indigo-700 transition-colors">
                                 <Sparkles className="h-5 w-5" />
-                            </Button>
-                        </motion.div>
+                            </div>
+                        </motion.button>
                     </motion.div>
                 )}
             </AnimatePresence>
