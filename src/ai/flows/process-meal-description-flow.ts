@@ -18,7 +18,7 @@ const ProcessMealDescriptionInputSchema = z.object({
 export type ProcessMealDescriptionInput = z.infer<typeof ProcessMealDescriptionInputSchema>;
 
 const ProcessMealDescriptionOutputSchema = z.object({
-  wittyName: z.string().describe('A witty, cheeky, or descriptive name for the meal, generated based on the input. Examples: "That Massive Bowl of Greek Purity", "The Huge Mofo Chicken Wrap of Destiny", "The Midnight Mistake", "Crisp Sadness".'),
+  wittyName: z.string().describe('A witty, cheeky, or descriptive name for the meal, generated based on the input. MAX 21 CHARACTERS. Examples: "Greek Purity", "Mofo Chicken Wrap", "Midnight Mistake", "Crisp Sadness".'),
   primaryFoodItemForAnalysis: z.string().describe('The main identified food item or concept from the description, suitable as a "name" for a subsequent FODMAP analysis (e.g., "Oatmeal with blueberries"). This should be a relatively concise and factual summary of the meal. CRITICAL: If the user description includes quantities (e.g., "4 eggs", "50g toast") or distinct additions (e.g. "extra egg", "side of fries"), these MUST be preserved here.'),
   consolidatedIngredients: z.string().describe('A comma-separated list of all significant ingredients identified in the meal description (e.g., "rolled oats, water, blueberries, honey").'),
   estimatedPortionSize: z.string().describe('An estimated single, representative portion size number for the entire described meal (e.g., "1", "1.5", "200"). This is an approximation for overall analysis.'),
@@ -50,10 +50,9 @@ Analyze the meal description: "{{{mealDescription}}}"
 Output a JSON object matching ProcessMealDescriptionOutputSchema.
 
 Tasks:
-1.  'wittyName': Generate a fun, memorable, or edgy name for the meal. Examples:
-    *   "Greek Salad, large" -> "That Massive Bowl of Greek Purity"
-    *   "Chicken Burrito, XL" -> "The Huge Mofo Chicken Wrap of Destiny"
-    *   "Oatmeal with blueberries & honey" -> "Berry-Good Morning Fuel"
+1.  'wittyName': Generate a fun, memorable, or edgy name for the meal. MAX 21 CHARACTERS (including spaces). This is a HARD LIMIT. Keep it short and punchy.
+    *   Examples of compliant names: "Greek Purity", "Mofo Chicken Wrap", "Berry-Good Fuel", "Sad Desk Salad", "Midnight Mistake".
+    *   Do NOT exceed 21 characters.
 2.  'primaryFoodItemForAnalysis': A concise, factual summary of the meal for subsequent nutritional analysis.
     *   CRITICAL: Accurately list ALL components and quantities from '{{{mealDescription}}}'.
     *   Preserve user-stated quantities and explicit additions (e.g., "Sausage McMuffin with egg, 1 extra egg, 1 hashbrown").
@@ -81,7 +80,7 @@ const processMealDescriptionFlow = ai.defineFlow(
         console.warn('[ProcessMealDescriptionFlow] AI prompt returned no output. Falling back to default error response.');
         return {
           ...defaultErrorOutput,
-          primaryFoodItemForAnalysis: `Could not analyze: "${input.mealDescription.substring(0,50)}..."`,
+          primaryFoodItemForAnalysis: `Could not analyze: "${input.mealDescription.substring(0, 50)}..."`,
         };
       }
       return output;
@@ -89,7 +88,7 @@ const processMealDescriptionFlow = ai.defineFlow(
       console.error('[ProcessMealDescriptionFlow] Error during AI processing:', error);
       return {
         ...defaultErrorOutput,
-        primaryFoodItemForAnalysis: `Error analyzing: ${error.message || 'Unknown error'}. Input: "${input.mealDescription.substring(0,50)}..."`,
+        primaryFoodItemForAnalysis: `Error analyzing: ${error.message || 'Unknown error'}. Input: "${input.mealDescription.substring(0, 50)}..."`,
       };
     }
   }

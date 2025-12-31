@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.19";
+export const APP_VERSION = "Beta 3.8.20";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.20",
+    date: "December 31, 2025",
+    title: "Shorter Titles",
+    description: [
+      "AI: Updated the Title Generator to limit creative names to 21 characters for better UI fit.",
+    ]
+  },
   {
     version: "Beta 3.8.19",
     date: "December 31, 2025",
