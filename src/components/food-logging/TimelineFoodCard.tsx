@@ -11,10 +11,18 @@ import MicronutrientsIndicator from '@/components/shared/MicronutrientsIndicator
 import GutBacteriaIndicator from '@/components/shared/GutBacteriaIndicator';
 import KetoFriendlinessIndicator from '@/components/shared/KetoFriendlinessIndicator';
 import { Badge } from '@/components/ui/badge';
-import { ThumbsUp, ThumbsDown, Trash2, ListChecks, Loader2, Flame, Beef, Wheat, Droplet, Edit3, CheckCheck, PencilLine, Sparkles, Leaf, Users, Activity, Repeat, MessageSquareText, Info, AlertCircle, Heart, ChevronsUpDown, Clock } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Trash2, ListChecks, Loader2, Flame, Beef, Wheat, Droplet, Edit3, CheckCheck, PencilLine, Sparkles, Leaf, Users, Activity, Repeat, MessageSquareText, Info, AlertCircle, Heart, ChevronsUpDown, Clock, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -142,213 +150,104 @@ export default function TimelineFoodCard({
             </div>
 
             {/* Right Column: Action Rows */}
+            {/* Right Column: Action Menu */}
             {!isGuestView && (
               <div className="flex flex-col items-end gap-1 ml-0 shrink-0">
-                {/* Top Row: Favorite, Safe, Unsafe, Log Symptoms */}
-                <div className="flex items-center gap-0.5 justify-end h-7">
-                  {/* Favorite Action */}
-                  {!isManualMacroEntry && onToggleFavorite && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-block" tabIndex={-1}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleFavoriteToggle}
-                              disabled={isLoadingAi}
-                              className={cn(
-                                "h-7 w-7",
-                                item.isFavorite
-                                  ? 'bg-white/25 hover:bg-white/35 text-primary-foreground'
-                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                              )}
-                              aria-label={item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}
-                            >
-                              <Heart className={cn("h-4 w-4", item.isFavorite ? 'fill-red-500 text-red-500' : '')} />
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-popover text-popover-foreground border-border">
-                          <p>{item.isFavorite ? "Unmark as Favorite" : "Mark as Favorite"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                <AlertDialog>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-white/20">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
 
-                  {/* Safe/Unsafe Actions */}
-                  {!isManualMacroEntry && onSetFeedback && (
-                    <>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-block" tabIndex={-1}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => { e.stopPropagation(); handleFeedback('safe'); }}
-                                disabled={isLoadingAi}
-                                className={cn(
-                                  "h-7 w-7",
-                                  item.userFeedback === 'safe'
-                                    ? 'bg-white text-primary hover:bg-white/90 border-2 border-primary'
-                                    : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                                )}
-                                aria-label="Mark as Safe"
-                              >
-                                <ThumbsUp className={cn("h-4 w-4", item.userFeedback === 'safe' ? 'fill-primary text-primary' : '')} />
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Safe</p></TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-block" tabIndex={-1}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => { e.stopPropagation(); handleFeedback('unsafe'); }}
-                                disabled={isLoadingAi}
-                                className={cn(
-                                  "h-7 w-7",
-                                  item.userFeedback === 'unsafe'
-                                    ? 'bg-white text-red-600 hover:bg-white/90 border-2 border-red-600'
-                                    : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                                )}
-                                aria-label="Mark as Unsafe"
-                              >
-                                <ThumbsDown className={cn("h-4 w-4", item.userFeedback === 'unsafe' ? 'fill-red-600 text-red-600' : '')} />
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Mark as Unsafe</p></TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </>
-                  )}
+                      {/* Favorite */}
+                      {!isManualMacroEntry && onToggleFavorite && (
+                        <DropdownMenuItem onClick={handleFavoriteToggle}>
+                          <Heart className={cn("mr-2 h-4 w-4", item.isFavorite ? "fill-red-500 text-red-500" : "")} />
+                          <span>{item.isFavorite ? "Unfavorite" : "Favorite"}</span>
+                        </DropdownMenuItem>
+                      )}
 
-                  {/* Log Symptoms Action */}
-                  {!isManualMacroEntry && onLogSymptoms && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-block" tabIndex={-1}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => { e.stopPropagation(); onLogSymptoms(item.id); }}
-                              disabled={isLoadingAi}
-                              className={cn(
-                                "h-7 w-7",
-                                (item.symptoms && item.symptoms.length > 0)
-                                  ? 'bg-white text-primary hover:bg-white/90 border-2 border-primary'
-                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                              )}
-                              aria-label="Log Symptoms"
-                            >
-                              <ListChecks className={cn("h-4 w-4", (item.symptoms && item.symptoms.length > 0) ? "fill-primary text-primary" : "")} />
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Log Symptoms</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+                      {/* Feedback */}
+                      {!isManualMacroEntry && onSetFeedback && (
+                        <>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleFeedback('safe'); }}>
+                            <ThumbsUp className={cn("mr-2 h-4 w-4", item.userFeedback === 'safe' ? "fill-primary text-primary" : "")} />
+                            <span>Mark as Safe</span>
+                            {item.userFeedback === 'safe' && <CheckCheck className="ml-auto h-4 w-4 text-primary" />}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleFeedback('unsafe'); }}>
+                            <ThumbsDown className={cn("mr-2 h-4 w-4", item.userFeedback === 'unsafe' ? "fill-red-600 text-red-600" : "")} />
+                            <span>Mark as Unsafe</span>
+                            {item.userFeedback === 'unsafe' && <CheckCheck className="ml-auto h-4 w-4 text-red-600" />}
+                          </DropdownMenuItem>
+                        </>
+                      )}
 
-                {/* Bottom Row: Edit, Copy, Delete */}
-                <div className="flex items-center gap-0.5 justify-end h-7">
-                  {/* Edit Action */}
-                  {onEditIngredients && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-block" tabIndex={-1}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => { e.stopPropagation(); onEditIngredients(item); }}
-                              disabled={isLoadingAi}
-                              className={cn(
-                                "h-7 w-7",
-                                item.macrosOverridden
-                                  ? 'bg-white text-primary hover:bg-white/90 border-2 border-primary'
-                                  : 'text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10'
-                              )}
-                              aria-label="Edit Item"
-                            >
-                              <Edit3 className={cn("h-4 w-4", item.macrosOverridden ? "fill-primary text-primary" : "")} />
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Edit Item</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                      {/* Log Symptoms */}
+                      {!isManualMacroEntry && onLogSymptoms && (
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onLogSymptoms(item.id); }}>
+                          <ListChecks className={cn("mr-2 h-4 w-4", (item.symptoms && item.symptoms.length > 0) ? "text-primary" : "")} />
+                          <span>Log Symptoms</span>
+                          {(item.symptoms && item.symptoms.length > 0) && <CheckCheck className="ml-auto h-4 w-4 text-primary" />}
+                        </DropdownMenuItem>
+                      )}
 
-                  {/* Copy Meal Action */}
-                  {onRepeatMeal && item.entryType === 'food' && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-block" tabIndex={-1}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => { e.stopPropagation(); onRepeatMeal(item); }}
-                              disabled={isLoadingAi}
-                              className={iconButtonClass}
-                              aria-label="Copy Meal"
-                            >
-                              <Repeat className="h-4 w-4" />
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Copy Meal</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                      <DropdownMenuSeparator />
 
-                  {/* Remove Action with Confirmation */}
-                  {onRemoveItem && (
-                    <AlertDialog>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertDialogTrigger asChild>
-                              <span className="inline-block" tabIndex={-1}>
-                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); /* Dialog handles opening */ }} className="text-red-300 hover:text-red-200 hover:bg-white/10 h-7 w-7" disabled={isLoadingAi} aria-label="Remove this item">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </span>
-                            </AlertDialogTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-popover text-popover-foreground border-border"><p>Remove Item</p></TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <AlertDialogContent className="bg-card text-card-foreground border-border">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this content? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="border-border hover:bg-muted text-foreground">Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={(e) => { e.stopPropagation(); onRemoveItem(item.id); }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
+                      {/* Edit */}
+                      {onEditIngredients && (
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditIngredients(item); }}>
+                          <Edit3 className={cn("mr-2 h-4 w-4", item.macrosOverridden ? "text-primary" : "")} />
+                          <span>Edit Item</span>
+                        </DropdownMenuItem>
+                      )}
+
+                      {/* Copy */}
+                      {onRepeatMeal && item.entryType === 'food' && (
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRepeatMeal(item); }}>
+                          <Repeat className="mr-2 h-4 w-4" />
+                          <span>Copy Meal</span>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuSeparator />
+
+                      {/* Delete */}
+                      {onRemoveItem && (
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Alert Dialog Content (Outside Dropdown Menu Content but inside AlertDialog scope) */}
+                  <AlertDialogContent className="bg-card text-card-foreground border-border">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this content? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="border-border hover:bg-muted text-foreground">Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => { e.stopPropagation(); onRemoveItem && onRemoveItem(item.id); }}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             )}
           </div>

@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.18";
+export const APP_VERSION = "Beta 3.8.19";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.19",
+    date: "December 31, 2025",
+    title: "Streamlined Cards",
+    description: [
+      "UI: Cleaned up Food Card headers by consolidating all actions into a single menu button.",
+    ]
+  },
   {
     version: "Beta 3.8.18",
     date: "December 31, 2025",
