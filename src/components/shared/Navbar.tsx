@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.15";
+export const APP_VERSION = "Beta 3.8.16";
 
 interface ReleaseNote {
   version: string;
@@ -54,6 +54,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.16",
+    date: "December 31, 2025",
+    title: "Centered Menu",
+    description: [
+      "UI: Unified Feedback and Add Actions into a centered, frosted-glass bottom menu bar for better accessibility and aesthetics.",
+    ]
+  },
   {
     version: "Beta 3.8.15",
     date: "December 31, 2025",
@@ -842,12 +850,15 @@ export default function Navbar({
       </AnimatePresence>
 
       {!authLoading && authUser && !isGuest && (
-        <FloatingActionMenu
-          onLogFoodAIClick={() => handleGenericActionItemClick(onLogFoodAIClick, 'logFoodAI')}
-          onScanBarcodeClick={() => handleGenericActionItemClick(onIdentifyByPhotoClick, 'logPhoto')} // Previous mapping was Scan Barcode -> Identify by Photo? Verify functionality later.
-          onLogSymptomsClick={() => handleGenericActionItemClick(onLogSymptomsClick, 'logSymptoms')}
-          onAddManualEntryClick={() => handleGenericActionItemClick(onLogPreviousMealClick, 'logPrevious')} // Mapping "Manual" to "Previous" as it was the 4th item.
-        />
+        <BottomActionBar>
+          <FeedbackWidget />
+          <FloatingActionMenu
+            onLogFoodAIClick={() => handleGenericActionItemClick(onLogFoodAIClick, 'logFoodAI')}
+            onScanBarcodeClick={() => handleGenericActionItemClick(onIdentifyByPhotoClick, 'logPhoto')}
+            onLogSymptomsClick={() => handleGenericActionItemClick(onLogSymptomsClick, 'logSymptoms')}
+            onAddManualEntryClick={() => handleGenericActionItemClick(onLogPreviousMealClick, 'logPrevious')}
+          />
+        </BottomActionBar>
       )}
     </header>
   );

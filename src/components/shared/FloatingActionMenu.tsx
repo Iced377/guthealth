@@ -42,9 +42,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
-            {/* Container pointer-events-none allows clicking through empty space. Buttons enable pointer-events-auto */}
-
+        <div className="relative z-50">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -52,7 +50,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         animate="visible"
                         exit="hidden"
                         variants={menuVariants}
-                        className="flex flex-col items-end gap-3 pointer-events-auto mb-2 mr-1"
+                        className="absolute bottom-full right-0 mb-4 flex flex-col items-end gap-3 min-w-[max-content]"
                     >
                         {/* Sub-Item 4: Manual/Recent */}
                         <motion.div variants={itemVariants} className="flex items-center gap-2">
@@ -110,7 +108,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
 
             <motion.button
                 className={cn(
-                    "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center pointer-events-auto relative overflow-hidden transition-all duration-200",
+                    "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200",
                     isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-white"
                 )}
                 onClick={toggleMenu}

@@ -5,7 +5,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import FeedbackWidget from '@/components/feedback/FeedbackWidget';
+// FeedbackWidget moved to Navbar for unified BottomActionBar
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
 
 // `inter` variable is no longer needed here
@@ -59,7 +59,7 @@ export default function RootLayout({
               {children}
             </main>
             <Toaster />
-            <FeedbackWidget />
+
             <CookieConsentBanner />
           </ThemeProvider>
         </AuthProvider>

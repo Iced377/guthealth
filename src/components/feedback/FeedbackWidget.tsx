@@ -97,8 +97,8 @@ export default function FeedbackWidget() {
         variant="default" // Will use primary color from theme
         size="lg"
         className={cn(
-          "fixed bottom-6 left-6 rounded-full shadow-2xl h-16 w-16 p-0 z-50",
-          "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary focus:ring-offset-2 border-2 border-white", // Uses theme colors
+          "rounded-full shadow-2xl h-14 w-14 p-0", // Removed fixed position, resized to 14
+          "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary focus:ring-offset-2 border-2 border-white",
           "animate-custom-feedback-bounce"
         )}
         onClick={() => setIsOpen(true)}
