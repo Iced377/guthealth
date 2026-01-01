@@ -240,7 +240,7 @@ export default function DashboardContent({
                             return (
                                 <div key={dateKey} className="relative pl-8 pb-12 last:pb-0 border-l-2 border-primary/20 ml-2">
                                     {/* Timeline Node */}
-                                    <div className="absolute left-[-9px] top-0 h-4 w-4 rounded-full bg-background border-2 border-primary ring-4 ring-background" />
+                                    <div className="absolute left-[-9px] top-1 h-4 w-4 rounded-full bg-background border-2 border-primary ring-4 ring-background" />
 
                                     {/* Date Header */}
                                     <div className="flex items-center gap-2 mb-6 -mt-1">
