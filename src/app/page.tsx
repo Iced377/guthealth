@@ -6,9 +6,12 @@ import Link from 'next/link';
 import type { LoggedFoodItem, UserProfile, TimelineEntry, Symptom, SymptomLog, SafeFood, DailyNutritionSummary } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { Loader2, PlusCircle, ListChecks, Pencil, CalendarDays, Edit3, ChevronUp, Repeat, Camera, LayoutGrid, CalendarIcon } from 'lucide-react';
-import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile as DetailedFodmapProfileFromAI } from '@/ai/flows/fodmap-detection';
-import { isSimilarToSafeFoods, type FoodFODMAPProfile, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
+import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile as DetailedFodmapProfileFromAI, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
+// import { isSimilarToSafeFoods } removed
 import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/flows/process-meal-description-flow';
+
+
+
 import GradientText from '@/components/shared/GradientText';
 
 
@@ -334,257 +337,202 @@ export default function RootPage() {
     newTimestamp?: Date
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const logTimestamp = newTimestamp || new Date();
+
+    // 1. Optimistic Update
+    const optimisticItem: LoggedFoodItem = {
+      ...foodItemData,
+      id: currentItemId,
+      timestamp: logTimestamp,
+      entryType: 'food',
+      fodmapData: null, // Placeholder
+      userFodmapProfile: generateFallbackFodmapProfile(foodItemData.name), // Temporary fallback
+      isSimilarToSafe: false,
+      calories: null, protein: null, carbs: null, fat: null,
+      userFeedback: editingItem ? editingItem.userFeedback : null,
+      macrosOverridden: false,
+      originalName: foodItemData.name,
+      sourceDescription: "Manually logged",
+      isFavorite: editingItem ? editingItem.isFavorite : false,
+    };
+
+    if (editingItem) {
+      updateTimelineEntry(optimisticItem);
+    } else {
+      addTimelineEntry(optimisticItem);
+    }
+
+    // Close dialog immediately
+    setIsAddFoodDialogOpen(false);
+    setEditingItem(null);
+    if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
+
+
+    // 2. Background Processing
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
-
-    let processedFoodItem: LoggedFoodItem;
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
-    let similarityOutput: FoodSimilarityOutput | undefined;
-
-    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog, or now if not provided
-
 
     try {
+      const safeFoodItemsForAnalysis = (userProfile.safeFoods && userProfile.safeFoods.length > 0)
+        ? userProfile.safeFoods.map(sf => ({
+          name: sf.name,
+          portionSize: sf.portionSize,
+          portionUnit: sf.portionUnit,
+          fodmapProfile: sf.fodmapProfile,
+        }))
+        : undefined;
+
       fodmapAnalysis = await analyzeFoodItem({
         foodItem: foodItemData.name,
         ingredients: foodItemData.ingredients,
         portionSize: foodItemData.portionSize,
         portionUnit: foodItemData.portionUnit,
+        userSafeFoodItems: safeFoodItemsForAnalysis, // Passed directly here
       });
 
-      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(foodItemData.name);
-      let isSimilar = false;
-      if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
-        const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
-          name: sf.name,
-          portionSize: sf.portionSize,
-          portionUnit: sf.portionUnit,
-          fodmapProfile: sf.fodmapProfile,
-        }));
-        similarityOutput = await isSimilarToSafeFoods({
-          currentFoodItem: {
-            name: foodItemData.name,
-            portionSize: foodItemData.portionSize,
-            portionUnit: foodItemData.portionUnit,
-            fodmapProfile: itemFodmapProfileForSimilarity
-          },
-          userSafeFoodItems: safeFoodItemsForSimilarity,
-        });
-        isSimilar = similarityOutput?.isSimilar ?? false;
-      }
+      const itemFodmapProfile: DetailedFodmapProfileFromAI = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(foodItemData.name);
 
-      processedFoodItem = {
-        ...foodItemData,
-        id: currentItemId,
-        timestamp: logTimestamp,
+      const processedFoodItem: LoggedFoodItem = {
+        ...optimisticItem,
         fodmapData: fodmapAnalysis ?? null,
-        isSimilarToSafe: isSimilar ?? false,
-        userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+        isSimilarToSafe: fodmapAnalysis?.similarityAnalysis?.isSimilar ?? false, // Use specific similarity output
+        userFodmapProfile: itemFodmapProfile ?? null,
         calories: fodmapAnalysis?.calories ?? null,
         protein: fodmapAnalysis?.protein ?? null,
         carbs: fodmapAnalysis?.carbs ?? null,
         fat: fodmapAnalysis?.fat ?? null,
-        entryType: 'food',
-        userFeedback: editingItem ? editingItem.userFeedback : null,
-        macrosOverridden: false,
-        originalName: foodItemData.name,
-        sourceDescription: "Manually logged",
-        isFavorite: editingItem ? editingItem.isFavorite : false,
       };
+
+      // 3. Final Update & Save
+      updateTimelineEntry(processedFoodItem);
 
       if (authUser && authUser.uid !== 'guest-user') {
         const { id, ...itemToSave } = processedFoodItem;
         const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', currentItemId);
-        if (editingItem) {
-          await updateDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
-          toast({ title: "Food Item Updated", description: `${processedFoodItem.name} updated with new AI analysis.` });
-        } else {
-          await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
-          toast({ title: "Food Logged & Saved", description: `${processedFoodItem.name} added with AI analysis.` });
-        }
-      } else {
-        toast({ title: editingItem ? "Food Item Updated (Locally)" : "Food Logged (Locally)", description: `${processedFoodItem.name} ${editingItem ? 'updated' : 'added'}. Login to save.` });
+        // Use setDoc primarily to overwrite correctly with ID
+        await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) }, { merge: true });
+        // Toast is now background, maybe skip or show subtle?
+        // toast({ title: "Analysis Complete", description: `${processedFoodItem.name} updated.` });
       }
-
-      if (editingItem) {
-        updateTimelineEntry(processedFoodItem);
-      } else {
-        addTimelineEntry(processedFoodItem);
-        setIsPremiumDashboardOpen(true);
-      }
-      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined); // Clear if logging previous meal
-      setIsAddFoodDialogOpen(false);
-      setEditingItem(null);
 
     } catch (error: any) {
       console.error('AI analysis or food logging/updating failed:', error);
-      toast({ title: 'Error Processing Food', description: `Could not ${editingItem ? 'update' : 'log'} food. AI analysis might have failed.`, variant: 'destructive' });
-
-      processedFoodItem = {
-        ...foodItemData,
-        id: currentItemId,
-        timestamp: logTimestamp,
-        isSimilarToSafe: similarityOutput?.isSimilar ?? false,
-        entryType: 'food',
-        fodmapData: null,
-        userFodmapProfile: generateFallbackFodmapProfile(foodItemData.name),
-        calories: null, protein: null, carbs: null, fat: null,
-        userFeedback: editingItem ? editingItem.userFeedback : null,
-        macrosOverridden: false,
-        originalName: foodItemData.name,
-        sourceDescription: "Manually logged (analysis failed)",
-        isFavorite: editingItem ? editingItem.isFavorite : false,
-      };
-      if (editingItem) {
-        updateTimelineEntry(processedFoodItem);
-      } else {
-        addTimelineEntry(processedFoodItem);
-      }
+      toast({ title: 'Analysis Failed', description: `Could not complete AI analysis for ${foodItemData.name}.`, variant: 'destructive' });
+      // Item remains in "Optimistic" state but without rich data. 
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
-      if (editingItem) setEditingItem(null);
     }
   };
 
-  // newTimestamp is now the precise date and time from the dialog
   const handleSubmitMealDescription = async (
     formData: SimplifiedFoodLogFormValues,
     userDidOverrideMacros: boolean,
     newTimestamp?: Date
   ) => {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const logTimestamp = newTimestamp || new Date();
+
+    // 1. Optimistic Update
+    const optimisticItem: LoggedFoodItem = {
+      id: currentItemId,
+      name: editingItem?.name || "Processing Meal...",
+      originalName: formData.mealDescription,
+      ingredients: "Analyzing ingredients...",
+      portionSize: "...",
+      portionUnit: "",
+      sourceDescription: formData.mealDescription,
+      timestamp: logTimestamp,
+      fodmapData: null,
+      isSimilarToSafe: false,
+      userFodmapProfile: generateFallbackFodmapProfile(formData.mealDescription),
+      calories: userDidOverrideMacros ? formData.calories : null,
+      protein: userDidOverrideMacros ? formData.protein : null,
+      carbs: userDidOverrideMacros ? formData.carbs : null,
+      fat: userDidOverrideMacros ? formData.fat : null,
+      entryType: 'food',
+      userFeedback: editingItem ? editingItem.userFeedback : null,
+      macrosOverridden: userDidOverrideMacros,
+      isFavorite: editingItem ? editingItem.isFavorite : false,
+    };
+
+    if (editingItem) {
+      updateTimelineEntry(optimisticItem);
+    } else {
+      addTimelineEntry(optimisticItem);
+      setIsPremiumDashboardOpen(true);
+    }
+
+    // Close dialog immediately
+    setIsSimplifiedAddFoodDialogOpen(false);
+    setEditingItem(null);
+    if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
+
+
+    // 2. Background Processing
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
 
-    let mealDescriptionOutput: ProcessMealDescriptionOutput | undefined;
-    let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
-    let similarityOutput: FoodSimilarityOutput | undefined;
-    let processedFoodItem: LoggedFoodItem;
-    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog, or now if not provided
-
     try {
-      mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
-      fodmapAnalysis = await analyzeFoodItem({
-        foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
+      // Step A: Name & Portions
+      const mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
+
+      const namedItem = {
+        ...optimisticItem,
+        name: mealDescriptionOutput.wittyName,
+        originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
         ingredients: mealDescriptionOutput.consolidatedIngredients,
         portionSize: mealDescriptionOutput.estimatedPortionSize,
         portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-      });
+      };
 
-      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
-      let isSimilar = false;
-      if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
-        const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
+      // Update UI with partial data (Name available)
+      updateTimelineEntry(namedItem);
+
+      // Step B: Nutrition & Similarity (Merged)
+      const safeFoodItemsForAnalysis = (userProfile.safeFoods && userProfile.safeFoods.length > 0)
+        ? userProfile.safeFoods.map(sf => ({
           name: sf.name,
           portionSize: sf.portionSize,
           portionUnit: sf.portionUnit,
           fodmapProfile: sf.fodmapProfile,
-        }));
-        similarityOutput = await isSimilarToSafeFoods({
-          currentFoodItem: {
-            name: mealDescriptionOutput.primaryFoodItemForAnalysis,
-            portionSize: mealDescriptionOutput.estimatedPortionSize,
-            portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-            fodmapProfile: itemFodmapProfileForSimilarity
-          },
-          userSafeFoodItems: safeFoodItemsForSimilarity,
-        });
-        isSimilar = similarityOutput?.isSimilar ?? false;
-      }
+        }))
+        : undefined;
 
-      let finalCalories, finalProtein, finalCarbs, finalFat;
-
-      if (userDidOverrideMacros) {
-        finalCalories = formData.calories;
-        finalProtein = formData.protein;
-        finalCarbs = formData.carbs;
-        finalFat = formData.fat;
-      } else {
-        finalCalories = fodmapAnalysis?.calories;
-        finalProtein = fodmapAnalysis?.protein;
-        finalCarbs = fodmapAnalysis?.carbs;
-        finalFat = fodmapAnalysis?.fat;
-      }
-
-
-      processedFoodItem = {
-        id: currentItemId,
-        name: mealDescriptionOutput.wittyName,
-        originalName: mealDescriptionOutput.primaryFoodItemForAnalysis ?? null,
+      const fodmapAnalysis = await analyzeFoodItem({
+        foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
         ingredients: mealDescriptionOutput.consolidatedIngredients,
         portionSize: mealDescriptionOutput.estimatedPortionSize,
         portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-        sourceDescription: formData.mealDescription ?? null,
-        timestamp: logTimestamp,
+        userSafeFoodItems: safeFoodItemsForAnalysis,
+      });
+
+      const itemFodmapProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(namedItem.name);
+
+      const finalItem: LoggedFoodItem = {
+        ...namedItem,
         fodmapData: fodmapAnalysis ?? null,
-        isSimilarToSafe: isSimilar ?? false,
-        userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
-        calories: finalCalories ?? null,
-        protein: finalProtein ?? null,
-        carbs: finalCarbs ?? null,
-        fat: finalFat ?? null,
-        entryType: 'food',
-        userFeedback: editingItem ? editingItem.userFeedback : null,
-        macrosOverridden: userDidOverrideMacros ?? false,
-        isFavorite: editingItem ? editingItem.isFavorite : false,
+        isSimilarToSafe: fodmapAnalysis?.similarityAnalysis?.isSimilar ?? false,
+        userFodmapProfile: itemFodmapProfile ?? null,
+        calories: userDidOverrideMacros ? formData.calories : (fodmapAnalysis?.calories ?? null),
+        protein: userDidOverrideMacros ? formData.protein : (fodmapAnalysis?.protein ?? null),
+        carbs: userDidOverrideMacros ? formData.carbs : (fodmapAnalysis?.carbs ?? null),
+        fat: userDidOverrideMacros ? formData.fat : (fodmapAnalysis?.fat ?? null),
       };
 
+      // 3. Final Update & Save
+      updateTimelineEntry(finalItem);
+
       if (authUser && authUser.uid !== 'guest-user') {
-        const { id, ...itemToSave } = processedFoodItem;
+        const { id, ...itemToSave } = finalItem;
         const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', currentItemId);
-        if (editingItem) {
-          await updateDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
-          toast({ title: "Meal Updated!", description: `"${processedFoodItem.name}" updated with new AI insights.` });
-        } else {
-          await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
-          toast({ title: "Meal Logged!", description: `"${processedFoodItem.name}" added with AI insights.` });
-        }
-      } else {
-        toast({ title: editingItem ? "Meal Updated (Locally)" : "Meal Logged (Locally)", description: `"${processedFoodItem.name}" ${editingItem ? 'updated' : 'added'}. Login to save.` });
+        await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(finalItem.timestamp as Date) }, { merge: true });
       }
-
-      if (editingItem) {
-        updateTimelineEntry(processedFoodItem);
-      } else {
-        addTimelineEntry(processedFoodItem);
-        setIsPremiumDashboardOpen(true);
-      }
-      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
-      setIsSimplifiedAddFoodDialogOpen(false);
-      setEditingItem(null);
-
 
     } catch (error: any) {
       console.error('Full AI meal processing/updating failed:', error);
-      toast({ title: 'Error Processing Meal', description: `Could not ${editingItem ? 'update' : 'log'} meal via AI.`, variant: 'destructive' });
-
-      processedFoodItem = {
-        id: currentItemId,
-        name: mealDescriptionOutput?.wittyName || editingItem?.name || "Meal (Analysis Failed)",
-        originalName: mealDescriptionOutput?.primaryFoodItemForAnalysis || editingItem?.originalName || formData.mealDescription.substring(0, 30) + "...",
-        ingredients: mealDescriptionOutput?.consolidatedIngredients || editingItem?.ingredients || "See description",
-        portionSize: mealDescriptionOutput?.estimatedPortionSize || editingItem?.portionSize || "N/A",
-        portionUnit: mealDescriptionOutput?.estimatedPortionUnit || editingItem?.portionUnit || "",
-        sourceDescription: formData.mealDescription,
-        timestamp: logTimestamp,
-        fodmapData: null,
-        isSimilarToSafe: similarityOutput?.isSimilar ?? false,
-        userFodmapProfile: (fodmapAnalysis?.detailedFodmapProfile || editingItem?.userFodmapProfile || generateFallbackFodmapProfile(mealDescriptionOutput?.primaryFoodItemForAnalysis || "fallback")) ?? null,
-        calories: (userDidOverrideMacros ? formData.calories : (editingItem ? editingItem.calories : undefined)) ?? null,
-        protein: (userDidOverrideMacros ? formData.protein : (editingItem ? editingItem.protein : undefined)) ?? null,
-        carbs: (userDidOverrideMacros ? formData.carbs : (editingItem ? editingItem.carbs : undefined)) ?? null,
-        fat: (userDidOverrideMacros ? formData.fat : (editingItem ? editingItem.fat : undefined)) ?? null,
-        entryType: 'food',
-        userFeedback: editingItem ? editingItem.userFeedback : null,
-        macrosOverridden: userDidOverrideMacros ?? false,
-        isFavorite: editingItem ? editingItem.isFavorite : false,
-      };
-      if (editingItem) {
-        updateTimelineEntry(processedFoodItem);
-      } else {
-        addTimelineEntry(processedFoodItem);
-      }
+      toast({ title: 'Processing Incomplete', description: `Some analysis failed, but your meal is logged.`, variant: 'destructive' });
+      // Keep whatever state we reached (e.g., just name, or just optimistic)
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
-      if (editingItem) setEditingItem(null);
     }
   };
 
@@ -596,98 +544,82 @@ export default function RootPage() {
     const currentItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
 
-    let processedFoodItem: LoggedFoodItem;
+    const logTimestamp = newTimestamp || new Date();
+
+    // 1. Optimistic Update (Photo data is already "processed" enough to display)
+    const optimisticItem: LoggedFoodItem = {
+      name: photoData.name,
+      originalName: photoData.name,
+      ingredients: photoData.ingredients,
+      portionSize: photoData.portionSize,
+      portionUnit: photoData.portionUnit,
+      id: currentItemId,
+      timestamp: logTimestamp,
+      fodmapData: null,
+      isSimilarToSafe: false,
+      userFodmapProfile: generateFallbackFodmapProfile(photoData.name),
+      calories: null, protein: null, carbs: null, fat: null,
+      entryType: 'food',
+      userFeedback: null,
+      macrosOverridden: false,
+      sourceDescription: "Identified by photo",
+      isFavorite: false,
+    };
+
+    addTimelineEntry(optimisticItem);
+    setIsPremiumDashboardOpen(true);
+    setIsIdentifyByPhotoDialogOpen(false);
+    if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
+
+
+    // 2. Background Processing
     let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
-    let similarityOutput: FoodSimilarityOutput | undefined;
-    const logTimestamp = newTimestamp || new Date(); // Use precise timestamp from dialog (or log previous flow), or now
 
     try {
+      const safeFoodItemsForAnalysis = (userProfile.safeFoods && userProfile.safeFoods.length > 0)
+        ? userProfile.safeFoods.map(sf => ({
+          name: sf.name,
+          portionSize: sf.portionSize,
+          portionUnit: sf.portionUnit,
+          fodmapProfile: sf.fodmapProfile,
+        }))
+        : undefined;
+
       fodmapAnalysis = await analyzeFoodItem({
         foodItem: photoData.name,
         ingredients: photoData.ingredients,
         portionSize: photoData.portionSize,
         portionUnit: photoData.portionUnit,
+        userSafeFoodItems: safeFoodItemsForAnalysis,
       });
 
-      const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(photoData.name);
-      let isSimilar = false;
-      if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
-        const safeFoodItemsForSimilarity = userProfile.safeFoods.map(sf => ({
-          name: sf.name,
-          portionSize: sf.portionSize,
-          portionUnit: sf.portionUnit,
-          fodmapProfile: sf.fodmapProfile,
-        }));
-        similarityOutput = await isSimilarToSafeFoods({
-          currentFoodItem: {
-            name: photoData.name,
-            portionSize: photoData.portionSize,
-            portionUnit: photoData.portionUnit,
-            fodmapProfile: itemFodmapProfileForSimilarity
-          },
-          userSafeFoodItems: safeFoodItemsForSimilarity,
-        });
-        isSimilar = similarityOutput?.isSimilar ?? false;
-      }
+      const itemFodmapProfile: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(photoData.name);
 
-      processedFoodItem = {
-        name: photoData.name,
-        originalName: photoData.name,
-        ingredients: photoData.ingredients,
-        portionSize: photoData.portionSize,
-        portionUnit: photoData.portionUnit,
-        id: currentItemId,
-        timestamp: logTimestamp,
+      const processedFoodItem: LoggedFoodItem = {
+        ...optimisticItem,
         fodmapData: fodmapAnalysis ?? null,
-        isSimilarToSafe: isSimilar ?? false,
-        userFodmapProfile: itemFodmapProfileForSimilarity ?? null,
+        isSimilarToSafe: fodmapAnalysis?.similarityAnalysis?.isSimilar ?? false,
+        userFodmapProfile: itemFodmapProfile ?? null,
         calories: fodmapAnalysis?.calories ?? null,
         protein: fodmapAnalysis?.protein ?? null,
         carbs: fodmapAnalysis?.carbs ?? null,
         fat: fodmapAnalysis?.fat ?? null,
-        entryType: 'food',
-        userFeedback: null,
-        macrosOverridden: false,
-        sourceDescription: "Identified by photo",
-        isFavorite: false,
       };
+
+      // 3. Final Update & Save
+      updateTimelineEntry(processedFoodItem);
 
       if (authUser && authUser.uid !== 'guest-user') {
         const { id, ...itemToSave } = processedFoodItem;
         const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', currentItemId);
-        await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
-        toast({ title: "Food Logged from Photo", description: `${processedFoodItem.name} added with AI analysis.` });
-      } else {
-        toast({ title: "Food Logged from Photo (Locally)", description: `${processedFoodItem.name} added. Login to save.` });
+        await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) }, { merge: true });
+        toast({ title: "Photo Analysis Complete", description: `${processedFoodItem.name} enriched.` });
       }
-
-      addTimelineEntry(processedFoodItem);
-      setIsPremiumDashboardOpen(true);
-      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
-      setIsIdentifyByPhotoDialogOpen(false);
 
     } catch (error: any) {
       console.error('AI analysis or food logging from photo failed:', error);
-      toast({ title: 'Error Processing Photo Log', description: `Could not log food from photo. AI analysis might have failed.`, variant: 'destructive' });
-      processedFoodItem = {
-        name: photoData.name,
-        originalName: photoData.name,
-        ingredients: photoData.ingredients,
-        portionSize: photoData.portionSize,
-        portionUnit: photoData.portionUnit,
-        id: currentItemId,
-        timestamp: logTimestamp,
-        isSimilarToSafe: similarityOutput?.isSimilar ?? false,
-        entryType: 'food',
-        fodmapData: null,
-        userFodmapProfile: (fodmapAnalysis?.detailedFodmapProfile || generateFallbackFodmapProfile(photoData.name)) ?? null,
-        calories: null, protein: null, carbs: null, fat: null,
-        userFeedback: null,
-        macrosOverridden: false,
-        sourceDescription: "Identified by photo (analysis partially failed)",
-        isFavorite: false,
-      };
-      addTimelineEntry(processedFoodItem);
+      toast({ title: 'Photo Analysis Failed', description: `Detail analysis failed, but item was logged.`, variant: 'destructive' });
+      // Item remains in optimistic state
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
     }

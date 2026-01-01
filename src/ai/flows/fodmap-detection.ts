@@ -27,13 +27,28 @@ const DetailedFoodFODMAPProfileSchema = z.object({
 export type FoodFODMAPProfile = z.infer<typeof DetailedFoodFODMAPProfileSchema>;
 
 
+const SimilarityAnalysisSchema = z.object({
+  isSimilar: z.boolean().describe('Indicates whether the current food item is similar to any of the user-defined safe foods, considering both FODMAP profile and portion context.'),
+  similarityReason: z.string().optional().describe('Reasoning behind the similarity assessment. If similar, mention which safe food it resembles and why (e.g., "Similar to your safe intake of 1/2 cup rice due to low overall FODMAPs and comparable portion.").'),
+}).describe("Assessment of similarity to user's safe foods.");
+
+// Simplified safe food schema for prompt input
+const SimpleSafeFoodSchema = z.object({
+  name: z.string(),
+  portionSize: z.string(),
+  portionUnit: z.string(),
+  fodmapProfile: z.any().describe('The safe food\'s FODMAP profile.'),
+});
+
 const AnalyzeFoodItemInputSchema = z.object({
   foodItem: z.string().describe('The name of the food item to analyze. This may include quantities, e.g., "4 eggs and 2 slices of toast".'),
   ingredients: z.string().describe('A comma-separated list of ingredients in the food item.'),
   portionSize: z.string().describe('The size of the portion, e.g., "100", "0.5", "1". This refers to the overall meal portion if foodItem is complex.'),
   portionUnit: z.string().describe('The unit for the portion, e.g., "g", "cup", "medium apple", "meal". This refers to the overall meal portion unit.'),
+  userSafeFoodItems: z.array(SimpleSafeFoodSchema).optional().describe('Optional list of user safe foods to check for similarity.'),
 });
 export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
+
 
 const FodmapScoreSchema = z.enum(['Green', 'Yellow', 'Red']);
 export type FodmapScore = z.infer<typeof FodmapScoreSchema>;
@@ -93,6 +108,7 @@ const AISummariesSchema = z.object({
   ketoSummary: z.string().optional().describe("Brief (1-2 sentence) textual summary of keto-friendliness. E.g., 'Appears suitable for a strict keto diet.' or 'Too high in carbs for keto.'"),
 }).describe("Additional concise textual summaries for display in an 'AI Notes' section.");
 
+
 const AnalyzeFoodItemOutputSchema = z.object({
   ingredientFodmapScores: z.array(IngredientScoreSchema).describe('A list of ingredients and their FODMAP scores, adjusted for the overall portion.'),
   overallRisk: FodmapScoreSchema.describe('The overall FODMAP risk level of the food item for the specified portion (Green, Yellow, or Red).'),
@@ -109,6 +125,7 @@ const AnalyzeFoodItemOutputSchema = z.object({
   ketoFriendliness: KetoFriendlinessInfoSchema.optional().describe("Keto-friendliness assessment."),
   detectedAllergens: z.array(z.string()).optional().describe("List of common allergens detected in the ingredients (e.g., Milk, Wheat, Soy). If none, can be empty or omitted."),
   aiSummaries: AISummariesSchema.optional().describe("Concise AI-generated textual summaries for display in notes."),
+  similarityAnalysis: SimilarityAnalysisSchema.optional().describe("Analysis of whether this food is similar to the user's known safe foods."),
 });
 
 export type AnalyzeFoodItemOutput = z.infer<typeof AnalyzeFoodItemOutputSchema>;
@@ -135,12 +152,8 @@ const defaultErrorOutput: AnalyzeFoodItemOutput = {
     gutImpactSummary: 'Analysis failed.',
     ketoSummary: 'Analysis failed.'
   },
+  similarityAnalysis: { isSimilar: false },
 };
-
-
-export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<AnalyzeFoodItemOutput> {
-  return analyzeFoodItemFlow(input);
-}
 
 const analyzeFoodItemPrompt = ai.definePrompt({
   name: 'analyzeFoodItemPrompt',
@@ -148,37 +161,43 @@ const analyzeFoodItemPrompt = ai.definePrompt({
   input: { schema: AnalyzeFoodItemInputSchema },
   output: { schema: AnalyzeFoodItemOutputSchema },
   config: {
-    temperature: 0.2,
+    temperature: 0, // Deterministic results
   },
-  prompt: `You are an expert AI for comprehensive, portion-aware food analysis for IBS users.
+  prompt: `You are an expert AI for COMPREHENSIVE, PORTION-AWARE food analysis.
 Input: Food: '{{{foodItem}}}', Ingredients: '{{{ingredients}}}', Portion: '{{{portionSize}}} {{{portionUnit}}}'.
+
+User Safe Foods (Reference):
+{{#if userSafeFoodItems.length}}
+{{#each userSafeFoodItems}}
+- Name: {{{this.name}}}, Portion: {{{this.portionSize}}} {{{this.portionUnit}}} (Profile provided in data)
+{{/each}}
+{{else}}
+None
+{{/if}}
+
 Output a JSON object strictly adhering to 'AnalyzeFoodItemOutputSchema'.
 
 Key tasks:
-1.  **Portion-Specific Analysis:** All analyses for '{{{portionSize}}} {{{portionUnit}}}'.
-    *   FODMAPs: For each ingredient in '{{{ingredients}}}', assess FODMAP content relative to the meal portion. Output 'overallRisk', 'reason', and if possible, 'detailedFodmapProfile'.
+1.  **Portion-Specific Analysis:**
+    *   FODMAPs: Assess FODMAP content relative to the *entire* meal/portion. Output 'overallRisk' and 'reason'.
 
-2.  **Quantity-Aware Nutrition (Calories, Macros, Micronutrients):**
-    *   Prioritize quantities in '{{{foodItem}}}' (e.g., "4 eggs") for component nutrition.
-    *   '{{{portionSize}}} {{{portionUnit}}}' applies to the whole meal or components without specific quantities.
-    *   For composite/branded items (e.g., "Sausage McMuffin with Egg, 1 hashbrown"), use general knowledge and estimate additions.
-    *   Ensure final 'calories', 'protein', 'carbs', 'fat', and 'micronutrientsInfo' sum all components accurately.
+2.  **QUANTITY-DRIVEN NUTRITION (CRITICAL):**
+    *   **CHECK INGREDIENTS FOR QUANTITIES**: The 'Ingredients' input may contain quantities in brackets, e.g., "Rice (200g), Chicken (150g)". **YOU MUST USE THESE EXACT QUANTITIES** to calculate calories and macros.
+    *   If '{{{foodItem}}}' has quantities (e.g., "4 eggs"), use them.
+    *   Sum all components for final 'calories', 'protein', 'carbs', 'fat'.
 
-3.  **Micronutrients ('micronutrientsInfo'):**
-    *   User-Specified (from Ingredients): If '{{{ingredients}}}' contains nutrients with quantities (e.g., "Vitamin D3 50,000 IU", "B6 7mg", "B6 10.5mg", "Omega-3 800mg (480 EPA, 320 DHA)"), accurately transcribe these. If multiple entries for the SAME nutrient with compatible units (e.g., all mg or all mcg for B6) are found, sum them into a single 'MicronutrientDetailSchema.amount' string (e.g., "17.5 mg for B6" from the example). For complex entries like "Omega-3 800mg (480 EPA, 320 DHA)", you can list "Omega-3" with "800mg" and also "EPA" with "480mg" and "DHA" with "320mg" as separate 'MicronutrientDetail' entries if simpler, or a single "Omega-3" entry showing "800mg (480 EPA, 320 DHA)" as the amount. Ensure the 'amount' string reflects the quantity and unit from the input. Calculate 'dailyValuePercent' only if confident.
-    *   Estimate key micronutrients for foods/quantities in '{{{foodItem}}}'.
-    *   Suggest 'iconName' based on nutrient function per schema.
+3.  **Micronutrients:**
+    *   Transcribe detailed quantities from input if present (e.g. "Vitamin D3 50,000 IU").
+    *   Estimate key micronutrients for the defined quantities.
 
-4.  **Other Health Indicators (Portion-Specific):**
-    *   'glycemicIndexInfo': Estimate value and level.
-    *   'dietaryFiberInfo': Estimate grams and quality.
-    *   'gutBacteriaImpact': Estimate sentiment and 'reasoning'.
-    *   'ketoFriendliness': Assess score, 'reasoning', and optional 'estimatedNetCarbs'.
-    *   'detectedAllergens': List common allergens from '{{{ingredients}}}'.
+4.  **Other Health Indicators:**
+    *   Provide estimates for GI, Fiber, Gut Impact, Keto, Allergens based on the *entire* portion.
 
-5.  **AI Summaries ('aiSummaries'):** Concise textual summaries for each category. Acknowledge significant user-specified high-dose supplements or specific Omega-3 details.
+5.  **AI Summaries (SPEED OPTIMIZATION):**
+    *   Keep all text fields ('reason', 'aiSummaries.*') **EXTREMELY CONCISE** (max 1 short sentence). Avoid fluff.
+    *   Example: "High in fructans due to garlic." (Not "This item is high in fructans because it contains garlic which is...")
 
-Strictly follow output schema. Omit/default optional sub-fields if not estimable. Ensure nutrition reflects quantities in '{{{foodItem}}}', scaled to '{{{portionSize}}} {{{portionUnit}}}'.
+Strictly follow output schema. Omit optional sub-fields if unknown. Ensure nutrition matches the explicit quantities provided in inputs.
 `,
 });
 
@@ -229,5 +248,9 @@ const analyzeFoodItemFlow = ai.defineFlow(
     }
   }
 );
+
+export async function analyzeFoodItem(input: AnalyzeFoodItemInput): Promise<AnalyzeFoodItemOutput> {
+  return analyzeFoodItemFlow(input);
+}
 
 export type { FoodFODMAPProfile as DetailedFodmapProfileFromAI };

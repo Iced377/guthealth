@@ -1,4 +1,20 @@
 
+# Release Notes - GutCheck v3.8.25 (AI Improvements)
+
+**Release Date:** January 01, 2026
+**Version:** v3.8.25
+
+## 🌟 Highlights
+
+### Enhanced AI Food Identification
+We've upgraded our image recognition capabilities to provide smarter, more accurate food logging.
+- **Automatic Portion Estimation**: The AI now visually estimates the quantity of each ingredient (e.g., "150g Chicken" instead of just "Chicken"), leading to significantly more accurate macro and calorie tracking.
+
+### Faster Nutrition Analysis
+- **Speed Optimization**:  We've optimized our AI prompts to deliver nutrition insights faster than before, reducing wait times for your food logs.
+
+---
+
 # Release Notes - GutHealth v3.7 (The Dashboard Update)
 
 **Release Date:** December 2025

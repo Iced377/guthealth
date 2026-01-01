@@ -49,6 +49,7 @@ Image: {{media url=imageDataUri}}
 Your tasks:
 1.  **'identifiedFoodName'**: Identify the primary food item. If packaged, the product name. If a dish, its name. For ambiguous cooking (e.g., eggs), use general terms ('cooked eggs') unless method is obvious.
 2.  **'identifiedIngredients'**: Provide a comma-separated list of main ingredients.
+    *   **CRITICAL - QUANTITY ESTIMATION**: Where visually inferable, you **MUST** include an estimated quantity in round brackets next to each ingredient. Example: "Rice (200g), Chicken (150g)".
     *   **CRITICAL FOR SUPPLEMENTS/LABELS**: If OCR detects specific nutrient quantities (e.g., "Vitamin D3 50,000 IU", "Iron 10mg"), these exact strings MUST be included in 'identifiedIngredients'. Do not alter or omit these OCR'd quantities.
     *   For dishes, list common ingredients.
 3.  **'estimatedPortionSize' & 'estimatedPortionUnit'**: Provide rough estimates.
@@ -91,13 +92,13 @@ Examples:
 });
 
 const defaultErrorOutput: IdentifyFoodFromImageOutput = {
-    identifiedFoodName: undefined,
-    identifiedIngredients: undefined,
-    estimatedPortionSize: undefined,
-    estimatedPortionUnit: undefined,
-    ocrText: undefined,
-    recognitionSuccess: false,
-    errorMessage: 'AI processing failed to return an output.',
+  identifiedFoodName: undefined,
+  identifiedIngredients: undefined,
+  estimatedPortionSize: undefined,
+  estimatedPortionUnit: undefined,
+  ocrText: undefined,
+  recognitionSuccess: false,
+  errorMessage: 'AI processing failed to return an output.',
 };
 
 const identifyFoodFromImageFlow = ai.defineFlow(
@@ -113,7 +114,7 @@ const identifyFoodFromImageFlow = ai.defineFlow(
         return defaultErrorOutput;
       }
       return output;
-    } catch(err: any) {
+    } catch (err: any) {
       console.error("[IdentifyFoodByPhotoFlow] Error during AI processing:", err);
       return {
         ...defaultErrorOutput,
