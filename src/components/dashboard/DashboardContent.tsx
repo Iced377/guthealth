@@ -214,7 +214,7 @@ export default function DashboardContent({
 
 
             <ScrollArea className="flex-1 -mx-4 px-4">
-                <div className="relative pb-24">
+                <div className="relative pb-24 pt-6">
                     <div className="space-y-6">
                         {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
                             <div className="text-center py-12 border-2 border-dashed border-border rounded-xl mt-4 bg-muted/20">
@@ -238,14 +238,19 @@ export default function DashboardContent({
                             if (displayableEntries.length === 0) return null;
 
                             return (
-                                <div key={dateKey} className="space-y-3">
-                                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md py-3 border-b border-border/50">
-                                        <h3 className="text-sm font-semibold text-primary/80 uppercase tracking-wide flex items-center gap-2">
-                                            <CalendarDays className="h-4 w-4" />
+                                <div key={dateKey} className="relative pl-8 pb-12 last:pb-0 border-l-2 border-primary/20 ml-2">
+                                    {/* Timeline Node */}
+                                    <div className="absolute left-[-9px] top-0 h-4 w-4 rounded-full bg-background border-2 border-primary ring-4 ring-background" />
+
+                                    {/* Date Header */}
+                                    <div className="flex items-center gap-2 mb-6 -mt-1">
+                                        <h3 className="text-sm font-bold text-primary uppercase tracking-wider bg-primary/10 px-3 py-1 rounded-full shadow-sm border border-primary/10">
                                             {dateKey}
                                         </h3>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+
+                                    {/* Cards Grid */}
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                                         {displayableEntries.map((entry, entryIndex) => {
                                             if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
                                                 return (
@@ -271,7 +276,7 @@ export default function DashboardContent({
                                                 return (
                                                     <div
                                                         key={entry.id}
-                                                        className="card-reveal-animation"
+                                                        className="card-reveal-animation h-full"
                                                         style={{ animationDelay: `${entryIndex * 0.05}s` }}
                                                     >
                                                         <TimelineSymptomCard

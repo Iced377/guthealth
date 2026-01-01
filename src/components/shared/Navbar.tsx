@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.22";
+export const APP_VERSION = "Beta 3.8.23";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.8.23",
+    date: "December 31, 2025",
+    title: "Layout Refinement",
+    description: [
+      "UI: Adjusted timeline spacing to prevent header overlap.",
+    ]
+  },
   {
     version: "Beta 3.8.22",
     date: "December 31, 2025",
