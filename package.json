@@ -1,6 +1,6 @@
 {
   "name": "nextn",
-  "version": "3.8.25",
+  "version": "3.9.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
@@ -40,7 +40,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "firebase": "^11.8.1",
     "firebase-admin": "^13.6.0",
     "framer-motion": "^12.23.26",

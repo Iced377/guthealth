@@ -1,4 +1,29 @@
 
+# Release Notes - GutHealth v3.9.0 (Integrations & Insights)
+
+**Release Date:** January 01, 2026
+**Version:** v3.9.0
+
+## 🌟 Highlights
+
+### Pedometer++ Import
+For users who track steps with Pedometer++, you can now bring your full history into GutCheck.
+- **CSV Import**: Easily upload your exported data via the Trends dashboard.
+- **Historic Data**: Import years of extensive step data in seconds.
+
+### Enhanced Trends Visualization
+We've upgraded the Activity Chart to give you deeper insights into your movement.
+- **Histogram View**: Steps are now displayed as clear daily bars.
+- **7-Day Trend Line**: A smooth moving average line helps you spot weekly trends amidst daily fluctuations.
+- **Smart Merging**: The graph automatically prioritizes the best data source (Fitbit vs. Pedometer++) for each day.
+
+## 🛠 Fixes & Improvements
+- **Fitbit Sync**: Fixed an issue where the syncing process sometimes missed the most recent day's data. Syncing now explicitly captures everything up to the current moment.
+- **Dashboard Layout**: Reorganized the Trends grid to prioritize Weight and Activity charts for better visibility.
+- **Stability**: Resolved backend initialization errors for Firebase Admin SDK.
+
+---
+
 # Release Notes - GutCheck v3.8.25 (AI Improvements)
 
 **Release Date:** January 01, 2026
