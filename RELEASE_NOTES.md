@@ -1,4 +1,14 @@
 
+# Release Notes - GutHealth v3.9.1 (Build Fix)
+
+**Release Date:** January 01, 2026
+**Version:** v3.9.1
+
+## 🛠 Fixes
+- **Deployment**: Synced `package-lock.json` with `package.json` to resolve build errors during deployment.
+
+---
+
 # Release Notes - GutHealth v3.9.0 (Integrations & Insights)
 
 **Release Date:** January 01, 2026
