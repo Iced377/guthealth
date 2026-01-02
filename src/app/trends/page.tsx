@@ -24,6 +24,7 @@ import WeightTrendChart from '@/components/trends/WeightTrendChart';
 import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
 import PedometerImportDialog from '@/components/trends/PedometerImportDialog';
+import CaloriesStepsCorrelationChart, { CorrelationPoint } from '@/components/trends/CaloriesStepsCorrelationChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, AlertTriangle, BarChart3, Award, Zap } from 'lucide-react';
@@ -253,6 +254,8 @@ export default function TrendsPage() {
     }));
   }, [filteredEntries]);
 
+
+
   const calorieData = useMemo<CaloriePoint[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
     return aggregateDataByDay(foodEntries, (date, items) => ({
@@ -260,6 +263,8 @@ export default function TrendsPage() {
       calories: items.reduce((sum, item) => sum + (item.calories ?? 0), 0),
     }));
   }, [filteredEntries]);
+
+
 
   const safetyData = useMemo<SafetyPoint[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
@@ -270,6 +275,8 @@ export default function TrendsPage() {
       notMarked: items.filter(item => item.userFeedback === null || item.userFeedback === undefined).length,
     }));
   }, [filteredEntries]);
+
+
 
   const giTrendData = useMemo<GIPoint[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
@@ -296,6 +303,8 @@ export default function TrendsPage() {
     }
     return result;
   }, [filteredEntries]);
+
+
 
   const aggregateGenericByDay = <T extends { timestamp: Date }>(
     entries: T[],
@@ -330,6 +339,8 @@ export default function TrendsPage() {
     }).filter(p => p.weight > 0); // Only show days experienced weight
   }, [filteredEntries]);
 
+
+
   const activityData = useMemo<ActivityPoint[]>(() => {
     // Combine Fitbit and Pedometer data
     const activityEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') as (FitbitLog | PedometerLog)[];
@@ -355,6 +366,23 @@ export default function TrendsPage() {
     }).filter(p => p.steps > 0);
   }, [filteredEntries]);
 
+  const correlationData = useMemo<CorrelationPoint[]>(() => {
+    // Map by date for fast lookup
+    const caloriesByDate = new Map(calorieData.map(d => [d.date, d.calories]));
+
+    return activityData.reduce((acc, activity) => {
+      const calories = caloriesByDate.get(activity.date);
+      if (calories && calories > 0 && activity.steps > 0) {
+        acc.push({
+          date: activity.date,
+          steps: activity.steps,
+          calories: calories
+        });
+      }
+      return acc;
+    }, [] as CorrelationPoint[]);
+  }, [activityData, calorieData]);
+
   const symptomFrequencyData = useMemo<SymptomFrequency[]>(() => {
     const symptomLogs = filteredEntries.filter(e => e.entryType === 'symptom') as SymptomLog[];
     const frequencyMap: Record<string, number> = {};
@@ -365,6 +393,8 @@ export default function TrendsPage() {
     });
     return Object.entries(frequencyMap).map(([name, value]) => ({ name, value }));
   }, [filteredEntries]);
+
+
 
   const micronutrientAchievementData = useMemo<MicronutrientAchievement[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
@@ -415,6 +445,8 @@ export default function TrendsPage() {
       .map(([name, data]) => ({ name, achievedDays: data.achievedDays, iconName: data.iconName }))
       .sort((a, b) => b.achievedDays - a.achievedDays);
   }, [filteredEntries]);
+
+
 
 
   if (authLoading || isLoadingData) {
@@ -537,6 +569,15 @@ export default function TrendsPage() {
               </CardHeader>
               <CardContent>
                 {giTrendData.length > 0 ? <GITrendChart data={giTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No GI data available for this period.</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Calories vs. Steps Correlation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {correlationData.length > 0 ? <CaloriesStepsCorrelationChart data={correlationData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">Not enough overlapping data (Steps + Calories) to show correlation.</p>}
               </CardContent>
             </Card>
 

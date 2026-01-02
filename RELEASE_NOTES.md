@@ -1,4 +1,14 @@
 
+# Release Notes - GutHealth v3.9.5 (Trends Enhancement)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.5
+
+## 📈 New Features
+- **Correlation Chart**: Added a new scatter plot to visualize the specific correlation between daily **Steps** and **Calorie Intake**.
+
+---
+
 # Release Notes - GutHealth v3.9.4 (Hotfix)
 
 **Release Date:** January 02, 2026
