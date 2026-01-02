@@ -122,7 +122,18 @@ export interface FitbitLog {
   caloriesBurned?: number;
 }
 
-export type TimelineEntry = LoggedFoodItem | SymptomLog | FitbitLog;
+export interface PedometerLog {
+  id: string;
+  timestamp: Date;
+  entryType: 'pedometer_data';
+  steps: number;
+  distance?: number; // meters
+  floorsAscended?: number;
+  activeEnergy?: number; // kcal
+  source?: 'pedometer_plus_plus';
+}
+
+export type TimelineEntry = LoggedFoodItem | SymptomLog | FitbitLog | PedometerLog;
 
 
 export interface SafeFood {

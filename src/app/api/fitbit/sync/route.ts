@@ -88,19 +88,22 @@ export async function POST(req: NextRequest) {
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(today.getFullYear() - 1);
         const startDateStr = format(oneYearAgo, 'yyyy-MM-dd');
+        const endDateStr = format(today, 'yyyy-MM-dd');
 
-        // Weight: /1/user/-/body/weight/date/[startDate]/1y.json
+        console.log(`[FitbitSync] Fetching data from ${startDateStr} to ${endDateStr}`);
+
+        // Weight: /1/user/-/body/weight/date/[startDate]/[endDate].json
         const [weightRes, fatRes, stepsRes, caloriesRes] = await Promise.all([
-            fetch(`https://api.fitbit.com/1/user/-/body/weight/date/${startDateStr}/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/body/weight/date/${startDateStr}/${endDateStr}.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/body/fat/date/${startDateStr}/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/body/fat/date/${startDateStr}/${endDateStr}.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/${startDateStr}/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/${startDateStr}/${endDateStr}.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/${startDateStr}/1y.json`, {
+            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/${startDateStr}/${endDateStr}.json`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             })
         ]);

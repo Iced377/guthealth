@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
-import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint } from '@/types';
+import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ import GITrendChart from '@/components/trends/GITrendChart';
 import WeightTrendChart from '@/components/trends/WeightTrendChart';
 import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
+import PedometerImportDialog from '@/components/trends/PedometerImportDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, AlertTriangle, BarChart3, Award, Zap } from 'lucide-react';
@@ -330,14 +331,26 @@ export default function TrendsPage() {
   }, [filteredEntries]);
 
   const activityData = useMemo<ActivityPoint[]>(() => {
-    const activityEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data') as FitbitLog[];
+    // Combine Fitbit and Pedometer data
+    const activityEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') as (FitbitLog | PedometerLog)[];
+
     return aggregateGenericByDay(activityEntries, (date, items) => {
-      // Activity is usually a daily summary, but if multiple, maybe max?
-      const latest = items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
+      // If we have both fitbit and pedometer for same day, we might prioritize one or sum?
+      // Typically users use one main source. If both exist, Pedometer++ might be duplicate of Health data.
+      // But here user is manually importing.
+      // Let's sum them if they are from different sources? Or take max?
+      // Safer to take max steps found for the day to avoid double counting if Pedometer++ export overlaps with Fitbit.
+      // Or if they are distinct sources, sum?
+      // Let's assume distinct and try to merge intelligently. 
+      // Actually, simplest logic: Take the entry with highest steps count for the day.
+      const maxStepsEntry = items.sort((a, b) => (b.steps || 0) - (a.steps || 0))[0];
+
+      const caloriesBurned = (maxStepsEntry as FitbitLog).caloriesBurned || (maxStepsEntry as PedometerLog).activeEnergy || 0;
+
       return {
         date,
-        steps: latest?.steps || 0,
-        burned: latest?.caloriesBurned || 0,
+        steps: maxStepsEntry?.steps || 0,
+        burned: caloriesBurned,
       };
     }).filter(p => p.steps > 0);
   }, [filteredEntries]);
@@ -474,6 +487,7 @@ export default function TrendsPage() {
             <Button onClick={handleConnectFitbit} disabled={authLoading} type="button">
               <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
             </Button>
+            <PedometerImportDialog />
           </div>
           <div className="mb-8">
             <TimeRangeToggle selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
@@ -501,24 +515,6 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Hourly Glycemic Index (GI) Trend</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {giTrendData.length > 0 ? <GITrendChart data={giTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No GI data available for this period.</p>}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Food Safety Feedback</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {safetyData.length > 0 ? <LoggedSafetyTrendChart data={safetyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No food safety feedback logged for this period.</p>}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
                 <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
               </CardHeader>
               <CardContent>
@@ -532,6 +528,24 @@ export default function TrendsPage() {
               </CardHeader>
               <CardContent>
                 {activityData.length > 0 ? <ActivityTrendChart data={activityData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No activity data (Sync Fitbit to see).</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Hourly Glycemic Index (GI) Trend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {giTrendData.length > 0 ? <GITrendChart data={giTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No GI data available for this period.</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Food Safety Feedback</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {safetyData.length > 0 ? <LoggedSafetyTrendChart data={safetyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No food safety feedback logged for this period.</p>}
               </CardContent>
             </Card>
 

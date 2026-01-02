@@ -1,4 +1,14 @@
 
+# Release Notes - GutHealth v3.9.2 (Code Sync)
+
+**Release Date:** January 01, 2026
+**Version:** v3.9.2
+
+## 🛠 Fixes
+- **Code Sync**: Ensured all new feature code (Pedometer Import, Activity Charts) is correctly included in the release build.
+
+---
+
 # Release Notes - GutHealth v3.9.1 (Build Fix)
 
 **Release Date:** January 01, 2026

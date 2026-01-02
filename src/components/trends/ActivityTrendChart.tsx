@@ -3,7 +3,8 @@
 
 import type { ActivityPoint } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useMemo } from 'react';
 
 interface ActivityTrendChartProps {
     data: ActivityPoint[];
@@ -13,6 +14,7 @@ interface ActivityTrendChartProps {
 const getColors = (isDarkMode: boolean) => {
     return {
         steps: isDarkMode ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-2))', // Blue/Teal
+        average: isDarkMode ? 'hsl(var(--primary))' : 'hsl(var(--primary))',
         grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
         text: isDarkMode ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))",
     };
@@ -21,8 +23,25 @@ const getColors = (isDarkMode: boolean) => {
 export default function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
     const colors = getColors(isDarkMode);
 
+    const chartData = useMemo(() => {
+        // Calculate 7-day moving average
+        return data.map((point, index, array) => {
+            if (index < 6) return { ...point, movingAverage: null }; // Need 7 days
+
+            const slice = array.slice(index - 6, index + 1);
+            const sum = slice.reduce((acc, curr) => acc + curr.steps, 0);
+            const avg = Math.round(sum / 7);
+
+            return {
+                ...point,
+                movingAverage: avg
+            };
+        });
+    }, [data]);
+
     const chartConfig = {
         steps: { label: "Steps", color: colors.steps },
+        movingAverage: { label: "7-Day Avg", color: colors.average },
         burned: { label: "Calories Burned", color: "hsl(var(--chart-3))" }
     } satisfies import("@/components/ui/chart").ChartConfig;
 
@@ -31,11 +50,11 @@ export default function ActivityTrendChart({ data, isDarkMode }: ActivityTrendCh
     }
 
     return (
-        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-            <AreaChart
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+            <ComposedChart
                 accessibilityLayer
-                data={data}
-                margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
+                data={chartData}
+                margin={{ top: 20, right: 20, left: -20, bottom: 5 }}
             >
                 <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
                 <XAxis
@@ -45,9 +64,9 @@ export default function ActivityTrendChart({ data, isDarkMode }: ActivityTrendCh
                     tickMargin={8}
                     tickFormatter={(value) => value.slice(5)}
                     stroke={colors.text}
-                    angle={data.length > 10 ? -35 : 0}
-                    textAnchor={data.length > 10 ? "end" : "middle"}
-                    height={data.length > 10 ? 50 : 30}
+                    angle={data.length > 20 ? -45 : 0}
+                    textAnchor={data.length > 20 ? "end" : "middle"}
+                    height={data.length > 20 ? 60 : 30}
                 />
                 <YAxis
                     tickLine={false}
@@ -59,30 +78,23 @@ export default function ActivityTrendChart({ data, isDarkMode }: ActivityTrendCh
                     cursor={true}
                     content={<ChartTooltipContent indicator="dot" />}
                 />
-                <defs>
-                    <linearGradient id="fillSteps" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                            offset="5%"
-                            stopColor="var(--color-steps)"
-                            stopOpacity={0.8}
-                        />
-                        <stop
-                            offset="95%"
-                            stopColor="var(--color-steps)"
-                            stopOpacity={0.1}
-                        />
-                    </linearGradient>
-                </defs>
-                <Area
+                <Bar
                     dataKey="steps"
-                    type="monotone"
-                    fill="url(#fillSteps)"
-                    stroke="var(--color-steps)"
-                    strokeWidth={2.5}
+                    fill="var(--color-steps)"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={50}
                     stackId="a"
                 />
+                <Line
+                    type="monotone"
+                    dataKey="movingAverage"
+                    stroke="var(--color-movingAverage)"
+                    strokeWidth={3}
+                    dot={false}
+                    name="7-Day Avg"
+                />
                 <ChartLegend content={<ChartLegendContent />} />
-            </AreaChart>
+            </ComposedChart>
         </ChartContainer>
     );
 }
