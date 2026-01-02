@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.9";
+export const APP_VERSION = "Beta 3.9.10";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.10",
+    date: "January 2, 2026",
+    title: "Layout Fix (Trends)",
+    description: [
+      "Optimized the Trends Dashboard layout for smaller screens.",
+    ]
+  },
   {
     version: "Beta 3.9.9",
     date: "January 2, 2026",

@@ -1,4 +1,13 @@
 
+# Release Notes - GutHealth v3.9.10 (Layout Fix)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.10
+
+## 🛠 Fixes
+- **Mobile Layout**: Refactored the Trends Dashboard header to wrap buttons gracefully on small screens, preventing horizontal overflow.
+
+---
 # Release Notes - GutHealth v3.9.9 (Debug Tool)
 
 **Release Date:** January 02, 2026

@@ -557,17 +557,17 @@ export default function TrendsPage() {
       <Navbar />
       <ScrollArea className="flex-grow">
         <main className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               <Button variant="ghost" size="sm" onClick={handleDebugSync}>
                 <Bug className="h-4 w-4 text-muted-foreground" />
               </Button>
-              <Button onClick={handleConnectFitbit} disabled={authLoading} type="button">
-                <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
+              <Button onClick={handleConnectFitbit} disabled={authLoading} type="button" size="sm">
+                <Zap className="mr-2 h-4 w-4" /> Connect Fitbit
               </Button>
+              <PedometerImportDialog />
             </div>
-            <PedometerImportDialog />
           </div>
           <div className="mb-8">
             <TimeRangeToggle selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
