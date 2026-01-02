@@ -1,4 +1,14 @@
 
+# Release Notes - GutHealth v3.9.4 (Hotfix)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.4
+
+## 🛠 Fixes
+- **Deployment**: Finalized `package-lock.json` synchronization to fix "Module not found" errors during build.
+
+---
+
 # Release Notes - GutHealth v3.9.3 (Build Stability)
 
 **Release Date:** January 02, 2026
