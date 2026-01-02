@@ -1,4 +1,13 @@
 
+# Release Notes - GutHealth v3.9.7 (Build Hotfix)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.7
+
+## 🛠 Fixes
+- **Build System**: Removed stray characters from the API route file that broke the production build.
+
+---
 # Release Notes - GutHealth v3.9.6 (Sync & AI Fixes)
 
 **Release Date:** January 02, 2026

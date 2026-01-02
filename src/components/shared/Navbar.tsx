@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.6";
+export const APP_VERSION = "Beta 3.9.7";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.7",
+    date: "January 2, 2026",
+    title: "Hotfix",
+    description: [
+      "Build Fix: Resolved a syntax error in the Fitbit sync API that was causing deployment failures.",
+    ]
+  },
   {
     version: "Beta 3.9.6",
     date: "January 2, 2026",
