@@ -1,4 +1,14 @@
 
+# Release Notes - GutHealth v3.9.3 (Build Stability)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.3
+
+## 🛠 Fixes
+- **Build Fix**: Resolved `framer-motion` compatibility issues by explicitly marking UI components as client-side modules.
+
+---
+
 # Release Notes - GutHealth v3.9.2 (Code Sync)
 
 **Release Date:** January 01, 2026
