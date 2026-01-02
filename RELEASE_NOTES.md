@@ -1,4 +1,23 @@
 
+# Release Notes - GutHealth v3.9.9 (Debug Tool)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.9
+
+## 🛠 Debugging & Fixes
+- **Mobile Layout**: Fixed an issue where content would spill over the screen edge on mobile devices.
+- **Fitbit Debug**: Added a hidden "Bug" icon on the Trends dashboard to diagnose sync data issues.
+
+---
+# Release Notes - GutHealth v3.9.9 (Debug Tool)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.9
+
+## 🛠 Debugging
+- **Fitbit Debug**: Added a hidden "Bug" icon on the Trends dashboard. Clicking it runs a pure diagnostic check of your Fitbit data and Timezone to identify why today's records are missing.
+
+---
 # Release Notes - GutHealth v3.9.7 (Build Hotfix)
 
 **Release Date:** January 02, 2026

@@ -27,7 +27,7 @@ import PedometerImportDialog from '@/components/trends/PedometerImportDialog';
 import CaloriesStepsCorrelationChart, { CorrelationPoint } from '@/components/trends/CaloriesStepsCorrelationChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, AlertTriangle, BarChart3, Award, Zap } from 'lucide-react';
+import { Loader2, AlertTriangle, BarChart3, Award, Zap, Bug } from 'lucide-react';
 import { subDays, subMonths, subYears, formatISO, startOfDay, endOfDay, parseISO, getHours, format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 
@@ -179,6 +179,22 @@ export default function TrendsPage() {
       console.warn("Background fitbit sync failed/skipped", e);
     }
   }, [user, fetchData]);
+
+  const handleDebugSync = async () => {
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/fitbit/debug', {
+        method: 'POST',
+        body: JSON.stringify({ idToken })
+      });
+      const data = await res.json();
+      console.log("DEBUG RESPONSE:", data);
+      alert(JSON.stringify(data, null, 2)); // Simple alert for immediate visibility
+    } catch (e) {
+      alert("Debug failed");
+    }
+  };
 
   const handleConnectFitbit = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -543,9 +559,14 @@ export default function TrendsPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
-            <Button onClick={handleConnectFitbit} disabled={authLoading} type="button">
-              <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={handleDebugSync}>
+                <Bug className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button onClick={handleConnectFitbit} disabled={authLoading} type="button">
+                <Zap className="mr-2 h-4 w-4" /> Connect to Fitbit
+              </Button>
+            </div>
             <PedometerImportDialog />
           </div>
           <div className="mb-8">

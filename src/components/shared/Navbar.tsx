@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.7";
+export const APP_VERSION = "Beta 3.9.9";
 
 interface ReleaseNote {
   version: string;
@@ -57,7 +57,16 @@ interface ReleaseNote {
 
 const releaseNotesData: ReleaseNote[] = [
   {
-    version: "Beta 3.9.7",
+    version: "Beta 3.9.9",
+    date: "January 2, 2026",
+    title: "Debug & Layout Fix",
+    description: [
+      "Fixed mobile layout overflow issue.",
+      "Added diagnostic tools for Fitbit sync.",
+    ]
+  },
+  {
+    version: "Beta 3.9.8",
     date: "January 2, 2026",
     title: "Hotfix",
     description: [
