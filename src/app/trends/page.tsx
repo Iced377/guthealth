@@ -150,8 +150,35 @@ export default function TrendsPage() {
         description: message ? `Error: ${decodeURIComponent(message)}` : 'There was a problem linking your Fitbit account. Please try again.',
         variant: 'destructive',
       });
+    } else if (user) {
+      // Auto-sync on load (incremental, handled by API rate limiting)
+      // We only trigger this if we think user IS connected. 
+      // We don't verify connection state client-side cheaply without profile fetch, 
+      // but `syncFitbitData` handles 404 gracefully?
+      // Let's rely on syncFitbitData to fail silently or we can assume if they visited this page they might want data.
+      // Better: Only auto-sync if we have *some* fitbit data logic or just try it.
+      // For now, attempting silent background sync.
+      syncFitbitDataWithoutToast();
     }
-  }, [searchParams, toast, syncFitbitData]);
+  }, [searchParams, toast, syncFitbitData, user]);
+
+  const syncFitbitDataWithoutToast = useCallback(async () => {
+    // Background sync - no blocking UI, no success toast (unless new data?), no error toast (fail silent)
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      await fetch('/api/fitbit/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+      // After silent sync, reload data
+      fetchData();
+    } catch (e) {
+      // Silent fail
+      console.warn("Background fitbit sync failed/skipped", e);
+    }
+  }, [user, fetchData]);
 
   const handleConnectFitbit = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();

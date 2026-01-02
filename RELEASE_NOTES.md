@@ -1,4 +1,19 @@
 
+# Release Notes - GutHealth v3.9.6 (Sync & AI Fixes)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.6
+
+## 🌟 Highlights
+### Holistic Fitbit Sync
+- **Smart History**: Automatically fetches up to 1 year of history in safe chunks to avoid API limits.
+- **Auto-Pilot**: Syncs automatically in the background when checking Trends.
+- **Real-Time Guarantee**: Explicitly fetches "Today's" live stats to ensure your dashboard is always current.
+
+## 🛠 Fixes
+- **AI Food Recognition**: Resolved a configuration issue that was preventing food analysis. Both text and image logging are restored.
+
+---
 # Release Notes - GutHealth v3.9.5 (Trends Enhancement)
 
 **Release Date:** January 02, 2026

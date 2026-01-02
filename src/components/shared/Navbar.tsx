@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.8.25";
+export const APP_VERSION = "Beta 3.9.6";
 
 interface ReleaseNote {
   version: string;
@@ -57,7 +57,16 @@ interface ReleaseNote {
 
 const releaseNotesData: ReleaseNote[] = [
   {
-    version: "Beta 3.8.25",
+    version: "Beta 3.9.6",
+    date: "January 2, 2026",
+    title: "Sync & AI Fixes",
+    description: [
+      "Fitbit Sync Engine Overhaul: Implemented a smart holistic sync that handles 1-year history (chunked), auto-syncs on page load, and guarantees real-time 'Today' data.",
+      "AI Food Recognition Fix: Resolved an issue where the AI service was failing due to configuration mismatch. Text and Image logging are fully operational again.",
+    ]
+  },
+  {
+    version: "Beta 3.9.5",
     date: "January 1, 2026",
     title: "AI Improvements",
     description: [

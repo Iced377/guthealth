@@ -79,97 +79,159 @@ export async function POST(req: NextRequest) {
             console.log("Fitbit token refreshed.");
         }
 
-        // 4. Fetch History Data (Last 1 Year)
-        // We use Time Series endpoints to support longer ranges.
-        // ERROR FIX: 'today/1y' fetches 1 year starting from today (future).
-        // We want 1 year ENDING today, so we start from 1 year ago.
+        // 3.5 Fetch User Profile for Timezone (to determine "Today" for the user)
+        const profileRes = await fetch('https://api.fitbit.com/1/user/-/profile.json', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
 
-        const today = new Date();
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(today.getFullYear() - 1);
-        const startDateStr = format(oneYearAgo, 'yyyy-MM-dd');
-        const endDateStr = format(today, 'yyyy-MM-dd');
+        let offsetMillis = 0;
+        if (profileRes.ok) {
+            const profileData = await profileRes.json() as any;
+            offsetMillis = profileData.user.offsetFromUTCMillis || 0;
+            console.log(`[FitbitSync] User Timezone Offset: ${offsetMillis / 3600000} hours`);
+        } else {
+            console.warn("Failed to fetch profile for timezone, defaulting to Server Time (UTC).");
+        }
 
-        console.log(`[FitbitSync] Fetching data from ${startDateStr} to ${endDateStr}`);
+        // --- RATE LIMITING ---
+        const lastSyncedAt = fitbitData.lastUpdated ? (fitbitData.lastUpdated.toDate ? fitbitData.lastUpdated.toDate() : new Date(fitbitData.lastUpdated)) : null;
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
-        // Weight: /1/user/-/body/weight/date/[startDate]/[endDate].json
-        const [weightRes, fatRes, stepsRes, caloriesRes] = await Promise.all([
-            fetch(`https://api.fitbit.com/1/user/-/body/weight/date/${startDateStr}/${endDateStr}.json`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            }),
-            fetch(`https://api.fitbit.com/1/user/-/body/fat/date/${startDateStr}/${endDateStr}.json`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/${startDateStr}/${endDateStr}.json`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            }),
-            fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/${startDateStr}/${endDateStr}.json`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            })
-        ]);
+        // If synced recently and this is an auto-sync (we assume query param or just default behavior, lets just limit generally for now)
+        // But the user might press the button manually.
+        // Let's assume calls to this endpoint should check time unless "force" param is present?
+        // For simplicity, we'll just check specific today data if recent, or maybe skip?
+        // User asked for "trends page load" -> this will happen a lot. 10 min throttle is good.
+        let isCreateOrFullSync = false;
+        if (lastSyncedAt && lastSyncedAt > tenMinutesAgo) {
+            console.log("Sync performed recently (less than 10 mins). Skipping full historical sync to conserve API.");
+            // We can optionally JUST do the "Today" fetch here to be super responsive, 
+            // but let's stick to the plan: if verified recently, assume fresh enough.
+            // OR: We can do a light sync (just today).
+            // Let's do LIGHT SYNC only (Today) if throttled.
+        } else {
+            isCreateOrFullSync = true;
+        }
 
+        // --- DATE CALCULATIONS ---
+        const now = Date.now();
+        const userLocalTime = new Date(now + offsetMillis);
+        const todayStr = userLocalTime.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        let startDate: Date;
+        if (!lastSyncedAt) {
+            // First time sync: 1 Year ago
+            const d = new Date(userLocalTime);
+            d.setFullYear(d.getFullYear() - 1);
+            startDate = d;
+        } else {
+            // Incremental: Start from the day of last sync (to catch partial updates)
+            // We use the user's timezone applied to the last sync time roughly, or just use the stored date?
+            // Simpler: Use lastSyncedAt (UTC) -> User Time -> Date String.
+            const lastSyncedUserTime = new Date(lastSyncedAt.getTime() + offsetMillis);
+            startDate = lastSyncedUserTime;
+            // Go back 1 day to be safe?
+            startDate.setDate(startDate.getDate() - 1);
+        }
+
+        // Clamp start date to max 1 year ago to avoid crazy loops if user returns after 5 years
+        const maxHistory = new Date(userLocalTime);
+        maxHistory.setFullYear(maxHistory.getFullYear() - 1);
+        if (startDate < maxHistory) startDate = maxHistory;
+
+        const endDate = userLocalTime; // Today
+
+        // --- CHUNKED HISTORICAL SYNC ---
+        // Only run if we are doing a full/incremental sync (not throttled)
         const dailyMap: Record<string, { weight?: number; fatPercent?: number; steps?: number; caloriesBurned?: number }> = {};
 
-        // Process Weight Time Series
-        if (weightRes.ok) {
-            const data = await weightRes.json() as any;
-            const weightArr = data['body-weight'];
-            if (weightArr && Array.isArray(weightArr)) {
-                weightArr.forEach((entry: any) => {
-                    const date = entry.dateTime;
-                    if (!dailyMap[date]) dailyMap[date] = {};
-                    dailyMap[date].weight = parseFloat(entry.value);
-                });
+        if (isCreateOrFullSync) {
+            let currentStart = new Date(startDate);
+            let chunksProcessed = 0;
+
+            while (currentStart <= endDate) {
+                let currentEnd = new Date(currentStart);
+                currentEnd.setDate(currentEnd.getDate() + 30); // 30 day chunk
+                if (currentEnd > endDate) currentEnd = endDate;
+
+                const sStr = currentStart.toISOString().split('T')[0];
+                const eStr = currentEnd.toISOString().split('T')[0];
+
+                console.log(`[FitbitSync] Fetching chunk: ${sStr} to ${eStr}`);
+
+                const [weightRes, fatRes, stepsRes, caloriesRes] = await Promise.all([
+                    fetch(`https://api.fitbit.com/1/user/-/body/weight/date/${sStr}/${eStr}.json`, { headers: { 'Authorization': `Bearer ${accessToken}` } }),
+                    fetch(`https://api.fitbit.com/1/user/-/body/fat/date/${sStr}/${eStr}.json`, { headers: { 'Authorization': `Bearer ${accessToken}` } }),
+                    fetch(`https://api.fitbit.com/1/user/-/activities/steps/date/${sStr}/${eStr}.json`, { headers: { 'Authorization': `Bearer ${accessToken}` } }),
+                    fetch(`https://api.fitbit.com/1/user/-/activities/calories/date/${sStr}/${eStr}.json`, { headers: { 'Authorization': `Bearer ${accessToken}` } })
+                ]);
+
+                // Helper to process response
+                const processRes = async (res: any, key: string, mapFn: (entry: any) => void) => {
+                    if (res.ok) {
+                        const json = await res.json() as any;
+                        const arr = json[key];
+                        if (Array.isArray(arr)) arr.forEach(mapFn);
+                    }
+                };
+
+                await Promise.all([
+                    processRes(weightRes, 'body-weight', (e) => {
+                        if (!dailyMap[e.dateTime]) dailyMap[e.dateTime] = {};
+                        dailyMap[e.dateTime].weight = parseFloat(e.value);
+                    }),
+                    processRes(fatRes, 'body-fat', (e) => {
+                        if (!dailyMap[e.dateTime]) dailyMap[e.dateTime] = {};
+                        dailyMap[e.dateTime].fatPercent = parseFloat(e.value);
+                    }),
+                    processRes(stepsRes, 'activities-steps', (e) => {
+                        if (!dailyMap[e.dateTime]) dailyMap[e.dateTime] = {};
+                        dailyMap[e.dateTime].steps = parseInt(e.value, 10);
+                    }),
+                    processRes(caloriesRes, 'activities-calories', (e) => {
+                        if (!dailyMap[e.dateTime]) dailyMap[e.dateTime] = {};
+                        dailyMap[e.dateTime].caloriesBurned = parseInt(e.value, 10);
+                    })
+                ]);
+
+                // Move next
+                currentStart = new Date(currentEnd);
+                currentStart.setDate(currentStart.getDate() + 1);
+                chunksProcessed++;
             }
-        } else {
-            console.warn("Failed to fetch weight history", await weightRes.text());
         }
 
-        // Process Fat Time Series
-        if (fatRes.ok) {
-            const data = await fatRes.json() as any;
-            const fatArr = data['body-fat'];
-            if (fatArr && Array.isArray(fatArr)) {
-                fatArr.forEach((entry: any) => {
-                    const date = entry.dateTime;
-                    if (!dailyMap[date]) dailyMap[date] = {};
-                    dailyMap[date].fatPercent = parseFloat(entry.value);
-                });
+        // --- ALWAYS FETCH TODAY ALONE (REAL-TIME GUARANTEE) ---
+        // Providing specific endpoints for "Today" to bypass time-series lag
+        console.log(`[FitbitSync] Fetching Real-Time Data for Today: ${todayStr}`);
+        const [todayActivityRes, todayWeightLogRes] = await Promise.all([
+            fetch(`https://api.fitbit.com/1/user/-/activities/date/${todayStr}.json`, { headers: { 'Authorization': `Bearer ${accessToken}` } }),
+            fetch(`https://api.fitbit.com/1/user/-/body/log/weight/date/${todayStr}.json`, { headers: { 'Authorization': `Bearer ${accessToken}` } })
+        ]);
+
+        if (todayActivityRes.ok) {
+            const json = await todayActivityRes.json() as any;
+            if (json.summary) {
+                if (!dailyMap[todayStr]) dailyMap[todayStr] = {};
+                // Activity Summary has total steps/calories for the day
+                dailyMap[todayStr].steps = json.summary.steps;
+                dailyMap[todayStr].caloriesBurned = json.summary.caloriesOut;
             }
-        } else {
-            console.warn("Failed to fetch fat history", await fatRes.text());
         }
 
-        // Process Steps
-        if (stepsRes.ok) {
-            const data = await stepsRes.json() as any;
-            // data['activities-steps'] is array of { dateTime: 'YYYY-MM-DD', value: '123' }
-            const stepsArr = data['activities-steps'];
-            if (stepsArr && Array.isArray(stepsArr)) {
-                stepsArr.forEach((entry: any) => {
-                    const date = entry.dateTime;
-                    if (!dailyMap[date]) dailyMap[date] = {};
-                    dailyMap[date].steps = parseInt(entry.value, 10);
-                });
+        if (todayWeightLogRes.ok) {
+            const json = await todayWeightLogRes.json() as any;
+            // Log API returns array of logs
+            if (json.weight && Array.isArray(json.weight) && json.weight.length > 0) {
+                // Taking the last log of the day? Or average? most recent usually.
+                // It's sorted by time usually?
+                const latestLog = json.weight[json.weight.length - 1]; // Logged logs
+                if (!dailyMap[todayStr]) dailyMap[todayStr] = {};
+                dailyMap[todayStr].weight = latestLog.weight;
+                dailyMap[todayStr].fatPercent = latestLog.fat;
             }
-        } else {
-            console.warn("Failed to fetch steps history", await stepsRes.text());
         }
 
-        // Process Calories
-        if (caloriesRes.ok) {
-            const data = await caloriesRes.json() as any;
-            const calArr = data['activities-calories'];
-            if (calArr && Array.isArray(calArr)) {
-                calArr.forEach((entry: any) => {
-                    const date = entry.dateTime;
-                    if (!dailyMap[date]) dailyMap[date] = {};
-                    dailyMap[date].caloriesBurned = parseInt(entry.value, 10);
-                });
-            }
-        } else {
-            console.warn("Failed to fetch calories history", await caloriesRes.text());
-        }
 
         // 5. Batch Write to Firestore
         const batch = db.batch();
@@ -180,14 +242,9 @@ export async function POST(req: NextRequest) {
             // Only save if we have at least one data point
             if (data.weight === undefined && data.steps === undefined && data.caloriesBurned === undefined) return;
 
-            // Skip "0" steps/calories if that's all we have? 
-            // No, 0 steps is valid data for history (maybe didn't wear it), but typically we want real data.
-            // Let's save whatever Fitbit returned.
-
             const entryId = `fitbit_${dateStr}`;
             const docRef = timelineColRef.doc(entryId);
 
-            // We set the timestamp to NOON of that day to avoid timezone shifting it to prev/next day in UI
             const timestamp = parseISO(dateStr);
             timestamp.setHours(12, 0, 0, 0);
 
@@ -196,21 +253,25 @@ export async function POST(req: NextRequest) {
                 timestamp: timestamp,
                 entryType: 'fitbit_data',
                 lastSynced: new Date(),
-                ...data // merges weight, fatPercent, steps, caloriesBurned
+                ...data
             };
 
             batch.set(docRef, newEntry, { merge: true });
             operationCount++;
         });
 
+        // Update last synced time
+        await privateDataRef.set({ ...fitbitData, lastUpdated: new Date() }, { merge: true });
+
         if (operationCount > 0) {
             await batch.commit();
         }
 
-        return NextResponse.json({ success: true, syncedDays: operationCount });
+        return NextResponse.json({ success: true, syncedDays: operationCount, isFullSync: isCreateOrFullSync });
 
     } catch (error: any) {
         console.error('Error syncing Fitbit data:', error);
         return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 });
     }
 }
+```
