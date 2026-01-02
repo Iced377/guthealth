@@ -1,4 +1,15 @@
 
+# Release Notes - GutHealth v3.9.11 (UI Polish)
+
+**Release Date:** January 02, 2026
+**Version:** v3.9.11
+
+## 💅 UI/UX Improvements
+- **Trends Charts**: Switched interactive tooltips to **Click** (instead of Hover) to ensure they work reliably on mobile and don't get obstructed.
+- **Micronutrients**: Clicking an achievement now opens a clean popup with details, fixing mobile interaction.
+- **Mobile Menu**: Restored missing links (Terms, Privacy) and fixed scrolling issues on small screens.
+
+---
 # Release Notes - GutHealth v3.9.10 (Layout Fix)
 
 **Release Date:** January 02, 2026

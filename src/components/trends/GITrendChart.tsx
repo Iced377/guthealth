@@ -1,20 +1,20 @@
 
 'use client';
 
-import type { GIPoint } from '@/types'; 
+import type { GIPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'; // Changed LineChart/Line to BarChart/Bar
 
 interface GITrendChartProps {
-  data: GIPoint[]; 
+  data: GIPoint[];
   isDarkMode: boolean;
 }
 
 const getGIColors = (isDarkMode: boolean) => {
   const baseColors = {
-    gi: isDarkMode ? 'hsl(var(--chart-3))' : 'hsl(var(--chart-3))', 
+    gi: isDarkMode ? 'hsl(var(--chart-3))' : 'hsl(var(--chart-3))',
     grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
     text: isDarkMode ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))",
   };
@@ -23,7 +23,7 @@ const getGIColors = (isDarkMode: boolean) => {
 
 export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
   const colors = getGIColors(isDarkMode);
-  
+
   const chartConfig = {
     gi: { label: "Avg. Glycemic Index", color: colors.gi }, // Updated label for clarity with bars
   } satisfies import("@/components/ui/chart").ChartConfig;
@@ -31,9 +31,9 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
   if (!data || data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No GI data available for the selected period.</p>;
   }
-  
+
   const maxGiInDatapoints = data.length > 0 ? Math.max(...data.map(d => d.gi)) : 0;
-  const yAxisDomainMax = Math.max(maxGiInDatapoints, 100); 
+  const yAxisDomainMax = Math.max(maxGiInDatapoints, 100);
   const yAxisDomain = [0, yAxisDomainMax];
 
   return (
@@ -50,22 +50,23 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
           axisLine={false}
           tickMargin={8}
           stroke={colors.text}
-          angle={0} 
+          angle={0}
           textAnchor={"middle"}
           height={30}
-          interval={data.length > 12 ? Math.floor(data.length / 12) : 0} 
+          interval={data.length > 12 ? Math.floor(data.length / 12) : 0}
         />
-        <YAxis 
-            tickLine={false} 
-            axisLine={false} 
-            tickMargin={8} 
-            stroke={colors.text}
-            domain={yAxisDomain}
-            label={{ value: 'Avg. GI Value', angle: -90, position: 'insideLeft', fill: colors.text, dy: 40, dx: -5}}
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          stroke={colors.text}
+          domain={yAxisDomain}
+          label={{ value: 'Avg. GI Value', angle: -90, position: 'insideLeft', fill: colors.text, dy: 40, dx: -5 }}
         />
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [value, chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
+          trigger="click"
         />
         <Bar // Changed from Line
           dataKey="gi"

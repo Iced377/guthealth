@@ -86,7 +86,7 @@ export default function CaloriesStepsCorrelationChart({ data, isDarkMode }: Calo
                 >
                     <Label value="Calories Consumed" angle={-90} position="insideLeft" style={{ fill: isDarkMode ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 500 }} />
                 </YAxis>
-                <Tooltip content={<CustomTooltip isDarkMode={isDarkMode} />} />
+                <Tooltip content={<CustomTooltip isDarkMode={isDarkMode} />} trigger="click" />
                 <Scatter
                     name="Daily Log"
                     data={data}

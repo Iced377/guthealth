@@ -15,9 +15,9 @@ interface DailyMacrosTrendChartProps {
 
 const getColors = (isDarkMode: boolean) => { // Removed theme parameter
   const baseColors = {
-    protein: isDarkMode ? 'hsl(var(--chart-1))' : 'hsl(var(--chart-1))', 
-    carbs: isDarkMode ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-2))',   
-    fat: isDarkMode ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-4))',      
+    protein: isDarkMode ? 'hsl(var(--chart-1))' : 'hsl(var(--chart-1))',
+    carbs: isDarkMode ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-2))',
+    fat: isDarkMode ? 'hsl(var(--chart-4))' : 'hsl(var(--chart-4))',
     grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
     text: isDarkMode ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))",
   };
@@ -26,7 +26,7 @@ const getColors = (isDarkMode: boolean) => { // Removed theme parameter
 
 export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosTrendChartProps) {
   const colors = getColors(isDarkMode);
-  
+
   const chartConfig = {
     protein: { label: "Protein (g)", color: colors.protein },
     carbs: { label: "Carbs (g)", color: colors.carbs },
@@ -37,7 +37,7 @@ export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosT
   if (!data || data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No data available for the selected period.</p>;
   }
-  
+
   const yAxisDomain = [
     0,
     Math.max(...data.flatMap(d => [d.protein, d.carbs, d.fat, 50])) // Ensure Y axis goes to at least 50
@@ -63,16 +63,17 @@ export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosT
           textAnchor={data.length > 10 ? "end" : "middle"}
           height={data.length > 10 ? 50 : 30}
         />
-        <YAxis 
-            tickLine={false} 
-            axisLine={false} 
-            tickMargin={8} 
-            stroke={colors.text}
-            domain={yAxisDomain}
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          stroke={colors.text}
+          domain={yAxisDomain}
         />
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" />}
+          trigger="click"
         />
         <Line
           dataKey="protein"

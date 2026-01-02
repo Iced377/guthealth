@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.10";
+export const APP_VERSION = "Beta 3.9.11";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.11",
+    date: "January 2, 2026",
+    title: "UI & Interaction Polish",
+    description: [
+      "Trends: Charts now use click-to-view tooltips for better mobile experience.",
+      "Trends: Micronutrient achievements now open detailed popups on click.",
+      "Mobile: Fixed missing menu items and menu height issues.",
+    ]
+  },
   {
     version: "Beta 3.9.10",
     date: "January 2, 2026",
@@ -887,7 +897,7 @@ export default function Navbar({
               animate={{ y: 0 }}
               exit={{ y: "-100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed top-0 left-0 right-0 h-[50vh] bg-background border-b border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-b-xl"
+              className="fixed top-0 left-0 right-0 max-h-[85vh] h-auto bg-background border-b border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-b-xl"
             >
               <div className="p-4 flex items-center justify-between border-b border-border bg-muted/20">
                 <div className="flex items-center space-x-3">
@@ -920,6 +930,8 @@ export default function Navbar({
                   { icon: BarChart3, label: "Trends", onClick: () => { setIsMobileMenuOpen(false); trendsLinkHandler(); } },
                   { icon: Atom, label: "Micronutrients", onClick: () => { setIsMobileMenuOpen(false); micronutrientsLinkHandler(); } },
                   { icon: Lightbulb, label: "AI Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
+                  { icon: Shield, label: "Privacy Notice", onClick: () => { setIsMobileMenuOpen(false); router.push('/privacy'); } },
+                  { icon: FileText, label: "Terms of Use", onClick: () => { setIsMobileMenuOpen(false); router.push('/terms'); } },
                   { icon: Info, label: "About", onClick: () => { setIsMobileMenuOpen(false); aboutLinkHandler(); } },
                   ].map((item, idx) => (
                     <motion.div key={idx} variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>

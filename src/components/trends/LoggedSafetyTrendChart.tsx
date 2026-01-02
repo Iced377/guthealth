@@ -14,9 +14,9 @@ interface LoggedSafetyTrendChartProps {
 
 const getColors = (isDarkMode: boolean) => { // Removed theme parameter
   return {
-    unsafe: 'hsl(var(--chart-1))',   
-    safe: 'hsl(var(--chart-2))', 
-    notMarked: 'hsl(var(--chart-3))', 
+    unsafe: 'hsl(var(--chart-1))',
+    safe: 'hsl(var(--chart-2))',
+    notMarked: 'hsl(var(--chart-3))',
     grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
     text: isDarkMode ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))",
   };
@@ -24,7 +24,7 @@ const getColors = (isDarkMode: boolean) => { // Removed theme parameter
 
 export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafetyTrendChartProps) {
   const colors = getColors(isDarkMode);
-  
+
   const chartConfig = {
     unsafe: { label: "Unsafe", color: colors.unsafe },
     safe: { label: "Safe", color: colors.safe },
@@ -35,10 +35,10 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
   if (!data || data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No data available for the selected period.</p>;
   }
-  
+
   const yAxisDomain = [
     0,
-    Math.max(...data.map(d => d.safe + d.unsafe + d.notMarked), 5) 
+    Math.max(...data.map(d => d.safe + d.unsafe + d.notMarked), 5)
   ];
 
 
@@ -64,9 +64,10 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" />}
+          trigger="click"
         />
         <Bar dataKey="unsafe" stackId="a" fill="var(--color-unsafe)" radius={[0, 4, 4, 0]} barSize={20} />
-        <Bar dataKey="safe" stackId="a" fill="var(--color-safe)" barSize={20}/>
+        <Bar dataKey="safe" stackId="a" fill="var(--color-safe)" barSize={20} />
         <Bar dataKey="notMarked" stackId="a" fill="var(--color-notMarked)" radius={[4, 0, 0, 4]} barSize={20} />
         <ChartLegend content={<ChartLegendContent />} />
       </BarChart>

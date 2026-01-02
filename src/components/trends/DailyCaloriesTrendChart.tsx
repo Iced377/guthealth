@@ -23,7 +23,7 @@ const getColors = (isDarkMode: boolean) => { // Removed theme parameter
 
 export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCaloriesTrendChartProps) {
   const colors = getColors(isDarkMode);
-  
+
   const chartConfig = {
     calories: { label: "Calories (kcal)", color: colors.calories },
   } satisfies import("@/components/ui/chart").ChartConfig;
@@ -31,20 +31,20 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
   if (!data || data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No data available for the selected period.</p>;
   }
-  
+
   const yAxisDomain = [
     0,
     Math.max(...data.map(d => d.calories), 1000) // Ensure Y axis goes to at least 1000
   ];
 
   return (
-     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+    <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <AreaChart
         accessibilityLayer
         data={data}
         margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
       >
-        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3"/>
+        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
         <XAxis
           dataKey="date"
           tickLine={false}
@@ -56,30 +56,31 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
           textAnchor={data.length > 10 ? "end" : "middle"}
           height={data.length > 10 ? 50 : 30}
         />
-        <YAxis 
-            tickLine={false} 
-            axisLine={false} 
-            tickMargin={8} 
-            stroke={colors.text}
-            domain={yAxisDomain}
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          stroke={colors.text}
+          domain={yAxisDomain}
         />
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" />}
+          trigger="click"
         />
         <defs>
-            <linearGradient id="fillCalories" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                offset="5%"
-                stopColor="var(--color-calories)"
-                stopOpacity={0.8}
-                />
-                <stop
-                offset="95%"
-                stopColor="var(--color-calories)"
-                stopOpacity={0.1}
-                />
-            </linearGradient>
+          <linearGradient id="fillCalories" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="5%"
+              stopColor="var(--color-calories)"
+              stopOpacity={0.8}
+            />
+            <stop
+              offset="95%"
+              stopColor="var(--color-calories)"
+              stopOpacity={0.1}
+            />
+          </linearGradient>
         </defs>
         <Area
           dataKey="calories"
@@ -89,7 +90,7 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
           strokeWidth={2.5}
           stackId="a"
         />
-         <ChartLegend content={<ChartLegendContent />} />
+        <ChartLegend content={<ChartLegendContent />} />
       </AreaChart>
     </ChartContainer>
   );

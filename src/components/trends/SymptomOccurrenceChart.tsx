@@ -18,7 +18,7 @@ const PREDEFINED_CHART_COLORS = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
-  'hsl(220, 70%, 60%)', 
+  'hsl(220, 70%, 60%)',
   'hsl(340, 70%, 60%)',
   'hsl(100, 70%, 60%)',
 ];
@@ -48,6 +48,7 @@ export default function SymptomOccurrenceChart({ data, isDarkMode }: SymptomOccu
         <ChartTooltip
           cursor={false}
           content={<ChartTooltipContent hideLabel />}
+          trigger="click"
         />
         <Pie
           data={data}
@@ -56,14 +57,14 @@ export default function SymptomOccurrenceChart({ data, isDarkMode }: SymptomOccu
           cx="50%"
           cy="50%"
           outerRadius={120}
-          innerRadius={80} 
-          fill="hsl(var(--foreground))" 
+          innerRadius={80}
+          fill="hsl(var(--foreground))"
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={chartConfig[entry.name]?.color || PREDEFINED_CHART_COLORS[index % PREDEFINED_CHART_COLORS.length]} />
           ))}
         </Pie>
-         <ChartLegend
+        <ChartLegend
           content={<ChartLegendContent nameKey="name" className="flex-wrap justify-center max-w-[300px]" />}
         />
       </PieChart>
