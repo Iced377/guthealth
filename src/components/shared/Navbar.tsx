@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.13";
+export const APP_VERSION = "Beta 3.9.14";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.14",
+    date: "Jan 03, 2026",
+    title: "App Icons & Social Sharing",
+    description: [
+      "App Identity: Optimized app icons and fixed WhatsApp/Social sharing links to correctly display the app logo."
+    ]
+  },
   {
     version: "Beta 3.9.13",
     date: "January 3, 2026",

@@ -1,20 +1,20 @@
 {
   "name": "GutCheck",
   "short_name": "GutCheck",
-  "description": "Your companion for easy food logging and meaningful insights.",
+  "description": "Your companion to keep a food journal and learn what works for you!",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#27AE60",
-  "theme_color": "#27AE60",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/Gutcheck_logo.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/Gutcheck_logo.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

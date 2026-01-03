@@ -19,18 +19,18 @@ export const metadata: Metadata = {
     description: 'Your Ai companion for easy food logging and meaningful insights.',
     images: [
       {
-        url: '/Gutcheck_logo.png',
-        width: 512,
-        height: 512,
+        url: '/opengraph-image.jpg',
+        width: 1200,
+        height: 630,
         alt: 'GutCheck Logo',
       },
     ],
     type: 'website',
   },
   icons: {
-    icon: '/Gutcheck_logo.png',
-    shortcut: '/Gutcheck_logo.png',
-    apple: '/Gutcheck_logo.png',
+    icon: '/favicon-32.png',
+    shortcut: '/favicon-32.png',
+    apple: '/icon-192.png', // Apple touch icon usually best at 180-192px
   },
 };
 

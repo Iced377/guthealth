@@ -1,4 +1,16 @@
 
+# Release Notes - GutHealth v3.9.14 (App Icons & Social Sharing)
+
+**Release Date:** January 03, 2026
+**Version:** v3.9.14
+
+## 💅 UI/UX Improvements
+### App Identity
+- **Updated Icons**: Optimized app icons for all devices (Mobile Home Screen, Splash Screen, Favicons).
+- **Social Sharing**: Fixed WhatsApp and Social Media preview images to correctly display the app logo and description when sharing links.
+- **Logo Polish**: Maximized the logo size within the app icon for better visibility.
+
+---
 # Release Notes - GutHealth v3.9.13 (Mobile UI Polish)
 
 **Release Date:** January 03, 2026
