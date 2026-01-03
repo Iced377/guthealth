@@ -2,8 +2,6 @@
 'use client';
 
 import type { GIPoint } from '@/types';
-import { useTheme } from '@/contexts/ThemeContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'; // Changed LineChart/Line to BarChart/Bar
 
@@ -38,7 +36,7 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-      <BarChart // Changed from LineChart
+      <BarChart
         accessibilityLayer
         data={data}
         margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
@@ -66,7 +64,6 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [value, chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
-          trigger="click"
         />
         <Bar // Changed from Line
           dataKey="gi"
@@ -78,4 +75,3 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
     </ChartContainer>
   );
 }
-

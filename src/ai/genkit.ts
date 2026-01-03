@@ -5,7 +5,7 @@ const rawModelId =
   process.env.GENKIT_GOOGLE_MODEL ||
   process.env.GOOGLE_GENAI_MODEL ||
   process.env.GEMINI_MODEL ||
-  'gemini-2.5-flash';
+  'gemini-2.0-flash';
 
 const normalizedModelId = normalizeModelId(rawModelId);
 

@@ -7,7 +7,7 @@ import type { LoggedFoodItem, UserProfile, TimelineEntry, Symptom, SymptomLog, S
 import { COMMON_SYMPTOMS } from '@/types';
 import { Loader2, PlusCircle, ListChecks, Pencil, CalendarDays, Edit3, ChevronUp, Repeat, Camera, LayoutGrid, CalendarIcon } from 'lucide-react';
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile as DetailedFodmapProfileFromAI, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
-// import { isSimilarToSafeFoods } removed
+import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/flows/process-meal-description-flow';
 
 

@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.11";
+export const APP_VERSION = "Beta 3.9.12";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.12",
+    date: "January 3, 2026",
+    title: "Landing Page Redesign",
+    description: [
+      "Landing Page: Implemented a full-screen video background experience.",
+      "UI: Simplified the guest header by removing the background and app title for a cleaner look.",
+      "Fix: Resolved a video loading issue on the landing page."
+    ]
+  },
   {
     version: "Beta 3.9.11",
     date: "January 2, 2026",
@@ -674,10 +684,12 @@ export default function Navbar({
     setIsReleaseNotesOpen(open);
   };
 
-  const headerBaseClasses = "sticky top-0 z-50 w-full";
+  const headerBaseClasses = "z-50 w-full transition-all duration-300";
   const headerClasses = cn(
     headerBaseClasses,
-    "bg-card text-card-foreground border-b border-border"
+    isGuest
+      ? "absolute top-0 bg-transparent border-none py-2"
+      : "sticky top-0 bg-card text-card-foreground border-b border-border"
   );
   const appNameBaseClasses = "font-bold font-headline text-xl";
 
@@ -701,7 +713,9 @@ export default function Navbar({
                 <Image src="/Gutcheck_logo.png" alt="GutCheck Logo" width={39} height={39} className="object-contain filter brightness-0 invert" priority />
               </div>
             )}
-            <span className={cn(appNameBaseClasses, 'text-current', isGuest ? 'pl-2' : '', 'sm:inline-block')}>{APP_NAME}</span>
+            {!isGuest && (
+              <span className={cn(appNameBaseClasses, 'text-current', 'sm:inline-block')}>{APP_NAME}</span>
+            )}
           </Link>
           <Dialog open={isReleaseNotesOpen} onOpenChange={handleReleaseNotesToggle}>
             <DialogTrigger asChild>
@@ -766,7 +780,6 @@ export default function Navbar({
         <div className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
           {isGuest ? (
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <span className="hidden sm:inline text-sm text-foreground font-medium">Ready for More?</span>
               <Button
                 onClick={() => router.push('/login')}
                 className={cn(

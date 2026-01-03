@@ -1,4 +1,19 @@
 
+# Release Notes - GutHealth v3.9.12 (Landing Page Redesign)
+
+**Release Date:** January 03, 2026
+**Version:** v3.9.12
+
+## 🌟 Highlights
+### Full-Screen Video Background
+- **Immersive Experience**: The landing page now features a seamless full-screen video background that extends behind the transparent header.
+- **Visual Clarity**: Removed the app name and background bar from the guest header for a cleaner, modern look.
+
+## 🛠 Fixes
+- **Video Playback**: Fixed an issue where the background video would fail to load on the landing page.
+
+---
+
 # Release Notes - GutHealth v3.9.11 (UI Polish)
 
 **Release Date:** January 02, 2026

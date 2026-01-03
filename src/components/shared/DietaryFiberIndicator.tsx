@@ -2,7 +2,7 @@
 
 import type { DietaryFiberInfo } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Leaf } from 'lucide-react';
 
 interface DietaryFiberIndicatorProps {
@@ -12,28 +12,21 @@ interface DietaryFiberIndicatorProps {
 export default function DietaryFiberIndicator({ fiberInfo }: DietaryFiberIndicatorProps) {
   if (!fiberInfo || typeof fiberInfo.amountGrams !== 'number') {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-             <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1">
-              <Leaf className="h-3.5 w-3.5" /> Fiber: N/A
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent className="bg-popover text-popover-foreground border-border">
-            <p>Dietary Fiber data not available.</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1 cursor-pointer">
+            <Leaf className="h-3.5 w-3.5" /> Fiber: N/A
+          </Badge>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto bg-popover text-popover-foreground border-border p-3">
+          <p className="text-sm">Dietary Fiber data not available.</p>
+        </PopoverContent>
+      </Popover>
     );
   }
 
   const { amountGrams, quality } = fiberInfo;
 
-  let qualityText = '';
-  if (quality) {
-    qualityText = ` (${quality})`;
-  }
-  
   // Determine color based on quality, or a default if no quality
   let colorClass = 'border-blue-500/50 text-blue-700 dark:text-blue-400 bg-blue-500/10'; // Default/Adequate
   let iconColor = 'text-blue-500';
@@ -48,20 +41,20 @@ export default function DietaryFiberIndicator({ fiberInfo }: DietaryFiberIndicat
 
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="outline" className={`text-xs flex items-center gap-1 ${colorClass}`}>
-            <Leaf className={`h-3.5 w-3.5 ${iconColor}`} /> {amountGrams.toFixed(1)}g Fiber
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent className="bg-popover text-popover-foreground border-border">
-          <p className="font-semibold">Dietary Fiber</p>
-          <p>Amount: {amountGrams.toFixed(1)}g</p>
-          {quality && <p>Quality: {quality}</p>}
-           <p className="text-xs mt-1">General guide: &lt;2g Low, 2-4g Adequate, &gt;5g High per item.</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Badge variant="outline" className={`text-xs flex items-center gap-1 cursor-pointer ${colorClass}`}>
+          <Leaf className={`h-3.5 w-3.5 ${iconColor}`} /> {amountGrams.toFixed(1)}g Fiber
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 bg-popover text-popover-foreground border-border p-3">
+        <div className="space-y-1">
+          <p className="font-semibold text-sm">Dietary Fiber</p>
+          <p className="text-sm">Amount: {amountGrams.toFixed(1)}g</p>
+          {quality && <p className="text-sm">Quality: {quality}</p>}
+          <p className="text-xs text-muted-foreground mt-2 leading-tight">General guide: &lt;2g Low, 2-4g Adequate, &gt;5g High per item.</p>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

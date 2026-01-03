@@ -1,6 +1,4 @@
 
-'use client';
-
 import type { SafetyPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
@@ -41,7 +39,6 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
     Math.max(...data.map(d => d.safe + d.unsafe + d.notMarked), 5)
   ];
 
-
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <BarChart
@@ -64,7 +61,6 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" />}
-          trigger="click"
         />
         <Bar dataKey="unsafe" stackId="a" fill="var(--color-unsafe)" radius={[0, 4, 4, 0]} barSize={20} />
         <Bar dataKey="safe" stackId="a" fill="var(--color-safe)" barSize={20} />

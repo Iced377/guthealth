@@ -3,7 +3,7 @@
 
 import type { GutBacteriaImpactInfo } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Smile, Frown, Meh, HelpCircle, Users, Dna } from 'lucide-react'; // Using Dna as a proxy for gut health
 
 interface GutBacteriaIndicatorProps {
@@ -13,18 +13,16 @@ interface GutBacteriaIndicatorProps {
 export default function GutBacteriaIndicator({ gutImpact }: GutBacteriaIndicatorProps) {
   if (!gutImpact || !gutImpact.sentiment) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1">
-              <Users className="h-3 w-3" /> Gut Impact: N/A
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent className="bg-popover text-popover-foreground border-border">
-            <p>Gut Bacteria Impact data not available.</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1 cursor-pointer">
+            <Users className="h-3 w-3" /> Gut Impact: N/A
+          </Badge>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto bg-popover text-popover-foreground border-border p-3">
+          <p className="text-sm">Gut Bacteria Impact data not available.</p>
+        </PopoverContent>
+      </Popover>
     );
   }
 
@@ -63,19 +61,22 @@ export default function GutBacteriaIndicator({ gutImpact }: GutBacteriaIndicator
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="outline" className={`text-xs flex items-center gap-1 ${colorClass}`}>
-            <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} /> {displayText}
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs bg-popover text-popover-foreground border-border p-3">
-          <p className="font-semibold">Gut Bacteria Impact: {sentiment}</p>
-          {reasoning && <p className="text-sm text-muted-foreground mt-1">{reasoning}</p>}
-          {!reasoning && <p className="text-sm text-muted-foreground mt-1">General estimated impact on gut microbiota.</p>}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Badge variant="outline" className={`text-xs flex items-center gap-1 cursor-pointer ${colorClass}`}>
+          <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} /> {displayText}
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 bg-popover text-popover-foreground border-border p-3">
+        <div className="space-y-1">
+          <p className="font-semibold text-sm">Gut Bacteria Impact: {sentiment}</p>
+          {reasoning ? (
+            <p className="text-sm text-muted-foreground mt-2 leading-tight">{reasoning}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-2 leading-tight">General estimated impact on gut microbiota.</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

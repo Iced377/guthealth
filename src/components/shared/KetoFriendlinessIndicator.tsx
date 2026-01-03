@@ -3,7 +3,7 @@
 
 import type { KetoFriendlinessInfo } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Brain, Flame, HelpCircle, AlertCircle } from 'lucide-react'; // Using Brain or Flame
 
 interface KetoFriendlinessIndicatorProps {
@@ -13,18 +13,16 @@ interface KetoFriendlinessIndicatorProps {
 export default function KetoFriendlinessIndicator({ ketoInfo }: KetoFriendlinessIndicatorProps) {
   if (!ketoInfo || !ketoInfo.score) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1">
-              <HelpCircle className="h-3 w-3" /> Keto: N/A
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent className="bg-popover text-popover-foreground border-border">
-            <p>Keto-friendliness data not available.</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground flex items-center gap-1 cursor-pointer">
+            <HelpCircle className="h-3 w-3" /> Keto: N/A
+          </Badge>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto bg-popover text-popover-foreground border-border p-3">
+          <p className="text-sm">Keto-friendliness data not available.</p>
+        </PopoverContent>
+      </Popover>
     );
   }
 
@@ -63,21 +61,24 @@ export default function KetoFriendlinessIndicator({ ketoInfo }: KetoFriendliness
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="outline" className={`text-xs flex items-center gap-1 ${colorClass}`}>
-            <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} /> {scoreText}
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs bg-popover text-popover-foreground border-border p-3">
-          <p className="font-semibold">Keto-Friendliness: {score}</p>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Badge variant="outline" className={`text-xs flex items-center gap-1 cursor-pointer ${colorClass}`}>
+          <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} /> {scoreText}
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 bg-popover text-popover-foreground border-border p-3">
+        <div className="space-y-1">
+          <p className="font-semibold text-sm">Keto-Friendliness: {score}</p>
           {estimatedNetCarbs !== undefined && <p className="text-sm text-muted-foreground">Est. Net Carbs: {estimatedNetCarbs.toFixed(1)}g</p>}
-          {reasoning && <p className="text-sm text-muted-foreground mt-1">{reasoning}</p>}
-          {!reasoning && <p className="text-sm text-muted-foreground mt-1">General assessment of suitability for a ketogenic diet.</p>}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+          {reasoning ? (
+            <p className="text-sm text-muted-foreground mt-2 leading-tight">{reasoning}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-2 leading-tight">General assessment of suitability for a ketogenic diet.</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

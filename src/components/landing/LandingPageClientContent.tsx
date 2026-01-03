@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield } from 'lucide-react'; 
+import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield } from 'lucide-react';
 import Link from 'next/link';
 import GradientText from '@/components/shared/GradientText'; // Import the new component
 
 const featureIcons: Record<string, React.ElementType> = {
-  "Snap a Photo or Log a Meal": ScrollText, 
+  "Snap a Photo or Log a Meal": ScrollText,
   "Get Instant Deep Feedback": Brain,
   "Track Your Reactions": BarChart2,
   "Optimize with AI Recommendations": Lightbulb,
@@ -61,7 +61,7 @@ const DataSecuritySection = () => (
           {
             title: "Firebase App Check",
             description: "App Check helps protect our backend resources from abuse by ensuring requests originate from your authentic app instances.",
-            Icon: ShieldCheck, 
+            Icon: ShieldCheck,
           },
           {
             title: "Premium & Secure DNS",
@@ -73,15 +73,15 @@ const DataSecuritySection = () => (
             description: "Robust server-side rules strictly control data access, ensuring you can only access your own information.",
             Icon: FileLock2,
           },
-           {
+          {
             title: "Principle of Least Privilege",
             description: "Our systems are designed to ensure components only have access to the resources necessary for their function.",
-            Icon: DatabaseZap, 
+            Icon: DatabaseZap,
           },
-           {
+          {
             title: "Secure Cloud Infrastructure",
             description: "Leveraging Google Cloud Platform's secure and reliable infrastructure for hosting and data storage.",
-            Icon: Shield, 
+            Icon: Shield,
           },
         ].map((feature, index) => (
           <Card
@@ -136,46 +136,60 @@ export default function LandingPageClientContent({
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
-      <section className="py-16 sm:py-24 bg-gradient-to-br from-primary/10 via-background to-background">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline mb-6 tracking-tight">
-            Track your gut. <GradientText>Transform your health.</GradientText>
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Log meal conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.
-          </p>
+      {/* Hero Section with Video Background */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/Intro_Video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Dark Overlay for Readability */}
+        <div className="absolute inset-0 bg-black/60 z-10" />
+
+        {/* Content */}
+        <div className="container relative z-20 mx-auto px-4 text-center">
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out fill-mode-forwards">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-headline mb-6 tracking-tight text-white drop-shadow-md">
+              Track your gut. <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-green-400">Transform your health.</span>
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-200 max-w-2xl mx-auto mb-10 drop-shadow-sm font-light">
+              Log meals conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.
+            </p>
+          </div>
+
           {betaUserMessage && (
-            <div className="mt-6">
+            <div className="mt-6 animate-in fade-in zoom-in duration-700 delay-300 fill-mode-forwards">
               {betaUserMessage}
             </div>
           )}
+
           {heroActionContent && (
-            <div className="flex justify-center"> 
+            <div className="flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500 fill-mode-forwards">
               {heroActionContent}
             </div>
           )}
+
           {showHeroCTAButton && (
-            <div className="mt-8 mb-10">
-              <Button size="lg" className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+            <div className="mt-8 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500 fill-mode-forwards">
+              <Button size="lg" className="text-lg px-10 py-7 bg-primary hover:bg-primary/90 text-white rounded-full transition-all hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-primary/20" asChild>
                 <Link href="/signup">Get Started Free</Link>
               </Button>
             </div>
           )}
-          {/*
-          <div className="relative max-w-3xl mx-auto h-64 sm:h-96 bg-muted rounded-lg shadow-2xl overflow-hidden border border-border">
-            <Image
-              src="https://placehold.co/1200x600.png"
-              alt="GutCheck app logging process infographic"
-              layout="fill"
-              objectFit="cover"
-              className="opacity-75"
-              data-ai-hint="app infographic"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <p className="text-2xl font-semibold text-white">App Logging Infographic Placeholder</p>
-            </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-3 bg-white/80 rounded-full animate-scroll-down" />
           </div>
-          */}
         </div>
       </section>
 
@@ -198,7 +212,7 @@ export default function LandingPageClientContent({
                 <Card
                   key={index}
                   className="bg-card border-border shadow-lg hover:shadow-xl transition-shadow text-center p-6 rounded-xl card-reveal-animation"
-                  style={{ animationDelay: `${index * 0.15}s` }} 
+                  style={{ animationDelay: `${index * 0.15}s` }}
                 >
                   <CardHeader className="p-0 mb-4 flex flex-col items-center">
                     <TooltipProvider>
@@ -271,9 +285,9 @@ export default function LandingPageClientContent({
                 <CardContent className="p-0 text-muted-foreground flex-grow">
                   <p>"{feedback.text}"</p>
                 </CardContent>
-                 <CardFooter className="p-0 pt-4">
-                    <p className="text-sm font-medium text-muted-foreground">{feedback.source}</p>
-                  </CardFooter>
+                <CardFooter className="p-0 pt-4">
+                  <p className="text-sm font-medium text-muted-foreground">{feedback.source}</p>
+                </CardFooter>
               </Card>
             ))}
           </div>
@@ -285,7 +299,7 @@ export default function LandingPageClientContent({
 
       {/* Final CTA Section - Conditional Rendering */}
       {finalCTAMessage ? (
-        <section className="py-16 sm:py-20 text-center bg-background"> 
+        <section className="py-16 sm:py-20 text-center bg-background">
           {finalCTAMessage}
         </section>
       ) : (
@@ -299,7 +313,7 @@ export default function LandingPageClientContent({
               Thank you for being a part of our beta program. Your insights and experiences are invaluable. Please continue to share your feedback through the widget!
             </p>
             <Button size="lg" variant="default" className="text-lg px-8 py-6 bg-primary hover:bg-primary/80 text-primary-foreground" asChild>
-                <Link href="/?openDashboard=true">Go to Dashboard</Link>
+              <Link href="/?openDashboard=true">Go to Dashboard</Link>
             </Button>
           </div>
         </section>

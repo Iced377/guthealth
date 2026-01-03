@@ -1,6 +1,4 @@
 
-'use client';
-
 import type { CaloriePoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +64,6 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
         <ChartTooltip
           cursor={true}
           content={<ChartTooltipContent indicator="dot" />}
-          trigger="click"
         />
         <defs>
           <linearGradient id="fillCalories" x1="0" y1="0" x2="0" y2="1">

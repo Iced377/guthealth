@@ -77,7 +77,6 @@ export default function ActivityTrendChart({ data, isDarkMode }: ActivityTrendCh
                 <ChartTooltip
                     cursor={true}
                     content={<ChartTooltipContent indicator="dot" />}
-                    trigger="click"
                 />
                 <Bar
                     dataKey="steps"
