@@ -42,11 +42,17 @@ import { db } from '@/config/firebase';
 import {
   getDoc,
   doc as firestoreDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  limit,
 } from 'firebase/firestore';
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.14";
+export const APP_VERSION = "Beta 3.9.15";
+
 
 interface ReleaseNote {
   version: string;
@@ -57,6 +63,16 @@ interface ReleaseNote {
 
 const releaseNotesData: ReleaseNote[] = [
   {
+    version: "Beta 3.9.15",
+    date: "Jan 03, 2026",
+    title: "Admin Automation",
+    description: [
+      "Admin: Feedback items are now automatically marked as 'Viewed' when you leave the feedback page.",
+      "Fix: Resolved a layout hydration warning."
+    ]
+  },
+  {
+
     version: "Beta 3.9.14",
     date: "Jan 03, 2026",
     title: "App Icons & Social Sharing",
@@ -635,6 +651,29 @@ export default function Navbar({
     }
   }, [authUser, authLoading]);
 
+  // Admin Notification: Check for new feedback
+  const [hasNewFeedback, setHasNewFeedback] = useState(false);
+  useEffect(() => {
+    const checkNewFeedback = async () => {
+      if (!isCurrentUserAdmin) return;
+      try {
+        const q = query(
+          collection(db, 'feedbackSubmissions'),
+          where('status', '==', 'new'),
+          limit(1)
+        );
+        const snapshot = await getDocs(q);
+        setHasNewFeedback(!snapshot.empty);
+      } catch (error) {
+        console.error("Error checking for new feedback:", error);
+      }
+    };
+
+    if (isCurrentUserAdmin) {
+      checkNewFeedback();
+    }
+  }, [isCurrentUserAdmin]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const lastSeenVersion = localStorage.getItem(LOCALSTORAGE_LAST_SEEN_VERSION_KEY);
@@ -879,9 +918,14 @@ export default function Navbar({
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {isCurrentUserAdmin && (
-                        <DropdownMenuItem onClick={() => router.push('/admin/feedback')} className="cursor-pointer">
-                          <AdminIcon className="mr-2 h-4 w-4" />
-                          <span>Admin Dashboard</span>
+                        <DropdownMenuItem onClick={() => router.push('/admin/feedback')} className="cursor-pointer flex justify-between items-center">
+                          <div className="flex items-center">
+                            <AdminIcon className="mr-2 h-4 w-4" />
+                            <span>Admin Dashboard</span>
+                          </div>
+                          {hasNewFeedback && (
+                            <span className="h-2 w-2 rounded-full bg-red-500 mr-2" />
+                          )}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
@@ -990,8 +1034,13 @@ export default function Navbar({
 
                   {isCurrentUserAdmin && (
                     <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
-                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => { setIsMobileMenuOpen(false); router.push('/admin/feedback'); }}>
-                        <AdminIcon className="mr-3 h-5 w-5" /> Admin Dashboard
+                      <Button variant="ghost" className="w-full justify-between text-base h-12 pr-4" onClick={() => { setIsMobileMenuOpen(false); router.push('/admin/feedback'); }}>
+                        <div className="flex items-center">
+                          <AdminIcon className="mr-3 h-5 w-5" /> Admin Dashboard
+                        </div>
+                        {hasNewFeedback && (
+                          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                        )}
                       </Button>
                     </motion.div>
                   )}

@@ -1,4 +1,18 @@
 
+# Release Notes - GutHealth v3.9.15 (Admin Automation)
+
+**Release Date:** January 03, 2026
+**Version:** v3.9.15
+
+## 🌟 Highlights
+### Admin Efficiency
+- **Smart Feedback Status**: Feedback items marked as 'New' are now automatically marked as 'Viewed' when an admin opens and exits the feedback list, eliminating manual cleanup.
+
+## 🛠 Fixes
+- **Stability**: Fixed a hydration mismatch warning related to the root layout body tag.
+
+---
+
 # Release Notes - GutHealth v3.9.14 (App Icons & Social Sharing)
 
 **Release Date:** January 03, 2026
