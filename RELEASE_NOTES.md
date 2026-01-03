@@ -1,4 +1,18 @@
 
+# Release Notes - GutHealth v3.9.13 (Mobile UI Polish)
+
+**Release Date:** January 03, 2026
+**Version:** v3.9.13
+
+## 💅 UI/UX Improvements
+### Mobile Experience
+- **Cleaner Header**: Removed the "Sign In" button from the top bar on mobile devices to reduce clutter.
+- **Smart Actions**: Added a "Log Out" button that intelligently appears if you are logged in but viewing the guest landing page.
+- **Visual Polish**: Updated the hero text to "Keep Your Food Diary. Transform your Health." and fixed spacing issues where text would overlap with the header.
+- **Layout**: Optimized the vertical spacing of the main action buttons to ensure they fit perfectly on smaller screens.
+
+---
+
 # Release Notes - GutHealth v3.9.12 (Landing Page Redesign)
 
 **Release Date:** January 03, 2026

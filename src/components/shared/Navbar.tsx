@@ -46,7 +46,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.12";
+export const APP_VERSION = "Beta 3.9.13";
 
 interface ReleaseNote {
   version: string;
@@ -56,6 +56,17 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.13",
+    date: "January 3, 2026",
+    title: "Mobile UI Polish",
+    description: [
+      "Mobile: Hidden the 'Sign In' button on the guest header for a cleaner mobile look.",
+      "Mobile: Added a 'Log Out' button for authenticated users viewing the guest page.",
+      "UI: Updated Hero text and improved spacing to prevent text overlap on small screens.",
+      "Layout: Adjusted positioning of action buttons for better visibility on mobile devices."
+    ]
+  },
   {
     version: "Beta 3.9.12",
     date: "January 3, 2026",
@@ -780,10 +791,17 @@ export default function Navbar({
         <div className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
           {isGuest ? (
             <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Show Log Out if user is authenticated but on guest view */}
+              {authUser && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut} aria-label="Log out">
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              )}
+
               <Button
                 onClick={() => router.push('/login')}
                 className={cn(
-                  "h-9 px-3 sm:px-4 text-xs sm:text-sm",
+                  "hidden sm:flex h-9 px-3 sm:px-4 text-xs sm:text-sm", // Hidden on mobile
                   "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 variant={'default'}

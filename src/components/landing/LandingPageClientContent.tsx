@@ -155,9 +155,9 @@ export default function LandingPageClientContent({
 
         {/* Content */}
         <div className="container relative z-20 mx-auto px-4 text-center">
-          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out fill-mode-forwards">
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out fill-mode-forwards pt-20 sm:pt-0"> {/* Added pt-20 for mobile spacing */}
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-headline mb-6 tracking-tight text-white drop-shadow-md">
-              Track your gut. <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-green-400">Transform your health.</span>
+              Keep Your Food Diary. <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-green-400">Transform your health.</span>
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl text-gray-200 max-w-2xl mx-auto mb-10 drop-shadow-sm font-light">
               Log meals conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.

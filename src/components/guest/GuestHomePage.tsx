@@ -35,7 +35,7 @@ export default function GuestHomePage({
 
   useEffect(() => {
     if (isDarkMode) {
-        document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
 
@@ -44,7 +44,7 @@ export default function GuestHomePage({
   };
 
   const guestHeroButtons = (
-    <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 mb-10">
+    <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-4 mb-10">
       <button
         onClick={handleMainButtonClick}
         className={cn(
@@ -99,11 +99,11 @@ export default function GuestHomePage({
 
   const guestJoinBetaMessage = (
     <div className="container mx-auto px-4"> {/* Removed bg-primary/10 and text-center for section */}
-      
+
       <h2 className="text-3xl sm:text-4xl font-bold mb-6 font-headline text-center">
         <GradientText>
-            <Heart className="inline-block h-10 w-10 mr-3 text-primary" /> {/* Heart icon is now part of the gradient */}
-            Become a GutChecker Pioneer!
+          <Heart className="inline-block h-10 w-10 mr-3 text-primary" /> {/* Heart icon is now part of the gradient */}
+          Become a GutChecker Pioneer!
         </GradientText>
       </h2>
       <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8 text-center">
