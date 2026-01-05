@@ -60,7 +60,8 @@ export async function POST(req: NextRequest) {
                 serverTime: new Date().toISOString(),
                 userOffsetHours: offsetMillis / 3600000,
                 calculatedToday: todayStr,
-                permissionsScope: fitbitData?.scope
+                permissionsScope: fitbitData?.scope || fitbitData?.scopes,
+                isUsingFallbackTimezone: offsetMillis === 0 && !profileData?.user
             },
             rawResponses: {
                 activity: activityJson,

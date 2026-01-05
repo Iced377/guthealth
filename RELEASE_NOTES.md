@@ -1,4 +1,24 @@
 
+# Release Notes - GutHealth v3.9.16 (User Center & Fitbit Fixes)
+
+**Release Date:** January 05, 2026
+**Version:** v3.9.16
+
+## 🌟 Highlights
+### User Center
+- **Profile Page**: Launched a new User Center (`/profile`) where you can manage your personal details.
+- **Date of Birth**: You can now easily set and update your Date of Birth for age-specific health metrics.
+- **App Connections**: A new dedicated section to manage integrations.
+- **Fitbit Toggle**: Easily Connect or Disconnect your Fitbit account with a single switch.
+
+## 🛠 Fixes
+### Fitbit Integration
+- **Sync Reliability**: Resolved a critical bug where missing permissions (Profile/Activity) were causing 403 errors and data gaps in the morning.
+- **Timezone Awareness**: Fixed an issue where the app was defaulting to UTC, causing "Today's" data to appear empty until the afternoon.
+- **Smart Permissions**: The app now intelligently checks and requests the specific permissions required for full functionality.
+
+---
+
 # Release Notes - GutHealth v3.9.15 (Admin Automation)
 
 **Release Date:** January 03, 2026

@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
             offsetMillis = profileData.user.offsetFromUTCMillis || 0;
             console.log(`[FitbitSync] User Timezone Offset: ${offsetMillis / 3600000} hours`);
         } else {
-            console.warn("Failed to fetch profile for timezone, defaulting to Server Time (UTC).");
+            console.warn(`Failed to fetch profile for timezone (Status: ${profileRes.status} ${profileRes.statusText}). Defaulting to Server Time (UTC).`);
+            if (profileRes.status === 403) {
+                console.error("CRITICAL: 'profile' scope is missing. This prevents correct date calculation. Please re-authenticate Fitbit with all permissions.");
+            }
         }
 
         // --- RATE LIMITING ---

@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-export const APP_VERSION = "Beta 3.9.15";
+const APP_VERSION = "Beta 3.9.16";
 
 
 interface ReleaseNote {
@@ -62,6 +62,17 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.16",
+    date: "Jan 05, 2026",
+    title: "User Center & Fitbit Fixes",
+    description: [
+      "User Center: Launched a new profile management page where you can update your Date of Birth and manage connected apps.",
+      "Fitbit Toggle: Added a dedicated toggle to easily connect or disconnect your Fitbit account.",
+      "Sync Fix: Resolved a critical issue where Fitbit permissions were missing, causing 403 errors and data syncing delays. The app now correctly requests and checks for Profile and Activity permissions.",
+      "Timezone Fix: Fixed a timezone alignment bug that caused morning syncing to fail.",
+    ]
+  },
   {
     version: "Beta 3.9.15",
     date: "Jan 03, 2026",
@@ -928,6 +939,10 @@ export default function Navbar({
                           )}
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>User Center</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
                         <Shield className="mr-2 h-4 w-4" />
                         <span>Privacy Notice</span>
@@ -1013,6 +1028,7 @@ export default function Navbar({
                   { icon: BarChart3, label: "Trends", onClick: () => { setIsMobileMenuOpen(false); trendsLinkHandler(); } },
                   { icon: Atom, label: "Micronutrients", onClick: () => { setIsMobileMenuOpen(false); micronutrientsLinkHandler(); } },
                   { icon: Lightbulb, label: "AI Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
+                  { icon: User, label: "User Center", onClick: () => { setIsMobileMenuOpen(false); router.push('/profile'); } },
                   { icon: Shield, label: "Privacy Notice", onClick: () => { setIsMobileMenuOpen(false); router.push('/privacy'); } },
                   { icon: FileText, label: "Terms of Use", onClick: () => { setIsMobileMenuOpen(false); router.push('/terms'); } },
                   { icon: Info, label: "About", onClick: () => { setIsMobileMenuOpen(false); aboutLinkHandler(); } },

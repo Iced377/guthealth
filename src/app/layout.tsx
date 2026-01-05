@@ -52,7 +52,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       {/* Removed the inter.variable class name from the body */}
-      <body className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">
+      <body suppressHydrationWarning className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">
         <AuthProvider>
           <ThemeProvider>
             <main className="flex-grow w-full">

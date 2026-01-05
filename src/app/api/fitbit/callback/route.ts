@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
       throw new Error(`Fitbit API error: ${errorBody.errors?.[0]?.message || 'Failed to get access token'}`);
     }
 
-    const tokens = await tokenResponse.json() as { access_token: string; refresh_token: string; user_id: string; expires_in: number };
+    const tokens = await tokenResponse.json() as { access_token: string; refresh_token: string; user_id: string; expires_in: number; scope: string };
 
     // --- Securely store the tokens in Firestore, associated with the user ---
     const fitbitData = {
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       expiresAt: new Date().getTime() + tokens.expires_in * 1000,
-      scopes: process.env.FITBIT_SCOPES,
+      scope: tokens.scope, // Stores the actual granted scopes (space separated)
       lastUpdated: new Date(),
     };
 

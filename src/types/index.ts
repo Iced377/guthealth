@@ -153,6 +153,7 @@ export interface UserProfile {
   safeFoods: SafeFood[];
   premium?: boolean;
   isAdmin?: boolean;
+  dateOfBirth?: string; // YYYY-MM-DD
 }
 
 export type { DetailedFodmapProfileFromAI };

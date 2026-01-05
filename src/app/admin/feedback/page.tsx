@@ -1,10 +1,12 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
-import { collection, getDocs, query, orderBy, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc, Timestamp, writeBatch } from 'firebase/firestore';
+
 import type { FeedbackSubmission, UserProfile } from '@/types';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,6 +25,8 @@ export default function AdminFeedbackPage() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState<boolean | null>(null);
+  const newFeedbackIdsRef = useRef<string[]>([]);
+
   // Removed userCount related states as the feature was removed.
   // const [totalUsers, setTotalUsers] = useState<number | null>(null);
   // const [userCountError, setUserCountError] = useState<string | null>(null);
@@ -101,6 +105,13 @@ export default function AdminFeedbackPage() {
             } satisfies FeedbackSubmission;
           });
           setFeedbackItems(items);
+
+          // Track IDs of items that are 'new' so we can mark them as viewed on exit
+          const newIds = items
+            .filter(item => item.status === 'new')
+            .map(item => item.id);
+          newFeedbackIdsRef.current = newIds;
+
           if (process.env.NODE_ENV === 'development') {
             console.log('[Admin Page] Successfully fetched feedback submissions:', items.length);
           }
@@ -141,6 +152,26 @@ export default function AdminFeedbackPage() {
     };
 
     checkAdminAndFetchData();
+
+    // Cleanup function to mark items as viewed when the component unmounts
+    return () => {
+      const idsToUpdate = newFeedbackIdsRef.current;
+      if (idsToUpdate.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Admin Page] Exiting page. Marking items as viewed:', idsToUpdate);
+        }
+
+        const batch = writeBatch(db);
+        idsToUpdate.forEach(id => {
+          const docRef = doc(db, 'feedbackSubmissions', id);
+          batch.update(docRef, { status: 'viewed' });
+        });
+
+        batch.commit().catch(err => {
+          console.error("Error marking feedback as viewed on exit:", err);
+        });
+      }
+    };
   }, [authUser, authLoading]);
 
   if (isLoadingData || authLoading || isCurrentUserAdmin === null) {
@@ -167,7 +198,7 @@ export default function AdminFeedbackPage() {
       </>
     );
   }
-  
+
   const getStatusVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status?.toLowerCase()) {
       case 'new': return 'default';
@@ -184,7 +215,7 @@ export default function AdminFeedbackPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       <main className="flex-grow container mx-auto px-2 sm:px-4 py-8 space-y-6"> {/* Reduced space-y from 8 to 6 */}
-        
+
         {isCurrentUserAdmin && (
           <div className="mb-0"> {/* Removed mb-4, relying on Card's margin or space-y of main */}
             <Button asChild variant="outline" size="sm">
@@ -224,10 +255,10 @@ export default function AdminFeedbackPage() {
           </CardHeader>
           <CardContent>
             {feedbackError && (
-                <div className="text-destructive mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md">
-                    <AlertTriangle className="inline-block mr-2 h-5 w-5" />
-                    {feedbackError}
-                </div>
+              <div className="text-destructive mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-md">
+                <AlertTriangle className="inline-block mr-2 h-5 w-5" />
+                {feedbackError}
+              </div>
             )}
             {feedbackItems.length === 0 && !feedbackError && !isLoadingData ? (
               <p className="text-muted-foreground text-center py-6">No feedback submissions yet.</p>
@@ -276,10 +307,10 @@ export default function AdminFeedbackPage() {
                 </Table>
               </div>
             ) : isLoadingData ? (
-               <div className="flex items-center justify-center py-6">
-                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                 <p className="ml-3 text-muted-foreground">Loading feedback...</p>
-               </div>
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-3 text-muted-foreground">Loading feedback...</p>
+              </div>
             ) : null}
           </CardContent>
         </Card>
