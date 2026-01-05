@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
             throw new Error(`Missing environment variables: ${missing.join(', ')}`);
         }
 
-        const scope = process.env.FITBIT_SCOPES || 'activity nutrition weight profile';
+        const scope = 'activity nutrition weight profile';
 
         const url = `https://www.fitbit.com/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
 

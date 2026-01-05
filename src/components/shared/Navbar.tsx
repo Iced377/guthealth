@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.9.16";
+const APP_VERSION = "Beta 3.9.17";
 
 
 interface ReleaseNote {
@@ -62,6 +62,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.17",
+    date: "Jan 05, 2026",
+    title: "Critical Permission Fix",
+    description: [
+      "Fitbit: Forced the app to request all necessary permissions (Activity, Nutrition, Profile, Weight) to prevent configuration errors in production environments.",
+    ]
+  },
   {
     version: "Beta 3.9.16",
     date: "Jan 05, 2026",

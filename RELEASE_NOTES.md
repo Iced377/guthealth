@@ -1,4 +1,15 @@
 
+# Release Notes - GutHealth v3.9.17 (Critical Permission Fix)
+
+**Release Date:** January 05, 2026
+**Version:** v3.9.17
+
+## 🛠 Fixes
+### Fitbit Integration
+- **Forced Scopes**: Modified the authentication flow to strictly request `activity`, `nutrition`, `weight`, and `profile` permissions, overriding any potential misconfiguration in production environment variables. This ensures the app always has access to the data it needs to function.
+
+---
+
 # Release Notes - GutHealth v3.9.16 (User Center & Fitbit Fixes)
 
 **Release Date:** January 05, 2026
