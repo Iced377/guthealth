@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.9.17";
+const APP_VERSION = "Beta 3.9.18";
 
 
 interface ReleaseNote {
@@ -62,6 +62,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.18",
+    date: "Jan 06, 2026",
+    title: "Trends Data Fix",
+    description: [
+      "Trends: Fixed a data filtering bug where morning data was missing from the earliest day in selected time ranges.",
+      "Dev: Fixed localhost access issues.",
+    ]
+  },
   {
     version: "Beta 3.9.17",
     date: "Jan 05, 2026",

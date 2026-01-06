@@ -8,6 +8,16 @@
 ### Fitbit Integration
 - **Forced Scopes**: Modified the authentication flow to strictly request `activity`, `nutrition`, `weight`, and `profile` permissions, overriding any potential misconfiguration in production environment variables. This ensures the app always has access to the data it needs to function.
 
+# Release Notes - GutHealth v3.9.18 (Trends Data Fix)
+
+**Release Date:** January 06, 2026
+**Version:** v3.9.18
+
+## 🛠 Fixes
+### Trends Dashboard
+- **Data Filtering**: Fixed an issue where the "Last 7 Days" and "Last 30 Days" filters were cutting off data from the earliest day in the range. The app now correctly includes the full 24 hours of the start date.
+- **Localhost Fix**: Resolved an issue where the local development environment was not opening correctly.
+
 ---
 
 # Release Notes - GutHealth v3.9.16 (User Center & Fitbit Fixes)

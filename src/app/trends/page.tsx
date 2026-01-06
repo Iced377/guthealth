@@ -184,9 +184,10 @@ export default function TrendsPage() {
     if (!user) return;
     try {
       const idToken = await user.getIdToken();
+      const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const res = await fetch('/api/fitbit/debug', {
         method: 'POST',
-        body: JSON.stringify({ idToken })
+        body: JSON.stringify({ idToken, clientTimezone })
       });
       const data = await res.json();
       console.log("DEBUG RESPONSE:", data);
@@ -243,23 +244,23 @@ export default function TrendsPage() {
         startDate = startOfDay(now);
         break;
       case '7D':
-        startDate = subDays(now, 7);
+        startDate = startOfDay(subDays(now, 7));
         break;
       case '30D':
-        startDate = subDays(now, 30);
+        startDate = startOfDay(subDays(now, 30));
         break;
       case '90D':
-        startDate = subDays(now, 90);
+        startDate = startOfDay(subDays(now, 90));
         break;
       case '1Y':
-        startDate = subYears(now, 1);
+        startDate = startOfDay(subYears(now, 1));
         break;
       case 'ALL':
       default:
         return timelineEntries;
     }
 
-    const endDate = selectedTimeRange === '1D' ? endOfDay(now) : now;
+    const endDate = endOfDay(now);
 
     return timelineEntries.filter(entry => {
       const entryDate = new Date(entry.timestamp);
@@ -662,6 +663,33 @@ export default function TrendsPage() {
             <Button asChild variant="outline">
               <Link href="/?openDashboard=true">Return to Dashboard</Link>
             </Button>
+          </div>
+
+          <div className="mt-8 p-4 border border-dashed border-muted-foreground/30 rounded bg-muted/20 text-xs font-mono text-left">
+            <details>
+              <summary className="cursor-pointer font-bold mb-2">Debug Analysis (Click to Expand)</summary>
+              <div className="space-y-1">
+                <p><strong>Current Client Time:</strong> {new Date().toString()}</p>
+                <p><strong>Detected Timezone:</strong> {typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'N/A'}</p>
+                <p><strong>Selected Range:</strong> {selectedTimeRange}</p>
+                <p><strong>Filter Logic:</strong> {(() => {
+                  const now = new Date();
+                  let s: Date;
+                  switch (selectedTimeRange) {
+                    case '1D': s = startOfDay(now); break;
+                    case '7D': s = startOfDay(subDays(now, 7)); break;
+                    case '30D': s = startOfDay(subDays(now, 30)); break;
+                    case '90D': s = startOfDay(subDays(now, 90)); break;
+                    case '1Y': s = startOfDay(subYears(now, 1)); break;
+                    default: return "ALL";
+                  }
+                  const e = endOfDay(now);
+                  return `Start: ${s.toString()} | End: ${e.toString()}`;
+                })()}</p>
+                <p><strong>Total Entries:</strong> {timelineEntries.length}</p>
+                <p><strong>Visible Entries:</strong> {filteredEntries.length}</p>
+              </div>
+            </details>
           </div>
         </main>
       </ScrollArea>
