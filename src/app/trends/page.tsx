@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
-import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, HourlyCaloriePoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
+import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, HourlyCaloriePoint, HourlyMealCountPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import LoggedSafetyTrendChart from '@/components/trends/LoggedSafetyTrendChart';
 import SymptomOccurrenceChart from '@/components/trends/SymptomOccurrenceChart';
 import GITrendChart from '@/components/trends/GITrendChart';
 import HourlyCaloriesChart from '@/components/trends/HourlyCaloriesChart';
+import HourlyMealCountChart from '@/components/trends/HourlyMealCountChart';
 import WeightTrendChart from '@/components/trends/WeightTrendChart';
 import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
@@ -385,6 +386,25 @@ export default function TrendsPage() {
     return result;
   }, [filteredEntries]);
 
+  const hourlyMealCountData = useMemo<HourlyMealCountPoint[]>(() => {
+    const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
+    const hourlyCounts: Record<number, number> = {};
+
+    foodEntries.forEach(entry => {
+      const hour = getHours(new Date(entry.timestamp));
+      hourlyCounts[hour] = (hourlyCounts[hour] || 0) + 1;
+    });
+
+    const result: HourlyMealCountPoint[] = [];
+    for (let i = 0; i < 24; i++) {
+      result.push({
+        hour: format(new Date(0, 0, 0, i), 'HH:mm'),
+        count: hourlyCounts[i] || 0,
+      });
+    }
+    return result;
+  }, [filteredEntries]);
+
 
   const aggregateGenericByDay = <T extends { timestamp: Date }>(
     entries: T[],
@@ -663,6 +683,15 @@ export default function TrendsPage() {
               </CardHeader>
               <CardContent>
                 {hourlyCaloriesTrendData.length > 0 ? <HourlyCaloriesChart data={hourlyCaloriesTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No calorie data available for this period.</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Meal Timing Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hourlyMealCountData.length > 0 ? <HourlyMealCountChart data={hourlyMealCountData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No meal data available for this period.</p>}
               </CardContent>
             </Card>
 

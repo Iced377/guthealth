@@ -215,6 +215,11 @@ export interface HourlyCaloriePoint {
   calories: number;
 }
 
+export interface HourlyMealCountPoint {
+  hour: string; // e.g., "00:00", "01:00"
+  count: number;
+}
+
 export interface SymptomFrequency {
   name: string;
   value: number;

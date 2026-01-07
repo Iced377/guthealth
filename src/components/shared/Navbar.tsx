@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.9.19";
+const APP_VERSION = "Beta 3.9.20";
 
 
 interface ReleaseNote {
@@ -62,6 +62,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.20",
+    date: "Jan 06, 2026",
+    title: "Meal Timing Distribution",
+    description: [
+      "Trends: Added a new 'Meal Timing Distribution' chart to show you the frequency of your meals throughout the day.",
+    ]
+  },
   {
     version: "Beta 3.9.19",
     date: "Jan 06, 2026",

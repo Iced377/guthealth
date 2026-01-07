@@ -1,4 +1,15 @@
 
+# Release Notes - GutHealth v3.9.20 (Meal Timing Distribution)
+
+**Release Date:** January 06, 2026
+**Version:** v3.9.20
+
+## 📈 New Features
+### Trends Dashboard
+- **Meal Timing Distribution**: Added a new chart that visualizes how often you eat at different times of the day. This provides insight into your daily meal frequency and timing habits.
+
+---
+
 # Release Notes - GutHealth v3.9.19 (Hourly Calories Trend)
 
 **Release Date:** January 06, 2026
