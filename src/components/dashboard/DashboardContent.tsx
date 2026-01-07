@@ -181,6 +181,12 @@ export default function DashboardContent({
                     currentDate={currentDate}
                     onPrevDate={() => setCurrentDate(prev => addDays(prev, -1))}
                     onNextDate={() => setCurrentDate(prev => addDays(prev, 1))}
+                    goals={userProfile.profile ? {
+                        calories: userProfile.profile.tdee,
+                        protein: userProfile.profile.macros.protein,
+                        carbs: userProfile.profile.macros.carbs,
+                        fat: userProfile.profile.macros.fats,
+                    } : undefined}
                 />
             </div>
 

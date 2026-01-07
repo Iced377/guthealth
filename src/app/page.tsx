@@ -171,6 +171,7 @@ export default function RootPage() {
               displayName: authUser.displayName,
               safeFoods: data.safeFoods || [],
               premium: currentIsPremium,
+              profile: data.profile,
             });
           } else {
             const newUserProfile: UserProfile = {

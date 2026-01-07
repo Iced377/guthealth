@@ -9,40 +9,47 @@ import {
   browserLocalPersistence,
   setPersistence,
 } from 'firebase/auth';
-import { auth } from '@/config/firebase';
-import { useRouter } from 'next/navigation';
+import { auth, db } from '@/config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { UserProfile } from '@/types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  userProfile: UserProfile | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  userProfile: null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [redirectLoading, setRedirectLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname();
 
+  // Handle Redirect Result (Google Sign In)
   useEffect(() => {
-    let unsub: ReturnType<typeof onAuthStateChanged>;
-
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
         return getRedirectResult(auth);
       })
       .then((result) => {
         if (result?.user) {
-          setUser(result.user);
+          // setUser(result.user); // Handled by onAuthStateChanged
           toast({ title: 'Welcome back!', description: result.user.displayName || 'Successfully signed in.' });
-          router.push('/'); // Redirect to home after successful Google redirect
+          // router.push('/'); // Handled by profile check
         }
       })
       .catch((error) => {
@@ -56,45 +63,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => {
         setRedirectLoading(false);
       });
+  }, [toast]);
 
-    unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+  // Handle Auth State Changes
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const token = await firebaseUser.getIdToken();
-          // Sync session cookie with server
           await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken: token }),
           });
+
+          // Fetch User Profile
+          try {
+            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (userDoc.exists()) {
+              setUserProfile(userDoc.data() as UserProfile);
+            } else {
+              setUserProfile(null);
+            }
+          } catch (err) {
+            console.error("Error fetching user profile:", err);
+          }
+
         } catch (error) {
           console.error('Failed to sync session cookie:', error);
         }
       } else {
-        // Clear session cookie on server
         await fetch('/api/auth/logout', { method: 'POST' });
+        setUserProfile(null);
       }
 
       setUser(firebaseUser);
       setAuthLoading(false);
+      setProfileLoading(false);
     });
 
-    return () => {
-      if (unsub) {
-        unsub();
+    return () => unsub();
+  }, []);
+
+  // Handle Setup Redirection
+  useEffect(() => {
+    if (authLoading || profileLoading) return;
+
+    if (user) {
+      // If user is logged in, check if they have completed setup
+      const hasCompletedSetup = userProfile?.profile?.hasCompletedSetup;
+
+      // If not completed setup, and not on setup page, redirect
+      if (!hasCompletedSetup && pathname !== '/setup') {
+        // Allow admin or some specific paths? maybe not.
+        // But let's verify we are not in a loop.
+        console.log("Redirecting to setup...");
+        router.push('/setup');
       }
-    };
-  }, [toast, router]);
+    }
+  }, [user, userProfile, authLoading, profileLoading, pathname, router]);
 
-  const loading = redirectLoading || authLoading;
+  const loading = redirectLoading || authLoading; // || profileLoading; // Profile loading shouldn't block entire app render, but maybe for this check it should?
+  // Let's keep initial loading blocking to prevent flash of content before redirect
 
-  const value = useMemo(() => ({ user, loading }), [user, loading]);
+  const value = useMemo(() => ({ user, loading, userProfile }), [user, loading, userProfile]);
 
-  if (loading) {
+  if (loading || (user && profileLoading)) { // Block until profile is checked
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-foreground">Loading Authentication...</p>
+        <p className="ml-4 text-lg text-foreground">Loading GutCheck...</p>
       </div>
     );
   }

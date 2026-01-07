@@ -1,6 +1,6 @@
 {
   "name": "guthealth",
-  "version": "3.9.20",
+  "version": "3.10.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",

@@ -11,9 +11,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/shared/Navbar';
-import { Calendar, Save, ArrowLeft, Activity, User, LogOut } from 'lucide-react';
+import { Calendar, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target, Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil } from 'lucide-react';
+import { UserProfile } from '@/types';
+import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
+
+// Helper to calculate age from DOB
+function getAge(dob: string) {
+    if (!dob) return 0;
+    const diff = Date.now() - new Date(dob).getTime();
+    return Math.abs(new Date(diff).getUTCFullYear() - 1970);
+}
 
 export default function ProfilePage() {
     const { user, loading } = useAuth();
@@ -22,6 +48,19 @@ export default function ProfilePage() {
 
     const [dob, setDob] = useState('');
     const [isSavingDob, setIsSavingDob] = useState(false);
+
+    const [profileData, setProfileData] = useState<UserProfile['profile'] | undefined>(undefined);
+
+    // Edit State
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [editForm, setEditForm] = useState({
+        height: 0,
+        weight: 0,
+        gender: 'female' as 'male' | 'female',
+        activityLevel: 'sedentary' as keyof typeof ACTIVITY_MULTIPLIERS,
+        goal: 'maintain' as keyof typeof GOAL_ADJUSTMENTS,
+    });
 
     const [isFitbitConnected, setIsFitbitConnected] = useState(false);
     const [isLoadingFitbit, setIsLoadingFitbit] = useState(true);
@@ -37,10 +76,12 @@ export default function ProfilePage() {
 
         const fetchData = async () => {
             try {
-                // 1. Fetch Profile Data (DOB)
+                // 1. Fetch Profile Data
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
-                    setDob(userDoc.data().dateOfBirth || '');
+                    const data = userDoc.data() as UserProfile;
+                    setDob(data.dateOfBirth || '');
+                    setProfileData(data.profile);
                 }
 
                 // 2. Fetch Fitbit Status
@@ -65,6 +106,20 @@ export default function ProfilePage() {
         fetchData();
     }, [user, loading, router, toast]);
 
+    // Initialize edit form when profileData changes or dialog opens
+    useEffect(() => {
+        if (profileData && isEditOpen) {
+            setEditForm({
+                height: profileData.height,
+                weight: profileData.weight,
+                gender: profileData.gender,
+                activityLevel: profileData.activityLevel,
+                goal: profileData.goal,
+            });
+        }
+    }, [profileData, isEditOpen]);
+
+
     // Handle DOB Save
     const handleSaveDob = async () => {
         if (!user) return;
@@ -81,6 +136,54 @@ export default function ProfilePage() {
             setIsSavingDob(false);
         }
     };
+
+    const handleSaveProfile = async () => {
+        if (!user || !profileData) return;
+        setIsSavingProfile(true);
+
+        try {
+            const age = getAge(dob);
+            if (age === 0 && !dob) {
+                toast({ title: "Date of Birth Required", description: "Please set your Date of Birth first to calculate targets accurately.", variant: "destructive" });
+                setIsSavingProfile(false);
+                return;
+            }
+
+            // Recalculate
+            const newBmr = calculateBMR(editForm.weight, editForm.height, age, editForm.gender);
+            const newTdee = calculateTDEE(newBmr, editForm.activityLevel);
+            const newNutrition = calculateNutritionTargets(
+                newBmr,
+                newTdee,
+                editForm.weight,
+                editForm.goal,
+                profileData.symptoms // Keep existing symptoms
+            );
+
+            const updatedProfile: UserProfile['profile'] = {
+                ...profileData,
+                ...editForm,
+                bmr: newBmr,
+                tdee: newTdee,
+                macros: newNutrition.macros
+            };
+
+            await updateDoc(doc(db, 'users', user.uid), {
+                profile: updatedProfile
+            });
+
+            setProfileData(updatedProfile);
+            setIsEditOpen(false);
+            toast({ title: "Profile Updated", description: "Your biometric data and nutrition targets have been recalculated." });
+
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            toast({ title: "Error", description: "Could not update profile.", variant: "destructive" });
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
+
 
     // Handle Fitbit Toggle
     const handleFitbitToggle = async (checked: boolean) => {
@@ -126,8 +229,6 @@ export default function ProfilePage() {
                 description: checked ? "Could not initiate Fitbit connection." : "Could not disconnect Fitbit.",
                 variant: "destructive"
             });
-            // Revert state if failed (though switch usually handles this slightly differently, manual reversion is safer)
-            // But since we didn't update state eagerly for 'checked', we are fine.
         } finally {
             setIsTogglingFitbit(false);
         }
@@ -136,7 +237,7 @@ export default function ProfilePage() {
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+        <div className="min-h-screen bg-background pb-20 md:pb-0">
             <Navbar />
 
             <main className="max-w-3xl mx-auto px-4 py-8 pt-24 space-y-8">
@@ -144,19 +245,19 @@ export default function ProfilePage() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-3xl font-bold text-gray-900">User Center</h1>
+                    <h1 className="text-3xl font-bold text-foreground">User Center</h1>
                 </div>
 
                 {/* Personal Information */}
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-border shadow-sm bg-card text-card-foreground">
                     <CardHeader>
                         <CardTitle className="flex items-center text-xl">
-                            <User className="mr-2 h-5 w-5 text-indigo-600" />
+                            <User className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             Personal Information
                         </CardTitle>
                         <CardDescription>Manage your personal details for better health insights.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="dob">Date of Birth</Label>
                             <div className="flex gap-2">
@@ -168,7 +269,7 @@ export default function ProfilePage() {
                                         onChange={(e) => setDob(e.target.value)}
                                         className="pl-10"
                                     />
-                                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 </div>
                                 <Button
                                     onClick={handleSaveDob}
@@ -185,16 +286,237 @@ export default function ProfilePage() {
                                     )}
                                 </Button>
                             </div>
-                            <p className="text-xs text-gray-500">Used to calculate age-related health metrics.</p>
+                            <p className="text-xs text-muted-foreground">Used to calculate age-related health metrics.</p>
                         </div>
                     </CardContent>
                 </Card>
 
+                {/* Biometrics & Setup Data */}
+                {profileData && (
+                    <>
+                        <Card className="border-border shadow-sm bg-card text-card-foreground">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle className="flex items-center text-xl">
+                                        <Activity className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                                        Your Profile
+                                    </CardTitle>
+                                    <CardDescription>Measured and calculated from your setup data.</CardDescription>
+                                </div>
+                                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" variant="outline">
+                                            <Pencil className="h-4 w-4 mr-2" />
+                                            Edit
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Edit Profile Data</DialogTitle>
+                                            <DialogDescription>
+                                                Updating these values will recalculate your daily calorie and macro targets.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="height">Height (cm)</Label>
+                                                    <Input
+                                                        id="height"
+                                                        type="number"
+                                                        value={editForm.height}
+                                                        onChange={(e) => setEditForm({ ...editForm, height: Number(e.target.value) })}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="weight">Weight (kg)</Label>
+                                                    <Input
+                                                        id="weight"
+                                                        type="number"
+                                                        value={editForm.weight}
+                                                        onChange={(e) => setEditForm({ ...editForm, weight: Number(e.target.value) })}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="gender">Gender</Label>
+                                                <Select
+                                                    value={editForm.gender}
+                                                    onValueChange={(val: 'male' | 'female') => setEditForm({ ...editForm, gender: val })}
+                                                >
+                                                    <SelectTrigger id="gender">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="female">Female</SelectItem>
+                                                        <SelectItem value="male">Male</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="activity">Activity Level</Label>
+                                                <Select
+                                                    value={editForm.activityLevel}
+                                                    onValueChange={(val: keyof typeof ACTIVITY_MULTIPLIERS) => setEditForm({ ...editForm, activityLevel: val })}
+                                                >
+                                                    <SelectTrigger id="activity">
+                                                        <SelectValue placeholder="Select activity level" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="sedentary">Sedentary (Little/no exercise)</SelectItem>
+                                                        <SelectItem value="lightly_active">Lightly Active (1-3 days/week)</SelectItem>
+                                                        <SelectItem value="moderately_active">Moderately Active (3-5 days/week)</SelectItem>
+                                                        <SelectItem value="very_active">Very Active (6-7 days/week)</SelectItem>
+                                                        <SelectItem value="super_active">Super Active (Physical job/training)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="goal">Primary Goal</Label>
+                                                <Select
+                                                    value={editForm.goal}
+                                                    onValueChange={(val: keyof typeof GOAL_ADJUSTMENTS) => setEditForm({ ...editForm, goal: val })}
+                                                >
+                                                    <SelectTrigger id="goal">
+                                                        <SelectValue placeholder="Select goal" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="maintain">Maintain Weight</SelectItem>
+                                                        <SelectItem value="lose_fat">Lose Fat</SelectItem>
+                                                        <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                                            <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                                {isSavingProfile ? "Recalculating..." : "Save Changes"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Biometrics Grid */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
+                                        <Ruler className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <span className="text-sm text-muted-foreground">Height</span>
+                                        <span className="font-semibold text-foreground">{profileData.height} cm</span>
+                                    </div>
+                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
+                                        <Scale className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <span className="text-sm text-muted-foreground">Weight</span>
+                                        <span className="font-semibold text-foreground">{profileData.weight} kg</span>
+                                    </div>
+                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center capitalize">
+                                        <User className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <span className="text-sm text-muted-foreground">Gender</span>
+                                        <span className="font-semibold text-foreground">{profileData.gender}</span>
+                                    </div>
+                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
+                                        <Zap className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <span className="text-sm text-muted-foreground">Activity</span>
+                                        <span className="font-semibold capitalize text-foreground">{profileData.activityLevel.replace('_', ' ')}</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-border shadow-sm bg-card text-card-foreground">
+                            <CardHeader>
+                                <CardTitle className="flex items-center text-xl">
+                                    <Target className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                                    Nutrition Targets
+                                </CardTitle>
+                                <CardDescription>Personalized goals based on your profile.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Main Goals */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="p-4 border border-border rounded-xl flex items-center space-x-4 bg-card">
+                                        <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                                            <Flame className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Daily Calories (TDEE)</p>
+                                            <p className="text-2xl font-bold text-foreground">{profileData.tdee} <span className="text-sm font-normal text-muted-foreground">kcal</span></p>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 border border-border rounded-xl flex items-center space-x-4 bg-card">
+                                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                            <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Basal Metabolic Rate</p>
+                                            <p className="text-xl font-bold text-foreground">{profileData.bmr} <span className="text-sm font-normal text-muted-foreground">kcal</span></p>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 border border-border rounded-xl flex items-center space-x-4 bg-card">
+                                        <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                                            {profileData.goal === 'lose_fat' ? <TrendingDown className="h-6 w-6 text-purple-600 dark:text-purple-400" /> :
+                                                profileData.goal === 'gain_muscle' ? <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" /> :
+                                                    <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Primary Goal</p>
+                                            <p className="text-xl font-bold text-foreground capitalize">{profileData.goal.replace('_', ' ')}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Macro Breakdown */}
+                                <div>
+                                    <h3 className="text-sm font-medium text-foreground mb-4 flex items-center">
+                                        <Utensils className="h-4 w-4 mr-2" /> Daily Macro Targets
+                                    </h3>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-lg text-center">
+                                            <span className="block text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">Protein</span>
+                                            <span className="block text-xl font-bold text-indigo-900 dark:text-indigo-100">{profileData.macros.protein}g</span>
+                                        </div>
+                                        <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-lg text-center">
+                                            <span className="block text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">Carbs</span>
+                                            <span className="block text-xl font-bold text-emerald-900 dark:text-emerald-100">{profileData.macros.carbs}g</span>
+                                        </div>
+                                        <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-lg text-center">
+                                            <span className="block text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Fats</span>
+                                            <span className="block text-xl font-bold text-amber-900 dark:text-amber-100">{profileData.macros.fats}g</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Baseline Symptoms */}
+                        {profileData.symptoms.length > 0 && (
+                            <Card className="border-border shadow-sm bg-card text-card-foreground">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Baseline Symptoms</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profileData.symptoms.map(s => (
+                                            <Badge key={s} variant="secondary" className="px-3 py-1 capitalize">
+                                                {s}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </>
+                )}
+
                 {/* Connected Apps */}
-                <Card className="border-none shadow-sm bg-white">
+                <Card className="border-border shadow-sm bg-card text-card-foreground">
                     <CardHeader>
                         <CardTitle className="flex items-center text-xl">
-                            <Activity className="mr-2 h-5 w-5 text-indigo-600" />
+                            <Activity className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             Connected Apps
                         </CardTitle>
                         <CardDescription>Manage your integrations with other health platforms.</CardDescription>
@@ -202,20 +524,20 @@ export default function ProfilePage() {
                     <CardContent className="space-y-6">
 
                         {/* Fitbit Item */}
-                        <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50/50">
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
                             <div className="flex items-center space-x-4">
                                 {/* Fitbit Logo/Icon placeholder using just text or generic icon */}
-                                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm">
+                                <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center text-teal-700 dark:text-teal-400 font-bold text-sm">
                                     fit
                                 </div>
                                 <div>
-                                    <h3 className="font-medium text-gray-900">Fitbit</h3>
-                                    <p className="text-sm text-gray-500">Syncs steps, weight, and activity.</p>
+                                    <h3 className="font-medium text-foreground">Fitbit</h3>
+                                    <p className="text-sm text-muted-foreground">Syncs steps, weight, and activity.</p>
                                 </div>
                             </div>
 
                             {isLoadingFitbit ? (
-                                <div className="h-6 w-10 bg-gray-200 animate-pulse rounded-full" />
+                                <div className="h-6 w-10 bg-muted animate-pulse rounded-full" />
                             ) : (
                                 <Switch
                                     checked={isFitbitConnected}
@@ -228,7 +550,14 @@ export default function ProfilePage() {
 
                     </CardContent>
                 </Card>
-
+                <div className="flex flex-col gap-4 text-center w-full pb-8">
+                    <Button variant="outline" className="w-full max-w-xs mx-auto" onClick={() => router.push('/setup')}>
+                        Redo Setup Wizard
+                    </Button>
+                    <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => router.push('/api/auth/signout')}>
+                        <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                    </Button>
+                </div>
             </main>
         </div>
     );

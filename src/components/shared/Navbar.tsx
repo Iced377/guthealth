@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.9.20";
+const APP_VERSION = "Beta 3.10.1";
 
 
 interface ReleaseNote {
@@ -62,6 +62,18 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.10.1",
+    date: "Jan 07, 2026",
+    title: "Major Feature Release: User Profile Editing",
+    description: [
+      "User Center: You can now fully edit your Profile! Update your Height, Weight, Activity Level, and Goals.",
+      "Smart Targets: Changing your profile automatically recalculates your daily Calorie (TDEE) and Macro targets.",
+      "Sync: The Profile changes now instantly sync to your Dashboard 'Nutrition Overview' cards.",
+      "Fix: Dashboard dark mode themes are now consistent with the User Center.",
+      "UX: Added a 'Restart Setup' button to easily redo the entire onboarding process."
+    ]
+  },
   {
     version: "Beta 3.9.20",
     date: "Jan 06, 2026",

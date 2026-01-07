@@ -8,17 +8,24 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { format, isToday } from 'date-fns';
 
+interface NutritionGoals {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+}
+
 interface NutritionOverviewProps {
     summary: DailyNutritionSummary;
     currentDate: Date;
     onPrevDate: () => void;
     onNextDate: () => void;
+    goals?: NutritionGoals;
 }
 
-export default function NutritionOverview({ summary, currentDate, onPrevDate, onNextDate }: NutritionOverviewProps) {
-    // Goals could be passed in props later, hardcoding standard defaults for visualization scale
-    // These are just reference points for the progress bars to make them look populated
-    const targets = {
+export default function NutritionOverview({ summary, currentDate, onPrevDate, onNextDate, goals }: NutritionOverviewProps) {
+    // defaults if not provided
+    const targets = goals || {
         calories: 2500,
         protein: 150,
         carbs: 300,

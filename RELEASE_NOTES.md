@@ -1,4 +1,25 @@
 
+
+# Release Notes - GutHealth v3.10.1 (Major Feature Release)
+
+**Release Date:** January 07, 2026
+**Version:** v3.10.1
+
+## 🌟 Major Features
+### User Profile Editing
+- **Full Edit Control**: You can now edit your biometric data (Height, Weight, Age) and lifestyle settings (Activity Level, Goal) directly from the User Center.
+- **Auto-Recalculation**: Updating your profile instantly recalculates your daily Calorie (TDEE) and Macro targets based on nutrition science.
+- **Dashboard Sync**: Your new personalized targets are immediately reflected on your Dashboard's Nutrition Overview cards.
+
+### Setup & Onboarding
+- **Redo Setup**: Added a "Redo Setup Wizard" button to the profile page, allowing you to easily restart the onboarding process from scratch.
+
+## 🛠 Fixes & Polish
+- **Dark Mode**: Fixed a theming inconsistency where the User Center was using light-mode colors in dark mode. It now perfectly matches the rest of the app.
+- **Data Sync**: Resolved an issue where profile targets were not propagating to the dashboard cards.
+
+---
+
 # Release Notes - GutHealth v3.9.20 (Meal Timing Distribution)
 
 **Release Date:** January 06, 2026

@@ -154,6 +154,24 @@ export interface UserProfile {
   premium?: boolean;
   isAdmin?: boolean;
   dateOfBirth?: string; // YYYY-MM-DD
+  profile?: {
+    hasCompletedSetup: boolean;
+    gender: 'male' | 'female';
+    height: number; // cm
+    weight: number; // kg
+    activityLevel: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'super_active';
+    goal: 'maintain' | 'lose_fat' | 'gain_muscle';
+    symptoms: string[]; // e.g., ['bloating', 'fatigue']
+
+    // Calculated
+    bmr: number;
+    tdee: number;
+    macros: {
+      protein: number;
+      carbs: number;
+      fats: number;
+    };
+  };
 }
 
 export type { DetailedFodmapProfileFromAI };
