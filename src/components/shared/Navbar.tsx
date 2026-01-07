@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.9.18";
+const APP_VERSION = "Beta 3.9.19";
 
 
 interface ReleaseNote {
@@ -62,6 +62,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.9.19",
+    date: "Jan 06, 2026",
+    title: "Hourly Calories Trend",
+    description: [
+      "Trends: Added a new chart to visualize your average calorie intake by hour of the day to help identify eating patterns.",
+    ]
+  },
   {
     version: "Beta 3.9.18",
     date: "Jan 06, 2026",

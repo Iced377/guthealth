@@ -210,6 +210,11 @@ export interface GIPoint {
   gi: number;
 }
 
+export interface HourlyCaloriePoint {
+  hour: string; // e.g., "00:00", "01:00"
+  calories: number;
+}
+
 export interface SymptomFrequency {
   name: string;
   value: number;

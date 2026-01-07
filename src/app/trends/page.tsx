@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
-import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
+import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, HourlyCaloriePoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ import DailyCaloriesTrendChart from '@/components/trends/DailyCaloriesTrendChart
 import LoggedSafetyTrendChart from '@/components/trends/LoggedSafetyTrendChart';
 import SymptomOccurrenceChart from '@/components/trends/SymptomOccurrenceChart';
 import GITrendChart from '@/components/trends/GITrendChart';
+import HourlyCaloriesChart from '@/components/trends/HourlyCaloriesChart';
 import WeightTrendChart from '@/components/trends/WeightTrendChart';
 import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
@@ -350,6 +351,41 @@ export default function TrendsPage() {
 
 
 
+
+  const hourlyCaloriesTrendData = useMemo<HourlyCaloriePoint[]>(() => {
+    const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
+    const hourlyCaloriesTotals: Record<number, { sum: number; count: number }> = {};
+
+    foodEntries.forEach(entry => {
+      if (entry.calories && entry.calories > 0) {
+        const hour = getHours(new Date(entry.timestamp));
+        if (!hourlyCaloriesTotals[hour]) {
+          hourlyCaloriesTotals[hour] = { sum: 0, count: 0 };
+        }
+        hourlyCaloriesTotals[hour].sum += entry.calories;
+        hourlyCaloriesTotals[hour].count += 1;
+      }
+    });
+
+    const result: HourlyCaloriePoint[] = [];
+    for (let i = 0; i < 24; i++) {
+      const data = hourlyCaloriesTotals[i];
+      // Note: We are calculating Average Calories per logged entry for that hour.
+      // Alternatively, it could be Sum of calories for that hour across all days (Total Volume per hour),
+      // OR Average Daily Calories for that hour (Total / Number of Days in Range).
+      // The user request says "y axis shows average calories consumed on that error. use Hourly Glycemic Index (GI) Trend for reference as it would follow the same logic for averaging".
+      // GI Trend averages the GI value of the food items.
+      // So here we should likely average the calories of the food items logged at that hour.
+      // i.e. "When I eat at 2pm, my meals average 500 calories".
+      result.push({
+        hour: format(new Date(0, 0, 0, i), 'HH:mm'),
+        calories: data ? Math.round(data.sum / data.count) : 0,
+      });
+    }
+    return result;
+  }, [filteredEntries]);
+
+
   const aggregateGenericByDay = <T extends { timestamp: Date }>(
     entries: T[],
     mapper: (date: string, itemsOnDate: T[]) => any
@@ -618,6 +654,15 @@ export default function TrendsPage() {
               </CardHeader>
               <CardContent>
                 {giTrendData.length > 0 ? <GITrendChart data={giTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No GI data available for this period.</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Hourly Average Calories</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hourlyCaloriesTrendData.length > 0 ? <HourlyCaloriesChart data={hourlyCaloriesTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No calorie data available for this period.</p>}
               </CardContent>
             </Card>
 

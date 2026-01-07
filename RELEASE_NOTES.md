@@ -1,4 +1,15 @@
 
+# Release Notes - GutHealth v3.9.19 (Hourly Calories Trend)
+
+**Release Date:** January 06, 2026
+**Version:** v3.9.19
+
+## 📈 New Features
+### Trends Dashboard
+- **Hourly Average Calories**: Added a new chart to visualize your average calorie intake by hour of the day. This helps you identify your eating patterns and potential snacking spikes.
+
+---
+
 # Release Notes - GutHealth v3.9.17 (Critical Permission Fix)
 
 **Release Date:** January 05, 2026
