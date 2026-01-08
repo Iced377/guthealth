@@ -78,6 +78,20 @@ export default function AIInsightsPage() {
     fetchUserProfileData();
   }, [authUser, authLoading]);
 
+
+  const calculateMaxFastingWindow = (logs: LoggedFoodItem[]): number => {
+    if (logs.length < 2) return 0;
+    // Sort ascending by time
+    const sortedLogs = [...logs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    let maxGapMs = 0;
+    for (let i = 0; i < sortedLogs.length - 1; i++) {
+      const gap = sortedLogs[i + 1].timestamp.getTime() - sortedLogs[i].timestamp.getTime();
+      if (gap > maxGapMs) maxGapMs = gap;
+    }
+    // Convert to hours with 1 decimal
+    return Math.round((maxGapMs / (1000 * 60 * 60)) * 10) / 10;
+  };
+
   const handleQuestionSubmit = async () => {
     if (!authUser) return;
 
@@ -105,7 +119,6 @@ export default function AIInsightsPage() {
         freeUserStartDate.setDate(now.getDate() - 7);
         foodLogQuery = query(timelineEntriesColRef, where('entryType', 'in', ['food', 'manual_macro']), where('timestamp', '>=', Timestamp.fromDate(freeUserStartDate)), orderBy('timestamp', 'desc'), limit(50));
         symptomLogQuery = query(timelineEntriesColRef, where('entryType', '==', 'symptom'), where('timestamp', '>=', Timestamp.fromDate(freeUserStartDate)), orderBy('timestamp', 'desc'), limit(20));
-        // Removed upgrade prompt toast
       }
 
       const [foodLogSnapshot, symptomLogSnapshot] = await Promise.all([
@@ -120,11 +133,12 @@ export default function AIInsightsPage() {
           timestamp = (data.timestamp as Timestamp).toDate();
         } else {
           console.warn(`Invalid or missing timestamp for food item ${d.id}, using current date as fallback.`);
-          timestamp = new Date(); // Fallback or consider filtering out
+          timestamp = new Date();
         }
         return { ...data, id: d.id, timestamp } as LoggedFoodItem;
-      }).filter(item => item.timestamp); // Filter out items where timestamp conversion might have failed if fallback wasn't desired
+      }).filter(item => item.timestamp);
 
+      const maxFastingWindowHours = calculateMaxFastingWindow(foodLogData);
 
       const symptomLogData: SymptomLog[] = symptomLogSnapshot.docs.map(d => {
         const data = d.data();
@@ -133,7 +147,7 @@ export default function AIInsightsPage() {
           timestamp = (data.timestamp as Timestamp).toDate();
         } else {
           console.warn(`Invalid or missing timestamp for symptom log ${d.id}, using current date as fallback.`);
-          timestamp = new Date(); // Fallback or consider filtering out
+          timestamp = new Date();
         }
         return { ...data, id: d.id, timestamp } as SymptomLog;
       }).filter(item => item.timestamp);
@@ -167,7 +181,7 @@ export default function AIInsightsPage() {
           severity: symptomEntry.severity ?? undefined,
           notes: symptomEntry.notes ?? undefined,
           timestamp: symptomEntry.timestamp.toISOString(),
-          linkedFoodItemIds: finalLinkedIds.length > 0 ? finalLinkedIds : undefined, // Send undefined if empty, to match .optional()
+          linkedFoodItemIds: finalLinkedIds.length > 0 ? finalLinkedIds : undefined,
         };
       });
 
@@ -184,7 +198,8 @@ export default function AIInsightsPage() {
           activityLevel: userProfile.profile?.activityLevel,
           tdee: userProfile.profile?.tdee,
           bmr: userProfile.profile?.bmr,
-          currentWeight: userProfile.profile?.weight
+          currentWeight: userProfile.profile?.weight,
+          maxFastingWindowHours: maxFastingWindowHours
         } : undefined,
       };
 
@@ -199,6 +214,7 @@ export default function AIInsightsPage() {
       setIsGeneratingInsight(false);
     }
   };
+
 
 
   const handleDiscardInsight = () => {

@@ -57,6 +57,7 @@ const UserProfileSchemaForAI = z.object({
   tdee: z.number().optional(),
   bmr: z.number().optional(),
   currentWeight: z.number().optional(),
+  maxFastingWindowHours: z.number().optional().describe("The calculated maximum time in hours between two consecutive meals in the provided logs."),
 }).optional();
 
 
@@ -96,6 +97,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **Activity Level:** {{#if userProfile.activityLevel}}{{userProfile.activityLevel}}{{else}}Not specified{{/if}}
 - **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
 - **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
+- **Max Recorded Fasting Window:** {{#if userProfile.maxFastingWindowHours}}{{userProfile.maxFastingWindowHours}} hours{{else}}N/A{{/if}}
 
 **User's Question:**
 "{{{userQuestion}}}"
@@ -123,7 +125,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
     *   **Weight Loss (\`lose_fat\`):** Analyze if their caloric intake and food choices align with a deficit. Are they eating nutrient-dense foods that keep them full? Are there hidden calories?
     *   **Muscle Gain (\`gain_muscle\`):** Check if protein intake is sufficient and if they are eating enough overall to fuel growth.
     *   **Maintenance (\`maintain\`):** specific patterns that might cause fluctuations.
-    *   *Intermittent Fasting (if applicable/implied):* Check the timestamps of their first and last meals. Are they fasting for enough time? (e.g., 16:8 window).
+    *   *Intermittent Fasting (if applicable/implied):* Check the 'Max Recorded Fasting Window'. If the user does Intermittent Fasting (e.g. check Dietary Preferences), assess if their {{#if userProfile.maxFastingWindowHours}}{{userProfile.maxFastingWindowHours}}{{else}}current{{/if}} hour window meets their goal (e.g. 16+ hours).
 
 2.  **Evaluate Daily Habits & Trends:**
     *   Look at the *trends* in their logs. Are they consistent? Do they skip meals? Do they binge at night?
