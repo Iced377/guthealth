@@ -22,8 +22,8 @@ export default function BasicInfo({ data, updateData, onNext }: BasicInfoProps) 
         <Card className="w-full max-w-lg mx-auto shadow-xl border-none">
             <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-2">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                        <User className="w-6 h-6 text-indigo-600" />
+                    <div className="p-2 bg-[#2aac6b]/10 rounded-lg">
+                        <User className="w-6 h-6 text-[#2aac6b]" />
                     </div>
                     Base Profile
                 </CardTitle>
@@ -45,7 +45,7 @@ export default function BasicInfo({ data, updateData, onNext }: BasicInfoProps) 
                             <RadioGroupItem value="male" id="male" className="peer sr-only" />
                             <Label
                                 htmlFor="male"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-indigo-600 [&:has([data-state=checked])]:border-indigo-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-[#2aac6b] [&:has([data-state=checked])]:border-[#2aac6b]"
                             >
                                 <span className="text-xl mb-1">👨</span>
                                 Male
@@ -55,7 +55,7 @@ export default function BasicInfo({ data, updateData, onNext }: BasicInfoProps) 
                             <RadioGroupItem value="female" id="female" className="peer sr-only" />
                             <Label
                                 htmlFor="female"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-indigo-600 [&:has([data-state=checked])]:border-indigo-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-[#2aac6b] [&:has([data-state=checked])]:border-[#2aac6b]"
                             >
                                 <span className="text-xl mb-1">👩</span>
                                 Female
@@ -103,7 +103,7 @@ export default function BasicInfo({ data, updateData, onNext }: BasicInfoProps) 
                 </div>
 
                 <Button
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg py-6 mt-4"
+                    className="w-full text-lg py-6 mt-4"
                     onClick={onNext}
                     disabled={!isValid}
                 >

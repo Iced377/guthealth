@@ -32,8 +32,8 @@ export default function SymptomsStep({ data, updateData, onBack, onNext }: Sympt
         <Card className="w-full max-w-2xl mx-auto shadow-xl border-none">
             <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-2">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                        <Stethoscope className="w-6 h-6 text-orange-600" />
+                    <div className="p-2 bg-[#2aac6b]/10 rounded-lg">
+                        <Stethoscope className="w-6 h-6 text-[#2aac6b]" />
                     </div>
                     Symptom Control
                 </CardTitle>
@@ -49,14 +49,14 @@ export default function SymptomsStep({ data, updateData, onBack, onNext }: Sympt
                         return (
                             <div
                                 key={symptom.id}
-                                className={`flex items-start space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${isSelected ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-100 hover:bg-gray-50'}`}
+                                className={`flex items-start space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${isSelected ? 'bg-[#2aac6b]/5 border-[#2aac6b]' : 'bg-white border-gray-100 hover:bg-gray-50'}`}
                                 onClick={() => handleToggle(symptom.id)}
                             >
                                 <Checkbox
                                     id={symptom.id}
                                     checked={isSelected}
                                     onCheckedChange={() => handleToggle(symptom.id)}
-                                    className="mt-1 data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
+                                    className="mt-1 data-[state=checked]:bg-[#2aac6b] data-[state=checked]:border-[#2aac6b]"
                                 />
                                 <div className="space-y-1">
                                     <Label
@@ -76,7 +76,7 @@ export default function SymptomsStep({ data, updateData, onBack, onNext }: Sympt
                     <Button variant="outline" onClick={onBack} className="w-1/3">
                         <ArrowLeft className="mr-2 w-4 h-4" /> Back
                     </Button>
-                    <Button className="w-2/3 bg-indigo-600 hover:bg-indigo-700" onClick={onNext}>
+                    <Button className="w-2/3" onClick={onNext}>
                         Analyze & Calculate <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                 </div>

@@ -1,5 +1,18 @@
 
 
+# Release Notes - GutHealth v3.10.2 (UI Refinements)
+
+**Release Date:** January 08, 2026
+**Version:** v3.10.2
+
+## 💅 UI/UX Polish
+### User Center
+- **Cleaner Interface**: Simplified the profile section headers by removing icons for a cleaner, more minimal look.
+- **Improved Navigation**: Moved the "Edit Profile" button to the top header to clearly indicate it applies to your entire profile.
+- **Consistent Icons**: Ensured all icons in the Setup Wizard and User Center use the consistent green theme color.
+
+---
+
 # Release Notes - GutHealth v3.10.1 (Major Feature Release)
 
 **Release Date:** January 07, 2026

@@ -49,8 +49,8 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
         <Card className="w-full max-w-2xl mx-auto shadow-xl border-none">
             <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-2">
-                    <div className="p-2 bg-pink-100 rounded-lg">
-                        <Target className="w-6 h-6 text-pink-600" />
+                    <div className="p-2 bg-[#2aac6b]/10 rounded-lg">
+                        <Target className="w-6 h-6 text-[#2aac6b]" />
                     </div>
                     Your Goals & Activity
                 </CardTitle>
@@ -71,8 +71,8 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
                                 className={cn(
                                     "cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md",
                                     data.goal === g.id
-                                        ? "border-pink-500 bg-pink-50 ring-1 ring-pink-500"
-                                        : "border-gray-200 bg-white hover:border-pink-200"
+                                        ? "border-[#2aac6b] bg-[#2aac6b]/5 ring-1 ring-[#2aac6b]"
+                                        : "border-gray-200 bg-white hover:border-[#2aac6b]/30"
                                 )}
                             >
                                 <div className="text-3xl mb-2">{g.icon}</div>
@@ -97,7 +97,7 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
                                 className={cn(
                                     "cursor-pointer border rounded-lg p-3 transition-colors flex flex-col",
                                     data.activityLevel === a.id
-                                        ? "border-indigo-500 bg-indigo-50 relative"
+                                        ? "border-[#2aac6b] bg-[#2aac6b]/5 relative"
                                         : "border-gray-200 hover:bg-gray-50"
                                 )}
                             >
@@ -112,7 +112,7 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
                     <Button variant="outline" onClick={onBack} className="w-1/3">
                         <ArrowLeft className="mr-2 w-4 h-4" /> Back
                     </Button>
-                    <Button className="w-2/3 bg-indigo-600 hover:bg-indigo-700" onClick={onNext}>
+                    <Button className="w-2/3" onClick={onNext}>
                         Next Step <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                 </div>

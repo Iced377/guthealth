@@ -151,9 +151,36 @@ export default function SetupWizard() {
         })
     };
 
+    // Theme Logic (Only for Basic Info step)
+    const getThemeGradient = () => {
+        if (currentStep === 'basic-info') {
+            if (formData.gender === 'male') return 'from-blue-100 to-sky-100';
+            if (formData.gender === 'female') return 'from-pink-100 to-rose-100';
+        }
+        return 'from-indigo-50 to-purple-50'; // Default
+    };
+
+    // Progress Logic
+    const steps: WizardStep[] = ['intro', 'basic-info', 'goals', 'symptoms', 'results'];
+    const currentStepIndex = steps.indexOf(currentStep);
+    const progress = Math.min(100, Math.max(0, ((currentStepIndex) / (steps.length - 1)) * 100));
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4 overflow-hidden">
-            <div className="w-full max-w-4xl relative">
+        <div className={`min-h-screen bg-gradient-to-br ${getThemeGradient()} transition-colors duration-700 ease-in-out flex flex-col items-center justify-center p-4 overflow-hidden`}>
+
+            {/* Progress Bar */}
+            {currentStep !== 'intro' && (
+                <div className="absolute top-0 left-0 w-full h-2 bg-black/5 z-50">
+                    <motion.div
+                        className="h-full bg-primary/80"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                    />
+                </div>
+            )}
+
+            <div className="w-full max-w-4xl relative mt-8">
                 <AnimatePresence initial={false} custom={direction} mode="wait">
                     {currentStep === 'intro' && (
                         <IntroVideo key="intro" onComplete={() => nextStep('basic-info')} />

@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.10.1";
+const APP_VERSION = "Beta 3.10.2";
 
 
 interface ReleaseNote {
@@ -62,6 +62,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.10.2",
+    date: "Jan 08, 2026",
+    title: "UI Refinements & Polish",
+    description: [
+      "User Center: Simplified section headers by removing icons for a cleaner look.",
+      "Navigation: Moved 'Edit Profile' button to the top for better visibility.",
+      "Theme: Standardized icon colors across the User Center and Setup Wizard."
+    ]
+  },
   {
     version: "Beta 3.10.1",
     date: "Jan 07, 2026",

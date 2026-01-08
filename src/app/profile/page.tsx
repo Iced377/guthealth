@@ -241,18 +241,127 @@ export default function ProfilePage() {
             <Navbar />
 
             <main className="max-w-3xl mx-auto px-4 py-8 pt-24 space-y-8">
-                <div className="flex items-center space-x-4 mb-6">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-3xl font-bold text-foreground">User Center</h1>
+                {/* Header with Edit Button */}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <h1 className="text-3xl font-bold text-foreground">User Center</h1>
+                    </div>
+
+                    {/* Edit Profile Dialog */}
+                    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm" className="bg-[#2aac6b] hover:bg-[#25965e] text-white shadow-sm">
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit Profile
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Edit Profile Data</DialogTitle>
+                                <DialogDescription>
+                                    Updating these values will recalculate your daily calorie and macro targets.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2 space-y-2">
+                                        <Label htmlFor="edit-dob">Date of Birth</Label>
+                                        <Input
+                                            id="edit-dob"
+                                            type="date"
+                                            value={dob} // Using state 'dob' directly for now as it's synced on open
+                                            onChange={(e) => setDob(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="height">Height (cm)</Label>
+                                        <Input
+                                            id="height"
+                                            type="number"
+                                            value={editForm.height}
+                                            onChange={(e) => setEditForm({ ...editForm, height: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="weight">Weight (kg)</Label>
+                                        <Input
+                                            id="weight"
+                                            type="number"
+                                            value={editForm.weight}
+                                            onChange={(e) => setEditForm({ ...editForm, weight: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="gender">Gender</Label>
+                                    <Select
+                                        value={editForm.gender}
+                                        onValueChange={(val: 'male' | 'female') => setEditForm({ ...editForm, gender: val })}
+                                    >
+                                        <SelectTrigger id="gender">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="female">Female</SelectItem>
+                                            <SelectItem value="male">Male</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="activity">Activity Level</Label>
+                                    <Select
+                                        value={editForm.activityLevel}
+                                        onValueChange={(val: keyof typeof ACTIVITY_MULTIPLIERS) => setEditForm({ ...editForm, activityLevel: val })}
+                                    >
+                                        <SelectTrigger id="activity">
+                                            <SelectValue placeholder="Select activity level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="sedentary">Sedentary (Little/no exercise)</SelectItem>
+                                            <SelectItem value="lightly_active">Lightly Active (1-3 days/week)</SelectItem>
+                                            <SelectItem value="moderately_active">Moderately Active (3-5 days/week)</SelectItem>
+                                            <SelectItem value="very_active">Very Active (6-7 days/week)</SelectItem>
+                                            <SelectItem value="super_active">Super Active (Physical job/training)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="goal">Primary Goal</Label>
+                                    <Select
+                                        value={editForm.goal}
+                                        onValueChange={(val: keyof typeof GOAL_ADJUSTMENTS) => setEditForm({ ...editForm, goal: val })}
+                                    >
+                                        <SelectTrigger id="goal">
+                                            <SelectValue placeholder="Select goal" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="maintain">Maintain Weight</SelectItem>
+                                            <SelectItem value="lose_fat">Lose Fat</SelectItem>
+                                            <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                                <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+                                    {isSavingProfile ? "Recalculating..." : "Save Changes"}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 {/* Personal Information */}
                 <Card className="border-border shadow-sm bg-card text-card-foreground">
                     <CardHeader>
                         <CardTitle className="flex items-center text-xl">
-                            <User className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             Personal Information
                         </CardTitle>
                         <CardDescription>Manage your personal details for better health insights.</CardDescription>
@@ -261,33 +370,27 @@ export default function ProfilePage() {
                         <div className="space-y-2">
                             <Label htmlFor="dob">Date of Birth</Label>
                             <div className="flex gap-2">
+                                {/* DOB Input moved to Edit Dialog, display only here or just remove save button? 
+                                       User said: "remove the save button and make the birthday update follow the same edit button as the rest"
+                                       So we should just display it here read-only or remove this card if it only has DOB?
+                                       The card is "Personal Information". Detailed req: "remove the save button and make the birthday update follow the same edit button".
+                                       I will make this input read-only/disabled and remove the save button. The editing will happen in the main 'Edit' dialog.
+                                    */}
                                 <div className="relative flex-1">
                                     <Input
                                         type="date"
                                         id="dob"
                                         value={dob}
-                                        onChange={(e) => setDob(e.target.value)}
-                                        className="pl-10"
+                                        disabled
+                                        className="pl-10 bg-muted/20"
                                     />
                                     <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                 </div>
-                                <Button
-                                    onClick={handleSaveDob}
-                                    disabled={isSavingDob}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                                >
-                                    {isSavingDob ? (
-                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                                    ) : (
-                                        <>
-                                            <Save className="mr-2 h-4 w-4" />
-                                            Save
-                                        </>
-                                    )}
-                                </Button>
+                                {/* Save Button Removed */}
                             </div>
-                            <p className="text-xs text-muted-foreground">Used to calculate age-related health metrics.</p>
+                            <p className="text-xs text-muted-foreground">To update, click the "Edit" button above.</p>
                         </div>
+                        <p className="text-xs text-muted-foreground">Used to calculate age-related health metrics.</p>
                     </CardContent>
                 </Card>
 
@@ -298,128 +401,32 @@ export default function ProfilePage() {
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="flex items-center text-xl">
-                                        <Activity className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                                         Your Profile
                                     </CardTitle>
                                     <CardDescription>Measured and calculated from your setup data.</CardDescription>
                                 </div>
-                                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button size="sm" variant="outline">
-                                            <Pencil className="h-4 w-4 mr-2" />
-                                            Edit
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Edit Profile Data</DialogTitle>
-                                            <DialogDescription>
-                                                Updating these values will recalculate your daily calorie and macro targets.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="grid gap-4 py-4">
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="height">Height (cm)</Label>
-                                                    <Input
-                                                        id="height"
-                                                        type="number"
-                                                        value={editForm.height}
-                                                        onChange={(e) => setEditForm({ ...editForm, height: Number(e.target.value) })}
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="weight">Weight (kg)</Label>
-                                                    <Input
-                                                        id="weight"
-                                                        type="number"
-                                                        value={editForm.weight}
-                                                        onChange={(e) => setEditForm({ ...editForm, weight: Number(e.target.value) })}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="gender">Gender</Label>
-                                                <Select
-                                                    value={editForm.gender}
-                                                    onValueChange={(val: 'male' | 'female') => setEditForm({ ...editForm, gender: val })}
-                                                >
-                                                    <SelectTrigger id="gender">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="female">Female</SelectItem>
-                                                        <SelectItem value="male">Male</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="activity">Activity Level</Label>
-                                                <Select
-                                                    value={editForm.activityLevel}
-                                                    onValueChange={(val: keyof typeof ACTIVITY_MULTIPLIERS) => setEditForm({ ...editForm, activityLevel: val })}
-                                                >
-                                                    <SelectTrigger id="activity">
-                                                        <SelectValue placeholder="Select activity level" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="sedentary">Sedentary (Little/no exercise)</SelectItem>
-                                                        <SelectItem value="lightly_active">Lightly Active (1-3 days/week)</SelectItem>
-                                                        <SelectItem value="moderately_active">Moderately Active (3-5 days/week)</SelectItem>
-                                                        <SelectItem value="very_active">Very Active (6-7 days/week)</SelectItem>
-                                                        <SelectItem value="super_active">Super Active (Physical job/training)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="goal">Primary Goal</Label>
-                                                <Select
-                                                    value={editForm.goal}
-                                                    onValueChange={(val: keyof typeof GOAL_ADJUSTMENTS) => setEditForm({ ...editForm, goal: val })}
-                                                >
-                                                    <SelectTrigger id="goal">
-                                                        <SelectValue placeholder="Select goal" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="maintain">Maintain Weight</SelectItem>
-                                                        <SelectItem value="lose_fat">Lose Fat</SelectItem>
-                                                        <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                                            <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
-                                                {isSavingProfile ? "Recalculating..." : "Save Changes"}
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
+                                {/* Edit Button Moved to Top */}
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 {/* Biometrics Grid */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
-                                        <Ruler className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <Ruler className="h-5 w-5 text-[#2aac6b] mb-2" />
                                         <span className="text-sm text-muted-foreground">Height</span>
                                         <span className="font-semibold text-foreground">{profileData.height} cm</span>
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
-                                        <Scale className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <Scale className="h-5 w-5 text-[#2aac6b] mb-2" />
                                         <span className="text-sm text-muted-foreground">Weight</span>
                                         <span className="font-semibold text-foreground">{profileData.weight} kg</span>
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center capitalize">
-                                        <User className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <User className="h-5 w-5 text-[#2aac6b] mb-2" />
                                         <span className="text-sm text-muted-foreground">Gender</span>
                                         <span className="font-semibold text-foreground">{profileData.gender}</span>
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
-                                        <Zap className="h-5 w-5 text-indigo-500 mb-2" />
+                                        <Zap className="h-5 w-5 text-[#2aac6b] mb-2" />
                                         <span className="text-sm text-muted-foreground">Activity</span>
                                         <span className="font-semibold capitalize text-foreground">{profileData.activityLevel.replace('_', ' ')}</span>
                                     </div>
@@ -430,7 +437,6 @@ export default function ProfilePage() {
                         <Card className="border-border shadow-sm bg-card text-card-foreground">
                             <CardHeader>
                                 <CardTitle className="flex items-center text-xl">
-                                    <Target className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                                     Nutrition Targets
                                 </CardTitle>
                                 <CardDescription>Personalized goals based on your profile.</CardDescription>
@@ -475,17 +481,17 @@ export default function ProfilePage() {
                                         <Utensils className="h-4 w-4 mr-2" /> Daily Macro Targets
                                     </h3>
                                     <div className="grid grid-cols-3 gap-4">
-                                        <div className="bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-lg text-center">
-                                            <span className="block text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">Protein</span>
-                                            <span className="block text-xl font-bold text-indigo-900 dark:text-indigo-100">{profileData.macros.protein}g</span>
+                                        <div className="bg-red-50 dark:bg-red-950/40 p-3 rounded-lg text-center">
+                                            <span className="block text-xs text-red-600 dark:text-red-400 font-semibold uppercase tracking-wider">Protein</span>
+                                            <span className="block text-xl font-bold text-red-900 dark:text-red-100">{profileData.macros.protein}g</span>
                                         </div>
-                                        <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-lg text-center">
-                                            <span className="block text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">Carbs</span>
-                                            <span className="block text-xl font-bold text-emerald-900 dark:text-emerald-100">{profileData.macros.carbs}g</span>
+                                        <div className="bg-yellow-50 dark:bg-yellow-950/40 p-3 rounded-lg text-center">
+                                            <span className="block text-xs text-yellow-600 dark:text-yellow-400 font-semibold uppercase tracking-wider">Carbs</span>
+                                            <span className="block text-xl font-bold text-yellow-900 dark:text-yellow-100">{profileData.macros.carbs}g</span>
                                         </div>
-                                        <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-lg text-center">
-                                            <span className="block text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Fats</span>
-                                            <span className="block text-xl font-bold text-amber-900 dark:text-amber-100">{profileData.macros.fats}g</span>
+                                        <div className="bg-blue-50 dark:bg-blue-950/40 p-3 rounded-lg text-center">
+                                            <span className="block text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">Fats</span>
+                                            <span className="block text-xl font-bold text-blue-900 dark:text-blue-100">{profileData.macros.fats}g</span>
                                         </div>
                                     </div>
                                 </div>
@@ -496,7 +502,9 @@ export default function ProfilePage() {
                         {profileData.symptoms.length > 0 && (
                             <Card className="border-border shadow-sm bg-card text-card-foreground">
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Baseline Symptoms</CardTitle>
+                                    <CardTitle className=" text-xl flex items-center">
+                                        Baseline Symptoms
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-wrap gap-2">
@@ -510,13 +518,13 @@ export default function ProfilePage() {
                             </Card>
                         )}
                     </>
-                )}
+                )
+                }
 
                 {/* Connected Apps */}
                 <Card className="border-border shadow-sm bg-card text-card-foreground">
                     <CardHeader>
                         <CardTitle className="flex items-center text-xl">
-                            <Activity className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             Connected Apps
                         </CardTitle>
                         <CardDescription>Manage your integrations with other health platforms.</CardDescription>
@@ -558,7 +566,7 @@ export default function ProfilePage() {
                         <LogOut className="mr-2 h-4 w-4" /> Sign Out
                     </Button>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

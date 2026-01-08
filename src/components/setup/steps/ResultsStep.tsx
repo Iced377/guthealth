@@ -27,7 +27,7 @@ export default function ResultsStep({ results, onBack, onFinish, isSaving }: Res
         hidden: { width: 0 },
         visible: (custom: number) => ({
             width: `${custom}%`,
-            transition: { duration: 1, ease: "easeOut", delay: 0.2 }
+            transition: { duration: 1, delay: 0.2 }
         })
     };
 
@@ -49,9 +49,9 @@ export default function ResultsStep({ results, onBack, onFinish, isSaving }: Res
                 <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                    className="w-16 h-16 bg-[#2aac6b]/10 rounded-full flex items-center justify-center mx-auto mb-4"
                 >
-                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    <CheckCircle2 className="w-8 h-8 text-[#2aac6b]" />
                 </motion.div>
                 <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
                     Your Personalized Plan
@@ -152,7 +152,7 @@ export default function ResultsStep({ results, onBack, onFinish, isSaving }: Res
                         Adjust Inputs
                     </Button>
                     <Button
-                        className="w-2/3 bg-green-600 hover:bg-green-700 text-lg shadow-lg shadow-green-200"
+                        className="w-2/3 text-lg"
                         onClick={onFinish}
                         disabled={isSaving}
                     >
