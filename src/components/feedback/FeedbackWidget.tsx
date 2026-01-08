@@ -47,8 +47,8 @@ export default function FeedbackWidget() {
       } catch (aiError) {
         console.error("AI feedback processing error:", aiError);
         toast({
-          title: "AI Analysis Skipped",
-          description: "Could not analyze feedback with AI, but your feedback will still be submitted.",
+          title: "Analysis Skipped",
+          description: "Could not analyze feedback, but your feedback will still be submitted.",
           variant: "default",
         });
       }

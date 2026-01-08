@@ -38,36 +38,36 @@ export default function LogPreviousMealDialog({
 
   const handleDateSelect = (date?: Date) => {
     setSelectedDate(date);
-    onDateSelect(date); 
+    onDateSelect(date);
   };
 
   const handleLogWithAI = () => {
     if (!selectedDate) {
-        alert("Please select a date first.");
-        return;
+      alert("Please select a date first.");
+      return;
     }
     onLogMethodSelect('AI');
-    onOpenChange(false); 
+    onOpenChange(false);
   };
 
   const handleLogManually = () => {
-     if (!selectedDate) {
-        alert("Please select a date first.");
-        return;
+    if (!selectedDate) {
+      alert("Please select a date first.");
+      return;
     }
     onLogMethodSelect('Manual');
-    onOpenChange(false); 
+    onOpenChange(false);
   };
 
   const handleLogWithPhoto = () => {
     if (!selectedDate) {
-        alert("Please select a date first.");
-        return;
+      alert("Please select a date first.");
+      return;
     }
     onLogMethodSelect('Photo');
-    onOpenChange(false); 
+    onOpenChange(false);
   };
-  
+
   const today = new Date();
 
   const cancelClasses = "w-full sm:w-auto"; // Simplified, variant="outline" will handle theme
@@ -75,10 +75,10 @@ export default function LogPreviousMealDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(openState) => {
-        // Do not reset selected date here.
-        // The parent component (page.tsx) handles resetting selectedLogDateForPreviousMeal
-        // when the *final* food logging dialog (SimplifiedAddFoodDialog, AddFoodItemDialog, etc.) closes.
-        onOpenChange(openState);
+      // Do not reset selected date here.
+      // The parent component (page.tsx) handles resetting selectedLogDateForPreviousMeal
+      // when the *final* food logging dialog (SimplifiedAddFoodDialog, AddFoodItemDialog, etc.) closes.
+      onOpenChange(openState);
     }}>
       <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
         <DialogHeader>
@@ -99,7 +99,7 @@ export default function LogPreviousMealDialog({
             disabled={(date) => date > today || date < new Date("2000-01-01")}
             initialFocus
           />
-           {selectedDate && (
+          {selectedDate && (
             <p className="mt-3 text-sm text-foreground">
               Selected date: <span className="font-semibold">{format(selectedDate, "PPP")}</span>
             </p>
@@ -114,10 +114,10 @@ export default function LogPreviousMealDialog({
           </DialogClose>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button onClick={handleLogWithAI} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/80" disabled={!selectedDate}>
-              <Brain className="mr-2 h-5 w-5" /> AI (Text)
+              <Brain className="mr-2 h-5 w-5" /> Auto (Text)
             </Button>
-             <Button onClick={handleLogWithPhoto} variant="secondary" className="w-full sm:w-auto" disabled={!selectedDate}>
-              <Camera className="mr-2 h-5 w-5" /> AI (Photo)
+            <Button onClick={handleLogWithPhoto} variant="secondary" className="w-full sm:w-auto" disabled={!selectedDate}>
+              <Camera className="mr-2 h-5 w-5" /> Auto (Photo)
             </Button>
             <Button onClick={handleLogManually} variant="secondary" className="w-full sm:w-auto" disabled={!selectedDate}>
               <Pencil className="mr-2 h-5 w-5" /> Manual

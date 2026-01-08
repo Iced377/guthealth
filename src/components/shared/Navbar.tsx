@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.10.6";
+const APP_VERSION = "Beta 4.0.0";
 
 
 interface ReleaseNote {
@@ -62,6 +62,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.0.0",
+    date: "Jan 08, 2026",
+    title: "Mobile Release & Native Feel",
+    description: [
+      "Mobile Launch: GutCheck is now fully optimized for the App Store and Google Play!",
+      "Experience: Implemented native gestures, removed tap delays, and optimized scrolling for a buttery smooth app feel.",
+      "Access: App users now have a streamlined login flow, skipping the web landing page."
+    ]
+  },
   {
     version: "Beta 3.10.6",
     date: "Jan 08, 2026",

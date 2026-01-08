@@ -1,5 +1,18 @@
 
 
+# Release Notes - GutHealth v4.0.0 (Mobile Release)
+
+**Release Date:** January 08, 2026
+**Version:** v4.0.0
+
+## 📱 Mobile Launch
+### App Store & Google Play Ready
+- **Native Experience**: GutCheck has been extensively optimized for mobile devices. Enjoy buttery smooth scrolling, instant tap responses, and a layout that fits perfectly in your hand.
+- **Smart Access**: If you're using the app, the login flow is now streamlined to skip the web introduction and get you straight to tracking.
+- **Visual Polish**: Adjustments to global styles ensure the app feels like a true native experience, respecting safe areas and notches on all modern devices.
+
+---
+
 # Release Notes - GutHealth v3.10.6 (Experience Polish)
 
 **Release Date:** January 08, 2026

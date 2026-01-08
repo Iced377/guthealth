@@ -271,8 +271,8 @@ export default function AdminFeedbackPage() {
                       <TableHead className="px-2 py-3 min-w-[150px] w-[15%]">User</TableHead>
                       <TableHead className="px-2 py-3 min-w-[110px] w-[10%]">User Category</TableHead>
                       <TableHead className="px-2 py-3 min-w-[250px] w-[25%]">Feedback</TableHead>
-                      <TableHead className="px-2 py-3 min-w-[200px] w-[20%]">AI Summary</TableHead>
-                      <TableHead className="px-2 py-3 min-w-[110px] w-[10%]">AI Category</TableHead>
+                      <TableHead className="px-2 py-3 min-w-[200px] w-[20%]">Auto Summary</TableHead>
+                      <TableHead className="px-2 py-3 min-w-[110px] w-[10%]">Auto Category</TableHead>
                       <TableHead className="px-2 py-3 min-w-[90px] w-[5%]">Status</TableHead>
                       <TableHead className="px-2 py-3 min-w-[100px] w-[5%]">Route</TableHead>
                     </TableRow>

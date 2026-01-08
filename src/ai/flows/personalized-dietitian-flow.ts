@@ -66,6 +66,13 @@ const PersonalizedDietitianInputSchema = z.object({
   foodLog: z.array(FoodItemSchemaForAI).describe("A chronological list of the user's logged food items (e.g., last 30-90 days)."),
   symptomLog: z.array(SymptomLogEntrySchemaForAI).describe("A chronological list of the user's logged symptoms (e.g., last 30-90 days)."),
   userProfile: UserProfileSchemaForAI.describe("Basic user profile information, including any marked safe foods."),
+  currentLocalTime: z.string().describe("The user's current local time string (e.g. '3:30 PM')."),
+  dailyTotals: z.object({
+    calories: z.number(),
+    protein: z.number(),
+    carbs: z.number(),
+    fat: z.number(),
+  }).describe("Pre-calculated totals for the current day to ensure accuracy."),
 });
 export type PersonalizedDietitianInput = z.infer<typeof PersonalizedDietitianInputSchema>;
 
@@ -92,12 +99,14 @@ const personalizedDietitianPrompt = ai.definePrompt({
 Your goal is to provide a highly personalized, empathetic, and actionable response based on the user's question, their specific health goals, and their daily logs.
 
 **User's Context:**
+- **Current Local Time:** {{{currentLocalTime}}}
 - **Goal:** {{#if userProfile.goal}}{{userProfile.goal}}{{else}}Not specified{{/if}}
 - **Current Weight:** {{#if userProfile.currentWeight}}{{userProfile.currentWeight}} kg{{else}}Not specified{{/if}}
 - **Activity Level:** {{#if userProfile.activityLevel}}{{userProfile.activityLevel}}{{else}}Not specified{{/if}}
 - **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
 - **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
 - **Max Recorded Fasting Window:** {{#if userProfile.maxFastingWindowHours}}{{userProfile.maxFastingWindowHours}} hours{{else}}N/A{{/if}}
+- **Today's Totals (Calculated):** Calories: {{dailyTotals.calories}}, Protein: {{dailyTotals.protein}}g, Carbs: {{dailyTotals.carbs}}g, Fat: {{dailyTotals.fat}}g
 
 **User's Question:**
 "{{{userQuestion}}}"
@@ -174,7 +183,7 @@ const personalizedDietitianFlow = ai.defineFlow(
       const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("model not found");
       let specificResponseMessage = `An error occurred while consulting the AI dietitian: ${error.message || 'Unknown AI error'}. Please try again later.`;
       if (modelNotFoundError) {
-        specificResponseMessage = "AI Dietitian analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
+        specificResponseMessage = "System analysis failed: The configured model is not accessible. Please check API key and project settings.";
       }
 
       return {

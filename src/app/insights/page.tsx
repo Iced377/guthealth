@@ -55,7 +55,7 @@ export default function AIInsightsPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!authUser) {
-      setError("Please log in to use the AI Dietitian.");
+      setError("Please log in to use the GutCheck Assistant.");
       return;
     }
 
@@ -185,6 +185,21 @@ export default function AIInsightsPage() {
         };
       });
 
+      // Calculate Daily Totals for "Today" (Local Time)
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const todaysLogs = foodLogData.filter(item => {
+        return item.timestamp >= startOfToday;
+      });
+
+      const dailyTotals = todaysLogs.reduce((acc, item) => ({
+        calories: acc.calories + (item.calories || 0),
+        protein: acc.protein + (item.protein || 0),
+        carbs: acc.carbs + (item.carbs || 0),
+        fat: acc.fat + (item.fat || 0),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
       const aiInput: PersonalizedDietitianInput = {
         userQuestion: PREDEFINED_QUESTION,
         foodLog: processedFoodLog,
@@ -201,6 +216,8 @@ export default function AIInsightsPage() {
           currentWeight: userProfile.profile?.weight,
           maxFastingWindowHours: maxFastingWindowHours
         } : undefined,
+        currentLocalTime: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+        dailyTotals: dailyTotals,
       };
 
       const result = await getPersonalizedDietitianInsight(aiInput);
@@ -219,7 +236,7 @@ export default function AIInsightsPage() {
 
   const handleDiscardInsight = () => {
     setCurrentAIResponse(null);
-    toast({ title: "Insight Discarded", description: "The AI response has been cleared." });
+    toast({ title: "Insight Discarded", description: "The response has been cleared." });
   };
 
 
@@ -229,7 +246,7 @@ export default function AIInsightsPage() {
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="ml-4 text-lg text-foreground">Loading AI Dietitian...</p>
+          <p className="ml-4 text-lg text-foreground">Loading GutCheck Assistant...</p>
         </div>
       </div>
     );
@@ -277,7 +294,7 @@ export default function AIInsightsPage() {
                 </CardHeader>
                 <CardContent className="px-4 py-2">
                   <p className="text-sm font-semibold text-green-600 dark:text-green-400 flex items-center">
-                    <Sparkles className="h-4 w-4 mr-2 opacity-80" /> AI Dietitian replied:
+                    <Sparkles className="h-4 w-4 mr-2 opacity-80" /> GutCheck Assistant replied:
                   </p>
                   <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
                     <ReactMarkdown>{currentAIResponse}</ReactMarkdown>
@@ -293,7 +310,7 @@ export default function AIInsightsPage() {
             {isGeneratingInsight && (
               <div className="flex items-center justify-center p-6 bg-muted/50 rounded-md">
                 <Loader2 className="h-6 w-6 animate-spin text-primary mr-3" />
-                <p className="text-foreground">Your AI Dietitian is analyzing your day...</p>
+                <p className="text-foreground">GutCheck Assistant is analyzing your day...</p>
               </div>
             )}
             {error && isGeneratingInsight && (

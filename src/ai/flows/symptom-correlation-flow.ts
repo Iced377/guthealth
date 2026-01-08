@@ -10,8 +10,8 @@
  * - SymptomCorrelationOutput - The return type for the flow.
  */
 
-import {ai} from '@/ai/genkit';
-import {z}from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 // Define input structures based on types/index.ts
 const LoggedFoodItemSchema = z.object({
@@ -71,12 +71,14 @@ const defaultErrorOutput: SymptomCorrelationOutput = {
 
 export async function getSymptomCorrelations(input: SymptomCorrelationInput): Promise<SymptomCorrelationOutput> {
   if (input.foodLog.length < 3 && input.symptomLog.length < 1) {
-    return { insights: [{
+    return {
+      insights: [{
         type: 'observation',
         title: 'More Data Needed',
         description: 'Log more meals and symptoms to receive personalized insights.',
         confidence: 'low',
-    }] };
+      }]
+    };
   }
   return symptomCorrelationFlow(input);
 }
@@ -84,8 +86,8 @@ export async function getSymptomCorrelations(input: SymptomCorrelationInput): Pr
 const symptomCorrelationPrompt = ai.definePrompt({
   name: 'symptomCorrelationPrompt',
   // Model is inherited from genkit.ts
-  input: {schema: SymptomCorrelationInputSchema},
-  output: {schema: SymptomCorrelationOutputSchema},
+  input: { schema: SymptomCorrelationInputSchema },
+  output: { schema: SymptomCorrelationOutputSchema },
   prompt: `You are an AI assistant for IBS pattern identification.
 Analyze the user's food and symptom logs to find correlations.
 Consider timing (1-4 hour onset typical), ingredients, portions, frequency, and overall FODMAP risk.
@@ -115,12 +117,12 @@ const symptomCorrelationFlow = ai.defineFlow(
   },
   async (input: SymptomCorrelationInput): Promise<SymptomCorrelationOutput> => {
     try {
-      const {output} = await symptomCorrelationPrompt(input);
+      const { output } = await symptomCorrelationPrompt(input);
       if (!output || !output.insights) {
-        console.warn('[SymptomCorrelationFlow] AI prompt returned no or invalid output. Falling back to default error response.');
+        console.warn('[SymptomCorrelationFlow] System computation returned no or invalid output. Falling back to default error response.');
         return {
           ...defaultErrorOutput,
-          insights: [{ ...defaultErrorOutput.insights[0], description: "Symptom correlation analysis did not produce a valid result."}]
+          insights: [{ ...defaultErrorOutput.insights[0], description: "Symptom correlation analysis did not produce a valid result." }]
         };
       }
       return output;
@@ -131,7 +133,7 @@ const symptomCorrelationFlow = ai.defineFlow(
       if (modelNotFoundError) {
         specificDescription = "Symptom correlation analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
       }
-      
+
       return {
         ...defaultErrorOutput,
         insights: [{ ...defaultErrorOutput.insights[0], description: specificDescription }]

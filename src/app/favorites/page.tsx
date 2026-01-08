@@ -63,7 +63,7 @@ export default function FavoritesPage() {
 
   const [isLoadingAi, setIsLoadingAi] = useState<Record<string, boolean>>({});
   const [editingItem, setEditingItem] = useState<LoggedFoodItem | null>(null);
-  
+
   // Dialog states
   const [isAddFoodDialogOpenState, setIsAddFoodDialogOpenState] = useState(false);
   const [isSimplifiedAddFoodDialogOpen, setIsSimplifiedAddFoodDialogOpen] = useState(false);
@@ -92,7 +92,7 @@ export default function FavoritesPage() {
           setUserProfile(userDocSnap.data() as UserProfile);
         } else {
           // Should not happen if user is authenticated, but handle defensively
-           setUserProfile({ uid: authUser.uid, email: authUser.email, displayName: authUser.displayName, safeFoods: [], premium: false });
+          setUserProfile({ uid: authUser.uid, email: authUser.email, displayName: authUser.displayName, safeFoods: [], premium: false });
         }
 
         const timelineEntriesColRef = collection(db, 'users', authUser.uid, 'timelineEntries');
@@ -133,14 +133,14 @@ export default function FavoritesPage() {
       await updateDoc(entryDocRef, { isFavorite: newIsFavorite });
       if (newIsFavorite) {
         // This case should not happen from favorites page, but handle defensively
-        toast({ title: "Added to Favorites", description: "Item marked as favorite."});
+        toast({ title: "Added to Favorites", description: "Item marked as favorite." });
       } else {
         setFavoriteItems(prev => prev.filter(item => item.id !== itemId));
-        toast({ title: "Removed from Favorites", description: "Item unmarked as favorite."});
+        toast({ title: "Removed from Favorites", description: "Item unmarked as favorite." });
       }
     } catch (error) {
       console.error("Error updating favorite status:", error);
-      toast({ title: "Error", description: "Could not update favorite status.", variant: "destructive"});
+      toast({ title: "Error", description: "Could not update favorite status.", variant: "destructive" });
     }
   };
 
@@ -156,19 +156,19 @@ export default function FavoritesPage() {
       toast({ title: "Error", description: "Could not remove favorite item.", variant: "destructive" });
     }
   };
-  
+
   const handleSetFoodFeedback = async (itemId: string, feedback: 'safe' | 'unsafe' | null) => {
     if (!authUser) return;
     const entryDocRef = doc(db, 'users', authUser.uid, 'timelineEntries', itemId);
     try {
-        await updateDoc(entryDocRef, { userFeedback: feedback });
-        setFavoriteItems(prevItems => 
-            prevItems.map(item => item.id === itemId ? { ...item, userFeedback: feedback } : item)
-        );
-        toast({ title: "Feedback Saved", description: `Food item marked as ${feedback || 'neutral'}.` });
+      await updateDoc(entryDocRef, { userFeedback: feedback });
+      setFavoriteItems(prevItems =>
+        prevItems.map(item => item.id === itemId ? { ...item, userFeedback: feedback } : item)
+      );
+      toast({ title: "Feedback Saved", description: `Food item marked as ${feedback || 'neutral'}.` });
     } catch (error) {
-        console.error("Error saving food feedback to Firestore:", error);
-        toast({ title: 'Feedback Error', description: 'Could not save feedback.', variant: 'destructive' });
+      console.error("Error saving food feedback to Firestore:", error);
+      toast({ title: 'Feedback Error', description: 'Could not save feedback.', variant: 'destructive' });
     }
   };
 
@@ -181,10 +181,10 @@ export default function FavoritesPage() {
       entryType: 'symptom' as 'symptom',
     };
     try {
-        await addDoc(collection(db, 'users', authUser.uid, 'timelineEntries'), newSymptomLog);
-        toast({ title: "Symptoms Logged", description: "Your symptoms have been recorded." });
+      await addDoc(collection(db, 'users', authUser.uid, 'timelineEntries'), newSymptomLog);
+      toast({ title: "Symptoms Logged", description: "Your symptoms have been recorded." });
     } catch (error: any) {
-        toast({ title: "Symptom Log Error", description: "Could not save symptoms.", variant: "destructive" });
+      toast({ title: "Symptom Log Error", description: "Could not save symptoms.", variant: "destructive" });
     }
     setIsSymptomLogDialogOpen(false);
   };
@@ -202,12 +202,12 @@ export default function FavoritesPage() {
     if (itemToEdit.entryType === 'manual_macro') {
       setIsAddManualMacroDialogOpen(true);
     } else if (itemToEdit.entryType === 'food') {
-      const isAIProcessed = itemToEdit.sourceDescription && 
-                           (itemToEdit.sourceDescription !== "Manually logged" && 
-                            itemToEdit.sourceDescription !== "Manually logged (analysis failed)");
+      const isAIProcessed = itemToEdit.sourceDescription &&
+        (itemToEdit.sourceDescription !== "Manually logged" &&
+          itemToEdit.sourceDescription !== "Manually logged (analysis failed)");
       if (isAIProcessed || itemToEdit.sourceDescription?.startsWith("Identified by photo")) {
         setIsSimplifiedAddFoodDialogOpen(true);
-      } else { 
+      } else {
         setIsAddFoodDialogOpenState(true);
       }
     }
@@ -243,7 +243,7 @@ export default function FavoritesPage() {
         carbs: fodmapAnalysis?.carbs ?? null,
         fat: fodmapAnalysis?.fat ?? null,
         entryType: 'food',
-        macrosOverridden: false, 
+        macrosOverridden: false,
         originalName: foodItemData.name,
         sourceDescription: "Manually logged",
       };
@@ -273,13 +273,13 @@ export default function FavoritesPage() {
       const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(mealDescriptionOutput.primaryFoodItemForAnalysis);
       let isSimilar = false;
       if (userProfile?.safeFoods && userProfile.safeFoods.length > 0) {
-         const similarityOutput = await isSimilarToSafeFoods({
+        const similarityOutput = await isSimilarToSafeFoods({
           currentFoodItem: { name: mealDescriptionOutput.primaryFoodItemForAnalysis, portionSize: mealDescriptionOutput.estimatedPortionSize, portionUnit: mealDescriptionOutput.estimatedPortionUnit, fodmapProfile: itemFodmapProfileForSimilarity },
           userSafeFoodItems: userProfile.safeFoods.map(sf => ({ ...sf, fodmapProfile: sf.fodmapProfile! })),
         });
         isSimilar = similarityOutput?.isSimilar ?? false;
       }
-      
+
       const updatedFoodItem: LoggedFoodItem = {
         ...editingItem,
         name: mealDescriptionOutput.wittyName,
@@ -298,20 +298,20 @@ export default function FavoritesPage() {
         fat: userDidOverrideMacros ? formData.fat : (fodmapAnalysis?.fat ?? null),
         macrosOverridden: userDidOverrideMacros,
       };
-      
+
       const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', currentItemId);
       await updateDoc(docRefPath, { ...updatedFoodItem, timestamp: Timestamp.fromDate(logTimestamp) });
       setFavoriteItems(prev => prev.map(item => item.id === currentItemId ? updatedFoodItem : item));
-      toast({ title: "Favorite Updated", description: `${updatedFoodItem.name} updated with new AI insights.` });
+      toast({ title: "Favorite Updated", description: `${updatedFoodItem.name} updated with new insights.` });
       setIsSimplifiedAddFoodDialogOpen(false);
       setEditingItem(null);
     } catch (error) {
-      toast({ title: 'Error Updating Favorite', description: 'Could not update meal via AI.', variant: 'destructive' });
+      toast({ title: 'Error Updating Favorite', description: 'Could not update meal via system.', variant: 'destructive' });
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
     }
   };
-  
+
   const handleSubmitManualMacroEntry = async (entryData: Omit<LoggedFoodItem, 'id' | 'timestamp' | 'entryType' | 'ingredients' | 'portionSize' | 'portionUnit' | 'fodmapData' | 'isSimilarToSafe' | 'userFodmapProfile' | 'sourceDescription' | 'userFeedback' | 'isFavorite'> & { entryType: 'manual_macro' | 'food' }, newTimestamp?: Date) => {
     if (!authUser || !editingItem) return;
     const currentItemId = editingItem.id;
@@ -327,18 +327,18 @@ export default function FavoritesPage() {
 
     const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', currentItemId);
     try {
-        await updateDoc(docRefPath, { ...updatedEntry, timestamp: Timestamp.fromDate(logTimestamp) });
-        setFavoriteItems(prev => prev.map(item => item.id === currentItemId ? updatedEntry : item));
-        toast({ title: "Manual Macros Updated", description: `${updatedEntry.name} updated.` });
-        setIsAddManualMacroDialogOpen(false);
-        setEditingItem(null);
+      await updateDoc(docRefPath, { ...updatedEntry, timestamp: Timestamp.fromDate(logTimestamp) });
+      setFavoriteItems(prev => prev.map(item => item.id === currentItemId ? updatedEntry : item));
+      toast({ title: "Manual Macros Updated", description: `${updatedEntry.name} updated.` });
+      setIsAddManualMacroDialogOpen(false);
+      setEditingItem(null);
     } catch (error) {
-        toast({ title: "Save Error", description: 'Could not update manual macro entry.', variant: "destructive" });
+      toast({ title: "Save Error", description: 'Could not update manual macro entry.', variant: "destructive" });
     }
   };
 
   const handleRepeatMeal = async (itemToRepeat: LoggedFoodItem) => {
-    if(!authUser || !userProfile) return;
+    if (!authUser || !userProfile) return;
     const newItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
     const newTimestamp = new Date();
@@ -353,14 +353,14 @@ export default function FavoritesPage() {
       const baseRepetitionData = {
         id: newItemId,
         timestamp: newTimestamp,
-        isSimilarToSafe: false, 
-        userFodmapProfile: null, 
+        isSimilarToSafe: false,
+        userFodmapProfile: null,
         entryType: 'food' as 'food',
-        userFeedback: null, 
+        userFeedback: null,
         macrosOverridden: itemToRepeat.macrosOverridden ?? false,
         isFavorite: false, // New repeated meals are not favorited by default
       };
-      
+
       if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo") && itemToRepeat.sourceDescription !== "Manually logged" && itemToRepeat.sourceDescription !== "Manually logged (analysis failed)") {
         mealDescriptionOutput = await processMealDescription({ mealDescription: itemToRepeat.sourceDescription });
         fodmapAnalysis = await analyzeFoodItem({ foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis, ingredients: mealDescriptionOutput.consolidatedIngredients, portionSize: mealDescriptionOutput.estimatedPortionSize, portionUnit: mealDescriptionOutput.estimatedPortionUnit });
@@ -372,7 +372,7 @@ export default function FavoritesPage() {
           });
         }
         processedFoodItem = { ...baseRepetitionData, name: mealDescriptionOutput.wittyName, originalName: mealDescriptionOutput.primaryFoodItemForAnalysis, ingredients: mealDescriptionOutput.consolidatedIngredients, portionSize: mealDescriptionOutput.estimatedPortionSize, portionUnit: mealDescriptionOutput.estimatedPortionUnit, sourceDescription: itemToRepeat.sourceDescription, fodmapData: fodmapAnalysis ?? null, isSimilarToSafe: similarityOutput?.isSimilar ?? false, userFodmapProfile: itemFodmapProfileForSimilarity, calories: (itemToRepeat.macrosOverridden ? itemToRepeat.calories : fodmapAnalysis?.calories) ?? null, protein: (itemToRepeat.macrosOverridden ? itemToRepeat.protein : fodmapAnalysis?.protein) ?? null, carbs: (itemToRepeat.macrosOverridden ? itemToRepeat.carbs : fodmapAnalysis?.carbs) ?? null, fat: (itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat) ?? null };
-      } else { 
+      } else {
         fodmapAnalysis = await analyzeFoodItem({ foodItem: itemToRepeat.originalName || itemToRepeat.name, ingredients: itemToRepeat.ingredients, portionSize: itemToRepeat.portionSize, portionUnit: itemToRepeat.portionUnit });
         const itemFodmapProfileForSimilarity: FoodFODMAPProfile = fodmapAnalysis?.detailedFodmapProfile ?? generateFallbackFodmapProfile(itemToRepeat.originalName || itemToRepeat.name);
         if (userProfile.safeFoods && userProfile.safeFoods.length > 0) {
@@ -403,7 +403,7 @@ export default function FavoritesPage() {
   if (error) {
     return <FavoritesError error={{ name: "FetchError", message: error, digest: undefined }} reset={() => window.location.reload()} />;
   }
-  
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
@@ -431,22 +431,22 @@ export default function FavoritesPage() {
           <ScrollArea className="h-[calc(100vh-10rem)]"> {/* Adjust height as needed */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8 pr-3">
               {favoriteItems.map((item, index) => (
-                 <div
-                    key={item.id}
-                    className="card-reveal-animation"
-                    style={{ animationDelay: `${index * 0.07}s` }}
-                  >
-                    <TimelineFoodCard
-                      item={item}
-                      onSetFeedback={handleSetFoodFeedback}
-                      onRemoveItem={handleRemoveTimelineEntry}
-                      onLogSymptoms={() => openSymptomLogDialogWithContext(item.id)}
-                      isLoadingAi={!!isLoadingAi[item.id]}
-                      onEditIngredients={handleEditTimelineEntry}
-                      onRepeatMeal={handleRepeatMeal}
-                      onToggleFavorite={handleToggleFavorite}
-                    />
-                  </div>
+                <div
+                  key={item.id}
+                  className="card-reveal-animation"
+                  style={{ animationDelay: `${index * 0.07}s` }}
+                >
+                  <TimelineFoodCard
+                    item={item}
+                    onSetFeedback={handleSetFoodFeedback}
+                    onRemoveItem={handleRemoveTimelineEntry}
+                    onLogSymptoms={() => openSymptomLogDialogWithContext(item.id)}
+                    isLoadingAi={!!isLoadingAi[item.id]}
+                    onEditIngredients={handleEditTimelineEntry}
+                    onRepeatMeal={handleRepeatMeal}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                </div>
               ))}
             </div>
           </ScrollArea>
@@ -478,7 +478,7 @@ export default function FavoritesPage() {
         onOpenChange={(open) => { if (!open) setEditingItem(null); setIsAddManualMacroDialogOpen(open); }}
         onSubmitEntry={handleSubmitManualMacroEntry}
         isEditing={!!editingItem && editingItem.entryType === 'manual_macro'}
-        initialValues={editingItem && editingItem.entryType === 'manual_macro' ? { calories: editingItem.calories ?? undefined, protein: editingItem.protein ?? undefined, carbs: editingItem.carbs ?? undefined, fat: editingItem.fat ?? undefined, entryName: editingItem.name } : undefined }
+        initialValues={editingItem && editingItem.entryType === 'manual_macro' ? { calories: editingItem.calories ?? undefined, protein: editingItem.protein ?? undefined, carbs: editingItem.carbs ?? undefined, fat: editingItem.fat ?? undefined, entryName: editingItem.name } : undefined}
         initialTimestamp={editingItem?.timestamp || selectedLogTimestampForPreviousMeal}
         key={editingItem?.id ? `edit-fav-macro-${editingItem.id}` : 'new-fav-macro'}
       />

@@ -54,6 +54,7 @@ export default function AboutPage() {
             <LandingPageClientContent
                 showHeroCTAButton={false}
                 betaUserMessage={betaUserMessageContent}
+                showBackgroundVideo={false}
             />
         </div>
     );

@@ -113,7 +113,7 @@ export default function TimelineFoodCard({
         {isLoadingAi && !isManualMacroEntry && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
-            <p className="ml-2 text-white">AI Analyzing...</p>
+            <p className="ml-2 text-white">Analyzing...</p>
           </div>
         )}
 

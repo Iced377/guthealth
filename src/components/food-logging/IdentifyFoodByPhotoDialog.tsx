@@ -131,80 +131,80 @@ export default function IdentifyFoodByPhotoDialog({
 
         {/* This div will now handle scrolling for its content */}
         <div className="flex-1 overflow-y-auto min-h-0 pr-2 py-4 space-y-4"> {/* Added pr-2 for scrollbar space */}
-            {!imagePreview && !identifiedData && !isLoading && !photoError && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4"> {/* Added px-4 here */}
-                <Button variant="outline" type="button" className="w-full border-primary text-primary hover:bg-primary/10 py-6 text-base" onClick={() => cameraInputRef.current?.click()} disabled={isLoading}>
-                  <Camera className="mr-2 h-5 w-5" /> Take Photo
-                </Button>
-                <Button variant="outline" type="button" className="w-full border-primary text-primary hover:bg-primary/10 py-6 text-base" onClick={() => uploadInputRef.current?.click()} disabled={isLoading}>
-                  <Library className="mr-2 h-5 w-5" /> From Library
-                </Button>
-              </div>
-            )}
+          {!imagePreview && !identifiedData && !isLoading && !photoError && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4"> {/* Added px-4 here */}
+              <Button variant="outline" type="button" className="w-full border-primary text-primary hover:bg-primary/10 py-6 text-base" onClick={() => cameraInputRef.current?.click()} disabled={isLoading}>
+                <Camera className="mr-2 h-5 w-5" /> Take Photo
+              </Button>
+              <Button variant="outline" type="button" className="w-full border-primary text-primary hover:bg-primary/10 py-6 text-base" onClick={() => uploadInputRef.current?.click()} disabled={isLoading}>
+                <Library className="mr-2 h-5 w-5" /> From Library
+              </Button>
+            </div>
+          )}
 
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              ref={cameraInputRef}
-              onChange={handleImageFileChange}
-              className="hidden"
-              disabled={isLoading}
-            />
-            <input
-              type="file"
-              accept="image/*"
-              ref={uploadInputRef}
-              onChange={handleImageFileChange}
-              className="hidden"
-              disabled={isLoading}
-            />
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            ref={cameraInputRef}
+            onChange={handleImageFileChange}
+            className="hidden"
+            disabled={isLoading}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            ref={uploadInputRef}
+            onChange={handleImageFileChange}
+            className="hidden"
+            disabled={isLoading}
+          />
 
-            {imagePreview && (
-              <div className="mt-3 border border-input rounded-md p-2 flex justify-center max-h-48 overflow-hidden px-4"> {/* Added px-4 here */}
-                <Image src={imagePreview} alt="Food preview" width={180} height={180} style={{ objectFit: 'contain' }} className="rounded-md" />
+          {imagePreview && (
+            <div className="mt-3 border border-input rounded-md p-2 flex justify-center max-h-48 overflow-hidden px-4"> {/* Added px-4 here */}
+              <Image src={imagePreview} alt="Food preview" width={180} height={180} style={{ objectFit: 'contain' }} className="rounded-md" />
+            </div>
+          )}
+          {isLoading && (
+            <div className="mt-2 text-center text-muted-foreground flex flex-col items-center justify-center px-4 space-y-2">
+              <div className="flex items-center justify-center space-x-2">
+                <Apple className="h-6 w-6 text-primary animate-icon-pulse-1" />
+                <Leaf className="h-6 w-6 text-primary animate-icon-pulse-2" />
+                <Sparkles className="h-6 w-6 text-primary animate-icon-pulse-3" />
               </div>
-            )}
-            {isLoading && (
-              <div className="mt-2 text-center text-muted-foreground flex flex-col items-center justify-center px-4 space-y-2">
-                <div className="flex items-center justify-center space-x-2">
-                  <Apple className="h-6 w-6 text-primary animate-icon-pulse-1" />
-                  <Leaf className="h-6 w-6 text-primary animate-icon-pulse-2" />
-                  <Sparkles className="h-6 w-6 text-primary animate-icon-pulse-3" />
-                </div>
-                <p>{imagePreview ? "Our AI is examining your meal..." : "Processing..."}</p>
-              </div>
-            )}
+              <p>{imagePreview ? "Examining your meal..." : "Processing..."}</p>
+            </div>
+          )}
 
 
-            {photoError && !isLoading && (
-              <div className="mt-2 p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-md flex flex-col items-center text-center mx-4"> {/* Added mx-4 here */}
-                <AlertTriangle className="h-6 w-6 mb-2 shrink-0" />
-                <div>
-                  <p className="font-semibold break-words whitespace-normal">Identification Failed</p>
-                  <p className="mb-2 break-words whitespace-normal">{photoError}</p>
-                  <Button variant="outline" className="text-xs mt-1 text-destructive hover:underline" onClick={() => {
-                      resetDialogState();
-                  }}>Try a different photo</Button>
-                </div>
+          {photoError && !isLoading && (
+            <div className="mt-2 p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-md flex flex-col items-center text-center mx-4"> {/* Added mx-4 here */}
+              <AlertTriangle className="h-6 w-6 mb-2 shrink-0" />
+              <div>
+                <p className="font-semibold break-words whitespace-normal">Identification Failed</p>
+                <p className="mb-2 break-words whitespace-normal">{photoError}</p>
+                <Button variant="outline" className="text-xs mt-1 text-destructive hover:underline" onClick={() => {
+                  resetDialogState();
+                }}>Try a different photo</Button>
               </div>
-            )}
+            </div>
+          )}
 
-            {identifiedData && !isLoading && (
-              <div className="mt-3 p-4 bg-muted/50 border border-input rounded-md space-y-2 text-sm mx-4"> {/* Added mx-4 here */}
-                <h3 className="text-base font-semibold text-foreground flex items-center"><CheckCircle className="h-5 w-5 mr-2 text-green-500"/> Identified Details:</h3>
-                <p className="break-words whitespace-normal"><strong className="text-foreground">Food:</strong> {identifiedData.identifiedFoodName || "N/A"}</p>
-                <p className="break-words whitespace-normal"><strong className="text-foreground">Ingredients:</strong> {identifiedData.identifiedIngredients || "N/A"}</p>
-                <p className="break-words whitespace-normal"><strong className="text-foreground">Portion:</strong> {identifiedData.estimatedPortionSize || "N/A"} {identifiedData.estimatedPortionUnit || ""}</p>
-                {identifiedData.ocrText && (
-                  <p className="text-xs break-words whitespace-normal"><strong className="text-foreground">OCR Text (partial):</strong> {identifiedData.ocrText.substring(0, 100)}{identifiedData.ocrText.length > 100 ? '...' : ''}</p>
-                )}
-                <p className={cn("text-xs pt-2 flex items-start gap-1.5", "text-muted-foreground")}>
-                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
-                  <span>If details aren't perfect, you can edit them from the meal card on your dashboard after logging.</span>
-                </p>
-              </div>
-            )}
+          {identifiedData && !isLoading && (
+            <div className="mt-3 p-4 bg-muted/50 border border-input rounded-md space-y-2 text-sm mx-4"> {/* Added mx-4 here */}
+              <h3 className="text-base font-semibold text-foreground flex items-center"><CheckCircle className="h-5 w-5 mr-2 text-green-500" /> Identified Details:</h3>
+              <p className="break-words whitespace-normal"><strong className="text-foreground">Food:</strong> {identifiedData.identifiedFoodName || "N/A"}</p>
+              <p className="break-words whitespace-normal"><strong className="text-foreground">Ingredients:</strong> {identifiedData.identifiedIngredients || "N/A"}</p>
+              <p className="break-words whitespace-normal"><strong className="text-foreground">Portion:</strong> {identifiedData.estimatedPortionSize || "N/A"} {identifiedData.estimatedPortionUnit || ""}</p>
+              {identifiedData.ocrText && (
+                <p className="text-xs break-words whitespace-normal"><strong className="text-foreground">OCR Text (partial):</strong> {identifiedData.ocrText.substring(0, 100)}{identifiedData.ocrText.length > 100 ? '...' : ''}</p>
+              )}
+              <p className={cn("text-xs pt-2 flex items-start gap-1.5", "text-muted-foreground")}>
+                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+                <span>If details aren't perfect, you can edit them from the meal card on your dashboard after logging.</span>
+              </p>
+            </div>
+          )}
         </div> {/* End of scrollable content div */}
 
 
@@ -225,6 +225,6 @@ export default function IdentifyFoodByPhotoDialog({
   );
 }
 
-    
 
-    
+
+

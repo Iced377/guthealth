@@ -6,22 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield } from 'lucide-react';
+import { ScrollText, Brain, BarChart2, Lightbulb, HelpCircle, ShieldCheck, MessageSquare, Heart, Lock, Network, FileLock2, Smartphone, DatabaseZap, Shield, TrendingUp, Activity } from 'lucide-react';
 import Link from 'next/link';
 import GradientText from '@/components/shared/GradientText'; // Import the new component
+import { cn } from '@/lib/utils';
 
 const featureIcons: Record<string, React.ElementType> = {
   "Snap a Photo or Log a Meal": ScrollText,
   "Get Instant Deep Feedback": Brain,
   "Track Your Reactions": BarChart2,
-  "Optimize with AI Recommendations": Lightbulb,
+  "Optimize with Smart Recommendations": Lightbulb,
+  "Identify Patterns": TrendingUp,
+  "Manage Symptoms": Activity,
 };
 
-const howItWorksTooltips: Record<string, string> = {
-  "Snap a Photo or Log a Meal": "Our AI can understand meal descriptions or analyze photos to identify ingredients.",
+const featureDescriptions: Record<string, string> = {
+  "Snap a Photo or Log a Meal": "Our system can understand meal descriptions or analyze photos to identify ingredients.",
   "Get Instant Deep Feedback": "Receive insights on FODMAPs, micronutrients, potential gut impact, and glycemic load specific to your meal and portion.",
   "Track Your Reactions": "Correlate your logged symptoms with your meals to pinpoint personal sensitivities.",
-  "Optimize with AI Recommendations": "Get suggestions for food swaps and discover patterns for a healthier gut.",
+  "Optimize with Smart Recommendations": "Get suggestions for food swaps and discover patterns for a healthier gut.",
 };
 
 const AccuracyTipIcon = HelpCircle;
@@ -31,6 +34,7 @@ interface LandingPageClientContentProps {
   showHeroCTAButton?: boolean;
   betaUserMessage?: React.ReactNode;
   finalCTAMessage?: React.ReactNode;
+  showBackgroundVideo?: boolean;
 }
 
 const DataSecuritySection = () => (
@@ -114,11 +118,12 @@ export default function LandingPageClientContent({
   showHeroCTAButton = true,
   betaUserMessage,
   finalCTAMessage,
+  showBackgroundVideo = true,
 }: LandingPageClientContentProps) {
   const placeholderFeedback = [
     {
       id: 1,
-      text: "The AI food analysis is surprisingly detailed! It's helping me understand portion sizes better.",
+      text: "The automated food analysis is surprisingly detailed! It's helping me understand portion sizes better.",
       source: "Beta User A",
     },
     {
@@ -137,18 +142,20 @@ export default function LandingPageClientContent({
     <main className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       {/* Hero Section with Video Background */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className={cn("relative h-screen flex items-center justify-center overflow-hidden", !showBackgroundVideo && "bg-slate-950")}>
         {/* Video Background */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="/Intro_Video.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        {showBackgroundVideo && (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/Intro_Video.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        )}
 
         {/* Dark Overlay for Readability */}
         <div className="absolute inset-0 bg-black/60 z-10" />
@@ -201,13 +208,13 @@ export default function LandingPageClientContent({
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: "Snap a Photo or Log a Meal", description: "Use your camera or write a short meal description. GutCheck’s AI analyzes ingredients and serving size." },
-              { title: "Get Instant Deep Feedback", description: "GutCheck uses deep analysis to provide insights about your meals and their impact on your Micronutrients, Guthealth, sugar spikes and more — adjusted to your portion." },
-              { title: "Track Your Reactions", description: "Log your digestive symptoms and track correlations over time. The app learns what works for you." },
-              { title: "Optimize with AI Recommendations", description: "GutCheck identifies safe swaps, personalized patterns, and meals that support gut-friendly bacteria." },
+              { title: "Snap a Photo or Log a Meal", description: "Use your camera or write a short meal description. GutCheck analyzes ingredients and serving size." },
+              { title: "Track Symptoms", description: "Log how you feel after meals to start building your personal gut health profile." },
+              { title: "Identify Patterns", description: "See trends over time connecting what you eat to how you feel." },
+              { title: "Optimize with Smart Recommendations", description: "GutCheck identifies safe swaps, personalized patterns, and meals that support gut-friendly bacteria." },
             ].map((step, index) => {
               const IconComponent = featureIcons[step.title] || ShieldCheck;
-              const tooltipText = howItWorksTooltips[step.title] || "Learn more about this feature.";
+              const tooltipText = featureDescriptions[step.title] || "Learn more about this feature.";
               return (
                 <Card
                   key={index}
@@ -251,7 +258,7 @@ export default function LandingPageClientContent({
             {[
               { id: "tip-1", title: "Describe all ingredients", content: "For best FODMAP accuracy, describe all ingredients including sauces and toppings." },
               { id: "tip-2", title: "Use natural language", content: "E.g., ‘Grilled chicken salad with vinaigrette’ works better than just ‘salad’." },
-              { id: "tip-3", title: "Specify portion size", content: "Portion size helps the AI adjust its risk estimate. Try adding size units like '1 cup' or '2 slices'." },
+              { id: "tip-3", title: "Specify portion size", content: "Portion size helps the system adjust its risk estimate. Try adding size units like '1 cup' or '2 slices'." },
               { id: "tip-4", title: "Upload clear photos", content: "Upload photos in good lighting, and ensure full view of your plate." },
               { id: "tip-5", title: "Log consistently", content: "The more you log, the more GutCheck adapts to your unique responses." },
             ].map((tip, index) => (

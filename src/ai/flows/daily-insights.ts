@@ -9,8 +9,8 @@
  * - DailyInsightsOutput - The return type for the getDailyInsights function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const DailyInsightsInputSchema = z.object({
   foodLog: z
@@ -65,8 +65,8 @@ export async function getDailyInsights(input: DailyInsightsInput): Promise<Daily
 const dailyInsightsPrompt = ai.definePrompt({
   name: 'dailyInsightsPrompt',
   // Model will be inherited from the ai object in genkit.ts
-  input: {schema: DailyInsightsInputSchema},
-  output: {schema: DailyInsightsOutputSchema},
+  input: { schema: DailyInsightsInputSchema },
+  output: { schema: DailyInsightsOutputSchema },
   prompt: `Analyze the user's daily food log, symptoms, and (if provided) micronutrient summary.
 Output a JSON object strictly matching 'DailyInsightsOutputSchema'.
 
@@ -90,10 +90,10 @@ const dailyInsightsFlow = ai.defineFlow(
   },
   async (input: DailyInsightsInput): Promise<DailyInsightsOutput> => {
     try {
-      const {output} = await dailyInsightsPrompt(input);
-      
+      const { output } = await dailyInsightsPrompt(input);
+
       if (!output) {
-        console.warn('[DailyInsightsFlow] AI prompt returned no output. Falling back to default error response.');
+        console.warn('[DailyInsightsFlow] System computation returned no output. Falling back to default error response.');
         return defaultErrorOutput;
       }
       return output;
@@ -103,9 +103,9 @@ const dailyInsightsFlow = ai.defineFlow(
       const modelNotFoundError = error.message?.includes("NOT_FOUND") || error.message?.includes("model not found");
       let specificSummaryMessage = `Error during daily insights analysis: ${error.message || 'Unknown error'}.`;
       if (modelNotFoundError) {
-        specificSummaryMessage = "Daily insights analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
+        specificSummaryMessage = "Analysis failed: The configured model is not accessible. Please check API key and project settings.";
       }
-      
+
       return {
         ...defaultErrorOutput,
         overallSummary: specificSummaryMessage,

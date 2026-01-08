@@ -20,29 +20,29 @@ const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
   Iron: Wind,
   Calcium: Bone,
   Phosphorus: Bone,
-  Magnesium: Activity, 
+  Magnesium: Activity,
   Sodium: Droplet,
   Potassium: Droplet,
   Chloride: Droplet,
-  Zinc: PersonStanding, 
+  Zinc: PersonStanding,
   Copper: Network,
   Manganese: Bone,
   Selenium: ShieldCheck,
-  Iodine: Brain, 
+  Iodine: Brain,
   Chromium: Target,
   VitaminA: Eye,
   VitaminC: ShieldCheck,
   VitaminD: ShieldCheck,
   VitaminE: ShieldQuestion,
-  VitaminK: Heart, 
-  VitaminB1: Brain, 
-  VitaminB2: Activity, 
-  VitaminB3: Activity, 
-  VitaminB5: Activity, 
-  VitaminB6: Brain, 
+  VitaminK: Heart,
+  VitaminB1: Brain,
+  VitaminB2: Activity,
+  VitaminB3: Activity,
+  VitaminB5: Activity,
+  VitaminB6: Brain,
   VitaminB12: Brain,
-  Biotin: Activity, 
-  Folate: Baby, 
+  Biotin: Activity,
+  Folate: Baby,
   Omega3: Heart,
   // Common AI-suggested iconNames from the prompt (to ensure they are mapped)
   Bone: Bone, Nut: Nut, Activity: Activity, PersonStanding: PersonStanding, Eye: Eye, ShieldCheck: ShieldCheck, Droplet: Droplet, Wind: Wind, Brain: Brain, Baby: Baby, Heart: Heart, ShieldQuestion: ShieldQuestion, Network: Network, Target: Target
@@ -50,7 +50,7 @@ const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
 
 
 interface PremiumDashboardSheetProps {
-  children: React.ReactNode; 
+  children: React.ReactNode;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   userProfile: UserProfile;
@@ -101,7 +101,7 @@ export default function PremiumDashboardSheet({
   const [isFabPopoverOpen, setIsFabPopoverOpen] = useState(false);
 
   const handleFabActionClick = (action?: () => void) => {
-    if(action) {
+    if (action) {
       action();
     }
     setIsFabPopoverOpen(false);
@@ -130,7 +130,7 @@ export default function PremiumDashboardSheet({
                 }
                 dailyTotals[micro.name].totalDV += micro.dailyValuePercent;
                 if (micro.iconName && !dailyTotals[micro.name].iconName) {
-                   dailyTotals[micro.name].iconName = micro.iconName;
+                  dailyTotals[micro.name].iconName = micro.iconName;
                 }
               }
             });
@@ -138,14 +138,14 @@ export default function PremiumDashboardSheet({
         }
       }
     });
-    
+
     return Object.entries(dailyTotals)
       .filter(([, data]) => data.totalDV >= 100)
       .map(([name, data]) => ({ name, iconName: data.iconName, totalDV: data.totalDV }))
-      .sort((a,b) => b.totalDV - a.totalDV) 
-      .slice(0, 5); 
+      .sort((a, b) => b.totalDV - a.totalDV)
+      .slice(0, 5);
   }, [timelineEntries]);
-  
+
   const sortedDateKeys = useMemo(() => {
     return Object.keys(groupedTimelineEntries).sort((a, b) => {
       // Find the latest timestamp for each date group to sort the groups themselves
@@ -160,150 +160,150 @@ export default function PremiumDashboardSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-dvh flex flex-col p-0 bg-background text-foreground border-t-2 border-border">
         <SheetHeader className="p-4 border-b border-border shrink-0">
-            <SheetTitle className="sr-only">Main Dashboard and Timeline</SheetTitle>
-             <div className="flex flex-row flex-wrap justify-around items-center gap-x-2 sm:gap-x-3 gap-y-2 text-center">
-                <div className="flex flex-col items-center">
-                  <Flame className="h-5 w-5 text-orange-400 mb-0.5" />
-                  <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.calories)}</p>
-                  <p className="text-xs text-muted-foreground">KCAL</p>
-                </div>
-                <div className="flex flex-col items-center">
-                  <Beef className="h-5 w-5 text-red-400 mb-0.5" />
-                  <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.protein)}g</p>
-                  <p className="text-xs text-muted-foreground">PROTEIN</p>
-                </div>
-                <div className="flex flex-col items-center">
-                  <Wheat className="h-5 w-5 text-yellow-400 mb-0.5" />
-                  <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.carbs)}g</p>
-                  <p className="text-xs text-muted-foreground">CARBS</p>
-                </div>
-                <div className="flex flex-col items-center">
-                  <Droplet className="h-5 w-5 text-blue-400 mb-0.5" />
-                  <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.fat)}g</p>
-                  <p className="text-xs text-muted-foreground">FAT</p>
-                </div>
-                {achievedMicronutrients.length > 0 && (
-                  <div className="text-sm font-semibold text-foreground mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
-                      {achievedMicronutrients.map(micro => {
-                        const IconComponent = (micro.iconName && RepresentativeLucideIcons[micro.iconName]) || RepresentativeLucideIcons[micro.name] || Atom;
-                        return (
-                          <Popover key={micro.name}>
-                            <PopoverTrigger asChild>
-                              <div className="relative p-0.5 cursor-pointer flex items-center">
-                                <IconComponent className="h-4 w-4 text-green-500" />
-                                <Check className="absolute bottom-0 right-0 h-2.5 w-2.5 text-green-600 bg-background rounded-full" />
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto max-w-xs bg-popover text-popover-foreground border-border p-2 text-sm">
-                              <p><span className="font-semibold">{micro.name}:</span> {Math.round(micro.totalDV)}% DV achieved</p>
-                            </PopoverContent>
-                          </Popover>
-                        );
-                      })}
-                  </div>
-                )}
+          <SheetTitle className="sr-only">Main Dashboard and Timeline</SheetTitle>
+          <div className="flex flex-row flex-wrap justify-around items-center gap-x-2 sm:gap-x-3 gap-y-2 text-center">
+            <div className="flex flex-col items-center">
+              <Flame className="h-5 w-5 text-orange-400 mb-0.5" />
+              <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.calories)}</p>
+              <p className="text-xs text-muted-foreground">KCAL</p>
             </div>
+            <div className="flex flex-col items-center">
+              <Beef className="h-5 w-5 text-red-400 mb-0.5" />
+              <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.protein)}g</p>
+              <p className="text-xs text-muted-foreground">PROTEIN</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <Wheat className="h-5 w-5 text-yellow-400 mb-0.5" />
+              <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.carbs)}g</p>
+              <p className="text-xs text-muted-foreground">CARBS</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <Droplet className="h-5 w-5 text-blue-400 mb-0.5" />
+              <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.fat)}g</p>
+              <p className="text-xs text-muted-foreground">FAT</p>
+            </div>
+            {achievedMicronutrients.length > 0 && (
+              <div className="text-sm font-semibold text-foreground mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
+                {achievedMicronutrients.map(micro => {
+                  const IconComponent = (micro.iconName && RepresentativeLucideIcons[micro.iconName]) || RepresentativeLucideIcons[micro.name] || Atom;
+                  return (
+                    <Popover key={micro.name}>
+                      <PopoverTrigger asChild>
+                        <div className="relative p-0.5 cursor-pointer flex items-center">
+                          <IconComponent className="h-4 w-4 text-green-500" />
+                          <Check className="absolute bottom-0 right-0 h-2.5 w-2.5 text-green-600 bg-background rounded-full" />
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto max-w-xs bg-popover text-popover-foreground border-border p-2 text-sm">
+                        <p><span className="font-semibold">{micro.name}:</span> {Math.round(micro.totalDV)}% DV achieved</p>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </SheetHeader>
 
         <ScrollArea className="flex-1">
           <div className="relative">
-              <div className="px-4 py-4 space-y-0">
-                {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
-                  <div className="text-center py-12">
-                    <Utensils className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <h2 className="text-2xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
-                    <p className="text-muted-foreground">
-                      {userProfile.premium ? "Log food or symptoms using the central button." : "Log food or symptoms. Data is retained for 2 days for free users."}
-                    </p>
-                  </div>
-                )}
-                {sortedDateKeys.map(dateKey => {
-                  const entriesOnDate = groupedTimelineEntries[dateKey];
-                  if (!entriesOnDate || entriesOnDate.length === 0) return null;
-                  
-                  return (
-                    <div key={dateKey} className="mb-6">
-                      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
-                        <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
-                      </div>
-                      <div className="space-y-4">
-                        {entriesOnDate.map((entry, entryIndex) => {
-                          if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-                            return (
-                              <div
-                                key={entry.id}
-                                className="card-reveal-animation"
-                                style={{ animationDelay: `${entryIndex * 0.07}s` }}
-                              >
-                                <TimelineFoodCard
-                                  item={entry}
-                                  onSetFeedback={onSetFeedback}
-                                  onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                                  onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
-                                  isLoadingAi={!!isLoadingAi[entry.id]}
-                                  onEditIngredients={onEditIngredients}
-                                  onRepeatMeal={onRepeatMeal}
-                                  onToggleFavorite={onToggleFavorite}
-                                />
-                              </div>
-                            );
-                          }
-                          if (entry.entryType === 'symptom') {
-                            return (
-                              <div
-                                key={entry.id}
-                                className="card-reveal-animation"
-                                style={{ animationDelay: `${entryIndex * 0.07}s` }}
-                              >
-                                <TimelineSymptomCard
-                                  item={entry}
-                                  onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                                />
-                              </div>
-                            );
-                          }
-                          return null;
-                        })}
-                      </div>
+            <div className="px-4 py-4 space-y-0">
+              {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
+                <div className="text-center py-12">
+                  <Utensils className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                  <h2 className="text-2xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
+                  <p className="text-muted-foreground">
+                    {userProfile.premium ? "Log food or symptoms using the central button." : "Log food or symptoms. Data is retained for 2 days for free users."}
+                  </p>
+                </div>
+              )}
+              {sortedDateKeys.map(dateKey => {
+                const entriesOnDate = groupedTimelineEntries[dateKey];
+                if (!entriesOnDate || entriesOnDate.length === 0) return null;
+
+                return (
+                  <div key={dateKey} className="mb-6">
+                    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm -mx-4 px-4 py-2 mb-2 border-b border-border">
+                      <h3 className="text-sm font-semibold text-primary">{dateKey}</h3>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="space-y-4">
+                      {entriesOnDate.map((entry, entryIndex) => {
+                        if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
+                          return (
+                            <div
+                              key={entry.id}
+                              className="card-reveal-animation"
+                              style={{ animationDelay: `${entryIndex * 0.07}s` }}
+                            >
+                              <TimelineFoodCard
+                                item={entry}
+                                onSetFeedback={onSetFeedback}
+                                onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                                onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
+                                isLoadingAi={!!isLoadingAi[entry.id]}
+                                onEditIngredients={onEditIngredients}
+                                onRepeatMeal={onRepeatMeal}
+                                onToggleFavorite={onToggleFavorite}
+                              />
+                            </div>
+                          );
+                        }
+                        if (entry.entryType === 'symptom') {
+                          return (
+                            <div
+                              key={entry.id}
+                              className="card-reveal-animation"
+                              style={{ animationDelay: `${entryIndex * 0.07}s` }}
+                            >
+                              <TimelineSymptomCard
+                                item={entry}
+                                onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
+                              />
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </ScrollArea>
-        
+
         <Popover open={isFabPopoverOpen} onOpenChange={setIsFabPopoverOpen}>
           <PopoverTrigger asChild>
-              <Button variant="default" className="absolute bottom-20 right-6 h-16 w-16 rounded-full shadow-2xl z-20" size="icon">
-                <Plus className="h-8 w-8" />
-              </Button>
+            <Button variant="default" className="absolute bottom-20 right-6 h-16 w-16 rounded-full shadow-2xl z-20" size="icon">
+              <Plus className="h-8 w-8" />
+            </Button>
           </PopoverTrigger>
           <PopoverContent
-              side="top"
-              align="end"
-              className="w-auto bg-card text-card-foreground border-border shadow-xl rounded-xl p-0 mb-2"
-            >
-              <div className="flex flex-col gap-1 p-2">
-                <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
-                  <PlusCircle className="mr-3 h-5 w-5" /> Log Food (AI Text)
-                </Button>
-                <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
-                  <Camera className="mr-3 h-5 w-5" /> Identify by Photo
-                </Button>
-                <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogSymptomsClick)}>
-                  <ListChecks className="mr-3 h-5 w-5" /> Log Symptoms
-                </Button>
-                <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogPreviousMealClick)}>
-                  <CalendarDays className="mr-3 h-5 w-5" /> Log Previous Meal
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+            side="top"
+            align="end"
+            className="w-auto bg-card text-card-foreground border-border shadow-xl rounded-xl p-0 mb-2"
+          >
+            <div className="flex flex-col gap-1 p-2">
+              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
+                <PlusCircle className="mr-3 h-5 w-5" /> Log Food with Text
+              </Button>
+              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
+                <Camera className="mr-3 h-5 w-5" /> Identify by Photo
+              </Button>
+              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogSymptomsClick)}>
+                <ListChecks className="mr-3 h-5 w-5" /> Log Symptoms
+              </Button>
+              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogPreviousMealClick)}>
+                <CalendarDays className="mr-3 h-5 w-5" /> Log Previous Meal
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <SheetFooter className="p-3 border-t border-border sticky bottom-0 bg-card shrink-0">
-            <SheetClose asChild>
-                <Button variant="outline" className="w-full">Close Dashboard</Button>
-            </SheetClose>
+          <SheetClose asChild>
+            <Button variant="outline" className="w-full">Close Dashboard</Button>
+          </SheetClose>
         </SheetFooter>
       </SheetContent>
     </Sheet>

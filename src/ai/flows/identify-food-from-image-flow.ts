@@ -98,7 +98,7 @@ const defaultErrorOutput: IdentifyFoodFromImageOutput = {
   estimatedPortionUnit: undefined,
   ocrText: undefined,
   recognitionSuccess: false,
-  errorMessage: 'AI processing failed to return an output.',
+  errorMessage: 'Analysis failed to return an output.',
 };
 
 const identifyFoodFromImageFlow = ai.defineFlow(
@@ -118,7 +118,7 @@ const identifyFoodFromImageFlow = ai.defineFlow(
       console.error("[IdentifyFoodByPhotoFlow] Error during AI processing:", err);
       return {
         ...defaultErrorOutput,
-        errorMessage: `AI analysis error: ${err.message || 'Unknown error.'}`
+        errorMessage: `Analysis error: ${err.message || 'Unknown error.'}`
       }
     }
   }

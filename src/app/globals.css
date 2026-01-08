@@ -1,82 +1,121 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+
   /* Calo-like Light Mode Variables */
   :root {
-    --background: 0 0% 97%; /* Light Gray #F7F7F7 */
-    --foreground: 0 0% 13%; /* Dark Gray #212121 */
+    --background: 0 0% 97%;
+    /* Light Gray #F7F7F7 */
+    --foreground: 0 0% 13%;
+    /* Dark Gray #212121 */
 
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 0 0% 13%; /* Dark Gray */
+    --card: 0 0% 100%;
+    /* White */
+    --card-foreground: 0 0% 13%;
+    /* Dark Gray */
 
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 0 0% 13%; /* Dark Gray */
+    --popover: 0 0% 100%;
+    /* White */
+    --popover-foreground: 0 0% 13%;
+    /* Dark Gray */
 
-    --primary: 150 61% 42%; /* Calo Green #27AE60 */
-    --primary-foreground: 0 0% 100%; /* White text on Calo Green */
-    
-    --secondary: 150 40% 90%; /* Light Calo Green #D9F0E5 */
-    --secondary-foreground: 150 61% 20%; /* Darker Green #1A6F4A */
+    --primary: 150 61% 42%;
+    /* Calo Green #27AE60 */
+    --primary-foreground: 0 0% 100%;
+    /* White text on Calo Green */
 
-    --muted: 0 0% 90%; /* Light Gray #E5E5E5 */
-    --muted-foreground: 0 0% 40%; /* Medium Gray #666666 */
+    --secondary: 150 40% 90%;
+    /* Light Calo Green #D9F0E5 */
+    --secondary-foreground: 150 61% 20%;
+    /* Darker Green #1A6F4A */
 
-    --accent: 150 61% 42%; /* Calo Green (using primary as accent for now) */
-    --accent-foreground: 0 0% 100%; /* White text on Calo Green */
+    --muted: 0 0% 90%;
+    /* Light Gray #E5E5E5 */
+    --muted-foreground: 0 0% 40%;
+    /* Medium Gray #666666 */
 
-    --destructive: 0 82% 63%; /* Red #EB5757 */
-    --destructive-foreground: 0 0% 100%; /* White text on Red */
+    --accent: 150 61% 42%;
+    /* Calo Green (using primary as accent for now) */
+    --accent-foreground: 0 0% 100%;
+    /* White text on Calo Green */
 
-    --border: 0 0% 85%; /* Light Gray #D9D9D9 */
-    --input: 0 0% 80%; /* Medium Gray #CCCCCC for input borders */
-    --ring: 150 61% 35%; /* Darker Calo Green for focus rings #208A4E */
+    --destructive: 0 82% 63%;
+    /* Red #EB5757 */
+    --destructive-foreground: 0 0% 100%;
+    /* White text on Red */
+
+    --border: 0 0% 85%;
+    /* Light Gray #D9D9D9 */
+    --input: 0 0% 80%;
+    /* Medium Gray #CCCCCC for input borders */
+    --ring: 150 61% 35%;
+    /* Darker Calo Green for focus rings #208A4E */
 
     /* Success indicators, can be Calo green or a distinct success green */
-    --success-indicator-bg: 150 61% 42%;   /* Calo Green */
-    --success-indicator-text: 0 0% 100%; /* White */
+    --success-indicator-bg: 150 61% 42%;
+    /* Calo Green */
+    --success-indicator-text: 0 0% 100%;
+    /* White */
   }
 
   /* Calo-like Dark Mode Variables */
   html.dark {
-    --background: 0 0% 8%; /* Very Dark Gray #141414 */
-    --foreground: 0 0% 90%; /* Light Gray/Off-white #E5E5E5 */
+    --background: 0 0% 8%;
+    /* Very Dark Gray #141414 */
+    --foreground: 0 0% 90%;
+    /* Light Gray/Off-white #E5E5E5 */
 
-    --card: 0 0% 12%; /* Dark Gray #1F1F1F */
+    --card: 0 0% 12%;
+    /* Dark Gray #1F1F1F */
     --card-foreground: 0 0% 90%;
 
-    --popover: 0 0% 10%; /* Darker Gray #1A1A1A */
+    --popover: 0 0% 10%;
+    /* Darker Gray #1A1A1A */
     --popover-foreground: 0 0% 90%;
 
-    --primary: 150 61% 42%; /* Calo Green #27AE60 */
-    --primary-foreground: 0 0% 100%; /* White text on Calo Green */
-    
-    --secondary: 150 61% 25%; /* Dark Calo Green #1E5C3A */
-    --secondary-foreground: 0 0% 90%; /* Light text on Dark Green */
+    --primary: 150 61% 42%;
+    /* Calo Green #27AE60 */
+    --primary-foreground: 0 0% 100%;
+    /* White text on Calo Green */
 
-    --muted: 0 0% 15%; /* Muted Dark Gray #262626 */
-    --muted-foreground: 0 0% 60%; /* Muted Light Gray #999999 */
+    --secondary: 150 61% 25%;
+    /* Dark Calo Green #1E5C3A */
+    --secondary-foreground: 0 0% 90%;
+    /* Light text on Dark Green */
 
-    --accent: 150 61% 42%; /* Calo Green */
-    --accent-foreground: 0 0% 100%; 
+    --muted: 0 0% 15%;
+    /* Muted Dark Gray #262626 */
+    --muted-foreground: 0 0% 60%;
+    /* Muted Light Gray #999999 */
 
-    --destructive: 0 75% 55%; /* Darker Red #D32F2F */
-    --destructive-foreground: 0 0% 100%; /* White text */
+    --accent: 150 61% 42%;
+    /* Calo Green */
+    --accent-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%; /* Muted Dark Gray border #333333 */
-    --input: 0 0% 25%; /* Lighter Dark Gray #404040 for input borders */
-    --ring: 150 61% 50%; /* Slightly lighter Calo Green for focus rings #3CC87A */
-    
+    --destructive: 0 75% 55%;
+    /* Darker Red #D32F2F */
+    --destructive-foreground: 0 0% 100%;
+    /* White text */
+
+    --border: 0 0% 20%;
+    /* Muted Dark Gray border #333333 */
+    --input: 0 0% 25%;
+    /* Lighter Dark Gray #404040 for input borders */
+    --ring: 150 61% 50%;
+    /* Slightly lighter Calo Green for focus rings #3CC87A */
+
     /* Success indicators */
     --success-indicator-bg: 150 61% 42%;
     --success-indicator-text: 0 0% 100%;
   }
 
   /* Common variables for all themes (can be in :root or html) */
-  :root, html {
-    --radius: 0.75rem; /* Updated from 0.5rem */
+  :root,
+  html {
+    --radius: 0.75rem;
+    /* Updated from 0.5rem */
     /* Chart colors can be updated later if needed, keeping existing for now */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -89,31 +128,75 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+    /* Remove blue tap highlight on mobile */
   }
+
   body {
     @apply bg-background text-foreground overflow-x-hidden;
-    font-family: var(--font-inter), sans-serif; 
+    font-family: var(--font-inter), sans-serif;
+    /* Prevent text selection which feels non-native in app shell, allow on specific text content if needed */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: none;
+    /* Prevent pull-to-refresh effect on body */
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  /* Allow text selection on paragraphs and inputs */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  span,
+  input,
+  textarea,
+  div {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Re-disable on specific interactive wrappers if needed, but the above is a safe baseline */
+  button,
+  a {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-headline;
   }
 }
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 30px 10px hsla(var(--primary), 0.7), 0 0 60px 18px hsla(var(--primary), 0.5);
   }
+
   50% {
     box-shadow: 0 0 60px 18px hsla(var(--primary), 1), 0 0 90px 25px hsla(var(--primary), 0.8);
   }
 }
 
 @keyframes neon-chevron-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 2px hsla(var(--primary), 0.7));
     opacity: 0.7;
   }
+
   50% {
     filter: drop-shadow(0 0 6px hsla(var(--primary), 1));
     opacity: 1;
@@ -121,11 +204,36 @@
 }
 
 @keyframes custom-feedback-bounce {
+
   /* Bounce sequence (first ~1.5s of 30s cycle = first 5%) */
-  0%, 1.66%, 3.33%, 5%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(0.8,0,1,1); } /* Troughs */
-  0.833% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0,0,0.2,1); } /* Peak 1 */
-  2.5% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0,0,0.2,1); }   /* Peak 2 */
-  4.166% { transform: translateY(-15%); animation-timing-function: cubic-bezier(0,0,0.2,1); } /* Peak 3 (smaller) */
+  0%,
+  1.66%,
+  3.33%,
+  5%,
+  100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+
+  /* Troughs */
+  0.833% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  /* Peak 1 */
+  2.5% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  /* Peak 2 */
+  4.166% {
+    transform: translateY(-15%);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  /* Peak 3 (smaller) */
 }
 
 @keyframes wave-pulse-effect {
@@ -134,6 +242,7 @@
     opacity: 0.7;
     border-width: 3px;
   }
+
   100% {
     transform: translate(-50%, -50%) scale(2);
     opacity: 0;
@@ -146,6 +255,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -153,18 +263,24 @@
 }
 
 .card-reveal-animation {
-  opacity: 0; /* Start hidden */
+  opacity: 0;
+  /* Start hidden */
   animation-name: fadeInUpStaggered;
-  animation-duration: 0.5s; /* Animation duration for one card */
-  animation-fill-mode: forwards; /* Stay at the 'to' state */
+  animation-duration: 0.5s;
+  /* Animation duration for one card */
+  animation-fill-mode: forwards;
+  /* Stay at the 'to' state */
   animation-timing-function: ease-out;
 }
 
 @keyframes icon-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.6;
     transform: scale(0.95);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.05);
@@ -176,15 +292,20 @@
   .animate-pulse-glow {
     animation: pulse-glow 3s infinite ease-in-out;
   }
+
   .animate-neon-chevron-pulse {
     animation: neon-chevron-glow 1.5s infinite ease-in-out;
   }
+
   .animate-custom-feedback-bounce {
     animation: custom-feedback-bounce 30s infinite;
   }
+
   .animate-simple-pulse-wave {
-    position: relative; /* Required for pseudo-element positioning */
-    overflow: visible;  /* Ensures pseudo-element is not clipped */
+    position: relative;
+    /* Required for pseudo-element positioning */
+    overflow: visible;
+    /* Ensures pseudo-element is not clipped */
   }
 
   .animate-simple-pulse-wave::before {
@@ -195,28 +316,35 @@
     /* transform translate is now part of the animation keyframes */
     width: 100%;
     height: 100%;
-    border-radius: 50%; /* Make the wave circular */
+    border-radius: 50%;
+    /* Make the wave circular */
     border-style: solid;
-    border-color: hsla(var(--primary), 0.7); /* Initial color of the wave's border */
+    border-color: hsla(var(--primary), 0.7);
+    /* Initial color of the wave's border */
     animation: wave-pulse-effect 1.5s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    z-index: -1; /* Puts the wave behind the button's content */
-    pointer-events: none; /* The wave itself should not be interactive */
+    z-index: -1;
+    /* Puts the wave behind the button's content */
+    pointer-events: none;
+    /* The wave itself should not be interactive */
   }
 
   /* Ensure button content (like the icon) is on top of the pseudo-element wave */
-  .animate-simple-pulse-wave > * {
+  .animate-simple-pulse-wave>* {
     position: relative;
     z-index: 1;
   }
+
   .animate-icon-pulse-1 {
     animation: icon-pulse 1.8s infinite ease-in-out;
   }
+
   .animate-icon-pulse-2 {
-    animation: icon-pulse 1.8s infinite ease-in-out 0.3s; /* Delay for second icon */
+    animation: icon-pulse 1.8s infinite ease-in-out 0.3s;
+    /* Delay for second icon */
   }
+
   .animate-icon-pulse-3 {
-    animation: icon-pulse 1.8s infinite ease-in-out 0.6s; /* Delay for third icon */
+    animation: icon-pulse 1.8s infinite ease-in-out 0.6s;
+    /* Delay for third icon */
   }
 }
-
-    

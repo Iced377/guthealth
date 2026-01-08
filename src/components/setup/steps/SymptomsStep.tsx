@@ -38,7 +38,7 @@ export default function SymptomsStep({ data, updateData, onBack, onNext }: Sympt
                     Symptom Control
                 </CardTitle>
                 <CardDescription>
-                    Select any symptoms you want to manage. Your AI nutritionist will prioritize these.
+                    Select any symptoms you want to manage. Your GutCheck Assistant will prioritize these.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

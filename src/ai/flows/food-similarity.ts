@@ -9,8 +9,8 @@
  * - FoodSimilarityOutput - The return type for the isSimilarToSafeFoods function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import type { FoodFODMAPProfile as DetailedFodmapProfileFromAI } from './fodmap-detection'; // Use the detailed one from fodmap-detection
 
 // This schema represents the FODMAP profile used for comparison.
@@ -81,8 +81,8 @@ export async function isSimilarToSafeFoods(input: FoodSimilarityInput): Promise<
 
 const foodSimilarityPrompt = ai.definePrompt({
   name: 'foodSimilarityPrompt',
-  input: {schema: PromptInputSchema}, // Use the schema with stringified profiles
-  output: {schema: FoodSimilarityOutputSchema},
+  input: { schema: PromptInputSchema }, // Use the schema with stringified profiles
+  output: { schema: FoodSimilarityOutputSchema },
   prompt: `You are an AI assistant that determines whether a given food item (with its specific portion) is similar to any of a user's "safe" foods (each with their specific saved portion and FODMAP profile).
 
   Current Food Item to Check:
@@ -126,9 +126,9 @@ const foodSimilarityFlow = ai.defineFlow(
         })),
       };
 
-      const {output} = await foodSimilarityPrompt(promptInputData); // Pass transformed input to the prompt
+      const { output } = await foodSimilarityPrompt(promptInputData); // Pass transformed input to the prompt
       if (!output) {
-        console.warn('[FoodSimilarityFlow] AI prompt returned no output. Falling back to default error response.');
+        console.warn('[FoodSimilarityFlow] System computation returned no output. Falling back to default error response.');
         return {
           ...defaultErrorOutput,
           similarityReason: `Similarity analysis failed for "${input.currentFoodItem.name}". No output from prompt.`,

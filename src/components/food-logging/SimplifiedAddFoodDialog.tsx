@@ -88,7 +88,7 @@ export default function SimplifiedAddFoodDialog({
   const { toast } = useToast();
   const [userWantsToOverrideMacros, setUserWantsToOverrideMacros] = useState(initialMacrosOverridden);
   const { isDarkMode } = useTheme();
-  
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>(formatTimeToHHMM(new Date()));
 
@@ -149,7 +149,7 @@ export default function SimplifiedAddFoodDialog({
       console.error("Error processing/updating meal description:", error);
       toast({
         title: `Error ${isEditing ? 'Updating' : 'Processing'} Meal`,
-        description: error.message || `Could not ${isEditing ? 'update' : 'process'} your meal description with AI.`,
+        description: error.message || `Could not ${isEditing ? 'update' : 'process'} your meal description.`,
         variant: 'destructive'
       });
     } finally {
@@ -170,7 +170,7 @@ export default function SimplifiedAddFoodDialog({
 
   const dialogTitleText = isGuestView
     ? "What did you eat?"
-    : (isEditing ? "Edit Meal Details" : "Log Food with AI (Text)");
+    : (isEditing ? "Edit Meal Details" : "Log Food with Text");
 
   const submitButtonText = isLoading
     ? (isEditing ? 'Updating...' : 'Analyzing...')
@@ -187,12 +187,12 @@ export default function SimplifiedAddFoodDialog({
             {isGuestView
               ? "Tell us what you ate, including ingredients and their approximate portion sizes."
               : (isEditing
-                  ? "Update the description, date, time, or nutritional info below."
-                  : "Describe your meal in natural language. Our AI will estimate nutritional info. You can also set the date and time.") 
+                ? "Update the description, date, time, or nutritional info below."
+                : "Describe your meal in natural language. The system will estimate nutritional info. You can also set the date and time.")
             }
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={form.handleSubmit(handleDialogSubmit)} className="space-y-4 pt-2 max-h-[calc(80vh-120px)] overflow-y-auto pr-2">
           {!isGuestView && (
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -234,16 +234,16 @@ export default function SimplifiedAddFoodDialog({
               </div>
             </div>
           )}
-          
+
           <div>
             <Label htmlFor="mealDescription" className={labelClasses}>Meal Description</Label>
             <Controller
               name="mealDescription"
               control={control}
-              render={({ field }) => ( 
+              render={({ field }) => (
                 <Textarea
                   id="mealDescription"
-                  value={field.value ?? ''} 
+                  value={field.value ?? ''}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   ref={field.ref}
@@ -260,7 +260,7 @@ export default function SimplifiedAddFoodDialog({
             )}
           </div>
 
-          {(!isGuestView) && ( 
+          {(!isGuestView) && (
             <div className="space-y-3 pt-3 border-t border-border/50 mt-3">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -289,10 +289,10 @@ export default function SimplifiedAddFoodDialog({
                     </div>
                     <div>
                       <Label htmlFor="proteinSimplified" className={cn(labelClasses, "text-xs")}>Protein (g)</Label>
-                       <Controller
+                      <Controller
                         name="protein"
                         control={control}
-                        render={({ field }) => <Input id="proteinSimplified" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 30" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="proteinSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 30" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.protein && <p className={cn("text-xs text-destructive mt-1")}>{errors.protein.message}</p>}
                     </div>
@@ -301,7 +301,7 @@ export default function SimplifiedAddFoodDialog({
                       <Controller
                         name="carbs"
                         control={control}
-                        render={({ field }) => <Input id="carbsSimplified" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 50" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="carbsSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 50" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.carbs && <p className={cn("text-xs text-destructive mt-1")}>{errors.carbs.message}</p>}
                     </div>
@@ -310,15 +310,15 @@ export default function SimplifiedAddFoodDialog({
                       <Controller
                         name="fat"
                         control={control}
-                        render={({ field }) => <Input id="fatSimplified" type="number" step="any" {...field} value={field.value ?? ''}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 20" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="fatSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 20" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.fat && <p className={cn("text-xs text-destructive mt-1")}>{errors.fat.message}</p>}
                     </div>
                   </div>
-                   <p className={cn("text-xs mt-1 flex items-start gap-1.5", "text-muted-foreground")}>
-                      <Info className="h-3 w-3 shrink-0 mt-0.5" />
-                      <span>If checked, values entered here will override AI estimates. If unchecked, AI will recalculate macros on update.</span>
-                    </p>
+                  <p className={cn("text-xs mt-1 flex items-start gap-1.5", "text-muted-foreground")}>
+                    <Info className="h-3 w-3 shrink-0 mt-0.5" />
+                    <span>If checked, values entered here will override auto-estimates. If unchecked, system will recalculate macros on update.</span>
+                  </p>
                 </>
               )}
             </div>
@@ -330,8 +330,8 @@ export default function SimplifiedAddFoodDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" className={submitButtonClasses} disabled={isLoading || (isSubmitting || !isValid && isSubmitted) }>
-              {isLoading ? <Loader2 className={cn("animate-spin h-5 w-5 mr-2", isGuestView ? "text-primary" : "text-primary-foreground" )} /> : <Sprout className={sproutSubmitIconClasses} />}
+            <Button type="submit" className={submitButtonClasses} disabled={isLoading || (isSubmitting || !isValid && isSubmitted)}>
+              {isLoading ? <Loader2 className={cn("animate-spin h-5 w-5 mr-2", isGuestView ? "text-primary" : "text-primary-foreground")} /> : <Sprout className={sproutSubmitIconClasses} />}
               {submitButtonText}
             </Button>
           </DialogFooter>

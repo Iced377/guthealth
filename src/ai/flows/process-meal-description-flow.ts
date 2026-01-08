@@ -77,7 +77,7 @@ const processMealDescriptionFlow = ai.defineFlow(
     try {
       const { output } = await processMealDescriptionGenkitPrompt(input);
       if (!output) {
-        console.warn('[ProcessMealDescriptionFlow] AI prompt returned no output. Falling back to default error response.');
+        console.warn('[ProcessMealDescriptionFlow] System computation returned no output. Falling back to default error response.');
         return {
           ...defaultErrorOutput,
           primaryFoodItemForAnalysis: `Could not analyze: "${input.mealDescription.substring(0, 50)}..."`,

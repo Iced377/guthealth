@@ -13,10 +13,10 @@ import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002'),
   title: 'GutCheck',
-  description: 'Your Ai companion for easy food logging and meaningful insights.',
+  description: 'Your smart companion for easy food logging and meaningful insights.',
   openGraph: {
     title: 'GutCheck',
-    description: 'Your Ai companion for easy food logging and meaningful insights.',
+    description: 'Your smart companion for easy food logging and meaningful insights.',
     images: [
       {
         url: '/opengraph-image.jpg',
@@ -26,6 +26,13 @@ export const metadata: Metadata = {
       },
     ],
     type: 'website',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false, // Prevent zooming
+    viewportFit: 'cover', // Handle notch/safe areas
   },
   icons: {
     icon: '/favicon-32.png',

@@ -86,7 +86,7 @@ export default function MicronutrientsIndicator({ micronutrientsInfo }: Micronut
             </div>
           )}
           {(notableMicros.length === 0 && fullListMicros.length === 0) && (
-            <p className="text-xs text-muted-foreground">No specific micronutrient data provided by AI for this item.</p>
+            <p className="text-xs text-muted-foreground">No specific micronutrient data provided by system for this item.</p>
           )}
         </div>
       </PopoverContent>

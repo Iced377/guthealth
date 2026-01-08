@@ -315,7 +315,7 @@ export default function DashboardContent({
                 >
                     <div className="flex flex-col gap-1 p-2">
                         <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
-                            <PlusCircle className="mr-3 h-5 w-5" /> Log Food (AI Text)
+                            <PlusCircle className="mr-3 h-5 w-5" /> Log Food with Text
                         </Button>
                         <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
                             <Camera className="mr-3 h-5 w-5" /> Identify by Photo

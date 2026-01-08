@@ -113,7 +113,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
                         >
-                            <span className="text-sm font-medium mr-3">AI Food Log</span>
+                            <span className="text-sm font-medium mr-3">Auto Food Log</span>
                             <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:bg-indigo-700 transition-colors">
                                 <Sparkles className="h-5 w-5" />
                             </div>

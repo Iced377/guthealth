@@ -52,7 +52,7 @@ export default function SubscriptionPage() {
               <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Unlimited food & symptom logging history.</p>
               <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Advanced trend analysis.</p>
               <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Detailed micronutrient tracking.</p>
-              <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Priority AI insights.</p>
+              <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Priority Smart insights.</p>
             </CardContent>
             <CardFooter>
               <Button variant="outline" className="w-full border-accent text-accent-foreground hover:bg-accent/10" disabled>
@@ -69,7 +69,7 @@ export default function SubscriptionPage() {
               </CardHeader>
               <CardContent className="space-y-3 flex-grow">
                 <p className="text-3xl font-bold text-foreground">$0<span className="text-sm font-normal text-muted-foreground">/month</span></p>
-                <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Log meals with AI analysis</p>
+                <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Log meals with Smart analysis</p>
                 <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> 2-day data retention for trends</p>
                 <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Basic FODMAP indicators</p>
                 <p className="text-muted-foreground"><Star className="inline-block mr-2 h-5 w-5 text-transparent" /> Limited micronutrient view</p>
@@ -94,7 +94,7 @@ export default function SubscriptionPage() {
                 <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Unlimited data retention</p>
                 <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Full trend analysis over time</p>
                 <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Detailed micronutrient tracking</p>
-                <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Deeper AI-powered correlations</p>
+                <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Deeper Smart correlations</p>
               </CardContent>
               <CardFooter>
                 <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled>
@@ -107,9 +107,9 @@ export default function SubscriptionPage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-2xl text-purple-500 flex items-center">
-                     <Gem className="mr-2 h-5 w-5"/> Lifetime Access
+                    <Gem className="mr-2 h-5 w-5" /> Lifetime Access
                   </CardTitle>
-                   <span className="text-xs font-semibold bg-purple-500 text-white px-2 py-1 rounded-full">ONE-TIME</span>
+                  <span className="text-xs font-semibold bg-purple-500 text-white px-2 py-1 rounded-full">ONE-TIME</span>
                 </div>
                 <CardDescription className="text-muted-foreground">All premium features, forever.</CardDescription>
               </CardHeader>

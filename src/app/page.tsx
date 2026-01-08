@@ -13,6 +13,7 @@ import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/
 
 
 import GradientText from '@/components/shared/GradientText';
+import { Capacitor } from '@capacitor/core';
 
 
 import { useToast } from '@/hooks/use-toast';
@@ -250,6 +251,13 @@ export default function RootPage() {
     }
   }, [searchParams, router, currentPathname, openSimplifiedAddFoodDialog, openIdentifyByPhotoDialog, openSymptomLogDialog, openLogPreviousMealDialog]);
 
+  // Redirect mobile app users to signup if not authenticated
+  useEffect(() => {
+    if (!authLoading && !authUser && Capacitor.isNativePlatform()) {
+      router.replace('/signup');
+    }
+  }, [authLoading, authUser, router]);
+
 
   const addTimelineEntry = (entry: TimelineEntry) => {
     setTimelineEntries(prevEntries => [entry, ...prevEntries].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
@@ -418,7 +426,7 @@ export default function RootPage() {
 
     } catch (error: any) {
       console.error('AI analysis or food logging/updating failed:', error);
-      toast({ title: 'Analysis Failed', description: `Could not complete AI analysis for ${foodItemData.name}.`, variant: 'destructive' });
+      toast({ title: 'Analysis Failed', description: `Could not complete analysis for ${foodItemData.name}.`, variant: 'destructive' });
       // Item remains in "Optimistic" state but without rich data. 
     } finally {
       setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
@@ -969,14 +977,14 @@ export default function RootPage() {
         const { id, ...itemToSave } = processedFoodItem;
         const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', newItemId);
         await setDoc(docRefPath, { ...itemToSave, timestamp: Timestamp.fromDate(processedFoodItem.timestamp as Date) });
-        toast({ title: "Meal Repeated & Saved", description: `"${processedFoodItem.name}" added with fresh AI analysis.` });
+        toast({ title: "Meal Repeated & Saved", description: `"${processedFoodItem.name}" added with fresh analysis.` });
       } else {
         toast({ title: "Meal Repeated (Locally)", description: `"${processedFoodItem.name}" added. Login to save.` });
       }
       addTimelineEntry(processedFoodItem);
     } catch (error: any) {
       console.error('Error repeating meal:', error);
-      toast({ title: 'Error Repeating Meal', description: `Could not repeat the meal. AI analysis might have failed.`, variant: 'destructive' });
+      toast({ title: 'Error Repeating Meal', description: `Could not repeat the meal. Analysis might have failed.`, variant: 'destructive' });
 
       processedFoodItem = {
         ...baseRepetitionData,
@@ -1050,7 +1058,7 @@ export default function RootPage() {
       </p>
       <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4 pl-4 text-left">
         <li>
-          <strong>Log Your Meals Consistently:</strong> Whether you use the AI text input, snap a photo, or log manually, the more data you provide, the better our AI becomes.
+          <strong>Log Your Meals Consistently:</strong> Whether you use the auto-text input, snap a photo, or log manually, the more data you provide, the better our system becomes.
         </li>
         <li>
           <strong>Track Your Symptoms:</strong> Don't forget to log any symptoms you experience. This is key to finding correlations.
@@ -1062,7 +1070,7 @@ export default function RootPage() {
           <strong>Share Your Thoughts:</strong> See the green feedback widget? Use it! Report bugs, suggest features, or tell us what you love (or don't!).
         </li>
         <li>
-          <strong>Explore & Experiment:</strong> Dive into your Trends, check out the AI Dietitian insights, and see what patterns emerge.
+          <strong>Explore & Experiment:</strong> Dive into your Trends, check out the GutCheck Assistant insights, and see what patterns emerge.
         </li>
       </ul>
       <p className="text-muted-foreground">
@@ -1214,7 +1222,7 @@ export default function RootPage() {
       {isAnyItemLoadingAi && (
         <div className="fixed bottom-20 right-4 bg-card text-card-foreground p-3 rounded-lg shadow-lg flex items-center space-x-2 z-50">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span>AI is analyzing...</span>
+          <span>Analyzing...</span>
         </div>
       )}
     </div>

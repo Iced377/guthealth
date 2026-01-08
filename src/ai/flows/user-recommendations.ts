@@ -70,7 +70,7 @@ const userRecommendationFlow = ai.defineFlow(
     try {
       const { output } = await userRecommendationPrompt(input);
       if (!output || !output.recommendationText) {
-        console.warn('[UserRecommendationFlow] AI prompt returned no or invalid output. Falling back to default error response.');
+        console.warn('[UserRecommendationFlow] System computation returned no or invalid output. Falling back to default error response.');
         return defaultErrorOutput;
       }
       return output;

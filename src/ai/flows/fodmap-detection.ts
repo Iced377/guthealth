@@ -214,7 +214,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
         console.warn('[AnalyzeFoodItemFlow] AI prompt returned no output. Falling back to default error response.');
         return {
           ...defaultErrorOutput,
-          reason: `AI analysis failed for item: "${input.foodItem}". No output from prompt.`,
+          reason: `Analysis failed for item: "${input.foodItem}". No output from prompt.`,
           aiSummaries: {
             ...defaultErrorOutput.aiSummaries,
             fodmapSummary: `FODMAP analysis failed for "${input.foodItem}".`,

@@ -64,7 +64,7 @@ export type ProcessedFeedbackOutput = z.infer<typeof ProcessedFeedbackOutputSche
 const defaultErrorOutput: ProcessedFeedbackOutput = {
   aiSuggestedCategory: 'Other Technical Issue',
   summaryTitle: 'Feedback Analysis Failed',
-  detailedSummary: 'The AI could not process this feedback due to an internal error.',
+  detailedSummary: 'The system could not process this feedback due to an internal error.',
   sentiment: 'Neutral',
   feasibility: 'Unknown',
   validity: 'Unclear',
@@ -120,7 +120,7 @@ const processFeedbackFlow = ai.defineFlow(
     try {
       const { output } = await processFeedbackGenkitPrompt(input);
       if (!output) {
-        console.warn('[ProcessFeedbackFlow] AI prompt returned no output. Falling back to default error response.');
+        console.warn('[ProcessFeedbackFlow] System computation returned no output. Falling back to default error response.');
         return {
           ...defaultErrorOutput,
           detailedSummary: `AI analysis failed for feedback: "${input.feedbackText.substring(0, 50)}..."`,
@@ -132,7 +132,7 @@ const processFeedbackFlow = ai.defineFlow(
       return {
         ...defaultErrorOutput,
         summaryTitle: 'Feedback Analysis Error',
-        detailedSummary: `AI analysis failed: ${error.message || 'Unknown error'}. Original feedback: "${input.feedbackText.substring(0, 50)}..."`,
+        detailedSummary: `Analysis failed: ${error.message || 'Unknown error'}. Original feedback: "${input.feedbackText.substring(0, 50)}..."`,
       };
     }
   }
