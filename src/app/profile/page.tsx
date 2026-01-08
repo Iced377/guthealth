@@ -28,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/shared/Navbar';
 import { Calendar, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target, Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil } from 'lucide-react';
@@ -40,6 +41,17 @@ function getAge(dob: string) {
     const diff = Date.now() - new Date(dob).getTime();
     return Math.abs(new Date(diff).getUTCFullYear() - 1970);
 }
+
+const DIET_OPTIONS = [
+    { id: 'keto', name: 'Keto' },
+    { id: 'vegan', name: 'Vegan' },
+    { id: 'vegetarian', name: 'Vegetarian' },
+    { id: 'intermittent_fasting', name: 'Intermittent Fasting' },
+    { id: 'paleo', name: 'Paleo' },
+    { id: 'gluten_free', name: 'Gluten Free' },
+    { id: 'dairy_free', name: 'Dairy Free' },
+    { id: 'pescatarian', name: 'Pescatarian' },
+];
 
 export default function ProfilePage() {
     const { user, loading } = useAuth();
@@ -60,6 +72,7 @@ export default function ProfilePage() {
         gender: 'female' as 'male' | 'female',
         activityLevel: 'sedentary' as keyof typeof ACTIVITY_MULTIPLIERS,
         goal: 'maintain' as keyof typeof GOAL_ADJUSTMENTS,
+        dietaryPreferences: [] as string[],
     });
 
     const [isFitbitConnected, setIsFitbitConnected] = useState(false);
@@ -115,6 +128,7 @@ export default function ProfilePage() {
                 gender: profileData.gender,
                 activityLevel: profileData.activityLevel,
                 goal: profileData.goal,
+                dietaryPreferences: profileData.dietaryPreferences || [],
             });
         }
     }, [profileData, isEditOpen]);
@@ -165,7 +179,8 @@ export default function ProfilePage() {
                 ...editForm,
                 bmr: newBmr,
                 tdee: newTdee,
-                macros: newNutrition.macros
+                macros: newNutrition.macros,
+                dietaryPreferences: editForm.dietaryPreferences
             };
 
             await updateDoc(doc(db, 'users', user.uid), {
@@ -347,6 +362,40 @@ export default function ProfilePage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                <div className="col-span-2 space-y-3">
+                                    <Label>Dietary Preferences</Label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {DIET_OPTIONS.map((diet) => {
+                                            const isSelected = editForm.dietaryPreferences.includes(diet.id);
+                                            return (
+                                                <div
+                                                    key={diet.id}
+                                                    className="flex items-start space-x-2"
+                                                >
+                                                    <Checkbox
+                                                        id={`edit-${diet.id}`}
+                                                        checked={isSelected}
+                                                        onCheckedChange={(checked) => {
+                                                            const current = editForm.dietaryPreferences;
+                                                            if (checked) {
+                                                                setEditForm({ ...editForm, dietaryPreferences: [...current, diet.id] });
+                                                            } else {
+                                                                setEditForm({ ...editForm, dietaryPreferences: current.filter(id => id !== diet.id) });
+                                                            }
+                                                        }}
+                                                    />
+                                                    <label
+                                                        htmlFor={`edit-${diet.id}`}
+                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                    >
+                                                        {diet.name}
+                                                    </label>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
@@ -517,6 +566,33 @@ export default function ProfilePage() {
                                 </CardContent>
                             </Card>
                         )}
+
+                        {/* Nutrition Preferences Card */}
+                        <Card className="border-border shadow-sm bg-card text-card-foreground">
+                            <CardHeader>
+                                <CardTitle className="flex items-center text-xl">
+                                    Nutrition Preferences
+                                </CardTitle>
+                                <CardDescription>Your specific dietary choices.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {profileData.dietaryPreferences && profileData.dietaryPreferences.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {profileData.dietaryPreferences.map(prefId => {
+                                            const dietName = DIET_OPTIONS.find(d => d.id === prefId)?.name || prefId;
+                                            return (
+                                                <Badge key={prefId} variant="outline" className="px-3 py-1 bg-[#2aac6b]/10 text-[#2aac6b] border-[#2aac6b]/20">
+                                                    {dietName}
+                                                </Badge>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic">No specific dietary preferences set.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+
                     </>
                 )
                 }
