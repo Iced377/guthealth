@@ -1,3 +1,9 @@
+## Beta 4.0.1 (Jan 09, 2026)
+### Polish & Fixes
+- **Native Feel**: Implemented consistent 'press' animations for a more responsive, native-app experience across all buttons and cards.
+- **Layout Fix**: Fixed an issue where the top menu bar overlapped with the status bar on notched iPhones.
+- **UX**: Refined touch feedback on health indicators and food logging triggers.
+
 
 
 # Release Notes - GutHealth v4.0.0 (Mobile Release)

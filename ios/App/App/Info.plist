@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>GutCheck</string>
+	<string>GutCheck</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>GutCheck uses your camera to let you take photos of your meals for AI analysis and logging.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GutCheck needs access to your photo library to let you choose food photos for analysis.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -47,9 +51,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-    <key>NSCameraUsageDescription</key>
-    <string>GutCheck uses your camera to let you take photos of your meals for AI analysis and logging.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>GutCheck needs access to your photo library to let you choose food photos for analysis.</string>
 </dict>
 </plist>

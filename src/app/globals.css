@@ -347,4 +347,8 @@
     animation: icon-pulse 1.8s infinite ease-in-out 0.6s;
     /* Delay for third icon */
   }
+
+  .active-press {
+    @apply transition-transform duration-200 active:scale-95;
+  }
 }

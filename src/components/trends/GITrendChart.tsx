@@ -30,7 +30,13 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
     return <p className="text-center text-muted-foreground py-8">No GI data available for the selected period.</p>;
   }
 
-  const maxGiInDatapoints = data.length > 0 ? Math.max(...data.map(d => d.gi)) : 0;
+  const validData = data.filter(d => !isNaN(d.gi) && d.gi >= 0);
+
+  if (validData.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">No valid GI data available.</p>;
+  }
+
+  const maxGiInDatapoints = validData.length > 0 ? Math.max(...validData.map(d => d.gi)) : 0;
   const yAxisDomainMax = Math.max(maxGiInDatapoints, 100);
   const yAxisDomain = [0, yAxisDomainMax];
 
@@ -38,7 +44,8 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <BarChart
         accessibilityLayer
-        data={data}
+        data={validData}
+        margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
         margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
       >
         <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />

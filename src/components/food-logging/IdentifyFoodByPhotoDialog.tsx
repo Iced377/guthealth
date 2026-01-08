@@ -129,6 +129,17 @@ export default function IdentifyFoodByPhotoDialog({
           )}
         </DialogHeader>
 
+        {/* Hidden description for accessibility if not visibly shown */}
+        {(!imagePreview && !identifiedData && !photoError) ? (
+          <DialogDescription className="text-muted-foreground">
+            Choose a photo of your food item.
+          </DialogDescription>
+        ) : (
+          <DialogDescription className="sr-only">
+            Preview, analyze, and confirm your food photo details.
+          </DialogDescription>
+        )}
+
         {/* This div will now handle scrolling for its content */}
         <div className="flex-1 overflow-y-auto min-h-0 pr-2 py-4 space-y-4"> {/* Added pr-2 for scrollbar space */}
           {!imagePreview && !identifiedData && !isLoading && !photoError && (

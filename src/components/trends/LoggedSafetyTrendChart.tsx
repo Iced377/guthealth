@@ -34,6 +34,12 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
     return <p className="text-center text-muted-foreground py-8">No data available for the selected period.</p>;
   }
 
+  const validData = data.filter(d => (!isNaN(d.safe) && d.safe >= 0) || (!isNaN(d.unsafe) && d.unsafe >= 0) || (!isNaN(d.notMarked) && d.notMarked >= 0));
+
+  if (validData.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">No valid data available.</p>;
+  }
+
   const yAxisDomain = [
     0,
     Math.max(...data.map(d => d.safe + d.unsafe + d.notMarked), 5)
@@ -43,7 +49,7 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <BarChart
         accessibilityLayer
-        data={data}
+        data={validData}
         margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
         layout="vertical"
       >

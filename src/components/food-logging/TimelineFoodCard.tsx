@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -129,7 +130,7 @@ export default function TimelineFoodCard({
               {/* Title - Aligned with Top Row Actions */}
               <div className="flex items-center h-7">
                 <DialogTrigger asChild>
-                  <span className="inline-block">
+                  <span className="inline-block active-press">
                     <Button
                       variant="ghost"
                       className={cn(
@@ -281,18 +282,18 @@ export default function TimelineFoodCard({
           {/* Health Indicators - Promoted to main view */}
           {hasHealthIndicators && item.fodmapData && (
             <div className={cn("text-xs pt-0 flex flex-wrap items-center gap-2")}>
-              <MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} />
-              <DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} />
-              <GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} />
-              <KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} />
-              <FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} />
-              <GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} />
+              <div className="active-press"><MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} /></div>
+              <div className="active-press"><DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} /></div>
+              <div className="active-press"><GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} /></div>
+              <div className="active-press"><KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} /></div>
+              <div className="active-press"><FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} /></div>
+              <div className="active-press"><GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} /></div>
               {detectedAllergens && detectedAllergens.length > 0 &&
                 detectedAllergens.map((allergen: string) => (
                   <TooltipProvider key={allergen}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge variant="destructive" className="text-xs bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30 flex items-center gap-1 cursor-default">
+                        <Badge variant="destructive" className="text-xs bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30 flex items-center gap-1 cursor-default active-press">
                           <AlertCircle className="h-3.5 w-3.5" /> {allergen}
                         </Badge>
                       </TooltipTrigger>
@@ -312,6 +313,9 @@ export default function TimelineFoodCard({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Log Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            Detailed information about this logged food entry.
+          </DialogDescription>
         </DialogHeader>
         <div className="text-sm space-y-3 pt-2">
           <div>

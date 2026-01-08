@@ -30,6 +30,13 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
     return <p className="text-center text-muted-foreground py-8">No data available for the selected period.</p>;
   }
 
+  // Filter out invalid data to prevent NaN
+  const validData = data.filter(d => !isNaN(d.calories) && d.calories >= 0);
+
+  if (validData.length === 0) {
+    return <p className="text-center text-muted-foreground py-8">No valid data available.</p>;
+  }
+
   const yAxisDomain = [
     0,
     Math.max(...data.map(d => d.calories), 1000) // Ensure Y axis goes to at least 1000
@@ -39,7 +46,7 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
       <AreaChart
         accessibilityLayer
-        data={data}
+        data={validData}
         margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
       >
         <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />

@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.0.0";
+const APP_VERSION = "Beta 4.0.1";
 
 
 interface ReleaseNote {
@@ -62,6 +62,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.0.1",
+    date: "Jan 09, 2026",
+    title: "Polish & Fixes",
+    description: [
+      "Native Feel: Implemented consistent 'press' animations for a more responsive, native-app experience across all buttons and cards.",
+      "Layout Fix: Fixed an issue where the top menu bar overlapped with the status bar on notched iPhones.",
+      "UX: Refined touch feedback on health indicators and food logging triggers."
+    ]
+  },
   {
     version: "Beta 4.0.0",
     date: "Jan 08, 2026",
@@ -861,7 +871,7 @@ export default function Navbar({
     setIsReleaseNotesOpen(open);
   };
 
-  const headerBaseClasses = "z-50 w-full transition-all duration-300";
+  const headerBaseClasses = "z-50 w-full transition-all duration-300 pt-[env(safe-area-inset-top)]";
   const headerClasses = cn(
     headerBaseClasses,
     isGuest

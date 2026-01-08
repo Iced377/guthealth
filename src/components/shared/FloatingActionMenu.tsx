@@ -62,7 +62,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 4: Manual/Recent */}
                         <motion.button
                             variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
                             onClick={() => { setIsOpen(false); onAddManualEntryClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Manual Entry</span>
@@ -74,7 +74,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 3: Symptoms */}
                         <motion.button
                             variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
                             onClick={() => { setIsOpen(false); onLogSymptomsClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Log Symptoms</span>
@@ -86,7 +86,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 2.5: Favorites (New) */}
                         <motion.button
                             variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
                             onClick={() => { setIsOpen(false); onLogFavoriteClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Log from Favourites</span>
@@ -98,7 +98,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 2: Photo/Barcode */}
                         <motion.button
                             variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
                             onClick={() => { setIsOpen(false); onScanBarcodeClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Scan / Photo</span>
@@ -110,7 +110,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 1: AI Log */}
                         <motion.button
                             variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
                             onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Auto Food Log</span>
@@ -124,12 +124,10 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
 
             <motion.button
                 className={cn(
-                    "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200",
+                    "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200 active-press",
                     isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-white"
                 )}
                 onClick={toggleMenu}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
                 animate={{ rotate: isOpen ? 45 : 0 }}
             >
                 {/* Icon: Plus sign AND Meal Icon? */}
