@@ -162,6 +162,7 @@ export interface UserProfile {
     activityLevel: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'super_active';
     goal: 'maintain' | 'lose_fat' | 'gain_muscle';
     symptoms: string[]; // e.g., ['bloating', 'fatigue']
+    dietaryPreferences?: string[]; // e.g., ['keto', 'vegan']
 
     // Calculated
     bmr: number;

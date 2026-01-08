@@ -13,9 +13,10 @@ import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIP
 import BasicInfo from './steps/BasicInfo';
 import GoalsStep from './steps/GoalsStep';
 import SymptomsStep from './steps/SymptomsStep';
+import DietStep from './steps/DietStep';
 import ResultsStep from './steps/ResultsStep';
 
-type WizardStep = 'intro' | 'basic-info' | 'goals' | 'symptoms' | 'results';
+type WizardStep = 'intro' | 'basic-info' | 'goals' | 'diet' | 'symptoms' | 'results';
 
 export interface SetupData {
     gender: 'male' | 'female';
@@ -25,6 +26,7 @@ export interface SetupData {
     activityLevel: keyof typeof ACTIVITY_MULTIPLIERS;
     goal: keyof typeof GOAL_ADJUSTMENTS;
     symptoms: string[];
+    dietaryPreferences?: string[];
 }
 
 export default function SetupWizard() {
@@ -42,7 +44,8 @@ export default function SetupWizard() {
         weight: 70,
         activityLevel: 'sedentary',
         goal: 'maintain',
-        symptoms: []
+        symptoms: [],
+        dietaryPreferences: []
     });
 
     const [results, setResults] = useState<{ bmr: number, tdee: number, macros: { protein: number, carbs: number, fats: number } } | null>(null);
@@ -99,6 +102,7 @@ export default function SetupWizard() {
                 activityLevel: formData.activityLevel,
                 goal: formData.goal,
                 symptoms: formData.symptoms,
+                dietaryPreferences: formData.dietaryPreferences,
                 bmr: results.bmr,
                 tdee: results.tdee,
                 macros: results.macros
@@ -161,7 +165,7 @@ export default function SetupWizard() {
     };
 
     // Progress Logic
-    const steps: WizardStep[] = ['intro', 'basic-info', 'goals', 'symptoms', 'results'];
+    const steps: WizardStep[] = ['intro', 'basic-info', 'goals', 'diet', 'symptoms', 'results'];
     const currentStepIndex = steps.indexOf(currentStep);
     const progress = Math.min(100, Math.max(0, ((currentStepIndex) / (steps.length - 1)) * 100));
 
@@ -220,6 +224,26 @@ export default function SetupWizard() {
                                 data={formData}
                                 updateData={updateFormData}
                                 onBack={() => prevStep('basic-info')}
+                                onNext={() => nextStep('diet')}
+                            />
+                        </motion.div>
+                    )}
+
+                    {currentStep === 'diet' && (
+                        <motion.div
+                            key="diet"
+                            custom={direction}
+                            variants={variants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="w-full"
+                        >
+                            <DietStep
+                                data={formData}
+                                updateData={updateFormData}
+                                onBack={() => prevStep('goals')}
                                 onNext={() => nextStep('symptoms')}
                             />
                         </motion.div>
@@ -239,7 +263,7 @@ export default function SetupWizard() {
                             <SymptomsStep
                                 data={formData}
                                 updateData={updateFormData}
-                                onBack={() => prevStep('goals')}
+                                onBack={() => prevStep('diet')}
                                 onNext={() => {
                                     calculateResults();
                                     nextStep('results');
