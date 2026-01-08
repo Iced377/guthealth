@@ -13,6 +13,7 @@ const UserRecommendationInputSchema = z.object({
   requestType: z.enum(['general_wellness', 'diet_tip', 'activity_nudge', 'mindfulness_reminder']).optional().describe("The type of recommendation requested, to ensure variety."),
   recentFoodLogSummary: z.string().optional().describe("A brief summary of recently logged food items, e.g., 'Logged 3 meals, 1 high FODMAP.' or 'User has logged several items today.'"),
   recentSymptomSummary: z.string().optional().describe("A brief summary of recently logged symptoms, e.g., 'Reported bloating twice recently.' or 'No symptoms reported today.'"),
+  dietaryPreferences: z.array(z.string()).optional().describe("List of user's dietary preferences, e.g., ['Keto', 'Vegan']."),
 });
 export type UserRecommendationInput = z.infer<typeof UserRecommendationInputSchema>;
 
@@ -40,12 +41,14 @@ Output JSON matching UserRecommendationOutputSchema.
 Context (use if relevant, omit if not applicable or empty):
 {{#if recentFoodLogSummary}}Food activity: {{{recentFoodLogSummary}}}{{/if}}
 {{#if recentSymptomSummary}}Symptoms: {{{recentSymptomSummary}}}{{/if}}
+{{#if dietaryPreferences}}Diet Preferences: {{#each dietaryPreferences}}{{.}}, {{/each}}{{/if}}
 {{#if requestType}}Requested type: {{{requestType}}}{{/if}}
 
 Guidelines:
 1. If context (food/symptoms) is given, make tip subtly relevant, especially if matching 'requestType'.
    - E.g., High sugar snack + 'diet_tip' -> "For sustained energy, try fruit and nuts instead of a sugary snack."
    - E.g., Bloating + 'general_wellness' -> "Feeling bloated? Slowing your eating pace might help."
+   - If 'dietaryPreferences' are present, align suggestions accordingly (e.g., suggest keto-friendly snacks if Keto).
 2. Prioritize 'requestType' if provided:
    - 'general_wellness': Hydration, sleep, stress. (E.g., "Aim for 7-8 hours of sleep for better well-being.")
    - 'diet_tip': Nutrition advice. (E.g., "Varied colorful veggies boost nutrients.")

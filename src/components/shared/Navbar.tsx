@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.10.4";
+const APP_VERSION = "Beta 3.10.5";
 
 
 interface ReleaseNote {
@@ -62,6 +62,17 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.10.5",
+    date: "Jan 08, 2026",
+    title: "Preferences & AI Polish",
+    description: [
+      "User Center: View and edit Dietary Preferences (Keto, Vegan, etc.).",
+      "AI Upgrade: AI now calculates your Max Fasting Window for better Intermittent Fasting advice.",
+      "Mobile: Fixed animated logo visibility on small screens.",
+      "Visuals: Added a friendly avatar video greeting."
+    ]
+  },
   {
     version: "Beta 3.10.4",
     date: "Jan 08, 2026",

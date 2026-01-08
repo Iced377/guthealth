@@ -1,4 +1,23 @@
 
+# Release Notes - GutHealth v3.10.5 (Preferences & AI Polish)
+
+**Release Date:** January 08, 2026
+**Version:** v3.10.5
+
+## 🌟 New Features
+### Dietary Preferences
+- **User Center**: You can now view and edit your **Dietary Preferences** (e.g., Keto, Vegan, Gluten-Free) directly in your Profile.
+- **Personalized Advice**: The AI Dietitian sees these preferences and tailors its recommendations accordingly.
+
+### AI Intermittent Fasting
+- **Fasting Awareness**: The AI now calculates your **Max Fasting Window** from your logs.
+- **Smart Feedback**: If you are fasting, it will give you specific encouragement or advice based on your actual eating window (e.g., "Great job hitting 16 hours!").
+
+### Mobile Experience
+- **Animated Logo**: The "Your Personal Dietitian" animated logo is now fully visible on mobile devices for logged-in users.
+- **Avatar Video**: Integrated a friendly avatar greeting for a warmer welcome.
+
+---
 # Release Notes - GutHealth v3.10.4 (Your Personal Dietitian)
 
 **Release Date:** January 08, 2026
