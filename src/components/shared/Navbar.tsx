@@ -855,7 +855,7 @@ export default function Navbar({
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Link href="/" className="flex items-center space-x-2">
             {!isGuest && (
-              <div className={cn("flex h-12 w-12 items-center justify-center rounded-full border-2 p-0 overflow-hidden relative", "bg-[#2aac6b] border-[#2aac6b]")}>
+              <div className={cn("flex shrink-0 h-12 w-12 items-center justify-center rounded-full border-2 p-0 overflow-hidden relative", "bg-[#2aac6b] border-[#2aac6b]")}>
                 <video
                   src="/happy-gestures.mp4"
                   className="w-full h-full object-cover"
