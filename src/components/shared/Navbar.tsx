@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.10.3";
+const APP_VERSION = "Beta 3.10.4";
 
 
 interface ReleaseNote {
@@ -62,6 +62,17 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.10.4",
+    date: "Jan 08, 2026",
+    title: "Your Personal Dietitian",
+    description: [
+      "AI Upgrade: Renamed to 'Your Personal Dietitian' with a smarter, goal-oriented brain.",
+      "Smart Goals: The AI now understands your specific goal (Weight Loss, Muscle Gain, etc.) and tailors advice accordingly.",
+      "Trends Awareness: It now looks at your long-term trends to provide more meaningful 'Next Steps'.",
+      "Context: Your Activity Level and BMR are now part of the AI's analysis for hyper-personalized insights."
+    ]
+  },
   {
     version: "Beta 3.10.3",
     date: "Jan 08, 2026",
@@ -844,12 +855,19 @@ export default function Navbar({
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Link href="/" className="flex items-center space-x-2">
             {!isGuest && (
-              <div className={cn("flex h-12 w-12 items-center justify-center rounded-full border-2 p-1", "bg-primary border-primary")}>
-                <Image src="/Gutcheck_logo.png" alt="GutCheck Logo" width={39} height={39} className="object-contain filter brightness-0 invert" priority />
+              <div className={cn("flex h-12 w-12 items-center justify-center rounded-full border-2 p-0 overflow-hidden relative", "bg-[#2aac6b] border-[#2aac6b]")}>
+                <video
+                  src="/happy-gestures.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
               </div>
             )}
             {!isGuest && (
-              <span className={cn(appNameBaseClasses, 'text-current', 'sm:inline-block')}>{APP_NAME}</span>
+              <span className={cn(appNameBaseClasses, 'text-current', 'hidden sm:inline-block')}>{APP_NAME}</span>
             )}
           </Link>
           <Dialog open={isReleaseNotesOpen} onOpenChange={handleReleaseNotesToggle}>

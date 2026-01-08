@@ -4,11 +4,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import Navbar from '@/components/shared/Navbar';
-import { Loader2, Brain, Sparkles, ThumbsDown, Home } from 'lucide-react'; 
+import { Loader2, Brain, Sparkles, ThumbsDown, Home } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { LoggedFoodItem, SymptomLog, UserProfile } from '@/types'; 
+import type { LoggedFoodItem, SymptomLog, UserProfile } from '@/types';
 import { getPersonalizedDietitianInsight, type PersonalizedDietitianInput } from '@/ai/flows/personalized-dietitian-flow';
 import { db } from '@/config/firebase';
 import {
@@ -21,7 +21,7 @@ import {
   getDoc,
   limit,
   where,
-} from 'firebase/firestore'; 
+} from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -67,7 +67,7 @@ export default function AIInsightsPage() {
         if (userDocSnap.exists()) {
           setUserProfile(userDocSnap.data() as UserProfile);
         } else {
-           setUserProfile({ uid: authUser.uid, email: authUser.email, displayName: authUser.displayName, safeFoods: [], premium: false });
+          setUserProfile({ uid: authUser.uid, email: authUser.email, displayName: authUser.displayName, safeFoods: [], premium: false });
         }
       } catch (err: any) {
         console.error("Error fetching user profile:", err);
@@ -89,17 +89,17 @@ export default function AIInsightsPage() {
       const now = new Date();
       const startDate = new Date(now);
       startDate.setDate(now.getDate() - DATA_FETCH_LIMIT_DAYS);
-      
+
       const timelineEntriesColRef = collection(db, 'users', authUser.uid, 'timelineEntries');
-      
+
       let foodLogQuery;
       let symptomLogQuery;
 
       const isPremium = userProfile?.premium || TEMPORARILY_UNLOCK_ALL_FEATURES;
 
       if (isPremium) {
-         foodLogQuery = query(timelineEntriesColRef, where('entryType', 'in', ['food', 'manual_macro']), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc'));
-         symptomLogQuery = query(timelineEntriesColRef, where('entryType', '==', 'symptom'), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc'));
+        foodLogQuery = query(timelineEntriesColRef, where('entryType', 'in', ['food', 'manual_macro']), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc'));
+        symptomLogQuery = query(timelineEntriesColRef, where('entryType', '==', 'symptom'), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc'));
       } else {
         const freeUserStartDate = new Date(now);
         freeUserStartDate.setDate(now.getDate() - 7);
@@ -122,7 +122,7 @@ export default function AIInsightsPage() {
           console.warn(`Invalid or missing timestamp for food item ${d.id}, using current date as fallback.`);
           timestamp = new Date(); // Fallback or consider filtering out
         }
-        return {...data, id: d.id, timestamp } as LoggedFoodItem;
+        return { ...data, id: d.id, timestamp } as LoggedFoodItem;
       }).filter(item => item.timestamp); // Filter out items where timestamp conversion might have failed if fallback wasn't desired
 
 
@@ -135,50 +135,56 @@ export default function AIInsightsPage() {
           console.warn(`Invalid or missing timestamp for symptom log ${d.id}, using current date as fallback.`);
           timestamp = new Date(); // Fallback or consider filtering out
         }
-        return {...data, id: d.id, timestamp } as SymptomLog;
+        return { ...data, id: d.id, timestamp } as SymptomLog;
       }).filter(item => item.timestamp);
-      
+
       const processedFoodLog = foodLogData.map(item => ({
-          name: item.name,
-          originalName: item.originalName ?? undefined,
-          ingredients: item.ingredients,
-          portionSize: item.portionSize,
-          portionUnit: item.portionUnit,
-          timestamp: item.timestamp.toISOString(),
-          overallFodmapRisk: item.fodmapData?.overallRisk ?? undefined,
-          calories: item.calories ?? undefined,
-          protein: item.protein ?? undefined,
-          carbs: item.carbs ?? undefined,
-          fat: item.fat ?? undefined,
-          userFeedback: item.userFeedback, 
-          sourceDescription: item.sourceDescription ?? undefined
+        name: item.name,
+        originalName: item.originalName ?? undefined,
+        ingredients: item.ingredients,
+        portionSize: item.portionSize,
+        portionUnit: item.portionUnit,
+        timestamp: item.timestamp.toISOString(),
+        overallFodmapRisk: item.fodmapData?.overallRisk ?? undefined,
+        calories: item.calories ?? undefined,
+        protein: item.protein ?? undefined,
+        carbs: item.carbs ?? undefined,
+        fat: item.fat ?? undefined,
+        userFeedback: item.userFeedback,
+        sourceDescription: item.sourceDescription ?? undefined
       }));
 
       const processedSymptomLog = symptomLogData.map(symptomEntry => {
-          let finalLinkedIds: string[] = [];
-          const rawLinkedIds = symptomEntry.linkedFoodItemIds;
+        let finalLinkedIds: string[] = [];
+        const rawLinkedIds = symptomEntry.linkedFoodItemIds;
 
-          if (Array.isArray(rawLinkedIds)) {
-            finalLinkedIds = rawLinkedIds.filter(id => typeof id === 'string' && id.trim().length > 0);
-          }
-          
-          return {
-              symptoms: symptomEntry.symptoms.map(s => ({ name: s.name })),
-              severity: symptomEntry.severity ?? undefined,
-              notes: symptomEntry.notes ?? undefined,
-              timestamp: symptomEntry.timestamp.toISOString(),
-              linkedFoodItemIds: finalLinkedIds.length > 0 ? finalLinkedIds : undefined, // Send undefined if empty, to match .optional()
-          };
+        if (Array.isArray(rawLinkedIds)) {
+          finalLinkedIds = rawLinkedIds.filter(id => typeof id === 'string' && id.trim().length > 0);
+        }
+
+        return {
+          symptoms: symptomEntry.symptoms.map(s => ({ name: s.name })),
+          severity: symptomEntry.severity ?? undefined,
+          notes: symptomEntry.notes ?? undefined,
+          timestamp: symptomEntry.timestamp.toISOString(),
+          linkedFoodItemIds: finalLinkedIds.length > 0 ? finalLinkedIds : undefined, // Send undefined if empty, to match .optional()
+        };
       });
-      
+
       const aiInput: PersonalizedDietitianInput = {
         userQuestion: PREDEFINED_QUESTION,
         foodLog: processedFoodLog,
         symptomLog: processedSymptomLog,
         userProfile: userProfile ? {
-            displayName: userProfile.displayName ?? undefined,
-            safeFoods: userProfile.safeFoods.map(sf => ({ name: sf.name, portionSize: sf.portionSize, portionUnit: sf.portionUnit })),
-            premium: userProfile.premium ?? undefined
+          displayName: userProfile.displayName ?? undefined,
+          safeFoods: userProfile.safeFoods.map(sf => ({ name: sf.name, portionSize: sf.portionSize, portionUnit: sf.portionUnit })),
+          premium: userProfile.premium ?? undefined,
+          goal: userProfile.profile?.goal,
+          dietaryPreferences: userProfile.profile?.dietaryPreferences,
+          activityLevel: userProfile.profile?.activityLevel,
+          tdee: userProfile.profile?.tdee,
+          bmr: userProfile.profile?.bmr,
+          currentWeight: userProfile.profile?.weight
         } : undefined,
       };
 
@@ -201,7 +207,7 @@ export default function AIInsightsPage() {
   };
 
 
-  if (authLoading) { 
+  if (authLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -221,7 +227,7 @@ export default function AIInsightsPage() {
           <Brain className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-2xl font-semibold mb-2 text-foreground">Insights Unavailable</h2>
           <p className="text-muted-foreground">{error}</p>
-           <div className="mt-8">
+          <div className="mt-8">
             <Button asChild variant="outline">
               <Link href="/?openDashboard=true">
                 <Home className="mr-2 h-4 w-4" /> Return to Dashboard
@@ -232,17 +238,17 @@ export default function AIInsightsPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <Navbar />
       <main className="flex-1 flex flex-col overflow-hidden container mx-auto px-0 sm:px-4 py-0">
         <div className="p-4 border-b border-border text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center">
-            <Sparkles className="mr-2 h-7 w-7 text-primary" /> Your Personal AI Dietitian
+            <Sparkles className="mr-2 h-7 w-7 text-primary" /> Your Personal Dietitian
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl mx-auto">
-            Get personalized insights based on your logged data by asking: <br/>
+            Get personalized insights based on your goals, trends, and daily logs by asking: <br />
             <em className="text-primary/90">&quot;{PREDEFINED_QUESTION}&quot;</em>
           </p>
         </div>
@@ -268,14 +274,14 @@ export default function AIInsightsPage() {
                 </CardFooter>
               </Card>
             )}
-             {isGeneratingInsight && (
+            {isGeneratingInsight && (
               <div className="flex items-center justify-center p-6 bg-muted/50 rounded-md">
                 <Loader2 className="h-6 w-6 animate-spin text-primary mr-3" />
                 <p className="text-foreground">Your AI Dietitian is analyzing your day...</p>
               </div>
             )}
             {error && isGeneratingInsight && (
-                <p className="text-destructive text-sm text-center p-2">{error}</p>
+              <p className="text-destructive text-sm text-center p-2">{error}</p>
             )}
           </div>
         </ScrollArea>
@@ -301,4 +307,4 @@ export default function AIInsightsPage() {
   );
 }
 
-    
+

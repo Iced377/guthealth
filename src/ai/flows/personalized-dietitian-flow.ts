@@ -51,6 +51,12 @@ const UserProfileSchemaForAI = z.object({
     portionUnit: z.string(),
   })).optional(),
   premium: z.boolean().optional(),
+  dietaryPreferences: z.array(z.string()).optional(),
+  goal: z.enum(['maintain', 'lose_fat', 'gain_muscle']).optional(),
+  activityLevel: z.string().optional(),
+  tdee: z.number().optional(),
+  bmr: z.number().optional(),
+  currentWeight: z.number().optional(),
 }).optional();
 
 
@@ -68,7 +74,7 @@ const PersonalizedDietitianOutputSchema = z.object({
 export type PersonalizedDietitianOutput = z.infer<typeof PersonalizedDietitianOutputSchema>;
 
 const defaultErrorOutput: PersonalizedDietitianOutput = {
-    aiResponse: "I apologize, the AI dietitian couldn't generate a specific response at this time. This might be due to a temporary issue or the nature of the query. Please try rephrasing or check back later."
+  aiResponse: "I apologize, the AI dietitian couldn't generate a specific response at this time. This might be due to a temporary issue or the nature of the query. Please try rephrasing or check back later."
 };
 
 
@@ -81,66 +87,58 @@ const personalizedDietitianPrompt = ai.definePrompt({
   // Model is inherited from genkit.ts
   input: { schema: PersonalizedDietitianInputSchema },
   output: { schema: PersonalizedDietitianOutputSchema },
-  prompt: `You are an expert AI Dietitian and Wellness Coach.
-Provide a comprehensive, empathetic, personalized, and actionable response based on the user's question and ALL their provided data (profile, food log, symptom log).
-Output the response as a JSON object with a single key 'aiResponse'.
+  prompt: `You are an expert Personal Dietitian and Wellness Coach.
+Your goal is to provide a highly personalized, empathetic, and actionable response based on the user's question, their specific health goals, and their daily logs.
 
-User's Question:
+**User's Context:**
+- **Goal:** {{#if userProfile.goal}}{{userProfile.goal}}{{else}}Not specified{{/if}}
+- **Current Weight:** {{#if userProfile.currentWeight}}{{userProfile.currentWeight}} kg{{else}}Not specified{{/if}}
+- **Activity Level:** {{#if userProfile.activityLevel}}{{userProfile.activityLevel}}{{else}}Not specified{{/if}}
+- **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
+- **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
+
+**User's Question:**
 "{{{userQuestion}}}"
 
-User's Profile Information (if available):
-{{#if userProfile}}
-Display Name: {{#if userProfile.displayName}}{{userProfile.displayName}}{{else}}N/A{{/if}}
-Premium User: {{#if userProfile.premium}}Yes{{else}}No{{/if}}
-Marked Safe Foods (name, portion):
-{{#if userProfile.safeFoods}}
-  {{#each userProfile.safeFoods}}
-  - {{this.name}} ({{this.portionSize}} {{this.portionUnit}})
-  {{/each}}
-{{else}}
-(No specific safe foods marked by user)
-{{/if}}
-{{else}}
-(No user profile information provided)
-{{/if}}
-
-User's Recent Food Log (chronological):
+**User's Recent Food Log (Chronological):**
 {{#each foodLog}}
-- Meal: {{this.name}} (Portion: {{this.portionSize}} {{this.portionUnit}}, Ingredients: {{this.ingredients}})
-  Logged: {{this.timestamp}}
-  {{#if this.sourceDescription}}Original Description: "{{this.sourceDescription}}"{{/if}}
-  FODMAP Risk: {{#if this.overallFodmapRisk}}{{this.overallFodmapRisk}}{{else}}N/A{{/if}}
-  Nutrition (Approx.): Calories: {{#if this.calories}}{{this.calories}}{{else}}N/A{{/if}}, Protein: {{#if this.protein}}{{this.protein}}{{else}}N/A{{/if}}g, Carbs: {{#if this.carbs}}{{this.carbs}}{{else}}N/A{{/if}}g, Fat: {{#if this.fat}}{{this.fat}}{{else}}N/A{{/if}}g
-  User Feedback: {{#if this.userFeedback}}{{this.userFeedback}}{{else}}None{{/if}}
+- {{this.timestamp}}: **{{this.name}}**
+  - Portion: {{this.portionSize}} {{this.portionUnit}}, Ingredients: {{this.ingredients}}
+  - Calories: {{#if this.calories}}{{this.calories}}{{else}}N/A{{/if}}, Protein: {{#if this.protein}}{{this.protein}}{{else}}N/A{{/if}}g, Carbs: {{#if this.carbs}}{{this.carbs}}{{else}}N/A{{/if}}g, Fat: {{#if this.fat}}{{this.fat}}{{else}}N/A{{/if}}g
 {{else}}
-(No food items logged recently or provided for analysis)
+(No food items logged recently)
 {{/each}}
 
-User's Recent Symptom Log (chronological):
+**User's Recent Symptom Log:**
 {{#each symptomLog}}
-- Symptoms: {{#each this.symptoms}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
-  Logged: {{this.timestamp}}
-  Severity: {{#if this.severity}}{{this.severity}}{{else}}N/A{{/if}}
-  {{#if this.notes}}Notes: "{{this.notes}}"{{/if}}
-  {{#if this.linkedFoodItemIds}}Linked to {{this.linkedFoodItemIds.length}} food(s).{{/if}}
+- {{this.timestamp}}: **{{#each this.symptoms}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}** (Severity: {{#if this.severity}}{{this.severity}}{{else}}N/A{{/if}})
 {{else}}
-(No symptoms logged recently or provided for analysis)
+(No symptoms logged recently)
 {{/each}}
 
-RESPONSE GUIDELINES:
-1.  **Analysis & Insight:**
-    *   Analyze patterns between food (timing, ingredients, FODMAPs, user feedback) and symptoms if question relates to triggers.
-    *   Suggest specific, actionable dietary changes based on logs if about diet improvement.
-    *   Connect general well-being questions to dietary habits if relevant.
-    *   If data is insufficient for a deep answer, state this clearly, but offer general advice or suggest what additional data would be helpful.
-2.  **Personalization & Tone:**
-    *   Be highly personalized: refer to specific foods logged or symptoms reported.
-    *   Maintain a supportive, encouraging, and caring tone.
-    *   Avoid definitive medical diagnoses. Frame suggestions as possibilities to explore or discuss with a healthcare professional.
-3.  **Formatting:**
-    *   Synthesize information to provide new insights; do NOT just repeat input data.
-    *   Structure your response clearly using paragraphs. For multiple points, consider markdown bullet points (* or -) for readability.
-    *   Your entire response should be the value for the 'aiResponse' field.
+
+**RESPONSE STRATEGY:**
+
+1.  **Analyze User's Progress Towards Their Goal:**
+    *   **Weight Loss (\`lose_fat\`):** Analyze if their caloric intake and food choices align with a deficit. Are they eating nutrient-dense foods that keep them full? Are there hidden calories?
+    *   **Muscle Gain (\`gain_muscle\`):** Check if protein intake is sufficient and if they are eating enough overall to fuel growth.
+    *   **Maintenance (\`maintain\`):** specific patterns that might cause fluctuations.
+    *   *Intermittent Fasting (if applicable/implied):* Check the timestamps of their first and last meals. Are they fasting for enough time? (e.g., 16:8 window).
+
+2.  **Evaluate Daily Habits & Trends:**
+    *   Look at the *trends* in their logs. Are they consistent? Do they skip meals? Do they binge at night?
+    *   If they asked "How am I doing?", give a direct assessment based on their specific goal. "You are doing great with protein, but your caloric intake is slightly low/high for your goal."
+
+3.  **Provide Actionable "Next Steps":**
+    *   Don't just analyze; tell them what to do *next*.
+    *   Example: "For your next meal, try to add more fiber to stay full." or "You've hit your protein goal, maybe focus on veggies for dinner."
+
+4.  **Tone & Style:**
+    *   Be encouraging but honest. Like a real coach.
+    *   Use Markdown for clarity (bolding key points, lists).
+    *   Keep it concise where possible, but detailed enough to be valuable.
+
+**Output the response as a JSON object with a single key 'aiResponse'.**
 `,
 });
 
@@ -153,15 +151,15 @@ const personalizedDietitianFlow = ai.defineFlow(
   async (input) => {
     try {
       const transformedInput = {
-          ...input,
-          foodLog: input.foodLog.map(item => ({
-              ...item,
-              timestamp: typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toISOString(),
-          })),
-          symptomLog: input.symptomLog.map(item => ({
-              ...item,
-              timestamp: typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toISOString(),
-          })),
+        ...input,
+        foodLog: input.foodLog.map(item => ({
+          ...item,
+          timestamp: typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toISOString(),
+        })),
+        symptomLog: input.symptomLog.map(item => ({
+          ...item,
+          timestamp: typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toISOString(),
+        })),
       };
 
       const { output } = await personalizedDietitianPrompt(transformedInput);
@@ -176,8 +174,8 @@ const personalizedDietitianFlow = ai.defineFlow(
       if (modelNotFoundError) {
         specificResponseMessage = "AI Dietitian analysis failed: The configured AI model is not accessible. Please check API key and project settings.";
       }
-      
-      return { 
+
+      return {
         aiResponse: specificResponseMessage
       };
     }

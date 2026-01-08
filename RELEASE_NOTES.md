@@ -1,4 +1,17 @@
 
+# Release Notes - GutHealth v3.10.4 (Your Personal Dietitian)
+
+**Release Date:** January 08, 2026
+**Version:** v3.10.4
+
+## 🧠 AI Dietitian Upgrade
+### Smarter & Goal-Oriented
+- **Rebranding**: The "AI Dietitian" is now "Your Personal Dietitian".
+- **Goal Awareness**: The AI now strictly follows your set goal (e.g., Lose Fat, Gain Muscle) when analyzing your day.
+- **Deep Context**: It now sees your BMR, TDEE, and Activity Level to give scientifically grounded advice.
+- **Trend Analysis**: Insights are now based on your habits and trends, not just a snapshot of a single meal.
+
+---
 # Release Notes - GutHealth v3.10.3 (Polished Logging Experience)
 
 **Release Date:** January 08, 2026
