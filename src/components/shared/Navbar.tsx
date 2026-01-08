@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.10.5";
+const APP_VERSION = "Beta 3.10.6";
 
 
 interface ReleaseNote {
@@ -63,12 +63,22 @@ interface ReleaseNote {
 
 const releaseNotesData: ReleaseNote[] = [
   {
+    version: "Beta 3.10.6",
+    date: "Jan 08, 2026",
+    title: "Experience Polish",
+    description: [
+      "Smart Upgrade: Removed 'AI' branding in favor of 'System', 'Smart', and 'GutCheck Assistant' for a warmer experience.",
+      "Insights Fixed: Your Personal Dietitian now knows your exact local time and uses precise daily totals for accurate advice.",
+      "Visuals: The About page now features a cleaner look without the background video, improving readability."
+    ]
+  },
+  {
     version: "Beta 3.10.5",
     date: "Jan 08, 2026",
-    title: "Preferences & AI Polish",
+    title: "Preferences & Polish",
     description: [
       "User Center: View and edit Dietary Preferences (Keto, Vegan, etc.).",
-      "AI Upgrade: AI now calculates your Max Fasting Window for better Intermittent Fasting advice.",
+      "Smart Upgrade: System now calculates your Max Fasting Window for better Intermittent Fasting advice.",
       "Mobile: Fixed animated logo visibility on small screens.",
       "Visuals: Added a friendly avatar video greeting."
     ]
@@ -78,10 +88,10 @@ const releaseNotesData: ReleaseNote[] = [
     date: "Jan 08, 2026",
     title: "Your Personal Dietitian",
     description: [
-      "AI Upgrade: Renamed to 'Your Personal Dietitian' with a smarter, goal-oriented brain.",
-      "Smart Goals: The AI now understands your specific goal (Weight Loss, Muscle Gain, etc.) and tailors advice accordingly.",
+      "Upgrade: Renamed to 'Your Personal Dietitian' with a smarter, goal-oriented brain.",
+      "Smart Goals: The system now understands your specific goal (Weight Loss, Muscle Gain, etc.) and tailors advice accordingly.",
       "Trends Awareness: It now looks at your long-term trends to provide more meaningful 'Next Steps'.",
-      "Context: Your Activity Level and BMR are now part of the AI's analysis for hyper-personalized insights."
+      "Context: Your Activity Level and BMR are now part of the system's analysis for hyper-personalized insights."
     ]
   },
   {
@@ -238,19 +248,19 @@ const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.9.6",
     date: "January 2, 2026",
-    title: "Sync & AI Fixes",
+    title: "Sync & Smart Fixes",
     description: [
       "Fitbit Sync Engine Overhaul: Implemented a smart holistic sync that handles 1-year history (chunked), auto-syncs on page load, and guarantees real-time 'Today' data.",
-      "AI Food Recognition Fix: Resolved an issue where the AI service was failing due to configuration mismatch. Text and Image logging are fully operational again.",
+      "Auto-Food Recognition Fix: Resolved an issue where the recognition service was failing due to configuration mismatch. Text and Image logging are fully operational again.",
     ]
   },
   {
     version: "Beta 3.9.5",
     date: "January 1, 2026",
-    title: "AI Improvements",
+    title: "System Improvements",
     description: [
-      "AI: Improved food identification to automatically estimate quantities for more accurate macro tracking.",
-      "AI: Optimized nutrition analysis for faster response times.",
+      "Improved food identification to automatically estimate quantities for more accurate macro tracking.",
+      "Optimized nutrition analysis for faster response times.",
     ]
   },
   {
@@ -290,7 +300,7 @@ const releaseNotesData: ReleaseNote[] = [
     date: "December 31, 2025",
     title: "Shorter Titles",
     description: [
-      "AI: Updated the Title Generator to limit creative names to 21 characters for better UI fit.",
+      "System: Updated the Title Generator to limit creative names to 21 characters for better UI fit.",
     ]
   },
   {
@@ -525,8 +535,8 @@ const releaseNotesData: ReleaseNote[] = [
     title: "App Audit & Timestamp Fixes",
     description: [
       "Timestamp Control: Implemented precise date AND time selection for all food logging and editing actions.",
-      "Audit Fix - Consistent Editing: Standardized editing dialogs; AI-processed items (text/photo) now consistently use the appropriate dialog for re-analysis or detail adjustment.",
-      "Audit Fix - AI Model Stability: Resolved AI model access errors by defaulting to stable models and improving error messages for 'model not found' scenarios.",
+      "Audit Fix - Consistent Editing: Standardized editing dialogs; Auto-processed items (text/photo) now consistently use the appropriate dialog for re-analysis or detail adjustment.",
+      "Audit Fix - Model Stability: Resolved model access errors by defaulting to stable models and improving error messages for 'model not found' scenarios.",
       "Audit Fix - Firestore Compatibility: Ensured data integrity by converting potentially 'undefined' values to 'null' before saving to Firestore.",
     ],
   },
@@ -550,30 +560,30 @@ const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.6.3",
     date: "June 09, 2025",
-    title: "AI Meal Interpretation & Branded Item Accuracy",
+    title: "Smart Meal Interpretation & Branded Item Accuracy",
     description: [
-      "Improved AI text logging to correctly interpret standard meal descriptions (e.g., 'Sausage McMuffin with hashbrown') as a single serving, not 1.5 servings.",
-      "Enhanced AI to avoid duplicating components already implied in a meal's name (e.g., not adding an 'extra egg' to 'Egg McMuffin' unless specified by the user).",
-      "Refined AI prompt for `processMealDescriptionFlow` to accurately preserve all user-stated quantities and explicit additions (like 'extra egg') in the `primaryFoodItemForAnalysis` field.",
-      "Strengthened AI prompt for `analyzeFoodItemFlow` by embedding nutritional examples for common branded items (e.g., specific McDonald's items) to improve the accuracy of macro and calorie estimations for those items.",
+      "Improved text logging to correctly interpret standard meal descriptions (e.g., 'Sausage McMuffin with hashbrown') as a single serving, not 1.5 servings.",
+      "Enhanced system to avoid duplicating components already implied in a meal's name (e.g., not adding an 'extra egg' to 'Egg McMuffin' unless specified by the user).",
+      "Refined system prompt for `processMealDescriptionFlow` to accurately preserve all user-stated quantities and explicit additions (like 'extra egg') in the `primaryFoodItemForAnalysis` field.",
+      "Strengthened system prompt for `analyzeFoodItemFlow` by embedding nutritional examples for common branded items (e.g., specific McDonald's items) to improve the accuracy of macro and calorie estimations for those items.",
     ],
   },
   {
     version: "Beta 3.6.2",
     date: "June 08, 2025",
-    title: "AI Logging Accuracy Enhancements",
+    title: "Auto-Logging Accuracy Enhancements",
     description: [
       "Improved accuracy for image-based food identification, including better portion estimation (e.g., counting eggs) and more general naming for ambiguous cooking methods.",
       "Enhanced nutritional analysis (macros & micronutrients) for text-based food logging, ensuring quantities in descriptions (e.g., '4 eggs') are better accounted for.",
-      "Corrected a minor import path in an AI development utility file.",
+      "Corrected a minor import path in a development utility file.",
     ],
   },
   {
     version: "Beta 3.6.1",
     date: "June 08, 2025",
-    title: "AI Consistency & Date Logging Fixes",
+    title: "Consistency & Date Logging Fixes",
     description: [
-      "Improved consistency of AI meal analysis results by setting a lower temperature (0.2 or 0.5 as appropriate) for relevant AI flows, reducing variability for identical inputs.",
+      "Improved consistency of meal analysis results by setting a lower temperature (0.2 or 0.5 as appropriate) for relevant flows, reducing variability for identical inputs.",
       "Fixed a bug where logging meals for a previous date was incorrectly using the current date due to premature state reset in the 'Log Previous Meal' dialog.",
     ],
   },
@@ -651,10 +661,10 @@ const releaseNotesData: ReleaseNote[] = [
   {
     version: "Beta 3.5.3",
     date: "June 06, 2025",
-    title: "AI Micronutrient Handling Improvements",
+    title: "Micronutrient Handling Improvements",
     description: [
-      "Further refined AI prompt instructions to more accurately process and record user-provided specific micronutrient quantities for text-based food logging.",
-      "Aimed to prevent the AI from substituting or ignoring explicit dosage information provided by the user.",
+      "Further refined system prompt instructions to more accurately process and record user-provided specific micronutrient quantities for text-based food logging.",
+      "Aimed to prevent the system from substituting or ignoring explicit dosage information provided by the user.",
     ],
   },
   {
@@ -662,7 +672,7 @@ const releaseNotesData: ReleaseNote[] = [
     date: "June 06, 2025",
     title: "Food Card Enhancements & Indicator Reordering",
     description: [
-      "Enhanced AI notes in food cards to include summaries for micronutrients and GI.",
+      "Enhanced notes in food cards to include summaries for micronutrients and GI.",
       "Added highlighting for common allergens in food cards.",
       "Introduced a new 'Keto Friendliness' indicator badge.",
       "Reordered indicator badges on food cards: Micronutrients, Fiber, GI, Keto Score, FODMAP, Gut Impact, Allergens.",
@@ -812,7 +822,7 @@ export default function Navbar({
 
   const aiInsightsLinkHandler = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    router.push(pathname === '/ai-insights' ? '/?openDashboard=true' : '/ai-insights');
+    router.push(pathname === '/insights' ? '/?openDashboard=true' : '/insights');
   };
 
   const favoritesLinkHandler = (e?: React.MouseEvent) => {
@@ -986,8 +996,8 @@ export default function Navbar({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/ai-insights' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')}
-                        aria-label="AI Insights"
+                        className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/insights' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')}
+                        aria-label="Insights"
                         onClick={aiInsightsLinkHandler}
                       >
                         <Lightbulb className="h-5 w-5" />
@@ -1122,7 +1132,7 @@ export default function Navbar({
                   { icon: Heart, label: "Favorites", onClick: () => { setIsMobileMenuOpen(false); favoritesLinkHandler(); } },
                   { icon: BarChart3, label: "Trends", onClick: () => { setIsMobileMenuOpen(false); trendsLinkHandler(); } },
                   { icon: Atom, label: "Micronutrients", onClick: () => { setIsMobileMenuOpen(false); micronutrientsLinkHandler(); } },
-                  { icon: Lightbulb, label: "AI Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
+                  { icon: Lightbulb, label: "Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
                   { icon: User, label: "User Center", onClick: () => { setIsMobileMenuOpen(false); router.push('/profile'); } },
                   { icon: Shield, label: "Privacy Notice", onClick: () => { setIsMobileMenuOpen(false); router.push('/privacy'); } },
                   { icon: FileText, label: "Terms of Use", onClick: () => { setIsMobileMenuOpen(false); router.push('/terms'); } },

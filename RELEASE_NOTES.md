@@ -1,4 +1,21 @@
 
+
+# Release Notes - GutHealth v3.10.6 (Experience Polish)
+
+**Release Date:** January 08, 2026
+**Version:** v3.10.6
+
+## 🌟 Quality of Life
+### Human-Centric Experience
+- **Rebranding**: We've replaced technical "AI" terms with simpler, more human language like "System", "Smart", and "GutCheck Assistant".
+- **Visual Clarity**: The **About** page has been updated to remove the background video, ensuring text is always crisp and readable.
+
+## 🛠 Fixes
+- **Insights Accuracy**: Resolved a timezone issue where the assistant was 3 hours behind. It now perfectly understands your local time.
+- **Data Precision**: Fixed a bug where daily totals (macros/calories) were sometimes miscalculated by the assistant.
+
+---
+
 # Release Notes - GutHealth v3.10.5 (Preferences & AI Polish)
 
 **Release Date:** January 08, 2026
