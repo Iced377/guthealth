@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, ListChecks, CalendarDays, Utensils, Sparkles } from 'lucide-react';
+import { Plus, Camera, ListChecks, CalendarDays, Utensils, Sparkles, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ interface FloatingActionMenuProps {
     onScanBarcodeClick: () => void; // Using this for "Photo" based on previous mapping, or should I verify? Previous "Add Entry" had "Scan Barcode" -> Camera.
     onLogSymptomsClick: () => void;
     onAddManualEntryClick: () => void; // Using this for "Recent" or "Manual"? Wait.
+    onLogFavoriteClick: () => void;
     // Navbar had: Log Food (AI), Scan Barcode (Camera), Log Symptoms (ListChecks), Manual Entry (Pencil/Plus).
     // User asked for "4 sub-items".
 }
@@ -20,6 +21,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
     onScanBarcodeClick,
     onLogSymptomsClick,
     onAddManualEntryClick,
+    onLogFavoriteClick,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -78,6 +80,18 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             <span className="text-sm font-medium mr-3">Log Symptoms</span>
                             <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <ListChecks className="h-5 w-5" />
+                            </div>
+                        </motion.button>
+
+                        {/* Sub-Item 2.5: Favorites (New) */}
+                        <motion.button
+                            variants={itemVariants}
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
+                            onClick={() => { setIsOpen(false); onLogFavoriteClick(); }}
+                        >
+                            <span className="text-sm font-medium mr-3">Log from Favourites</span>
+                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
+                                <Heart className="h-5 w-5 fill-red-500 text-red-500" />
                             </div>
                         </motion.button>
 

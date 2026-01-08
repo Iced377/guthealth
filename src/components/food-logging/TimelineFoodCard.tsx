@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, ThumbsDown, Trash2, ListChecks, Loader2, Flame, Beef, Wheat, Droplet, Edit3, CheckCheck, PencilLine, Sparkles, Leaf, Users, Activity, Repeat, MessageSquareText, Info, AlertCircle, Heart, ChevronsUpDown, Clock, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getFoodIcon } from './food-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
@@ -102,6 +103,8 @@ export default function TimelineFoodCard({
   const hasLogDetails = !isManualMacroEntry && (item.originalName && item.originalName !== item.name || item.sourceDescription);
   const hasHealthIndicators = !isManualMacroEntry && item.fodmapData;
 
+  const FoodIcon = getFoodIcon(item.name || item.originalName || "Food");
+
   const iconButtonClass = "h-7 w-7 text-primary-foreground opacity-70 hover:opacity-100 hover:bg-white/10";
 
   return (
@@ -113,7 +116,13 @@ export default function TimelineFoodCard({
             <p className="ml-2 text-white">AI Analyzing...</p>
           </div>
         )}
-        <CardHeader className="px-4 py-3 bg-primary text-primary-foreground">
+
+        {/* Background Illustration */}
+        <div className="absolute -bottom-6 -right-6 pointer-events-none z-0 overflow-hidden opacity-[0.07] transform rotate-12">
+          <FoodIcon className="w-40 h-40 text-current" strokeWidth={1.5} />
+        </div>
+
+        <CardHeader className="px-4 py-3 bg-primary text-primary-foreground relative z-1">
           <div className="flex justify-between items-start gap-3">
             {/* Left Column: Title (Top) and Macros (Bottom) */}
             <div className="flex flex-col justify-between self-stretch flex-1 min-w-0">
@@ -252,7 +261,7 @@ export default function TimelineFoodCard({
             )}
           </div>
         </CardHeader>
-        <CardContent className="px-4 pt-2 pb-3 space-y-3">
+        <CardContent className="px-4 pt-2 pb-3 space-y-3 relative z-1">
           {item.isSimilarToSafe && !isManualMacroEntry && (
             <Badge
               variant="default"

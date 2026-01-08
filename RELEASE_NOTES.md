@@ -1,4 +1,22 @@
 
+# Release Notes - GutHealth v3.10.3 (Polished Logging Experience)
+
+**Release Date:** January 08, 2026
+**Version:** v3.10.3
+
+## 🌟 Highlights
+### Log from Favourites
+- **Quick Logging**: Added a dedicated "Log from Favourites" option to the main add menu. You can now access and repeat your favorite meals in just one click, right above the "Scan/Photo" option.
+
+### Aesthetic Upgrades
+- **Food Card Flair**: Food cards now feature subtle, jazzy background illustrations that automatically match the food type (e.g., a coffee cup for lattes, a sub for sandwiches).
+- **Expanded Iconography**: Significantly improved the variety of food icons, covering diverse categories like Sushi, Tacos, Smoothies, and more.
+
+## 🛠 Fixes
+- **Layout Alignment**: Fixed an issue where the "Symptoms" card was shorter than adjacent food cards. It now aligns perfectly on the timeline.
+
+---
+
 
 # Release Notes - GutHealth v3.10.2 (UI Refinements)
 

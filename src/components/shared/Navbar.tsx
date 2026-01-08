@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 3.10.2";
+const APP_VERSION = "Beta 3.10.3";
 
 
 interface ReleaseNote {
@@ -62,6 +62,17 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 3.10.3",
+    date: "Jan 08, 2026",
+    title: "Polished Logging Experience",
+    description: [
+      "Favorites: Added 'Log from Favourites' for one-click re-logging.",
+      "Visuals: Food cards now have jazzy background illustrations.",
+      "Icons: Greatly expanded the food icon library.",
+      "Fix: Aligned Symptoms card size with food cards."
+    ]
+  },
   {
     version: "Beta 3.10.2",
     date: "Jan 08, 2026",
@@ -1137,6 +1148,7 @@ export default function Navbar({
             onLogFoodAIClick={() => handleGenericActionItemClick(onLogFoodAIClick, 'logFoodAI')}
             onScanBarcodeClick={() => handleGenericActionItemClick(onIdentifyByPhotoClick, 'logPhoto')}
             onLogSymptomsClick={() => handleGenericActionItemClick(onLogSymptomsClick, 'logSymptoms')}
+            onLogFavoriteClick={() => handleGenericActionItemClick(favoritesLinkHandler)}
             onAddManualEntryClick={() => handleGenericActionItemClick(onLogPreviousMealClick, 'logPrevious')}
           />
         </BottomActionBar>

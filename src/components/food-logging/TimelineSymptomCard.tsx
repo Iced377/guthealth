@@ -35,7 +35,7 @@ export default function TimelineSymptomCard({ item, onRemoveItem }: TimelineSymp
   }
 
   return (
-    <Card className="mb-4 shadow-lg bg-card border-border hover:shadow-xl transition-shadow duration-200">
+    <Card className="mb-4 shadow-lg bg-card border-border hover:shadow-xl transition-shadow duration-200 h-full flex flex-col">
       <CardHeader className="px-4 py-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold font-headline flex items-center text-foreground">
@@ -45,7 +45,7 @@ export default function TimelineSymptomCard({ item, onRemoveItem }: TimelineSymp
         </div>
         <p className="text-sm text-muted-foreground pt-1">Logged: {timeAgo}</p>
       </CardHeader>
-      <CardContent className="px-4 pt-2 pb-3">
+      <CardContent className="px-4 pt-2 pb-3 flex-grow">
         <div className="mb-2">
           <p className="text-sm font-medium text-foreground">Reported Symptoms:</p>
           <div className="flex flex-wrap gap-1 mt-1">
