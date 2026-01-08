@@ -59,7 +59,7 @@ export default function IntroVideo({ onComplete }: IntroVideoProps) {
                     <Button
                         size="lg"
                         onClick={handleSkip}
-                        className="group bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-8"
+                        className="group bg-[#2aac6b] hover:bg-[#25965e] text-white rounded-full px-8"
                     >
                         {videoEnded ? "Get Started" : "Skip Intro & Get Started"}
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
