@@ -47,11 +47,13 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          minTickGap={32}
+          tickFormatter={(value) => value} // Hour is already short "HH:mm"
           stroke={colors.text}
           angle={0}
-          textAnchor={"middle"}
+          interval="preserveStartEnd"
+          textAnchor="middle"
           height={30}
-          interval={data.length > 12 ? Math.floor(data.length / 12) : 0}
         />
         <YAxis
           tickLine={false}

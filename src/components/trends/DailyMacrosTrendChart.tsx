@@ -57,11 +57,13 @@ export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosT
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          minTickGap={32}
           tickFormatter={(value) => value.slice(5)} // Show MM-DD
           stroke={colors.text}
-          angle={data.length > 10 ? -35 : 0}
-          textAnchor={data.length > 10 ? "end" : "middle"}
-          height={data.length > 10 ? 50 : 30}
+          angle={0}
+          interval="preserveStartEnd"
+          textAnchor="middle"
+          height={30}
         />
         <YAxis
           tickLine={false}

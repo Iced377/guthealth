@@ -59,11 +59,13 @@ export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartP
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
+                    minTickGap={32}
                     tickFormatter={(value) => value.slice(5)}
                     stroke={colors.text}
-                    angle={data.length > 10 ? -35 : 0}
-                    textAnchor={data.length > 10 ? "end" : "middle"}
-                    height={data.length > 10 ? 50 : 30}
+                    angle={0}
+                    interval="preserveStartEnd"
+                    textAnchor="middle"
+                    height={30}
                 />
                 <YAxis
                     yAxisId="weight"

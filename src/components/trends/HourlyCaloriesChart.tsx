@@ -45,11 +45,13 @@ export default function HourlyCaloriesChart({ data, isDarkMode }: HourlyCalories
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
+                    minTickGap={32}
+                    tickFormatter={(value) => value}
                     stroke={colors.text}
                     angle={0}
-                    textAnchor={"middle"}
+                    interval="preserveStartEnd"
+                    textAnchor="middle"
                     height={30}
-                    interval={data.length > 12 ? Math.floor(data.length / 12) : 0}
                 />
                 <YAxis
                     tickLine={false}

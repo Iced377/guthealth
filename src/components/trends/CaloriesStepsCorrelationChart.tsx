@@ -71,6 +71,7 @@ export default function CaloriesStepsCorrelationChart({ data, isDarkMode }: Calo
                     domain={[0, 'auto']}
                     stroke={isDarkMode ? '#94a3b8' : '#64748b'}
                     fontSize={12}
+                    minTickGap={32}
                     tickFormatter={(value) => value.toLocaleString()}
                 >
                     <Label value="Daily Steps" offset={0} position="insideBottom" style={{ fill: isDarkMode ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 500 }} />
