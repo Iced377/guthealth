@@ -1,3 +1,11 @@
+## Beta 4.1.0 (Jan 09, 2026)
+### Major Redesign & Experience Update
+- **New About & Guest Experience**: Completely redesigned the About page and Guest Landing page with a modern, immersive layout featuring video backgrounds, specific "Problem/Solution" storytelling, and a focused security carousel.
+- **Dashboard Animations**: Timeline cards now dynamically "fly in and snap" into place as you scroll, creating a more engaging and modern feed.
+- **Mobile Menu Upgrade**: The main menu now slides in from the right as a full-height drawer, offering better accessibility and a cleaner look.
+- **Floating Actions**: Floating buttons (logging, feedback) now intelligently hide when the mobile menu is open to keep your view clear.
+- **Visual Refinements**: Fixed scrolling overlaps, polished video integrations, and improved touch targets for mobile users.
+
 ## Beta 4.0.4 (Jan 09, 2026)
 ### Native iOS Dialogs
 - **New Feature**: Dialogs now use native iOS 'Page Sheet' animations, sliding up from the bottom with rounded corners.

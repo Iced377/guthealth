@@ -2,6 +2,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail } from '@/types';
@@ -260,10 +261,13 @@ export default function DashboardContent({
                                         {displayableEntries.map((entry, entryIndex) => {
                                             if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
                                                 return (
-                                                    <div
+                                                    <motion.div
                                                         key={entry.id}
-                                                        className="card-reveal-animation h-full"
-                                                        style={{ animationDelay: `${entryIndex * 0.05}s` }}
+                                                        className="h-full"
+                                                        initial={{ opacity: 0, x: -20, y: 20 }}
+                                                        whileInView={{ opacity: 1, x: 0, y: 0 }}
+                                                        viewport={{ once: true, margin: "-50px" }}
+                                                        transition={{ type: "spring", stiffness: 100, damping: 15, delay: entryIndex * 0.1 }}
                                                     >
                                                         <TimelineFoodCard
                                                             item={entry}
@@ -275,21 +279,24 @@ export default function DashboardContent({
                                                             onRepeatMeal={onRepeatMeal}
                                                             onToggleFavorite={onToggleFavorite}
                                                         />
-                                                    </div>
+                                                    </motion.div>
                                                 );
                                             }
                                             if (entry.entryType === 'symptom') {
                                                 return (
-                                                    <div
+                                                    <motion.div
                                                         key={entry.id}
-                                                        className="card-reveal-animation h-full"
-                                                        style={{ animationDelay: `${entryIndex * 0.05}s` }}
+                                                        className="h-full"
+                                                        initial={{ opacity: 0, x: -20, y: 20 }}
+                                                        whileInView={{ opacity: 1, x: 0, y: 0 }}
+                                                        viewport={{ once: true, margin: "-50px" }}
+                                                        transition={{ type: "spring", stiffness: 100, damping: 15, delay: entryIndex * 0.1 }}
                                                     >
                                                         <TimelineSymptomCard
                                                             item={entry}
                                                             onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
                                                         />
-                                                    </div>
+                                                    </motion.div>
                                                 );
                                             }
                                             return null;

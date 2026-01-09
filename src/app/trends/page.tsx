@@ -613,7 +613,7 @@ export default function TrendsPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       <ScrollArea className="flex-grow">
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 py-8 pb-32">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
             <div className="flex flex-wrap gap-2 items-center">

@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.0.4";
+const APP_VERSION = "Beta 4.1.0";
 
 
 interface ReleaseNote {
@@ -1143,11 +1143,11 @@ export default function Navbar({
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div
-              initial={{ y: "-100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "-100%" }}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed top-0 left-0 right-0 max-h-[85vh] h-auto bg-background border-b border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-b-xl"
+              className="fixed top-0 right-0 bottom-0 h-full w-[85vw] max-w-sm bg-background border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-l-2xl"
             >
               <div className="p-4 flex items-center justify-between border-b border-border bg-muted/20">
                 <div className="flex items-center space-x-3">
@@ -1227,7 +1227,7 @@ export default function Navbar({
         )}
       </AnimatePresence>
 
-      {!authLoading && authUser && !isGuest && (
+      {!authLoading && authUser && !isGuest && !isMobileMenuOpen && (
         <BottomActionBar>
           <FeedbackWidget />
           <FloatingActionMenu

@@ -98,8 +98,7 @@ export default function FeedbackWidget() {
         size="lg"
         className={cn(
           "rounded-full shadow-2xl h-14 w-14 p-0", // Removed fixed position, resized to 14
-          "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary focus:ring-offset-2 border-2 border-white",
-          "animate-custom-feedback-bounce"
+          "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary focus:ring-offset-2 border-2 border-white"
         )}
         onClick={() => setIsOpen(true)}
         aria-label="Open feedback dialog"
@@ -130,7 +129,7 @@ export default function FeedbackWidget() {
           {!submissionSuccess && (
             <DialogFooter className="mt-2">
               <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isSubmitting}>
+                <Button type="button" variant="outline" size="lg" className="h-12 text-base" disabled={isSubmitting}>
                   Cancel
                 </Button>
               </DialogClose>

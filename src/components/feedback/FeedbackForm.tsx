@@ -17,7 +17,7 @@ import {
 import { Loader2, Send } from 'lucide-react';
 
 const feedbackSchema = z.object({
-  feedbackText: z.string().min(10, { message: 'Please provide at least 10 characters of feedback.' }).max(2000, {message: "Feedback is too long (max 2000 characters)."}),
+  feedbackText: z.string().min(10, { message: 'Please provide at least 10 characters of feedback.' }).max(2000, { message: "Feedback is too long (max 2000 characters)." }),
   category: z.string().optional(),
 });
 
@@ -88,11 +88,11 @@ export default function FeedbackForm({ onSubmit, isSubmitting }: FeedbackFormPro
           )}
         />
       </div>
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSubmitting}>
+      <Button type="submit" size="lg" className="w-full h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSubmitting}>
         {isSubmitting ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         ) : (
-          <Send className="mr-2 h-4 w-4" />
+          <Send className="mr-2 h-5 w-5" />
         )}
         Send Feedback
       </Button>

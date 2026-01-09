@@ -1,12 +1,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button'; 
-import { Home } from 'lucide-react'; 
+import { Button } from '@/components/ui/button';
+import { Home } from 'lucide-react';
 
 const TermsOfUsePage = () => {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-8 max-w-3xl pb-32">
       <h1 className="text-3xl font-bold mb-6 text-foreground">Terms of Use</h1>
 
       <p className="text-sm text-muted-foreground mb-6">Last updated: July 16, 2025</p>

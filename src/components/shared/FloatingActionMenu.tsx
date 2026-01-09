@@ -56,7 +56,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         variants={menuVariants}
                         className={cn(
                             "absolute bottom-full right-0 mb-4 flex flex-col gap-1 p-2 min-w-[200px]",
-                            "bg-secondary/70 backdrop-blur-xl border border-border/40 shadow-2xl rounded-2xl"
+                            "bg-secondary/95 backdrop-blur-xl border border-border/40 shadow-2xl rounded-2xl"
                         )}
                     >
                         {/* Sub-Item 4: Manual/Recent */}
@@ -89,7 +89,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
                             onClick={() => { setIsOpen(false); onLogFavoriteClick(); }}
                         >
-                            <span className="text-sm font-medium mr-3">Log from Favourites</span>
+                            <span className="text-sm font-medium mr-3">From Favourites</span>
                             <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <Heart className="h-5 w-5 fill-red-500 text-red-500" />
                             </div>

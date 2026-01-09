@@ -14,7 +14,7 @@ export const BottomActionBar: React.FC<BottomActionBarProps> = ({ children, clas
         <div className={cn(
             "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
             "flex items-center gap-6 p-2 rounded-full",
-            "bg-background/60 backdrop-blur-xl border border-border/40 shadow-2xl",
+            "bg-background/90 backdrop-blur-xl border border-border/40 shadow-2xl",
             className
         )}>
             {children}

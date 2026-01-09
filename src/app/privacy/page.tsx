@@ -1,12 +1,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button'; 
-import { Home } from 'lucide-react'; 
+import { Button } from '@/components/ui/button';
+import { Home } from 'lucide-react';
 
 const PrivacyPage = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-32">
       <h1 className="text-3xl font-bold mb-6">Privacy Notice</h1>
 
       <section className="mb-6">
@@ -110,12 +110,12 @@ const PrivacyPage = () => {
           Our application uses essential data storage mechanisms like browser `localStorage` and technologies employed by Firebase Authentication to ensure functionality and enhance your experience. We do not use cookies for third-party advertising or extensive cross-site tracking.
         </p>
         <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-            <li>
-              <strong>Firebase Authentication:</strong> To manage your login sessions securely and remember your authentication state, Firebase Authentication utilizes browser storage mechanisms (such as `localStorage` or `IndexedDB`). These are essential for the application to function correctly for logged-in users.
-            </li>
-            <li>
-              <strong>User Preferences:</strong> We use `localStorage` to remember your preferences, such as your theme choice (light/dark mode) and your cookie consent status. This helps provide a consistent experience across your visits without tracking you across other sites.
-            </li>
+          <li>
+            <strong>Firebase Authentication:</strong> To manage your login sessions securely and remember your authentication state, Firebase Authentication utilizes browser storage mechanisms (such as `localStorage` or `IndexedDB`). These are essential for the application to function correctly for logged-in users.
+          </li>
+          <li>
+            <strong>User Preferences:</strong> We use `localStorage` to remember your preferences, such as your theme choice (light/dark mode) and your cookie consent status. This helps provide a consistent experience across your visits without tracking you across other sites.
+          </li>
         </ul>
         <p className="mt-2">
           You can typically manage settings related to browser storage and cookies through your browser's privacy settings. Disabling certain essential storage mechanisms may affect the application's functionality, particularly login persistence.
