@@ -1,3 +1,8 @@
+## Beta 4.0.3 (Jan 09, 2026)
+### Layout Fix (Metadata)
+- **Layout**: Fixed the root cause of the status bar overlap. The app now correctly recognizes the safe area inset on all iOS devices.
+- **Fix**: Updated viewport metadata configuration.
+
 ## Beta 4.0.2 (Jan 09, 2026)
 ### Critical Layout Fix
 - **Layout Fix**: Applied a robust fix for the status bar overlap issue on iOS devices. The top menu now correctly respects the 'safe area' notch and dynamic island.

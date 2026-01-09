@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.0.2";
+const APP_VERSION = "Beta 4.0.3";
 
 
 interface ReleaseNote {
@@ -62,6 +62,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.0.3",
+    date: "Jan 09, 2026",
+    title: "Layout Fix (Metadata)",
+    description: [
+      "Layout: Fixed the root cause of the status bar overlap. The app now correctly recognizes the safe area inset on all iOS devices.",
+      "Fix: Updated viewport metadata configuration."
+    ]
+  },
   {
     version: "Beta 4.0.2",
     date: "Jan 09, 2026",

@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 // Removed 'Inter' from 'next/font/google' to load it directly
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -9,6 +9,15 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
 
 // `inter` variable is no longer needed here
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#27AE60',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002'),
@@ -27,17 +36,10 @@ export const metadata: Metadata = {
     ],
     type: 'website',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false, // Prevent zooming
-    viewportFit: 'cover', // Handle notch/safe areas
-  },
   icons: {
     icon: '/favicon-32.png',
     shortcut: '/favicon-32.png',
-    apple: '/icon-192.png', // Apple touch icon usually best at 180-192px
+    apple: '/icon-192.png',
   },
 };
 
