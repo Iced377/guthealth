@@ -70,7 +70,7 @@ const releaseNotesData: ReleaseNote[] = [
       "New App Icon: Say hello to our new 'Happy Stomach' mascot! A fresh, modern look for your home screen.",
       "Data Export: You can now download a copy of your personal data (profile, timeline, feedback) directly from the User Center.",
       "Privacy First: Enhanced cookie consent and transparent analytics tracking to fully respect your privacy choices.",
-      "Fixes: Resolved permissions issues with admin notifications and improved general stability."
+      "Fixes: Resolved permissions issues with admin notifications and fixed cloud build dependency errors."
     ]
   },
   {

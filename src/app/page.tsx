@@ -13,7 +13,7 @@ import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/
 
 
 import GradientText from '@/components/shared/GradientText';
-import { Capacitor } from '@capacitor/core';
+
 
 
 import { useToast } from '@/hooks/use-toast';
@@ -253,7 +253,9 @@ export default function RootPage() {
 
   // Redirect mobile app users to signup if not authenticated
   useEffect(() => {
-    if (!authLoading && !authUser && Capacitor.isNativePlatform()) {
+    // Check global Capacitor object to avoid build errors if package is missing in web environments
+    const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform();
+    if (!authLoading && !authUser && isNative) {
       router.replace('/signup');
     }
   }, [authLoading, authUser, router]);
