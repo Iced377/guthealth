@@ -45,7 +45,7 @@ export default function GuestHomePage({
   }, [isDarkMode]);
 
   return (
-    <div className="bg-background text-foreground min-h-screen flex flex-col font-body antialiased">
+    <div className="h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-background text-foreground overflow-x-hidden selection:bg-primary/30 flex flex-col font-body antialiased">
       <Navbar isGuest={true} />
 
       <main className="flex-grow">
