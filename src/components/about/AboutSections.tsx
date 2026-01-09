@@ -120,7 +120,7 @@ function ProblemCard({ icon: Icon, title, description, delay }: { icon: any, tit
 
 export function StorySection() {
     return (
-        <section className="relative bg-foreground text-background py-32 px-4">
+        <section className="relative bg-foreground text-background py-32 px-4 snap-start">
             <div className="container mx-auto max-w-5xl">
                 <div className="sticky top-32 mb-20 z-10 py-6 bg-foreground/80 backdrop-blur-md rounded-3xl border border-white/10 px-8 shadow-2xl">
                     <h2 className="text-4xl sm:text-6xl font-bold tracking-tighter">
@@ -176,7 +176,7 @@ function StoryCard({ title, subtitle, index, highlight = false }: { title: strin
 
 export function FeatureGrid() {
     return (
-        <div className="container mx-auto px-4 py-32 space-y-32">
+        <div className="container mx-auto px-4 py-32 space-y-32 snap-start">
             <FeatureItem
                 title="Journaling with a Purpose."
                 description="The most convenient way to keep your diary. Whether you snap a photo or just talk to it, GutCheck captures your meals effortlessly. It's not just logging; it's building a complete picture of your nutritional intake."
@@ -305,7 +305,7 @@ export function SecuritySection() {
     ];
 
     return (
-        <section className="py-32 bg-muted/10 overflow-hidden">
+        <section className="py-32 bg-muted/10 overflow-hidden snap-start">
             <div className="container mx-auto px-4 mb-16 text-center max-w-3xl">
                 <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                     <Shield className="w-10 h-10 text-primary" />

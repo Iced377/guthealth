@@ -1,3 +1,10 @@
+## Beta 4.1.2 (Jan 09, 2026)
+### UI & Layout Polishing
+- **Log Food Dialog**: Fixed a layout issue where the Date and Time inputs were overflowing on mobile screens. They now responsibly stack to fit perfectly.
+- **Dietitian Page**: Removed the floating action menu from the Personal Dietitian page for a cleaner, distraction-free conversation experience.
+- **About Page**: Implemented smooth "Scroll Snapping" so sections distinctively snap into place as you scroll.
+- **About Page Fix**: Resolved a visibility bug where certain sections (Problem & CTA) appeared blank due to conflicting animations.
+
 ## Beta 4.1.1 (Jan 09, 2026)
 ### Polish & Experience Fixes
 - **Setup Wizard UI**: Fixed iOS layout issues (Date of Birth overflow) and resolved Dark Mode visibility problems in Diet & Goal selection steps.

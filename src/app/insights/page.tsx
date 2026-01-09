@@ -39,18 +39,9 @@ export default function AIInsightsPage() {
   const [currentAIResponse, setCurrentAIResponse] = useState<string | null>(null);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hideFloatingActionMenu, setHideFloatingActionMenu] = useState(false);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const handleScroll = () => {
-    if (scrollAreaRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
-      // Hide if we are within 50px of the bottom
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-      setHideFloatingActionMenu(isAtBottom);
-    }
-  };
 
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
@@ -326,7 +317,7 @@ export default function AIInsightsPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Navbar hideFloatingActionMenu={hideFloatingActionMenu} />
+      <Navbar hideFloatingActionMenu={true} />
       <main className="flex-1 flex flex-col overflow-hidden container mx-auto px-0 sm:px-4 py-0">
         <div className="p-4 border-b border-border text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center">
@@ -341,7 +332,7 @@ export default function AIInsightsPage() {
         <div
           className="flex-1 p-4 overflow-y-auto"
           ref={scrollAreaRef}
-          onScroll={handleScroll}
+          onScroll={() => { }}
         >
           <div className="space-y-6">
             {currentAIResponse && !isGeneratingInsight && (

@@ -195,7 +195,7 @@ export default function SimplifiedAddFoodDialog({
 
         <form onSubmit={form.handleSubmit(handleDialogSubmit)} className="space-y-4 pt-2 max-h-[calc(80vh-120px)] overflow-y-auto pr-2">
           {!isGuestView && (
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div className="flex flex-col">
                 <Label htmlFor="logDateSimplified" className={labelClasses}>Log Date</Label>
                 <Popover>

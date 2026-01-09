@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.1.1";
+const APP_VERSION = "Beta 4.1.2";
 
 
 interface ReleaseNote {
@@ -62,6 +62,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.1.2",
+    date: "Jan 09, 2026",
+    title: "UI & Layout Polishing",
+    description: [
+      "Log Food Dialog: Fixed a layout issue where the Date and Time inputs were overflowing on mobile screens.",
+      "Dietitian Page: Removed the floating action menu from the Personal Dietitian page for a cleaner experience.",
+      "About Page: Implemented smooth Scroll Snapping and fixed visibility bugs where some sections appeared blank."
+    ]
+  },
   {
     version: "Beta 4.1.1",
     date: "Jan 09, 2026",
