@@ -9,7 +9,7 @@ const TermsOfUsePage = () => {
     <div className="container mx-auto px-4 py-8 max-w-3xl pb-32">
       <h1 className="text-3xl font-bold mb-6 text-foreground">Terms of Use</h1>
 
-      <p className="text-sm text-muted-foreground mb-6">Last updated: July 16, 2025</p>
+      <p className="text-sm text-muted-foreground mb-6">Last updated: January 09, 2026</p>
 
       <section className="mb-6 space-y-2">
         <h2 className="text-2xl font-semibold mb-2 border-b pb-2">1. Acceptance of Terms</h2>

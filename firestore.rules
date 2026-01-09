@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the request matches the user's UID
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // --- Users Collection ---
+    // Contains user profiles, settings, and safe foods.
+    match /users/{userId} {
+      // Allow users to read and write only their own document.
+      allow read, write: if isOwner(userId);
+
+      // --- Timeline Entries Subcollection ---
+      // Contains food logs, symptoms, and activity data.
+      match /timelineEntries/{entryId} {
+        // Allow users to full control over their own timeline entries.
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // --- Feedback Collection ---
+    // Stores user feedback entries.
+    match /feedbackSubmissions/{feedbackId} {
+      // Allow any authenticated user to create feedback.
+      allow create: if isAuthenticated();
+
+      // Allow users to read ONLY their own feedback.
+      // IMPORTANT: This rule requires queries to filter by `userId`.
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Allow list queries (collection groups or where clauses) ONLY if filtering by own uid.
+      allow list: if isAuthenticated() && request.query.filters.userId == request.auth.uid;
+    }
+
+    // --- Default Deny ---
+    // Explicitly deny access to any other potential collections not listed here.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

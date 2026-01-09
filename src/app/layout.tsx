@@ -7,6 +7,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 // FeedbackWidget moved to Navbar for unified BottomActionBar
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
+import AnalyticsWithConsent from '@/components/shared/AnalyticsWithConsent';
 
 // `inter` variable is no longer needed here
 
@@ -48,7 +49,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -72,6 +72,7 @@ export default function RootLayout({
             <CookieConsentBanner />
           </ThemeProvider>
         </AuthProvider>
+        <AnalyticsWithConsent />
         {/* {gaId && <GoogleAnalytics gaId={gaId} />} */}
       </body>
     </html>

@@ -167,7 +167,7 @@ export default function TimelineFoodCard({
                 <AlertDialog>
                   <Sheet>
                     <SheetTrigger asChild>
-                      <button className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70">
+                      <button className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70" aria-label={`Actions for ${item.name}`}>
                         <MoreHorizontal className="h-5 w-5" />
                       </button>
                     </SheetTrigger>

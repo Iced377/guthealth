@@ -47,6 +47,24 @@ const PrivacyPage = () => {
       </section>
 
       <section className="mb-6">
+        <h2 className="text-2xl font-semibold mb-2">AI Features & Third-Party Processing</h2>
+        <p>
+          Our application utilizes advanced artificial intelligence (AI) to provide comprehensive food analysis and personalized insights. Specifically, we use <strong>Google Gemini</strong> as our AI provider.
+        </p>
+        <ul className="list-disc list-inside ml-4 mt-2">
+          <li>
+            <strong>Data Processing:</strong> When you use features such as "Analyze Meal" or "Personal Dietitian", relevant data (including your meal descriptions, recent food logs, and profile context) is sent to Google's Gemini API for processing.
+          </li>
+          <li>
+            <strong>Privacy Assurance:</strong> We use the enterprise/developer standard for the Gemini API. According to Google's API Data Governance terms, data submitted to the API is <strong>not used to train their models</strong>. Your data is processed solely to generate the response for your request.
+          </li>
+          <li>
+            <strong>Transparency:</strong> We only send data to the AI service when you explicitly interact with AI-powered features.
+          </li>
+        </ul>
+      </section>
+
+      <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-2">Data Sharing</h2>
         <p>
           We do not sell your personal data. We may share your information in the following circumstances:
@@ -100,7 +118,7 @@ const PrivacyPage = () => {
           <li>The right to data portability.</li>
         </ul>
         <p className="mt-2">
-          You can exercise these rights by contacting us through the support channels provided in the app.
+          You can exercise your right to access and portability directly within the app by using the "Download My Data" feature in the User Center. for other rights, please contact us through the support channels provided in the app.
         </p>
       </section>
 
@@ -137,7 +155,7 @@ const PrivacyPage = () => {
       </section>
 
       <div className="mt-8 text-sm text-gray-500">
-        <p>Last updated: June 11, 2025</p>
+        <p>Last updated: January 09, 2026</p>
       </div>
 
       <div className="mt-12 text-center">

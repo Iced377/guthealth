@@ -31,9 +31,10 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/shared/Navbar';
-import { Calendar, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target, Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil } from 'lucide-react';
+import { Calendar, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target, Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil, Download, ShieldCheck } from 'lucide-react';
 import { UserProfile } from '@/types';
 import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
+import { generateUserDataExport } from '@/utils/data-export';
 
 // Helper to calculate age from DOB
 function getAge(dob: string) {
@@ -78,6 +79,7 @@ export default function ProfilePage() {
     const [isFitbitConnected, setIsFitbitConnected] = useState(false);
     const [isLoadingFitbit, setIsLoadingFitbit] = useState(true);
     const [isTogglingFitbit, setIsTogglingFitbit] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -246,6 +248,20 @@ export default function ProfilePage() {
             });
         } finally {
             setIsTogglingFitbit(false);
+        }
+    };
+
+    const handleDataExport = async () => {
+        if (!user) return;
+        setIsExporting(true);
+        try {
+            await generateUserDataExport(user.uid);
+            toast({ title: "Export Complete", description: "Your data has been downloaded." });
+        } catch (error) {
+            console.error("Export failed:", error);
+            toast({ title: "Export Failed", description: "Could not generate data export.", variant: "destructive" });
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -632,6 +648,41 @@ export default function ProfilePage() {
                             )}
                         </div>
 
+                    </CardContent>
+                </Card>
+
+                {/* Data & Privacy */}
+                <Card className="border-border shadow-sm bg-card text-card-foreground">
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-xl">
+                            Data & Privacy
+                        </CardTitle>
+                        <CardDescription>Manage your personal data and privacy settings.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
+                            <div className="flex items-center space-x-4">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                    <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-foreground">Download My Data</h3>
+                                    <p className="text-sm text-muted-foreground">Get a copy of all your stored data (GDPR compliant).</p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDataExport}
+                                disabled={isExporting}
+                            >
+                                {isExporting ? (
+                                    <span className="flex items-center">Generating...</span>
+                                ) : (
+                                    <span className="flex items-center"><Download className="mr-2 h-4 w-4" /> Download JSON</span>
+                                )}
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
                 <div className="flex flex-col gap-4 text-center w-full pb-8">

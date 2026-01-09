@@ -23,6 +23,8 @@ export default function CookieConsentBanner() {
   const handleAccept = () => {
     localStorage.setItem(LOCALSTORAGE_KEY, 'accepted');
     setIsVisible(false);
+    // Dispatch event to notify Analytics component immediately
+    window.dispatchEvent(new Event('cookie-consent-updated'));
   };
 
   if (!isVisible) {
@@ -43,8 +45,8 @@ export default function CookieConsentBanner() {
             See our <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link> for more details.
           </AlertDescription>
         </div>
-        <Button 
-          onClick={handleAccept} 
+        <Button
+          onClick={handleAccept}
           className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
           size="sm"
         >

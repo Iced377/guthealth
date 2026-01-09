@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.1.2";
+const APP_VERSION = "Beta 4.2.0";
 
 
 interface ReleaseNote {
@@ -62,6 +62,17 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.2.0",
+    date: "Jan 10, 2026",
+    title: "Brand Refresh & Privacy Suite",
+    description: [
+      "New App Icon: Say hello to our new 'Happy Stomach' mascot! A fresh, modern look for your home screen.",
+      "Data Export: You can now download a copy of your personal data (profile, timeline, feedback) directly from the User Center.",
+      "Privacy First: Enhanced cookie consent and transparent analytics tracking to fully respect your privacy choices.",
+      "Fixes: Resolved permissions issues with admin notifications and improved general stability."
+    ]
+  },
   {
     version: "Beta 4.1.2",
     date: "Jan 09, 2026",
@@ -842,28 +853,7 @@ export default function Navbar({
     }
   }, [authUser, authLoading]);
 
-  // Admin Notification: Check for new feedback
-  const [hasNewFeedback, setHasNewFeedback] = useState(false);
-  useEffect(() => {
-    const checkNewFeedback = async () => {
-      if (!isCurrentUserAdmin) return;
-      try {
-        const q = query(
-          collection(db, 'feedbackSubmissions'),
-          where('status', '==', 'new'),
-          limit(1)
-        );
-        const snapshot = await getDocs(q);
-        setHasNewFeedback(!snapshot.empty);
-      } catch (error) {
-        console.error("Error checking for new feedback:", error);
-      }
-    };
 
-    if (isCurrentUserAdmin) {
-      checkNewFeedback();
-    }
-  }, [isCurrentUserAdmin]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1121,9 +1111,6 @@ export default function Navbar({
                             <AdminIcon className="mr-2 h-4 w-4" />
                             <span>Admin Dashboard</span>
                           </div>
-                          {hasNewFeedback && (
-                            <span className="h-2 w-2 rounded-full bg-red-500 mr-2" />
-                          )}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
@@ -1241,9 +1228,6 @@ export default function Navbar({
                         <div className="flex items-center">
                           <AdminIcon className="mr-3 h-5 w-5" /> Admin Dashboard
                         </div>
-                        {hasNewFeedback && (
-                          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                        )}
                       </Button>
                     </motion.div>
                   )}
