@@ -1,3 +1,8 @@
+## Beta 4.0.4 (Jan 09, 2026)
+### Native iOS Dialogs
+- **New Feature**: Dialogs now use native iOS 'Page Sheet' animations, sliding up from the bottom with rounded corners.
+- **UI Update**: Added native-style Circular Gray close buttons and action menus for a cleaner, familiar iOS feel.
+
 ## Beta 4.0.3 (Jan 09, 2026)
 ### Layout Fix (Metadata)
 - **Layout**: Fixed the root cause of the status bar overlap. The app now correctly recognizes the safe area inset on all iOS devices.

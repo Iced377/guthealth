@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.0.3";
+const APP_VERSION = "Beta 4.0.4";
 
 
 interface ReleaseNote {
@@ -62,6 +62,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.0.4",
+    date: "Jan 09, 2026",
+    title: "Native iOS Dialogs",
+    description: [
+      "New Feature: Dialogs now use native iOS 'Page Sheet' animations, sliding up from the bottom with rounded corners.",
+      "UI Update: Added native-style Circular Gray close buttons and action menus for a cleaner, familiar iOS feel."
+    ]
+  },
   {
     version: "Beta 4.0.3",
     date: "Jan 09, 2026",

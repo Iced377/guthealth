@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogDescription,
+  DialogClose,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -166,9 +167,9 @@ export default function TimelineFoodCard({
                 <AlertDialog>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-white/20">
+                      <button className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70">
                         <MoreHorizontal className="h-5 w-5" />
-                      </Button>
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -311,13 +312,19 @@ export default function TimelineFoodCard({
 
       {/* Dialog Content for Log Details */}
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Log Details</DialogTitle>
-          <DialogDescription className="sr-only">
-            Detailed information about this logged food entry.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="text-sm space-y-3 pt-2">
+        <div className="flex items-center justify-between pb-4 border-b border-border/40 mb-4">
+          <DialogTitle className="text-lg font-semibold text-center w-full transform translate-x-4">Log Details</DialogTitle>
+          <DialogClose className="ios-icon-button bg-gray-100 dark:bg-gray-800 text-foreground shrink-0" asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full p-0">
+              <span className="sr-only">Close</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+            </Button>
+          </DialogClose>
+        </div>
+        <DialogDescription className="sr-only">
+          Detailed information about this logged food entry.
+        </DialogDescription>
+        <div className="text-sm space-y-3">
           <div>
             <p className="font-semibold text-foreground/80 flex items-center mb-0.5"><Clock className="h-4 w-4 mr-2 text-primary" />Time</p>
             <div className="pl-6 text-muted-foreground">

@@ -356,4 +356,8 @@
     padding-top: constant(safe-area-inset-top) !important;
     padding-top: env(safe-area-inset-top) !important;
   }
+
+  .ios-icon-button {
+    @apply h-8 w-8 rounded-full bg-secondary/80 text-secondary-foreground flex items-center justify-center transition-transform active:scale-95 hover:bg-secondary;
+  }
 }
