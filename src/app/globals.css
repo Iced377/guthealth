@@ -351,4 +351,9 @@
   .active-press {
     @apply transition-transform duration-200 active:scale-95;
   }
+
+  .safe-area-pt {
+    padding-top: constant(safe-area-inset-top) !important;
+    padding-top: env(safe-area-inset-top) !important;
+  }
 }

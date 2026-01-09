@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.0.1";
+const APP_VERSION = "Beta 4.0.2";
 
 
 interface ReleaseNote {
@@ -62,6 +62,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.0.2",
+    date: "Jan 09, 2026",
+    title: "Critical Layout Fix",
+    description: [
+      "Layout Fix: Applied a robust fix for the status bar overlap issue on iOS devices. The top menu now correctly respects the 'safe area' notch and dynamic island.",
+      "Polish: Ensured the fix works consistently across different iOS versions."
+    ]
+  },
   {
     version: "Beta 4.0.1",
     date: "Jan 09, 2026",
@@ -871,7 +880,7 @@ export default function Navbar({
     setIsReleaseNotesOpen(open);
   };
 
-  const headerBaseClasses = "z-50 w-full transition-all duration-300 pt-[env(safe-area-inset-top)]";
+  const headerBaseClasses = "z-50 w-full transition-all duration-300 safe-area-pt";
   const headerClasses = cn(
     headerBaseClasses,
     isGuest

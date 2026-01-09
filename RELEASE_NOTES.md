@@ -1,3 +1,8 @@
+## Beta 4.0.2 (Jan 09, 2026)
+### Critical Layout Fix
+- **Layout Fix**: Applied a robust fix for the status bar overlap issue on iOS devices. The top menu now correctly respects the 'safe area' notch and dynamic island.
+- **Polish**: Ensured the fix works consistently across different iOS versions.
+
 ## Beta 4.0.1 (Jan 09, 2026)
 ### Polish & Fixes
 - **Native Feel**: Implemented consistent 'press' animations for a more responsive, native-app experience across all buttons and cards.
