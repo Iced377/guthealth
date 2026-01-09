@@ -62,7 +62,7 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
 
                 {/* Goals Selection */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-800">What is your primary goal?</h3>
+                    <h3 className="font-semibold text-lg text-foreground">What is your primary goal?</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {goals.map((g) => (
                             <div
@@ -71,13 +71,13 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
                                 className={cn(
                                     "cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md",
                                     data.goal === g.id
-                                        ? "border-[#2aac6b] bg-[#2aac6b]/5 ring-1 ring-[#2aac6b]"
-                                        : "border-gray-200 bg-white hover:border-[#2aac6b]/30"
+                                        ? "border-[#2aac6b] bg-[#2aac6b]/10 ring-1 ring-[#2aac6b]"
+                                        : "border-border bg-card hover:border-[#2aac6b]/30 hover:bg-accent/50"
                                 )}
                             >
                                 <div className="text-3xl mb-2">{g.icon}</div>
-                                <div className="font-semibold text-gray-900">{g.label}</div>
-                                <div className="text-xs text-gray-500 mt-1">{g.desc}</div>
+                                <div className="font-semibold text-foreground">{g.label}</div>
+                                <div className="text-xs text-muted-foreground mt-1">{g.desc}</div>
                             </div>
                         ))}
                     </div>
@@ -85,8 +85,8 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
 
                 {/* Activity Level */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-800 flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-gray-600" />
+                    <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-muted-foreground" />
                         How active are you?
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -97,12 +97,12 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
                                 className={cn(
                                     "cursor-pointer border rounded-lg p-3 transition-colors flex flex-col",
                                     data.activityLevel === a.id
-                                        ? "border-[#2aac6b] bg-[#2aac6b]/5 relative"
-                                        : "border-gray-200 hover:bg-gray-50"
+                                        ? "border-[#2aac6b] bg-[#2aac6b]/10 relative"
+                                        : "border-border bg-card hover:bg-accent/50"
                                 )}
                             >
-                                <span className="font-medium text-gray-900">{a.label}</span>
-                                <span className="text-xs text-gray-500">{a.desc}</span>
+                                <span className="font-medium text-foreground">{a.label}</span>
+                                <span className="text-xs text-muted-foreground">{a.desc}</span>
                             </div>
                         ))}
                     </div>

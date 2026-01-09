@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.1.0";
+const APP_VERSION = "Beta 4.1.1";
 
 
 interface ReleaseNote {
@@ -62,6 +62,29 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.1.1",
+    date: "Jan 09, 2026",
+    title: "Polish & Experience Fixes",
+    description: [
+      "Setup Wizard UI: Fixed iOS layout issues (Date of Birth overflow) and resolved Dark Mode visibility problems in Diet & Goal selection steps.",
+      "About Page: Refined text for clarity (simplified feature descriptions) and removed the floating action menu to ensure a focused reading experience.",
+      "Public Assets: Updated manifest and public assets for better consistency.",
+      "General: Ongoing UI polish and dark mode improvements across the app."
+    ]
+  },
+  {
+    version: "Beta 4.1.0",
+    date: "Jan 09, 2026",
+    title: "Major Redesign & Experience Update",
+    description: [
+      "New About & Guest Experience: Completely redesigned the About page and Guest Landing page with a modern, immersive layout featuring video backgrounds, specific 'Problem/Solution' storytelling, and a focused security carousel.",
+      "Dashboard Animations: Timeline cards now dynamically 'fly in and snap' into place as you scroll, creating a more engaging and modern feed.",
+      "Mobile Menu Upgrade: The main menu now slides in from the right as a full-height drawer, offering better accessibility and a cleaner look.",
+      "Floating Actions: Floating buttons (logging, feedback) now intelligently hide when the mobile menu is open (or when you scroll to the bottom) to keep your view clear.",
+      "Visual Refinements: Fixed scrolling overlaps, polished video integrations, and improved touch targets for mobile users."
+    ]
+  },
   {
     version: "Beta 4.0.4",
     date: "Jan 09, 2026",
@@ -759,6 +782,7 @@ interface NavbarProps {
   onIdentifyByPhotoClick?: () => void;
   onLogSymptomsClick?: () => void;
   onLogPreviousMealClick?: () => void;
+  hideFloatingActionMenu?: boolean;
 }
 
 const LOCALSTORAGE_LAST_SEEN_VERSION_KEY = 'lastSeenAppVersion';
@@ -770,6 +794,7 @@ export default function Navbar({
   onIdentifyByPhotoClick,
   onLogSymptomsClick,
   onLogPreviousMealClick,
+  hideFloatingActionMenu = false,
 }: NavbarProps) {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -1149,7 +1174,7 @@ export default function Navbar({
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed top-0 right-0 bottom-0 h-full w-[85vw] max-w-sm bg-background border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-l-2xl"
             >
-              <div className="p-4 flex items-center justify-between border-b border-border bg-muted/20">
+              <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] flex items-center justify-between border-b border-border bg-muted/20">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10 border border-border">
                     <AvatarImage src={authUser?.photoURL || undefined} alt={authUser?.displayName || 'User'} />
@@ -1227,7 +1252,8 @@ export default function Navbar({
         )}
       </AnimatePresence>
 
-      {!authLoading && authUser && !isGuest && !isMobileMenuOpen && (
+
+      {!authLoading && authUser && !isGuest && !isMobileMenuOpen && !hideFloatingActionMenu && (
         <BottomActionBar>
           <FeedbackWidget />
           <FloatingActionMenu

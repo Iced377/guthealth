@@ -72,7 +72,7 @@ export default function BasicInfo({ data, updateData, onNext }: BasicInfoProps) 
                         type="date"
                         value={data.dob}
                         onChange={(e) => updateData({ dob: e.target.value })}
-                        className="text-lg p-6 bg-gray-50/50"
+                        className="text-lg py-3 px-4 bg-gray-50/50 w-full block appearance-none"
                     />
                 </div>
 

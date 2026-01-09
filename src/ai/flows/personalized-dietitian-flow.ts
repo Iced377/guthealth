@@ -21,7 +21,7 @@ const FoodItemSchemaForAI = z.object({
   ingredients: z.string(),
   portionSize: z.string(),
   portionUnit: z.string(),
-  timestamp: z.string().datetime().describe("ISO 8601 datetime string for when the food was logged."),
+  timestamp: z.string().describe("Datetime string for when the food was logged (preferably Local Time)."),
   overallFodmapRisk: z.enum(['Green', 'Yellow', 'Red']).optional(),
   calories: z.number().optional(),
   protein: z.number().optional(),
@@ -39,7 +39,7 @@ const SymptomLogEntrySchemaForAI = z.object({
   symptoms: z.array(SymptomForAI),
   severity: z.number().optional(),
   notes: z.string().optional(),
-  timestamp: z.string().datetime().describe("ISO 8601 datetime string for when symptoms were logged."),
+  timestamp: z.string().describe("Datetime string for when symptoms were logged (preferably Local Time)."),
   linkedFoodItemIds: z.array(z.string()).optional(),
 });
 
@@ -163,14 +163,7 @@ const personalizedDietitianFlow = ai.defineFlow(
     try {
       const transformedInput = {
         ...input,
-        foodLog: input.foodLog.map(item => ({
-          ...item,
-          timestamp: typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toISOString(),
-        })),
-        symptomLog: input.symptomLog.map(item => ({
-          ...item,
-          timestamp: typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toISOString(),
-        })),
+        // No need to transform timestamps as they are already strings (potentially local time strings)
       };
 
       const { output } = await personalizedDietitianPrompt(transformedInput);

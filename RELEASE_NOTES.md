@@ -1,3 +1,10 @@
+## Beta 4.1.1 (Jan 09, 2026)
+### Polish & Experience Fixes
+- **Setup Wizard UI**: Fixed iOS layout issues (Date of Birth overflow) and resolved Dark Mode visibility problems in Diet & Goal selection steps.
+- **About Page**: Refined text for clarity (simplified feature descriptions) and removed the floating action menu to ensure a focused reading experience.
+- **Public Assets**: Updated manifest and public assets for better consistency.
+- **General**: Ongoing UI polish and dark mode improvements across the app.
+
 ## Beta 4.1.0 (Jan 09, 2026)
 ### Major Redesign & Experience Update
 - **New About & Guest Experience**: Completely redesigned the About page and Guest Landing page with a modern, immersive layout featuring video backgrounds, specific "Problem/Solution" storytelling, and a focused security carousel.

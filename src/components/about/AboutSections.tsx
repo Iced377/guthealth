@@ -179,14 +179,26 @@ export function FeatureGrid() {
         <div className="container mx-auto px-4 py-32 space-y-32">
             <FeatureItem
                 title="Journaling with a Purpose."
-                description="The most convenient way to keep your diary. Whether you snap a photo, scan a barcode, or just talk to it, GutCheck captures your meals effortlessly."
+                description="The most convenient way to keep your diary. Whether you snap a photo or just talk to it, GutCheck captures your meals effortlessly. It's not just logging; it's building a complete picture of your nutritional intake."
                 videoSrc="/log-food-by-photo.mp4"
                 align="left"
             />
             <FeatureItem
+                title="Your Health Command Center."
+                description="See everything at a glance. Your daily meal indicators and timeline are beautifully organized in one place. Just the metrics that matter for your journey."
+                videoSrc="/main-dashboard.mp4"
+                align="right"
+            />
+            <FeatureItem
                 title="Contextual Intelligence."
-                description="We don't just force AI on you. We use it to connect the dots. GutCheck remembers your history to give you personalized, medically-relevant advice, not generic hallucinations."
-                placeholder="VIDEO PLACEHOLDER: Avatar / Context Demo"
+                description="We don't just force AI on you. We use it to connect the dots. GutCheck remembers your history to give you personalized, relevant advice. It understands your unique context, from dietary restrictions to specific health goals."
+                videoSrc="/insights.mp4"
+                align="left"
+            />
+            <FeatureItem
+                title="Visualize Your Progress."
+                description="Spot patterns you'd otherwise miss. Our powerful trend analysis helps you correlate what you eat with how you feel over time. Understand your body's long-term rhythms and make data-driven decisions for your health."
+                videoSrc="/trends.mp4"
                 align="right"
             />
         </div>

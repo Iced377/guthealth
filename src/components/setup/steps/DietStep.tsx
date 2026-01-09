@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, ArrowRight, Utensils } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DietStepProps {
     data: SetupData;
@@ -59,7 +60,12 @@ export default function DietStep({ data, updateData, onBack, onNext }: DietStepP
                         return (
                             <div
                                 key={diet.id}
-                                className={`flex items-start space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${isSelected ? 'bg-[#2aac6b]/5 border-[#2aac6b]' : 'bg-white border-gray-100 hover:bg-gray-50'}`}
+                                className={cn(
+                                    "flex items-start space-x-3 p-4 rounded-lg border transition-colors cursor-pointer",
+                                    isSelected
+                                        ? "bg-[#2aac6b]/10 border-[#2aac6b]"
+                                        : "bg-card border-border hover:bg-accent/50"
+                                )}
                                 onClick={() => handleToggle(diet.id)}
                             >
                                 <Checkbox
@@ -71,7 +77,7 @@ export default function DietStep({ data, updateData, onBack, onNext }: DietStepP
                                 <div className="space-y-1">
                                     <Label
                                         htmlFor={diet.id}
-                                        className="font-medium cursor-pointer"
+                                        className="font-medium cursor-pointer text-foreground"
                                     >
                                         {diet.name}
                                     </Label>

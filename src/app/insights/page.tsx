@@ -39,8 +39,18 @@ export default function AIInsightsPage() {
   const [currentAIResponse, setCurrentAIResponse] = useState<string | null>(null);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hideFloatingActionMenu, setHideFloatingActionMenu] = useState(false);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (scrollAreaRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+      // Hide if we are within 50px of the bottom
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      setHideFloatingActionMenu(isAtBottom);
+    }
+  };
 
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
@@ -81,15 +91,42 @@ export default function AIInsightsPage() {
 
   const calculateMaxFastingWindow = (logs: LoggedFoodItem[]): number => {
     if (logs.length < 2) return 0;
+
     // Sort ascending by time
     const sortedLogs = [...logs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-    let maxGapMs = 0;
-    for (let i = 0; i < sortedLogs.length - 1; i++) {
-      const gap = sortedLogs[i + 1].timestamp.getTime() - sortedLogs[i].timestamp.getTime();
-      if (gap > maxGapMs) maxGapMs = gap;
+
+    // Group logs by day (Local Date String as key to ensure we separate days correctly)
+    const logsByDay: { [key: string]: LoggedFoodItem[] } = {};
+    sortedLogs.forEach(log => {
+      const dayKey = log.timestamp.toLocaleDateString();
+      if (!logsByDay[dayKey]) logsByDay[dayKey] = [];
+      logsByDay[dayKey].push(log);
+    });
+
+    const dayKeys = Object.keys(logsByDay).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    let maxFastHours = 0;
+
+    for (let i = 0; i < dayKeys.length - 1; i++) {
+      const currentDayLogs = logsByDay[dayKeys[i]];
+      const nextDayLogs = logsByDay[dayKeys[i + 1]];
+
+      if (currentDayLogs.length > 0 && nextDayLogs.length > 0) {
+        // Last meal of current day
+        const lastMeal = currentDayLogs[currentDayLogs.length - 1];
+        // First meal of next day
+        const firstMeal = nextDayLogs[0];
+
+        const diffMs = firstMeal.timestamp.getTime() - lastMeal.timestamp.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        // Only consider it a "fast" if it's reasonable (e.g. < 48 hours, > 4 hours)
+        if (diffHours > maxFastHours && diffHours < 48) {
+          maxFastHours = diffHours;
+        }
+      }
     }
-    // Convert to hours with 1 decimal
-    return Math.round((maxGapMs / (1000 * 60 * 60)) * 10) / 10;
+
+    return Math.round(maxFastHours * 10) / 10;
   };
 
   const handleQuestionSubmit = async () => {
@@ -158,7 +195,15 @@ export default function AIInsightsPage() {
         ingredients: item.ingredients,
         portionSize: item.portionSize,
         portionUnit: item.portionUnit,
-        timestamp: item.timestamp.toISOString(),
+        // Format as Local Time String for AI
+        timestamp: item.timestamp.toLocaleString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }),
         overallFodmapRisk: item.fodmapData?.overallRisk ?? undefined,
         calories: item.calories ?? undefined,
         protein: item.protein ?? undefined,
@@ -180,7 +225,14 @@ export default function AIInsightsPage() {
           symptoms: symptomEntry.symptoms.map(s => ({ name: s.name })),
           severity: symptomEntry.severity ?? undefined,
           notes: symptomEntry.notes ?? undefined,
-          timestamp: symptomEntry.timestamp.toISOString(),
+          timestamp: symptomEntry.timestamp.toLocaleString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          }),
           linkedFoodItemIds: finalLinkedIds.length > 0 ? finalLinkedIds : undefined,
         };
       });
@@ -202,8 +254,8 @@ export default function AIInsightsPage() {
 
       const aiInput: PersonalizedDietitianInput = {
         userQuestion: PREDEFINED_QUESTION,
-        foodLog: processedFoodLog,
-        symptomLog: processedSymptomLog,
+        foodLog: processedFoodLog as any,
+        symptomLog: processedSymptomLog as any,
         userProfile: userProfile ? {
           displayName: userProfile.displayName ?? undefined,
           safeFoods: userProfile.safeFoods.map(sf => ({ name: sf.name, portionSize: sf.portionSize, portionUnit: sf.portionUnit })),
@@ -274,7 +326,7 @@ export default function AIInsightsPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Navbar />
+      <Navbar hideFloatingActionMenu={hideFloatingActionMenu} />
       <main className="flex-1 flex flex-col overflow-hidden container mx-auto px-0 sm:px-4 py-0">
         <div className="p-4 border-b border-border text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center">
@@ -286,7 +338,11 @@ export default function AIInsightsPage() {
           </p>
         </div>
 
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+        <div
+          className="flex-1 p-4 overflow-y-auto"
+          ref={scrollAreaRef}
+          onScroll={handleScroll}
+        >
           <div className="space-y-6">
             {currentAIResponse && !isGeneratingInsight && (
               <Card className="bg-green-500/10 border-green-500/30 shadow-lg">
@@ -317,7 +373,7 @@ export default function AIInsightsPage() {
               <p className="text-destructive text-sm text-center p-2">{error}</p>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="p-4 border-t border-border bg-background space-y-3">
           <Button
@@ -339,5 +395,3 @@ export default function AIInsightsPage() {
     </div>
   );
 }
-
-
