@@ -43,7 +43,7 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode, targetCalori
       <BarChart
         accessibilityLayer
         data={validData}
-        margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
+        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
       >
         <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
         <XAxis
@@ -62,6 +62,7 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode, targetCalori
           tickMargin={8}
           stroke={COLORS.text}
           fontSize={12}
+          width={45}
           domain={[0, 'auto']}
         />
         <ReferenceLine

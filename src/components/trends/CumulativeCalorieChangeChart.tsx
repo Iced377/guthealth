@@ -28,9 +28,13 @@ export default function CumulativeCalorieChangeChart({ data, isDarkMode, targetC
         // Sort visually by date just in case
         const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+        // Guardrail: Filter out days with < 800 calories (assumed incomplete logging)
+        const MIN_VALID_CALORIES = 800;
+        const validData = sortedData.filter(point => point.calories && point.calories >= MIN_VALID_CALORIES);
+
         let runningTotal = 0;
 
-        return sortedData.map(point => {
+        return validData.map(point => {
             // Calculate daily difference
             // If Target=2000, Consumed=1500 -> Diff = +500 (Deficit/Savings)
             // If Target=2000, Consumed=2500 -> Diff = -500 (Surplus/Over)
@@ -76,7 +80,7 @@ export default function CumulativeCalorieChangeChart({ data, isDarkMode, targetC
                 <AreaChart
                     accessibilityLayer
                     data={chartData}
-                    margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                 >
                     <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
                     <XAxis
@@ -95,6 +99,7 @@ export default function CumulativeCalorieChangeChart({ data, isDarkMode, targetC
                         tickMargin={8}
                         stroke={COLORS.text}
                         fontSize={12}
+                        width={50}
                     />
                     <ReferenceLine y={0} stroke={COLORS.text} strokeDasharray="3 3" />
                     <ChartTooltip

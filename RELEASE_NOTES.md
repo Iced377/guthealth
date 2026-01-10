@@ -1,3 +1,8 @@
+## Beta 4.3.1 (Jan 10, 2026)
+### Smarter Insights
+- **Fasting Intel**: The AI Dietitian now has precise knowledge of your meal timing. It calculates exactly when your fasting window began and provides specific times for when you can comfortably break your fast (e.g., "You can break your 16h fast at 1:15 PM").
+- **Fix**: Resolved a logic error where the trends analysis was biased towards Fitbit data, ignoring step data from other sources (Apple Health, Pedometer). It now correctly merges data sources for a complete picture of your activity.
+
 ## Beta 4.3.0 (Jan 10, 2026)
 ### Enhanced Trends & Insightful AI
 - **Visualized Macros**: The Daily Macros chart is now a **Stacked Bar Chart**, allowing you to see your nutrient breakdown clearly. We added toggles for **Grams** vs **% Kcal** and filters to hide/show specific macros.

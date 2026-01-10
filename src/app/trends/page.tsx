@@ -313,43 +313,9 @@ export default function TrendsPage() {
 
 
 
-  const safetyData = useMemo<SafetyPoint[]>(() => {
-    const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
-    return aggregateDataByDay(foodEntries, (date, items) => ({
-      date,
-      safe: items.filter(item => item.userFeedback === 'safe').length,
-      unsafe: items.filter(item => item.userFeedback === 'unsafe').length,
-      notMarked: items.filter(item => item.userFeedback === null || item.userFeedback === undefined).length,
-    }));
-  }, [filteredEntries]);
 
 
 
-  const giTrendData = useMemo<GIPoint[]>(() => {
-    const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
-    const hourlyGiTotals: Record<number, { sum: number; count: number }> = {};
-
-    foodEntries.forEach(entry => {
-      if (entry.fodmapData?.glycemicIndexInfo?.value) {
-        const hour = getHours(new Date(entry.timestamp));
-        if (!hourlyGiTotals[hour]) {
-          hourlyGiTotals[hour] = { sum: 0, count: 0 };
-        }
-        hourlyGiTotals[hour].sum += entry.fodmapData.glycemicIndexInfo.value;
-        hourlyGiTotals[hour].count += 1;
-      }
-    });
-
-    const result: GIPoint[] = [];
-    for (let i = 0; i < 24; i++) {
-      const data = hourlyGiTotals[i];
-      result.push({
-        hour: format(new Date(0, 0, 0, i), 'HH:mm'),
-        gi: data ? data.sum / data.count : 0,
-      });
-    }
-    return result;
-  }, [filteredEntries]);
 
 
 
@@ -484,16 +450,6 @@ export default function TrendsPage() {
     }, [] as CorrelationPoint[]);
   }, [activityData, calorieData]);
 
-  const symptomFrequencyData = useMemo<SymptomFrequency[]>(() => {
-    const symptomLogs = filteredEntries.filter(e => e.entryType === 'symptom') as SymptomLog[];
-    const frequencyMap: Record<string, number> = {};
-    symptomLogs.forEach(log => {
-      log.symptoms.forEach(symptom => {
-        frequencyMap[symptom.name] = (frequencyMap[symptom.name] || 0) + 1;
-      });
-    });
-    return Object.entries(frequencyMap).map(([name, value]) => ({ name, value }));
-  }, [filteredEntries]);
 
 
 
@@ -620,9 +576,6 @@ export default function TrendsPage() {
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
             <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
             <div className="flex flex-wrap gap-2 items-center">
-              <Button variant="ghost" size="sm" onClick={handleDebugSync}>
-                <Bug className="h-4 w-4 text-muted-foreground" />
-              </Button>
               <Button onClick={handleConnectFitbit} disabled={authLoading} type="button" size="sm">
                 <Zap className="mr-2 h-4 w-4" /> Connect Fitbit
               </Button>
@@ -698,14 +651,6 @@ export default function TrendsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Hourly Glycemic Index (GI) Trend</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {giTrendData.length > 0 ? <GITrendChart data={giTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No GI data available for this period.</p>}
-              </CardContent>
-            </Card>
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
@@ -721,7 +666,7 @@ export default function TrendsPage() {
                 <CardTitle className="text-xl font-semibold text-foreground">Meal Timing Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                {hourlyMealCountData.length > 0 ? <HourlyMealCountChart data={hourlyMealCountData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No meal data available for this period.</p>}
+                {hourlyMealCountData.length > 0 ? <HourlyMealCountChart data={hourlyMealCountData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No meal data available for this period (Count: {hourlyMealCountData.length}).</p>}
               </CardContent>
             </Card>
 
@@ -730,27 +675,11 @@ export default function TrendsPage() {
                 <CardTitle className="text-xl font-semibold text-foreground">Calories vs. Steps Correlation</CardTitle>
               </CardHeader>
               <CardContent>
-                {correlationData.length > 0 ? <CaloriesStepsCorrelationChart data={correlationData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">Not enough overlapping data (Steps + Calories) to show correlation.</p>}
+                {correlationData.length > 0 ? <CaloriesStepsCorrelationChart data={correlationData} isDarkMode={isDarkMode} targetCalories={targetCalories} /> : <p className="text-muted-foreground text-center py-8">Not enough overlapping data (Steps + Calories) to show correlation.</p>}
               </CardContent>
             </Card>
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Food Safety Feedback</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {safetyData.length > 0 ? <LoggedSafetyTrendChart data={safetyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No food safety feedback logged for this period.</p>}
-              </CardContent>
-            </Card>
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Symptom Occurrence</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[350px] flex items-center justify-center">
-                {symptomFrequencyData.length > 0 ? <SymptomOccurrenceChart data={symptomFrequencyData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No symptoms logged for this period.</p>}
-              </CardContent>
-            </Card>
 
             <Card className="bg-card shadow-lg border-border lg:col-span-2">
               <CardHeader>
@@ -769,32 +698,6 @@ export default function TrendsPage() {
             </Button>
           </div>
 
-          <div className="mt-8 p-4 border border-dashed border-muted-foreground/30 rounded bg-muted/20 text-xs font-mono text-left">
-            <details>
-              <summary className="cursor-pointer font-bold mb-2">Debug Analysis (Click to Expand)</summary>
-              <div className="space-y-1">
-                <p><strong>Current Client Time:</strong> {new Date().toString()}</p>
-                <p><strong>Detected Timezone:</strong> {typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'N/A'}</p>
-                <p><strong>Selected Range:</strong> {selectedTimeRange}</p>
-                <p><strong>Filter Logic:</strong> {(() => {
-                  const now = new Date();
-                  let s: Date;
-                  switch (selectedTimeRange) {
-                    case '1D': s = startOfDay(now); break;
-                    case '7D': s = startOfDay(subDays(now, 7)); break;
-                    case '30D': s = startOfDay(subDays(now, 30)); break;
-                    case '90D': s = startOfDay(subDays(now, 90)); break;
-                    case '1Y': s = startOfDay(subYears(now, 1)); break;
-                    default: return "ALL";
-                  }
-                  const e = endOfDay(now);
-                  return `Start: ${s.toString()} | End: ${e.toString()}`;
-                })()}</p>
-                <p><strong>Total Entries:</strong> {timelineEntries.length}</p>
-                <p><strong>Visible Entries:</strong> {filteredEntries.length}</p>
-              </div>
-            </details>
-          </div>
         </main>
       </ScrollArea>
     </div>

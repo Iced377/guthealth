@@ -1,6 +1,7 @@
 
 'use client';
 
+import { formatISO, addHours } from 'date-fns';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import Navbar from '@/components/shared/Navbar';
@@ -149,9 +150,11 @@ export default function AIInsightsPage() {
         symptomLogQuery = query(timelineEntriesColRef, where('entryType', '==', 'symptom'), where('timestamp', '>=', Timestamp.fromDate(freeUserStartDate)), orderBy('timestamp', 'desc'), limit(20));
       }
 
-      const [foodLogSnapshot, symptomLogSnapshot] = await Promise.all([
+      const [foodLogSnapshot, symptomLogSnapshot, fitbitLogSnapshot, pedometerLogSnapshot] = await Promise.all([
         getDocs(foodLogQuery),
-        getDocs(symptomLogQuery)
+        getDocs(symptomLogQuery),
+        getDocs(query(timelineEntriesColRef, where('entryType', '==', 'fitbit_data'), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc'))),
+        getDocs(query(timelineEntriesColRef, where('entryType', '==', 'pedometer_data'), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc')))
       ]);
 
       const foodLogData: LoggedFoodItem[] = foodLogSnapshot.docs.map(d => {
@@ -166,7 +169,63 @@ export default function AIInsightsPage() {
         return { ...data, id: d.id, timestamp } as LoggedFoodItem;
       }).filter(item => item.timestamp);
 
+      const fitbitLogData = fitbitLogSnapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          ...data,
+          id: d.id,
+          timestamp: (data.timestamp as Timestamp).toDate(),
+          steps: data.steps,
+          caloriesBurned: data.caloriesBurned
+        };
+      });
+
+      const pedometerLogData = pedometerLogSnapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          ...data,
+          id: d.id,
+          timestamp: (data.timestamp as Timestamp).toDate(),
+          steps: data.steps ?? 0,
+          activeEnergy: data.activeEnergy ?? 0
+        };
+      });
+
       const maxFastingWindowHours = calculateMaxFastingWindow(foodLogData);
+
+      // EXTRACTED TIME ALGORITHMS
+      // 1. Time of Day Context
+      const currentHour = now.getHours();
+      let timeOfDaySegment = "Afternoon";
+      if (currentHour >= 5 && currentHour < 12) timeOfDaySegment = "Morning";
+      else if (currentHour >= 12 && currentHour < 17) timeOfDaySegment = "Afternoon";
+      else if (currentHour >= 17 && currentHour < 22) timeOfDaySegment = "Evening";
+      else timeOfDaySegment = "Late Night";
+
+
+
+      // 2. Time Since Last Meal & Fasting Projection
+      let hoursSinceLastMeal = 0;
+      let projectedFastingEndTimes = undefined;
+
+      if (foodLogData.length > 0) {
+        // Sort descending to find most recent
+        const sortedFood = [...foodLogData].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const lastMeal = sortedFood[0];
+        const diffMs = now.getTime() - lastMeal.timestamp.getTime();
+        hoursSinceLastMeal = Number((diffMs / (1000 * 60 * 60)).toFixed(1));
+
+        // Calculate Projected End Times if fasting started after last meal
+        if (hoursSinceLastMeal > 0) {
+          const end16h = addHours(lastMeal.timestamp, 16);
+          const endMax = addHours(lastMeal.timestamp, maxFastingWindowHours || 12); // Default to 12 if no max recorded
+
+          projectedFastingEndTimes = {
+            target16h: end16h.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            targetMax: endMax.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+          };
+        }
+      }
 
       const symptomLogData: SymptomLog[] = symptomLogSnapshot.docs.map(d => {
         const data = d.data();
@@ -248,27 +307,113 @@ export default function AIInsightsPage() {
 
       // Group all logs by day to calculate daily totals for the period
       const logsByDate: { [key: string]: number } = {};
+      const stepsByDate: { [key: string]: number } = {};
+
       foodLogData.forEach(item => {
-        const dateKey = item.timestamp.toDateString(); // Group by Day
+        // Use formatISO to match the consistent YYYY-MM-DD format used throughout the app
+        const dateKey = formatISO(item.timestamp, { representation: 'date' });
         if (!logsByDate[dateKey]) logsByDate[dateKey] = 0;
         logsByDate[dateKey] += (item.calories || 0);
       });
 
-      const dayKeys = Object.keys(logsByDate);
-      const totalDaysAnalyzed = dayKeys.length;
+      // MERGE Fitbit and Pedometer Data based on MAX steps for the day
+      fitbitLogData.forEach(item => {
+        const dateKey = formatISO(item.timestamp, { representation: 'date' });
+        if (!stepsByDate[dateKey] || item.steps > stepsByDate[dateKey]) {
+          stepsByDate[dateKey] = item.steps || 0;
+        }
+      });
+
+      pedometerLogData.forEach(item => {
+        const dateKey = formatISO(item.timestamp, { representation: 'date' });
+        // Only override if pedometer has MORE steps (assumes user carries phone more or watch died, or prefer highest count)
+        if (!stepsByDate[dateKey] || item.steps > stepsByDate[dateKey]) {
+          stepsByDate[dateKey] = item.steps || 0;
+        }
+      });
+
+      // Sort day keys chronologically to easily slice the last 7 days
+      // Keys are now YYYY-MM-DD, so string sort works perfectly
+      const allDayKeys = Object.keys(logsByDate).sort();
+
+      // Filter for LAST 7 DAYS only to match user's "recent" mental model and charts
+      const RECENT_WINDOW_DAYS = 7;
+      const recentDayKeys = allDayKeys.slice(-RECENT_WINDOW_DAYS);
+
+      const totalDaysAnalyzed = recentDayKeys.length;
       let cumulativeNetCalories = 0;
+      let cumulativeNetCaloriesWithGuardrail = 0;
       let daysOverCalorieTarget = 0;
       let totalCaloriesConsumedPeriod = 0;
 
-      dayKeys.forEach(date => {
+      let optimalFluxDays = 0;
+      let grindDays = 0;
+      let sedentaryStorageDays = 0;
+      let metabolicStagnationDays = 0;
+      const STEP_THRESHOLD = 7500;
+
+      // Prepare data for regression { steps, calories }
+      const regressionPoints: { steps: number, calories: number }[] = [];
+
+      console.log("Flux Zone Debug - Recent Days:", recentDayKeys);
+
+      recentDayKeys.forEach(date => {
         const dayCals = logsByDate[date];
+        const daySteps = stepsByDate[date] || 0;
         totalCaloriesConsumedPeriod += dayCals;
-        // Cumulative Net = Target - Consumed (Positive = Deficit)
+
+        console.log(`Date: ${date}, Cals: ${dayCals}, Steps: ${daySteps}, TDEE: ${tdee}`);
+
+        // Standard Cumulative Net
         cumulativeNetCalories += (tdee - dayCals);
+
+        // Guardrailed Cumulative Net (< 800 kcal ignored)
+        if (dayCals >= 800) {
+          cumulativeNetCaloriesWithGuardrail += (tdee - dayCals);
+        }
+
         if (dayCals > tdee) {
           daysOverCalorieTarget++;
         }
+
+        // Regression Data Point & Flux Zone Calculation
+        if (dayCals > 0) { // Only analyze days with food logs
+          if (daySteps > 0) {
+            regressionPoints.push({ steps: daySteps, calories: dayCals });
+          }
+
+          // Flux Zone Logic
+          // Use exact same threshold as the Chart
+          const isHighActivity = daySteps >= STEP_THRESHOLD;
+          const isHighCalorie = dayCals >= tdee;
+
+          if (isHighActivity && isHighCalorie) optimalFluxDays++;
+          else if (isHighActivity && !isHighCalorie) grindDays++;
+          else if (!isHighActivity && isHighCalorie) sedentaryStorageDays++;
+          else metabolicStagnationDays++;
+        }
       });
+
+      // Calculate Regression Slope based on RECENT window
+      let slope = 0;
+      let slopeStrength = "None";
+
+      if (regressionPoints.length >= 2) {
+        const n = regressionPoints.length;
+        const sumX = regressionPoints.reduce((acc, p) => acc + p.steps, 0);
+        const sumY = regressionPoints.reduce((acc, p) => acc + p.calories, 0);
+        const sumXY = regressionPoints.reduce((acc, p) => acc + (p.steps * p.calories), 0);
+        const sumXX = regressionPoints.reduce((acc, p) => acc + (p.steps * p.steps), 0);
+
+        const denominator = (n * sumXX - sumX * sumX);
+        if (denominator !== 0) {
+          slope = (n * sumXY - sumX * sumY) / denominator;
+        }
+
+        if (Math.abs(slope) < 0.05) slopeStrength = "None/Negligible";
+        else if (slope > 0) slopeStrength = slope > 0.15 ? "Strong Positive" : "Weak Positive";
+        else slopeStrength = slope < -0.15 ? "Strong Negative" : "Weak Negative";
+      }
 
       const averageDailyCalories = totalDaysAnalyzed > 0 ? Math.round(totalCaloriesConsumedPeriod / totalDaysAnalyzed) : 0;
 
@@ -289,13 +434,25 @@ export default function AIInsightsPage() {
           maxFastingWindowHours: maxFastingWindowHours
         } : undefined,
         currentLocalTime: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+        timeOfDaySegment: timeOfDaySegment,
+        hoursSinceLastMeal: hoursSinceLastMeal,
+        projectedFastingEndTimes: projectedFastingEndTimes,
         dailyTotals: dailyTotals,
         trendsAnalysis: {
           cumulativeNetCalories: Math.round(cumulativeNetCalories),
+          cumulativeNetCaloriesWithGuardrail: Math.round(cumulativeNetCaloriesWithGuardrail),
+          calorieStepCorrelationSlope: Number(slope.toFixed(4)),
+          calorieStepCorrelationStrength: slopeStrength,
           daysOverCalorieTarget: daysOverCalorieTarget,
           totalDaysAnalyzed: totalDaysAnalyzed,
           averageDailyCalories: averageDailyCalories,
           dailyCalorieTarget: tdee,
+          fluxZones: {
+            optimalFluxDays,
+            grindDays,
+            sedentaryStorageDays,
+            metabolicStagnationDays
+          }
         }
       };
 

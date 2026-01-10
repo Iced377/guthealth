@@ -113,7 +113,7 @@ export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosT
         <BarChart
           accessibilityLayer
           data={chartData}
-          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           stackOffset={unit === 'calories' ? "expand" : "none"} // Expand creates 100% chart
         >
           <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
@@ -134,6 +134,7 @@ export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosT
             stroke={COLORS.text}
             tickFormatter={(value) => unit === 'calories' ? `${(value * 100).toFixed(0)}%` : value} // Format % for stackOffset="expand" (it processes 0-1)
             fontSize={12}
+            width={45}
           />
           <ChartTooltip
             cursor={{ fill: 'var(--muted)', opacity: 0.2 }}

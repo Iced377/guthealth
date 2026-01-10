@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.3.0";
+const APP_VERSION = "Beta 4.3.1";
 
 
 interface ReleaseNote {
@@ -62,6 +62,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.3.1",
+    date: "Jan 10, 2026",
+    title: "Smarter Insights",
+    description: [
+      "Fasting Intel: The AI now knows exactly when your fasting window began and gives precise times for when you can break it.",
+      "Fix: Resolved a logic error where the trends analysis was biased towards Fitbit data, ignoring Apple Health/Pedometer steps."
+    ]
+  },
   {
     version: "Beta 4.3.0",
     date: "Jan 10, 2026",
