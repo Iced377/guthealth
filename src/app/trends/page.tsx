@@ -17,6 +17,7 @@ import Navbar from '@/components/shared/Navbar';
 import TimeRangeToggle from '@/components/trends/TimeRangeToggle';
 import DailyMacrosTrendChart from '@/components/trends/DailyMacrosTrendChart';
 import DailyCaloriesTrendChart from '@/components/trends/DailyCaloriesTrendChart';
+import CumulativeCalorieChangeChart from '@/components/trends/CumulativeCalorieChangeChart';
 import LoggedSafetyTrendChart from '@/components/trends/LoggedSafetyTrendChart';
 import SymptomOccurrenceChart from '@/components/trends/SymptomOccurrenceChart';
 import GITrendChart from '@/components/trends/GITrendChart';
@@ -608,6 +609,8 @@ export default function TrendsPage() {
     );
   }
 
+  // Use profile TDEE or default
+  const targetCalories = userProfile?.profile?.tdee || 2000;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -635,9 +638,36 @@ export default function TrendsPage() {
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
                 <CardTitle className="text-xl font-semibold text-foreground">Daily Calorie Intake</CardTitle>
+                <p className="text-sm text-muted-foreground">Target: {targetCalories} kcal/day</p>
               </CardHeader>
               <CardContent>
-                {calorieData.length > 0 ? <DailyCaloriesTrendChart data={calorieData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No calorie data for this period.</p>}
+                {calorieData.length > 0 ? (
+                  <DailyCaloriesTrendChart
+                    data={calorieData}
+                    isDarkMode={isDarkMode}
+                    targetCalories={targetCalories}
+                  />
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">No calorie data for this period.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card shadow-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-foreground">Cumulative Net Calorie Change</CardTitle>
+                <p className="text-sm text-muted-foreground">Running balance vs. Target</p>
+              </CardHeader>
+              <CardContent>
+                {calorieData.length > 0 ? (
+                  <CumulativeCalorieChangeChart
+                    data={calorieData}
+                    isDarkMode={isDarkMode}
+                    targetCalories={targetCalories}
+                  />
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">No calorie data to calculate change.</p>
+                )}
               </CardContent>
             </Card>
 

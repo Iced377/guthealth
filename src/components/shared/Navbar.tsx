@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.2.0";
+const APP_VERSION = "Beta 4.3.0";
 
 
 interface ReleaseNote {
@@ -62,6 +62,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.3.0",
+    date: "Jan 10, 2026",
+    title: "Enhanced Trends & Insightful AI",
+    description: [
+      "Visualized Macros: The Daily Macros chart is now a stacked bar chart with Gram/% toggles and filters, making it easier to see your nutrient breakdown.",
+      "Calorie Intelligence: New Daily Calorie Histogram (with over-limit warnings) and a Cumulative Net Change chart to track your long-term deficit or surplus.",
+      "Smarter Dietitian: Your Personal Dietitian now sees these long-term trends (Adherence, Cumulative Balance) to give you more relevant, big-picture advice."
+    ]
+  },
   {
     version: "Beta 4.2.0",
     date: "Jan 10, 2026",

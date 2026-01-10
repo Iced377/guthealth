@@ -1,3 +1,11 @@
+## Beta 4.3.0 (Jan 10, 2026)
+### Enhanced Trends & Insightful AI
+- **Visualized Macros**: The Daily Macros chart is now a **Stacked Bar Chart**, allowing you to see your nutrient breakdown clearly. We added toggles for **Grams** vs **% Kcal** and filters to hide/show specific macros.
+- **Calorie Intelligence**:
+    - **Daily Histogram**: Shows your daily calorie intake as bars, which turn **Red** if you exceed your daily limit.
+    - **Cumulative Net Change**: A new **Area Chart** tracks your running calorie balance (Deficit vs Surplus) over time, helping you see the bigger picture.
+- **Smarter Dietitian**: The **AI Dietitian** now has access to these long-term trends (e.g., "You have a cumulative deficit of 2000 kcal"). It uses this data to provide deeper, more relevant advice about your progress and adherence.
+
 ## Beta 4.1.2 (Jan 09, 2026)
 ### UI & Layout Polishing
 - **Log Food Dialog**: Fixed a layout issue where the Date and Time inputs were overflowing on mobile screens. They now responsibly stack to fit perfectly.

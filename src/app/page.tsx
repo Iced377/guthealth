@@ -443,10 +443,59 @@ export default function RootPage() {
     const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const logTimestamp = newTimestamp || new Date();
 
+    // Check if description AND name are unchanged to avoid unnecessary re-analysis
+    let isDescriptionUnchanged = false;
+    let isNameUnchanged = true;
+
+    if (editingItem && editingItem.entryType === 'food' && !userDidOverrideMacros) {
+      const constructedDescription = editingItem.sourceDescription?.startsWith("Identified by photo")
+        ? `${editingItem.originalName}. Ingredients: ${editingItem.ingredients}`
+        : (editingItem.sourceDescription || editingItem.originalName || '');
+
+      if (constructedDescription.trim() === formData.mealDescription.trim()) {
+        isDescriptionUnchanged = true;
+      }
+
+      if (formData.name && formData.name.trim() !== editingItem.name) {
+        isNameUnchanged = false;
+      }
+    }
+
+    if (isDescriptionUnchanged && editingItem) {
+      // If name changed, update it. If time changed, update it. NO AI analysis needed.
+      const updatedItem = {
+        ...editingItem,
+        timestamp: logTimestamp,
+        name: formData.name || editingItem.name, // Update name if provided
+      };
+
+      updateTimelineEntry(updatedItem);
+      setIsSimplifiedAddFoodDialogOpen(false);
+      setEditingItem(null);
+      if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
+
+      if (authUser && authUser.uid !== 'guest-user') {
+        try {
+          const docRefPath = doc(db, 'users', authUser.uid, 'timelineEntries', editingItem.id);
+          // Update timestamp AND name
+          await updateDoc(docRefPath, {
+            timestamp: Timestamp.fromDate(logTimestamp),
+            name: updatedItem.name
+          });
+          toast({ title: "Meal Updated", description: "Entry updated successfully." });
+        } catch (error) {
+          console.error("Error updating entry:", error);
+          toast({ title: "Update Failed", description: "Could not update entry.", variant: "destructive" });
+        }
+      }
+      return;
+    }
+
     // 1. Optimistic Update
     const optimisticItem: LoggedFoodItem = {
       id: currentItemId,
-      name: editingItem?.name || "Processing Meal...",
+      // Prefer user name, else existing name (if editing), else "Processing..."
+      name: formData.name || editingItem?.name || "Processing Meal...",
       originalName: formData.mealDescription,
       ingredients: "Analyzing ingredients...",
       portionSize: "...",
@@ -488,7 +537,8 @@ export default function RootPage() {
 
       const namedItem = {
         ...optimisticItem,
-        name: mealDescriptionOutput.wittyName,
+        // If user provided a name manually, KEEP IT. Otherwise use AI name.
+        name: formData.name || mealDescriptionOutput.wittyName,
         originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
         ingredients: mealDescriptionOutput.consolidatedIngredients,
         portionSize: mealDescriptionOutput.estimatedPortionSize,

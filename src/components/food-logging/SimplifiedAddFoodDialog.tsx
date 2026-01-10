@@ -28,26 +28,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 
 const simplifiedFoodLogSchema = z.object({
+  name: z.string().optional(),
   mealDescription: z.string().min(10, { message: 'Please describe your meal in more detail (at least 10 characters).' }),
-  calories: z.preprocess(
-    (val) => (val === "" || val === undefined || val === null || Number.isNaN(parseFloat(String(val))) ? undefined : parseFloat(String(val))),
-    z.number().min(0, "Calories must be positive").optional()
-  ),
-  protein: z.preprocess(
-    (val) => (val === "" || val === undefined || val === null || Number.isNaN(parseFloat(String(val))) ? undefined : parseFloat(String(val))),
-    z.number().min(0, "Protein must be positive").optional()
-  ),
-  carbs: z.preprocess(
-    (val) => (val === "" || val === undefined || val === null || Number.isNaN(parseFloat(String(val))) ? undefined : parseFloat(String(val))),
-    z.number().min(0, "Carbs must be positive").optional()
-  ),
-  fat: z.preprocess(
-    (val) => (val === "" || val === undefined || val === null || Number.isNaN(parseFloat(String(val))) ? undefined : parseFloat(String(val))),
-    z.number().min(0, "Fat must be positive").optional()
-  ),
+  // Use strings for form state to allow stable editing of numbers (e.g. "1.", "") without immediate parsing issues
+  calories: z.string().optional(),
+  protein: z.string().optional(),
+  carbs: z.string().optional(),
+  fat: z.string().optional(),
 });
 
-export type SimplifiedFoodLogFormValues = z.infer<typeof simplifiedFoodLogSchema>;
+type FormValues = z.infer<typeof simplifiedFoodLogSchema>;
+
+export interface SimplifiedFoodLogFormValues {
+  name?: string;
+  mealDescription: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+}
 
 interface SimplifiedAddFoodDialogProps {
   isOpen: boolean;
@@ -93,15 +92,23 @@ export default function SimplifiedAddFoodDialog({
   const [selectedTime, setSelectedTime] = useState<string>(formatTimeToHHMM(new Date()));
 
 
-  const form = useForm<SimplifiedFoodLogFormValues>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(simplifiedFoodLogSchema),
     defaultValues: {
+      name: '',
       mealDescription: '',
       calories: undefined,
       protein: undefined,
       carbs: undefined,
       fat: undefined,
-      ...(initialValues || {}),
+      ...(initialValues ? {
+        ...initialValues,
+        name: initialValues.name || '',
+        calories: initialValues.calories?.toString(),
+        protein: initialValues.protein?.toString(),
+        carbs: initialValues.carbs?.toString(),
+        fat: initialValues.fat?.toString(),
+      } : {}),
     },
   });
   const { control, setValue, watch, reset, formState: { errors, isSubmitting, isValid, isSubmitted }, trigger, handleSubmit, getValues } = form;
@@ -114,22 +121,23 @@ export default function SimplifiedAddFoodDialog({
 
       if (isEditing && initialValues) {
         reset({
+          name: initialValues.name || '',
           mealDescription: initialValues.mealDescription || '',
-          calories: initialValues.calories,
-          protein: initialValues.protein,
-          carbs: initialValues.carbs,
-          fat: initialValues.fat,
+          calories: initialValues.calories?.toString() ?? '',
+          protein: initialValues.protein?.toString() ?? '',
+          carbs: initialValues.carbs?.toString() ?? '',
+          fat: initialValues.fat?.toString() ?? '',
         });
         setUserWantsToOverrideMacros(initialMacrosOverridden);
       } else if (!isEditing) {
-        reset({ mealDescription: '', calories: undefined, protein: undefined, carbs: undefined, fat: undefined });
+        reset({ name: '', mealDescription: '', calories: undefined, protein: undefined, carbs: undefined, fat: undefined });
         setUserWantsToOverrideMacros(false);
       }
     }
   }, [isOpen, isEditing, initialValues, initialMacrosOverridden, initialTimestamp, reset]);
 
 
-  const handleDialogSubmit = async (data: SimplifiedFoodLogFormValues) => {
+  const handleDialogSubmit = async (data: FormValues) => {
     setIsLoading(true);
     try {
       let finalTimestamp: Date | undefined = undefined;
@@ -139,7 +147,22 @@ export default function SimplifiedAddFoodDialog({
         finalTimestamp = new Date(); // Fallback, though should ideally not happen with validation
       }
 
-      await onSubmitLog(data, userWantsToOverrideMacros, finalTimestamp);
+      const parseNumber = (val: string | undefined) => {
+        if (!val || val.trim() === '') return undefined;
+        const num = parseFloat(val);
+        return isNaN(num) ? undefined : num;
+      };
+
+      const submittedData: SimplifiedFoodLogFormValues = {
+        name: data.name,
+        mealDescription: data.mealDescription,
+        calories: parseNumber(data.calories),
+        protein: parseNumber(data.protein),
+        carbs: parseNumber(data.carbs),
+        fat: parseNumber(data.fat),
+      };
+
+      await onSubmitLog(submittedData, userWantsToOverrideMacros, finalTimestamp);
       if (!isEditing) {
         reset();
         setUserWantsToOverrideMacros(false);
@@ -236,6 +259,16 @@ export default function SimplifiedAddFoodDialog({
           )}
 
           <div>
+            <Label htmlFor="name" className={labelClasses}>Name (Optional)</Label>
+            <Input
+              id="name"
+              {...form.register('name')}
+              placeholder="e.g. My Favorite Breakfast if left empty, AI will generate one."
+              className={inputClasses}
+            />
+          </div>
+
+          <div>
             <Label htmlFor="mealDescription" className={labelClasses}>Meal Description</Label>
             <Controller
               name="mealDescription"
@@ -283,7 +316,7 @@ export default function SimplifiedAddFoodDialog({
                       <Controller
                         name="calories"
                         control={control}
-                        render={({ field }) => <Input id="caloriesSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 500" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="caloriesSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={field.onChange} placeholder="e.g., 500" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.calories && <p className={cn("text-xs text-destructive mt-1")}>{errors.calories.message}</p>}
                     </div>
@@ -292,7 +325,7 @@ export default function SimplifiedAddFoodDialog({
                       <Controller
                         name="protein"
                         control={control}
-                        render={({ field }) => <Input id="proteinSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 30" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="proteinSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={field.onChange} placeholder="e.g., 30" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.protein && <p className={cn("text-xs text-destructive mt-1")}>{errors.protein.message}</p>}
                     </div>
@@ -301,7 +334,7 @@ export default function SimplifiedAddFoodDialog({
                       <Controller
                         name="carbs"
                         control={control}
-                        render={({ field }) => <Input id="carbsSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 50" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="carbsSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={field.onChange} placeholder="e.g., 50" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.carbs && <p className={cn("text-xs text-destructive mt-1")}>{errors.carbs.message}</p>}
                     </div>
@@ -310,7 +343,7 @@ export default function SimplifiedAddFoodDialog({
                       <Controller
                         name="fat"
                         control={control}
-                        render={({ field }) => <Input id="fatSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} placeholder="e.g., 20" className={cn(inputClasses, "h-9 text-sm")} />}
+                        render={({ field }) => <Input id="fatSimplified" type="number" step="any" {...field} value={field.value ?? ''} onChange={field.onChange} placeholder="e.g., 20" className={cn(inputClasses, "h-9 text-sm")} />}
                       />
                       {errors.fat && <p className={cn("text-xs text-destructive mt-1")}>{errors.fat.message}</p>}
                     </div>

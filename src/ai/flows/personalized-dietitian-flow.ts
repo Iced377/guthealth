@@ -61,6 +61,14 @@ const UserProfileSchemaForAI = z.object({
 }).optional();
 
 
+const TrendsAnalysisSchema = z.object({
+  cumulativeNetCalories: z.number().describe("Total accummulated calorie difference (Target - Consumed). Positive = Deficit, Negative = Surplus."),
+  daysOverCalorieTarget: z.number().describe("Number of days where consumed calories exceeded the target."),
+  totalDaysAnalyzed: z.number(),
+  averageDailyCalories: z.number(),
+  dailyCalorieTarget: z.number(),
+});
+
 const PersonalizedDietitianInputSchema = z.object({
   userQuestion: z.string().describe("The user's specific question about their diet, health, or well-being."),
   foodLog: z.array(FoodItemSchemaForAI).describe("A chronological list of the user's logged food items (e.g., last 30-90 days)."),
@@ -73,6 +81,7 @@ const PersonalizedDietitianInputSchema = z.object({
     carbs: z.number(),
     fat: z.number(),
   }).describe("Pre-calculated totals for the current day to ensure accuracy."),
+  trendsAnalysis: TrendsAnalysisSchema.optional().describe("Computed insights from the user's historical trends graphs, providing context on long-term observance of calorie goals."),
 });
 export type PersonalizedDietitianInput = z.infer<typeof PersonalizedDietitianInputSchema>;
 
@@ -107,6 +116,14 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
 - **Max Recorded Fasting Window:** {{#if userProfile.maxFastingWindowHours}}{{userProfile.maxFastingWindowHours}} hours{{else}}N/A{{/if}}
 - **Today's Totals (Calculated):** Calories: {{dailyTotals.calories}}, Protein: {{dailyTotals.protein}}g, Carbs: {{dailyTotals.carbs}}g, Fat: {{dailyTotals.fat}}g
+
+{{#if trendsAnalysis}}
+**Analysis from Trends Graphs (Last {{trendsAnalysis.totalDaysAnalyzed}} Days):**
+- **Cumulative Net Calorie Change:** {{trendsAnalysis.cumulativeNetCalories}} kcal
+  (Note: A POSITIVE number means a Calorie DEFICIT/Savings. A NEGATIVE number means a Calorie SURPLUS/Exceeded.)
+- **Adherence:** Exceeded daily calorie target ({{trendsAnalysis.dailyCalorieTarget}} kcal) on {{trendsAnalysis.daysOverCalorieTarget}} days out of {{trendsAnalysis.totalDaysAnalyzed}}.
+- **Average Daily Intake:** {{trendsAnalysis.averageDailyCalories}} kcal/day.
+{{/if}}
 
 **User's Question:**
 "{{{userQuestion}}}"

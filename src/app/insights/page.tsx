@@ -243,6 +243,35 @@ export default function AIInsightsPage() {
         fat: acc.fat + (item.fat || 0),
       }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
+      // --- Trend Analysis Calculation ---
+      const tdee = userProfile?.profile?.tdee || 2000;
+
+      // Group all logs by day to calculate daily totals for the period
+      const logsByDate: { [key: string]: number } = {};
+      foodLogData.forEach(item => {
+        const dateKey = item.timestamp.toDateString(); // Group by Day
+        if (!logsByDate[dateKey]) logsByDate[dateKey] = 0;
+        logsByDate[dateKey] += (item.calories || 0);
+      });
+
+      const dayKeys = Object.keys(logsByDate);
+      const totalDaysAnalyzed = dayKeys.length;
+      let cumulativeNetCalories = 0;
+      let daysOverCalorieTarget = 0;
+      let totalCaloriesConsumedPeriod = 0;
+
+      dayKeys.forEach(date => {
+        const dayCals = logsByDate[date];
+        totalCaloriesConsumedPeriod += dayCals;
+        // Cumulative Net = Target - Consumed (Positive = Deficit)
+        cumulativeNetCalories += (tdee - dayCals);
+        if (dayCals > tdee) {
+          daysOverCalorieTarget++;
+        }
+      });
+
+      const averageDailyCalories = totalDaysAnalyzed > 0 ? Math.round(totalCaloriesConsumedPeriod / totalDaysAnalyzed) : 0;
+
       const aiInput: PersonalizedDietitianInput = {
         userQuestion: PREDEFINED_QUESTION,
         foodLog: processedFoodLog as any,
@@ -261,6 +290,13 @@ export default function AIInsightsPage() {
         } : undefined,
         currentLocalTime: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
         dailyTotals: dailyTotals,
+        trendsAnalysis: {
+          cumulativeNetCalories: Math.round(cumulativeNetCalories),
+          daysOverCalorieTarget: daysOverCalorieTarget,
+          totalDaysAnalyzed: totalDaysAnalyzed,
+          averageDailyCalories: averageDailyCalories,
+          dailyCalorieTarget: tdee,
+        }
       };
 
       const result = await getPersonalizedDietitianInsight(aiInput);

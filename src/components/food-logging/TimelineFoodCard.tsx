@@ -336,7 +336,7 @@ export default function TimelineFoodCard({
       </Card>
 
       {/* Dialog Content for Log Details */}
-      <DialogContent>
+      <DialogContent hideCloseButton>
         <div className="flex items-center justify-between pb-4 border-b border-border/40 mb-4">
           <DialogTitle className="text-lg font-semibold text-center w-full transform translate-x-4">Log Details</DialogTitle>
           <DialogClose className="ios-icon-button bg-gray-100 dark:bg-gray-800 text-foreground shrink-0" asChild>

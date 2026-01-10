@@ -1,29 +1,28 @@
-
 import type { CaloriePoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ReferenceLine } from 'recharts';
 
 interface DailyCaloriesTrendChartProps {
   data: CaloriePoint[];
   // theme: string; // Removed unused theme prop
   isDarkMode: boolean;
+  targetCalories: number;
 }
 
-const getColors = (isDarkMode: boolean) => { // Removed theme parameter
-  return {
-    calories: isDarkMode ? 'hsl(var(--chart-5))' : 'hsl(var(--chart-5))', // Example: Bluish/Purple
-    grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
-    text: isDarkMode ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))",
-  };
+const COLORS = {
+  safe: '#3B82F6',   // Blue-500 (Under Limit)
+  danger: '#EF4444', // Red-500 (Over Limit)
+  grid: "hsl(var(--border))",
+  text: "hsl(var(--muted-foreground))",
+  target: "hsl(var(--foreground))"
 };
 
-export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCaloriesTrendChartProps) {
-  const colors = getColors(isDarkMode);
+export default function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories }: DailyCaloriesTrendChartProps) {
 
   const chartConfig = {
-    calories: { label: "Calories (kcal)", color: colors.calories },
+    calories: { label: "Calories (kcal)", color: COLORS.safe },
   } satisfies import("@/components/ui/chart").ChartConfig;
 
   if (!data || data.length === 0) {
@@ -37,19 +36,16 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
     return <p className="text-center text-muted-foreground py-8">No valid data available.</p>;
   }
 
-  const yAxisDomain = [
-    0,
-    Math.max(...data.map(d => d.calories), 1000) // Ensure Y axis goes to at least 1000
-  ];
+  const maxY = Math.max(...data.map(d => d.calories), targetCalories * 1.2);
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-      <AreaChart
+      <BarChart
         accessibilityLayer
         data={validData}
         margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
       >
-        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
+        <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
         <XAxis
           dataKey="date"
           tickLine={false}
@@ -57,47 +53,40 @@ export default function DailyCaloriesTrendChart({ data, isDarkMode }: DailyCalor
           tickMargin={8}
           minTickGap={32}
           tickFormatter={(value) => value.slice(5)}
-          stroke={colors.text}
-          angle={0}
-          interval="preserveStartEnd"
-          textAnchor="middle"
-          height={30}
+          stroke={COLORS.text}
+          fontSize={12}
         />
         <YAxis
           tickLine={false}
           axisLine={false}
           tickMargin={8}
-          stroke={colors.text}
-          domain={yAxisDomain}
+          stroke={COLORS.text}
+          fontSize={12}
+          domain={[0, 'auto']}
+        />
+        <ReferenceLine
+          y={targetCalories}
+          stroke={COLORS.target}
+          strokeDasharray="3 3"
+          label={{ position: 'top', value: 'Target', fill: COLORS.text, fontSize: 10 }}
         />
         <ChartTooltip
-          cursor={true}
+          cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
           content={<ChartTooltipContent indicator="dot" />}
         />
-        <defs>
-          <linearGradient id="fillCalories" x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="5%"
-              stopColor="var(--color-calories)"
-              stopOpacity={0.8}
-            />
-            <stop
-              offset="95%"
-              stopColor="var(--color-calories)"
-              stopOpacity={0.1}
-            />
-          </linearGradient>
-        </defs>
-        <Area
+        <Bar
           dataKey="calories"
-          type="monotone"
-          fill="url(#fillCalories)"
-          stroke="var(--color-calories)"
-          strokeWidth={2.5}
-          stackId="a"
-        />
-        <ChartLegend content={<ChartLegendContent />} />
-      </AreaChart>
+          radius={[4, 4, 0, 0]}
+          fill={COLORS.safe}
+        >
+          {validData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={entry.calories > targetCalories ? COLORS.danger : COLORS.safe}
+            />
+          ))}
+        </Bar>
+      </BarChart>
     </ChartContainer>
   );
 }
