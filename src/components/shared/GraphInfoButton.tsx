@@ -22,7 +22,7 @@ export default function GraphInfoButton({ title, description, benefit }: GraphIn
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary rounded-full">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-primary hover:text-primary-foreground rounded-full transition-colors">
                     <Info className="h-5 w-5" />
                     <span className="sr-only">Info about {title}</span>
                 </Button>
