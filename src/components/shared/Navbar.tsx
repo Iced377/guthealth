@@ -816,13 +816,13 @@ const releaseNotesData: ReleaseNote[] = [
   },
   {
     version: "Beta 3.5.0",
-    date: "June 05, 2024",
+    date: "June 05, 2025",
     title: "Admin Panel & UI Enhancements",
     description: "Iterative fixes for admin panel permissions. General UI polish.",
   },
   {
     version: "Beta 3.4.0",
-    date: "June 04, 2024",
+    date: "June 04, 2025",
     title: "Rule Refinements",
     description: "Refined Firestore security rules for better access control.",
   },

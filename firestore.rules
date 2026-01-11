@@ -12,11 +12,20 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Helper function to check if the user has the isAdmin flag in their profile
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     // --- Users Collection ---
     // Contains user profiles, settings, and safe foods.
     match /users/{userId} {
       // Allow users to read and write only their own document.
-      allow read, write: if isOwner(userId);
+      // Allow admins to read any user profile (useful for admin dashboards)
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
 
       // --- Timeline Entries Subcollection ---
       // Contains food logs, symptoms, and activity data.
@@ -33,11 +42,16 @@ service cloud.firestore {
       allow create: if isAuthenticated();
 
       // Allow users to read ONLY their own feedback.
-      // IMPORTANT: This rule requires queries to filter by `userId`.
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow admins to read ALL feedback.
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
       
-      // Allow list queries (collection groups or where clauses) ONLY if filtering by own uid.
-      allow list: if isAuthenticated() && request.query.filters.userId == request.auth.uid;
+      // Allow list queries:
+      // 1. Users filtering by their own UID.
+      // 2. Admins (who might query all documents).
+      allow list: if (isAuthenticated() && request.query.filters.userId == request.auth.uid) || isAdmin();
+      
+      // Allow admins to update status (e.g. mark as viewed)
+      allow update: if isAdmin();
     }
 
     // --- Default Deny ---
