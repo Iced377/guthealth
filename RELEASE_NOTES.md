@@ -1,3 +1,7 @@
+## Beta 4.3.2 (Jan 11, 2026)
+### Fasting Friendlier
+- **Smart Fasting**: We've refined the fasting logic. The AI now ignores items with **less than 5 calories** (like black coffee, plain tea, water, or supplements) when calculating your "Time Since Last Meal". This ensures your fasting stats aren't accidentally reset by non-breaking items.
+
 ## Beta 4.3.1 (Jan 10, 2026)
 ### Smarter Insights
 - **Fasting Intel**: The AI Dietitian now has precise knowledge of your meal timing. It calculates exactly when your fasting window began and provides specific times for when you can comfortably break your fast (e.g., "You can break your 16h fast at 1:15 PM").

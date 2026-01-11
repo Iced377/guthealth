@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.3.1";
+const APP_VERSION = "Beta 4.3.2";
 
 
 interface ReleaseNote {
@@ -62,6 +62,14 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.3.2",
+    date: "Jan 11, 2026",
+    title: "Fasting Friendlier",
+    description: [
+      "Smart Fasting: The system now rightly ignores negligible calorie items (like black coffee, water, or supplements < 5kcal) when calculating your fasting timer. Your morning brew no longer resets your fast!"
+    ]
+  },
   {
     version: "Beta 4.3.1",
     date: "Jan 10, 2026",

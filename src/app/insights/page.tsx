@@ -31,6 +31,7 @@ import Link from 'next/link';
 const TEMPORARILY_UNLOCK_ALL_FEATURES = true; // Kept true as per previous state
 const DATA_FETCH_LIMIT_DAYS = 90;
 const PREDEFINED_QUESTION = "What do you think about my food today so far and what would you recommend for the rest of today?";
+const FASTING_CALORIE_THRESHOLD = 5; // Entries below this (e.g. coffee, meds, diet soda) do not break a fast
 
 export default function AIInsightsPage() {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -82,10 +83,13 @@ export default function AIInsightsPage() {
 
 
   const calculateMaxFastingWindow = (logs: LoggedFoodItem[]): number => {
-    if (logs.length < 2) return 0;
+    // Filter out negligible calorie items (coffee, supplements, etc.)
+    const fastingLogs = logs.filter(log => (log.calories || 0) >= FASTING_CALORIE_THRESHOLD);
+
+    if (fastingLogs.length < 2) return 0;
 
     // Sort ascending by time
-    const sortedLogs = [...logs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const sortedLogs = [...fastingLogs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     // Group logs by day (Local Date String as key to ensure we separate days correctly)
     const logsByDay: { [key: string]: LoggedFoodItem[] } = {};
@@ -208,9 +212,12 @@ export default function AIInsightsPage() {
       let hoursSinceLastMeal = 0;
       let projectedFastingEndTimes = undefined;
 
-      if (foodLogData.length > 0) {
+      // Filter logs for significant calorie intake to determine "Last Meal"
+      const significantFoodLogs = foodLogData.filter(log => (log.calories || 0) >= FASTING_CALORIE_THRESHOLD);
+
+      if (significantFoodLogs.length > 0) {
         // Sort descending to find most recent
-        const sortedFood = [...foodLogData].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const sortedFood = [...significantFoodLogs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
         const lastMeal = sortedFood[0];
         const diffMs = now.getTime() - lastMeal.timestamp.getTime();
         hoursSinceLastMeal = Number((diffMs / (1000 * 60 * 60)).toFixed(1));
