@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { MouseEvent, useCallback } from 'react';
 
 import Navbar from '@/components/shared/Navbar';
+import GraphInfoButton from '@/components/shared/GraphInfoButton';
 import TimeRangeToggle from '@/components/trends/TimeRangeToggle';
 import DailyMacrosTrendChart from '@/components/trends/DailyMacrosTrendChart';
 import DailyCaloriesTrendChart from '@/components/trends/DailyCaloriesTrendChart';
@@ -590,7 +591,14 @@ export default function TrendsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Daily Calorie Intake</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Daily Calorie Intake</CardTitle>
+                  <GraphInfoButton
+                    title="Daily Calorie Intake"
+                    description="This bar chart displays your total calories consumed for each day. The dotted line represents your daily target."
+                    benefit="Quickly spot days where you went over or under your target. Consistently hitting your target is key for weight management."
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground">Target: {targetCalories} kcal/day</p>
               </CardHeader>
               <CardContent>
@@ -608,7 +616,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Cumulative Net Calorie Change</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Cumulative Net Calorie Change</CardTitle>
+                  <GraphInfoButton
+                    title="Cumulative Net Calorie Change"
+                    description="This line chart tracks your 'running total' of calorie surplus or deficit over time. If you eat 500 calories less than your TDEE, the line goes down. If you eat more, it goes up."
+                    benefit="This is the most powerful predictor of weight change. A downward trend means you are losing body fat, regardless of daily fluctuations."
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground">Running balance vs. Target</p>
               </CardHeader>
               <CardContent>
@@ -626,7 +641,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Daily Macronutrient Trends</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Daily Macronutrient Trends</CardTitle>
+                  <GraphInfoButton
+                    title="Daily Macronutrient Trends"
+                    description="This stacked bar chart breaks down your daily calories into Protein (Blue), Carbs (Green), and Fat (Orange). You can toggle between Grams and Percentages."
+                    benefit="Ensure you're getting enough protein for muscle recovery and balancing carbs/fats for energy. It helps you see *where* your calories are coming from."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {macroData.length > 0 ? <DailyMacrosTrendChart data={macroData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No macronutrient data for this period.</p>}
@@ -635,7 +657,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
+                  <GraphInfoButton
+                    title="Body Weight Trend"
+                    description="This graph plots your daily weight logs (lines) and calculates a smoothed trend (if enough data exists)."
+                    benefit="Weight fluctuates daily due to water/food volume. Focusing on the general direction of the line helps you ignore short-term noise and see real progress."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {weightData.length > 0 ? <WeightTrendChart data={weightData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No weight data (Sync Fitbit to see).</p>}
@@ -644,7 +673,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Daily Activity (Steps)</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Daily Activity (Steps)</CardTitle>
+                  <GraphInfoButton
+                    title="Daily Activity"
+                    description="A simple bar chart of your daily step count from Fitbit or Apple Health."
+                    benefit="Movement burns calories and improves insulin sensitivity. Use this to ensure you aren't being too sedentary on days you eat more."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {activityData.length > 0 ? <ActivityTrendChart data={activityData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No activity data (Sync Fitbit to see).</p>}
@@ -654,7 +690,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Hourly Average Calories</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Hourly Average Calories</CardTitle>
+                  <GraphInfoButton
+                    title="Hourly Average Calories"
+                    description="This heatmap shows *when* you eat during the day and how many calories you typically consume at that hour."
+                    benefit="Helps identify problem times (e.g., late-night snacking) or uneven energy distribution. Try to center your calories around your most active hours."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {hourlyCaloriesTrendData.length > 0 ? <HourlyCaloriesChart data={hourlyCaloriesTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No calorie data available for this period.</p>}
@@ -663,7 +706,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Meal Timing Distribution</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Meal Timing Distribution</CardTitle>
+                  <GraphInfoButton
+                    title="Meal Timing Distribution"
+                    description="Counts how many meals you've logged at each hour of the day."
+                    benefit="Are you a grazer or a meal-eater? Use this to see your natural eating rhythm and adjust if you find yourself hungry at odd hours."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {hourlyMealCountData.length > 0 ? <HourlyMealCountChart data={hourlyMealCountData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No meal data available for this period (Count: {hourlyMealCountData.length}).</p>}
@@ -672,7 +722,14 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground">Calories vs. Steps Correlation</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground">Calories vs. Steps Correlation</CardTitle>
+                  <GraphInfoButton
+                    title="Energy Flux Correlation"
+                    description="This scatter plot compares how much you ate (Y-axis) vs. how much you moved (X-axis) for each day. The colored quadrants show your metabolic state."
+                    benefit="Aim for the 'G-Flux' zone (High Activity, High Food) for optimal performance and metabolism, rather than the 'Starvation' zone (Low Activity, Low Food)."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {correlationData.length > 0 ? <CaloriesStepsCorrelationChart data={correlationData} isDarkMode={isDarkMode} targetCalories={targetCalories} /> : <p className="text-muted-foreground text-center py-8">Not enough overlapping data (Steps + Calories) to show correlation.</p>}
@@ -683,9 +740,16 @@ export default function TrendsPage() {
 
             <Card className="bg-card shadow-lg border-border lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground flex items-center">
-                  <Award className="mr-2 h-6 w-6 text-yellow-500" /> Micronutrient Target Achievements
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground flex items-center">
+                    <Award className="mr-2 h-6 w-6 text-yellow-500" /> Micronutrient Target Achievements
+                  </CardTitle>
+                  <GraphInfoButton
+                    title="Micronutrient Achievements"
+                    description="A leaderboard of your most consistent vitamins and minerals. It counts how many days you hit 100% of the recommended daily value."
+                    benefit="Calorie counting isn't enough. Use this to ensure you're getting actual nutrition (Quality) and not just Quantity."
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <MicronutrientAchievementList data={micronutrientAchievementData} />
