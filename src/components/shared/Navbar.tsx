@@ -51,7 +51,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.3.2";
+const APP_VERSION = "Beta 4.3.3";
 
 
 interface ReleaseNote {
@@ -62,6 +62,12 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.3.3",
+    date: "Jan 12, 2026",
+    title: "Authentication Improvements",
+    description: "Fixed an issue where Google Sign-In could fail silently on some new devices.",
+  },
   {
     version: "Beta 4.3.2",
     date: "Jan 11, 2026",

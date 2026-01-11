@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import {
   onAuthStateChanged,
@@ -40,16 +40,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   // Handle Redirect Result (Google Sign In)
+  // Handle Redirect Result (Google Sign In)
+  const hasCheckedRedirect = useRef(false);
+
   useEffect(() => {
+    if (hasCheckedRedirect.current) return;
+    hasCheckedRedirect.current = true;
+
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
         return getRedirectResult(auth);
       })
       .then((result) => {
         if (result?.user) {
+          console.log("Redirect login successful:", result.user.email);
+          toast({ title: 'Welcome back!', description: `Signed in as ${result.user.displayName}` });
           // setUser(result.user); // Handled by onAuthStateChanged
-          toast({ title: 'Welcome back!', description: result.user.displayName || 'Successfully signed in.' });
-          // router.push('/'); // Handled by profile check
+        } else {
+          console.log("No redirect result found.");
         }
       })
       .catch((error) => {
