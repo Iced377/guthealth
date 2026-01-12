@@ -1,5 +1,11 @@
 # Release Notes
 
+## Beta 4.3.5 (Jan 12, 2026)
+-   **Landing Page Polish:** Restored scroll snapping and animations; fixed Login button fade behavior.
+-   **Walkthrough:** Added a new final step with a video welcome avatar.
+-   **Security Section:** Fixed layout issue where content was cut off.
+-   **UI:** Version indicator now fades out on scroll.
+
 ## Beta 4.3.4 (Jan 12, 2026)
 -   **App Tour:** New walkthrough step for Navigation & Insights.
 -   **Fasting:** Corrected logic to prevent "Fast Started" alerts immediately after eating (2-hour minimum).

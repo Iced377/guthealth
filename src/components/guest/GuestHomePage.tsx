@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronUp } from 'lucide-react';
@@ -37,6 +37,7 @@ export default function GuestHomePage({
   isLoadingAiForItem: boolean;
 }) {
   const { isDarkMode } = useTheme();
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -45,17 +46,23 @@ export default function GuestHomePage({
   }, [isDarkMode]);
 
   return (
-    <div className="h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-background text-foreground overflow-x-hidden selection:bg-primary/30 flex flex-col font-body antialiased">
-      <Navbar isGuest={true} />
+    <div
+      className="h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-background text-foreground overflow-x-hidden selection:bg-primary/30 flex flex-col font-body antialiased"
+      onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 50)}
+    >
+      <Navbar isGuest={true} isScrolled={isScrolled} />
 
-      <main className="flex-grow">
-        <HeroSection />
-        <ProblemSection />
-        <StorySection />
-        <FeatureGrid />
-        <SecuritySection />
-        <FinalCTA isLoggedIn={false} />
-      </main>
+      {/* Memoized content to prevent re-renders on scroll, preserving animations and snap behavior */}
+      {useMemo(() => (
+        <main className="contents">
+          <HeroSection />
+          <ProblemSection />
+          <StorySection />
+          <FeatureGrid />
+          <SecuritySection />
+          <FinalCTA isLoggedIn={false} />
+        </main>
+      ), [])}
 
       {lastLoggedItem && !isSheetOpen && (
         <div

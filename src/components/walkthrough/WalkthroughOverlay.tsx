@@ -181,25 +181,78 @@ export default function WalkthroughOverlay() {
             </div>
 
             {/* 2. CONTENT LAYER (Z-51, Interactive) */}
-            {isMobile ? (
-                // --- MOBILE: Bottom Sheet ---
-                // modal={false} prevents the Sheet from rendering its own dark overlay, so our Spotlight is visible.
+            {currentStep.customType === 'avatar-modal' ? (
+                // --- SPECIAL AVATAR MODAL ---
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex flex-col items-center gap-8 text-center max-w-sm w-full"
+                    >
+                        {/* Glowing effect container */}
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary/50 blur-[60px] rounded-full animate-pulse" />
+                            <div className="relative w-64 h-64 sm:w-80 sm:h-80 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl ring-1 ring-white/30">
+                                <video
+                                    src={currentStep.mediaUrl}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="w-full h-full object-cover object-center scale-150"
+                                />
+                                {/* Inner shadow overlay */}
+                                <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-6 relative z-10 w-full">
+                            <h2 className="text-3xl font-bold text-white tracking-tight drop-shadow-md">
+                                {currentStep.title}
+                            </h2>
+                            <Button
+                                size="lg"
+                                onClick={endWalkthrough}
+                                className="w-full h-14 text-lg rounded-full shadow-xl hover:scale-105 transition-transform bg-primary text-primary-foreground font-semibold"
+                            >
+                                {currentStep.actionLabel || "Take me to my Dashboard"}
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            ) : isMobile ? (
+                // --- MOBILE: Top/Bottom Sheet ---
                 <Sheet open={isWalkthroughActive} modal={false} onOpenChange={(open) => !open && endWalkthrough()}>
-                    <SheetContent side="bottom" className="z-[60] pb-8 pt-4" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={() => endWalkthrough()}>
-                        {/* Hide default close button if we want custom control, or use it for "Skip" */}
+                    <SheetContent
+                        side={currentStep.position === 'top' ? "top" : "bottom"}
+                        className={cn(
+                            "z-[60] pb-8 pt-4",
+                            // Add extra top padding if top-sheet to avoid status bar/notch overlap issues if needed
+                            currentStep.position === 'top' && "pt-12"
+                        )}
+                        onInteractOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={() => endWalkthrough()}
+                    >
                         <SheetHeader className="mb-2 flex flex-row items-center justify-between space-y-0">
                             <SheetTitle className="text-xl font-bold bg-gradient-to-r from-primary to-green-400 bg-clip-text text-transparent">
                                 {currentStep.title}
                             </SheetTitle>
-                            {/* Custom Close/Skip trigger logic handled by default close or our own button */}
                         </SheetHeader>
 
                         {renderContent()}
                     </SheetContent>
                 </Sheet>
             ) : (
-                // --- DESKTOP: Fixed Card ---
-                <div className="fixed z-[60] bottom-8 right-8 w-96 max-w-[calc(100vw-4rem)]">
+                // --- DESKTOP: Fixed Card with Dynamic Position ---
+                <div className={cn(
+                    "fixed z-[60] w-96 max-w-[calc(100vw-4rem)] transition-all duration-500 ease-in-out",
+                    // Dynamic Positioning Logic
+                    currentStep.position === 'center' && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                    currentStep.position === 'top' && "top-24 right-8", // Below navbar
+                    (currentStep.position === 'bottom' || !currentStep.position) && "bottom-8 right-8",
+                    currentStep.position === 'left' && "bottom-8 left-8", // Rarely used but good fallback
+                    currentStep.position === 'right' && "bottom-8 right-8"
+                )}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

@@ -848,6 +848,7 @@ interface NavbarProps {
   onLogSymptomsClick?: () => void;
   onLogPreviousMealClick?: () => void;
   hideFloatingActionMenu?: boolean;
+  isScrolled?: boolean;
 }
 
 const LOCALSTORAGE_LAST_SEEN_VERSION_KEY = 'lastSeenAppVersion';
@@ -860,6 +861,7 @@ export default function Navbar({
   onLogSymptomsClick,
   onLogPreviousMealClick,
   hideFloatingActionMenu = false,
+  isScrolled: externalIsScrolled,
 }: NavbarProps) {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -872,6 +874,17 @@ export default function Navbar({
   const [showNewReleaseIndicator, setShowNewReleaseIndicator] = useState(false);
   const [isActionPopoverOpen, setIsActionPopoverOpen] = useState(false);
   const { startWalkthrough } = useWalkthrough();
+  const [internalIsScrolled, setInternalIsScrolled] = useState(false);
+
+  const isScrolled = externalIsScrolled ?? internalIsScrolled;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setInternalIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -1015,7 +1028,9 @@ export default function Navbar({
                 className={cn(
                   "text-xs p-1 h-auto ml-0 mt-1 rounded-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 relative",
                   "text-primary underline underline-offset-2",
-                  "hover:bg-transparent hover:text-primary/80"
+                  "hover:bg-transparent hover:text-primary/80",
+                  "transition-opacity duration-300",
+                  isGuest && isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
                 )}
                 aria-label={`App Version ${APP_VERSION}, click for release notes`}
               >
@@ -1081,8 +1096,9 @@ export default function Navbar({
               <Button
                 onClick={() => router.push('/login')}
                 className={cn(
-                  "hidden sm:flex h-9 px-3 sm:px-4 text-xs sm:text-sm", // Hidden on mobile
-                  "bg-primary text-primary-foreground hover:bg-primary/90"
+                  "flex h-9 px-3 sm:px-4 text-xs sm:text-sm transition-all duration-300", // Visible on all screens
+                  "bg-primary text-primary-foreground hover:bg-primary/90",
+                  isGuest && isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
                 )}
                 variant={'default'}
               >

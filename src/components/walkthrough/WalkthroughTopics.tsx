@@ -9,6 +9,7 @@ export type WalkthroughStep = {
     mediaUrl?: string; // Optional image/video
     mediaType?: 'image' | 'video';
     actionLabel?: string; // Custom label for "Next" button
+    customType?: 'avatar-modal';
 };
 
 export type WalkthroughTopic = {
@@ -42,7 +43,7 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
                 title: 'Your Food Log',
                 content: "Every meal you log appears as a card on your timeline. It shows the time, calories, and a quick summary.",
                 targetId: 'walkthrough-mock-card',
-                position: 'center',
+                position: 'bottom',
             },
             {
                 id: 'tour-meal-card-macros',
@@ -141,11 +142,14 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
                 position: 'top',
             },
             {
-                id: 'welcome-3',
-                title: 'Start Logging!',
-                content: "Go ahead and log your first meal now! Tap the plus button to get started.",
-                targetId: 'fab-add-button',
-                position: 'top',
+                id: 'welcome-5',
+                title: 'All Set!',
+                content: "You're all set to get started. I'll be here to help you along the way.",
+                customType: 'avatar-modal',
+                mediaUrl: '/welcome.mp4',
+                mediaType: 'video',
+                position: 'center',
+                actionLabel: "Take me to my Dashboard",
             },
         ],
     },

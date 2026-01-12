@@ -305,7 +305,7 @@ export function SecuritySection() {
     ];
 
     return (
-        <section className="py-32 bg-muted/10 overflow-hidden snap-start">
+        <ScrollSection className="bg-muted/10">
             <div className="container mx-auto px-4 mb-16 text-center max-w-3xl">
                 <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                     <Shield className="w-10 h-10 text-primary" />
@@ -348,7 +348,7 @@ export function SecuritySection() {
                     <Link href="/terms" className="hover:text-primary transition-colors">Terms of Use</Link>
                 </div>
             </div>
-        </section>
+        </ScrollSection>
     );
 }
 

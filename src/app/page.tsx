@@ -18,6 +18,7 @@ import GradientText from '@/components/shared/GradientText';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { db } from '@/config/firebase';
 import {
   doc,
@@ -103,6 +104,7 @@ export default function RootPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentPathname = usePathname();
+  const { startWalkthrough } = useWalkthrough();
 
   const [userProfile, setUserProfile] = useState<UserProfile>(initialGuestProfile);
   const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
@@ -233,6 +235,14 @@ export default function RootPage() {
       router.replace(currentPathname, { scroll: false });
     }
 
+    if (searchParams.get('startTour') === 'true') {
+      startWalkthrough('welcome');
+      // Clean param
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete('startTour');
+      router.replace(`${currentPathname}?${newSearchParams.toString()}`, { scroll: false });
+    }
+
     const dialogToOpen = searchParams.get('openDialog');
     if (dialogToOpen) {
       if (dialogToOpen === 'logFoodAI') {
@@ -249,7 +259,7 @@ export default function RootPage() {
       newSearchParams.delete('openDialog');
       router.replace(`${currentPathname}?${newSearchParams.toString()}`, { scroll: false });
     }
-  }, [searchParams, router, currentPathname, openSimplifiedAddFoodDialog, openIdentifyByPhotoDialog, openSymptomLogDialog, openLogPreviousMealDialog]);
+  }, [searchParams, router, currentPathname, openSimplifiedAddFoodDialog, openIdentifyByPhotoDialog, openSymptomLogDialog, openLogPreviousMealDialog, startWalkthrough]);
 
   // Redirect mobile app users to signup if not authenticated
   useEffect(() => {
