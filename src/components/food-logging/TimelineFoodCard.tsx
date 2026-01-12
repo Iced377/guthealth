@@ -55,6 +55,7 @@ interface TimelineFoodCardProps {
   onRepeatMeal?: (item: LoggedFoodItem) => void;
   isGuestView?: boolean;
   onToggleFavorite?: (itemId: string, currentIsFavorite: boolean) => void;
+  cardId?: string;
 }
 
 export default function TimelineFoodCard({
@@ -67,6 +68,7 @@ export default function TimelineFoodCard({
   onRepeatMeal,
   isGuestView = false,
   onToggleFavorite,
+  cardId,
 }: TimelineFoodCardProps) {
 
   const handleFeedback = (newFeedback: 'safe' | 'unsafe') => {
@@ -111,7 +113,7 @@ export default function TimelineFoodCard({
 
   return (
     <Dialog>
-      <Card className={cardClasses}>
+      <Card className={cardClasses} id={cardId}>
         {isLoadingAi && !isManualMacroEntry && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
@@ -145,7 +147,7 @@ export default function TimelineFoodCard({
               </div>
 
               {/* Macros - Aligned with Bottom Row Actions */}
-              <div className="flex items-center h-7 text-xs sm:text-sm font-medium opacity-90 gap-3">
+              <div className="flex items-center h-7 text-xs sm:text-sm font-medium opacity-90 gap-3" id={cardId ? `${cardId}-macros` : undefined}>
                 {macroParts.length > 0 ? (
                   <>
                     {item.calories != null && <span className="flex items-center"><Flame className="w-3.5 h-3.5 mr-1 text-orange-200" />{Math.round(item.calories)}</span>}
@@ -167,7 +169,7 @@ export default function TimelineFoodCard({
                 <AlertDialog>
                   <Sheet>
                     <SheetTrigger asChild>
-                      <button className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70" aria-label={`Actions for ${item.name}`}>
+                      <button className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70" aria-label={`Actions for ${item.name}`} id={cardId ? `${cardId}-actions` : undefined}>
                         <MoreHorizontal className="h-5 w-5" />
                       </button>
                     </SheetTrigger>
@@ -307,7 +309,7 @@ export default function TimelineFoodCard({
 
           {/* Health Indicators - Promoted to main view */}
           {hasHealthIndicators && item.fodmapData && (
-            <div className={cn("text-xs pt-0 flex flex-wrap items-center gap-2")}>
+            <div className={cn("text-xs pt-0 flex flex-wrap items-center gap-2")} id={cardId ? `${cardId}-indicators` : undefined}>
               <div className="active-press"><MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} /></div>
               <div className="active-press"><DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} /></div>
               <div className="active-press"><GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} /></div>

@@ -1154,7 +1154,7 @@ export default function RootPage() {
       />
 
 
-      <div className="flex-grow flex flex-col items-center justify-start pt-0 h-full overflow-hidden">
+      <div id="dashboard-container" className="flex-grow flex flex-col items-center justify-start pt-0 h-full overflow-hidden">
         {authUser ? (
           <DashboardContent
             userProfile={userProfile}

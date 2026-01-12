@@ -28,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   userProfile: null,
 });
 
+// Component to provide authentication state
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);

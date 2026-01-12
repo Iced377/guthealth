@@ -164,6 +164,13 @@ export interface UserProfile {
     symptoms: string[]; // e.g., ['bloating', 'fatigue']
     dietaryPreferences?: string[]; // e.g., ['keto', 'vegan']
 
+    // Walkthrough tracking
+    walkthroughStatus?: {
+      completedTopics: string[]; // e.g., ['intro', 'food_logging', 'insights']
+      hasSeenIntro: boolean;
+      isDismissed: boolean;
+    };
+
     // Calculated
     bmr: number;
     tdee: number;

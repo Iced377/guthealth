@@ -8,6 +8,9 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 // FeedbackWidget moved to Navbar for unified BottomActionBar
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
 import AnalyticsWithConsent from '@/components/shared/AnalyticsWithConsent';
+import { WalkthroughProvider } from '@/contexts/WalkthroughContext';
+import WalkthroughOverlay from '@/components/walkthrough/WalkthroughOverlay';
+import WalkthroughStage from '@/components/walkthrough/WalkthroughStage';
 
 // `inter` variable is no longer needed here
 
@@ -64,12 +67,16 @@ export default function RootLayout({
       <body suppressHydrationWarning className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">
         <AuthProvider>
           <ThemeProvider>
-            <main className="flex-grow w-full">
-              {children}
-            </main>
-            <Toaster />
+            <WalkthroughProvider>
+              <main className="flex-grow w-full">
+                {children}
+              </main>
+              <WalkthroughStage />
+              <WalkthroughOverlay />
+              <Toaster />
 
-            <CookieConsentBanner />
+              <CookieConsentBanner />
+            </WalkthroughProvider>
           </ThemeProvider>
         </AuthProvider>
         <AnalyticsWithConsent />

@@ -123,6 +123,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
             </AnimatePresence>
 
             <motion.button
+                id="fab-add-button"
                 className={cn(
                     "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200 active-press",
                     isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-white"

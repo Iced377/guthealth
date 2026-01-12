@@ -102,6 +102,7 @@ export default function FeedbackWidget() {
         )}
         onClick={() => setIsOpen(true)}
         aria-label="Open feedback dialog"
+        id="feedback-widget-button"
       >
         <MessageSquarePlus className="h-7 w-7" />
       </Button>

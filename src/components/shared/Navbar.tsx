@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText, Info } from 'lucide-react';
+import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText, Info, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingActionMenu } from './FloatingActionMenu';
 import { BottomActionBar } from './BottomActionBar';
 import FeedbackWidget from '../feedback/FeedbackWidget';
 // ... existing imports ...
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { signOutUser } from '@/lib/firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -51,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.3.3";
+const APP_VERSION = "Beta 4.3.4";
 
 
 interface ReleaseNote {
@@ -62,6 +63,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.3.4",
+    date: "Jan 12, 2026",
+    title: "Tour & Fasting Insights",
+    description: [
+      "App Tour: Added a new 'Navigation & Insights' step to help you get around the dashboard.",
+      "Fasting Logic: Improved the 'Fasting Status' check to prevent false positives right after a meal.",
+      "Smart Trends: The AI now praises your consistency when you hit extended fasting windows (14+ hours) over the last week!"
+    ]
+  },
   {
     version: "Beta 4.3.3",
     date: "Jan 12, 2026",
@@ -860,6 +871,7 @@ export default function Navbar({
   const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
   const [showNewReleaseIndicator, setShowNewReleaseIndicator] = useState(false);
   const [isActionPopoverOpen, setIsActionPopoverOpen] = useState(false);
+  const { startWalkthrough } = useWalkthrough();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -1056,7 +1068,7 @@ export default function Navbar({
         </div>
 
 
-        <div className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
+        <div id="navbar-actions-container" className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
           {isGuest ? (
             <div className="flex items-center space-x-2 sm:space-x-3">
               {/* Show Log Out if user is authenticated but on guest view */}
@@ -1085,16 +1097,16 @@ export default function Navbar({
               <div className="hidden md:flex items-center space-x-0.5 sm:space-x-1">
                 {!authLoading && authUser && (
                   <>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Dashboard" onClick={dashboardLinkHandler}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Dashboard" id="nav-item-dashboard" onClick={dashboardLinkHandler}>
                       <LayoutGrid className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" onClick={favoritesLinkHandler}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" id="nav-item-favorites" onClick={favoritesLinkHandler}>
                       <Heart className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" onClick={trendsLinkHandler}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" id="nav-item-trends" onClick={trendsLinkHandler}>
                       <BarChart3 className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/micronutrients' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Micronutrients Progress" onClick={micronutrientsLinkHandler}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/micronutrients' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Micronutrients Progress" id="nav-item-micronutrients" onClick={micronutrientsLinkHandler}>
                       <Atom className="h-5 w-5" />
                     </Button>
                     <div className="relative">
@@ -1103,12 +1115,13 @@ export default function Navbar({
                         size="icon"
                         className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/insights' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')}
                         aria-label="Insights"
+                        id="nav-item-insights"
                         onClick={aiInsightsLinkHandler}
                       >
                         <Lightbulb className="h-5 w-5" />
                       </Button>
                     </div>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/about' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="About" onClick={aboutLinkHandler}>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/about' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="About" id="nav-item-about" onClick={aboutLinkHandler}>
                       <Info className="h-5 w-5" />
                     </Button>
                   </>
@@ -1149,6 +1162,10 @@ export default function Navbar({
                       <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         <span>User Center</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => startWalkthrough('welcome')} className="cursor-pointer">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        <span>App Tour</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
                         <Shield className="mr-2 h-4 w-4" />
@@ -1236,6 +1253,7 @@ export default function Navbar({
                   { icon: Atom, label: "Micronutrients", onClick: () => { setIsMobileMenuOpen(false); micronutrientsLinkHandler(); } },
                   { icon: Lightbulb, label: "Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
                   { icon: User, label: "User Center", onClick: () => { setIsMobileMenuOpen(false); router.push('/profile'); } },
+                  { icon: PlayCircle, label: "App Tour", onClick: () => { setIsMobileMenuOpen(false); startWalkthrough('welcome'); } },
                   { icon: Shield, label: "Privacy Notice", onClick: () => { setIsMobileMenuOpen(false); router.push('/privacy'); } },
                   { icon: FileText, label: "Terms of Use", onClick: () => { setIsMobileMenuOpen(false); router.push('/terms'); } },
                   { icon: Info, label: "About", onClick: () => { setIsMobileMenuOpen(false); aboutLinkHandler(); } },

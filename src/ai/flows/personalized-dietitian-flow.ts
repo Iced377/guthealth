@@ -95,6 +95,10 @@ const PersonalizedDietitianInputSchema = z.object({
     target16h: z.string().describe("Time when a 16-hour fast would end, based on last meal."),
     targetMax: z.string().describe("Time when the user's max recorded fast would end, based on last meal.")
   }).optional(),
+  recentFastingWindows: z.array(z.object({
+    date: z.string(),
+    durationHours: z.number()
+  })).optional().describe("List of fasting window durations calculated from the last 7 days of logs."),
   timeOfDaySegment: z.string().optional().describe("Current time segment: 'Morning', 'Afternoon', 'Evening', 'Late Night'."),
   trendsAnalysis: TrendsAnalysisSchema.optional().describe("Computed insights from the user's historical trends graphs, providing context on long-term observance of calorie goals."),
 });
@@ -131,6 +135,12 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
 - **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
 - **Max Recorded Fasting Window:** {{#if userProfile.maxFastingWindowHours}}{{userProfile.maxFastingWindowHours}} hours{{else}}N/A{{/if}}
+{{#if recentFastingWindows}}
+- **Recent Fasting Consistency (Last 7 Days):**
+  {{#each recentFastingWindows}}
+  - {{this.date}}: {{this.durationHours}} hours
+  {{/each}}
+{{/if}}
 {{#if projectedFastingEndTimes}}
 - **Projected Fast Completion (Tomorrow):** 
   - 16 Hour Goal: Ends at **{{projectedFastingEndTimes.target16h}}**
@@ -143,7 +153,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **Cumulative Net Calorie Change (Guardrailed):** {{#if trendsAnalysis.cumulativeNetCaloriesWithGuardrail}}{{trendsAnalysis.cumulativeNetCaloriesWithGuardrail}}{{else}}{{trendsAnalysis.cumulativeNetCalories}}{{/if}} kcal
   (Note: POSITIVE = Deficit/Savings. NEGATIVE = Surplus. "Guardrailed" means days with < 800 kcal are ignored to prevent false savings.)
 - **Activity-Appetite Correlation:** {{#if trendsAnalysis.calorieStepCorrelationSlope}}Slope: {{trendsAnalysis.calorieStepCorrelationSlope}} ({{trendsAnalysis.calorieStepCorrelationStrength}}).
-  (Note: Regression of Steps vs Calories. Positive slope (>0.05) implies the user eats more on active days. Near zero implies no correlation. Negative implies they eat less when active.){{else}}N/A{{/if}}
+  (Note: Regression of Steps vs Calories. Positive slope (>0.05) implies the user eats more when active. Near zero implies no correlation. Negative implies they eat less when active.){{else}}N/A{{/if}}
 - **Adherence:** Exceeded daily calorie target ({{trendsAnalysis.dailyCalorieTarget}} kcal) on {{trendsAnalysis.daysOverCalorieTarget}} days out of {{trendsAnalysis.totalDaysAnalyzed}}.
 - **Average Daily Intake:** {{trendsAnalysis.averageDailyCalories}} kcal/day.
 {{#if trendsAnalysis.fluxZones}}
@@ -180,11 +190,11 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 1.  **CRITICAL: Time of Day & Context Awareness:**
     *   **IF Late Night (22:00 - 04:00):**
         *   **STOP:** Do NOT suggest exercise/walking. The prioritized advice is SLEEP and RECOVERY.
-        *   **FASTING:** If they last ate > 1 hour ago:
-            *   State clearly that their fast **ALREADY STARTED** {{hoursSinceLastMeal}} hours ago. 
-            *   Do NOT say "If you stop eating now". 
-            *   Use the provided "Projected Fast Completion" times strictly: "Based on your last meal, your 16h fast ends at {{projectedFastingEndTimes.target16h}}".
-        *   **NO SNACKS:** Unless explicitly requested.
+        *   **FASTING:** 
+            *   **IF \`hoursSinceLastMeal\` > 2:** State clearly that their fast **ALREADY STARTED** {{hoursSinceLastMeal}} hours ago. Use the provided "Projected Fast Completion" times strictly.
+            *   **IF \`hoursSinceLastMeal\` <= 2:** Consider them still in their **Fed State** or **Eating Window**. Do NOT say the fast has started yet.
+            *   Do NOT say "If you stop eating now".
+            *   **NO SNACKS:** Unless explicitly requested.
     *   **IF Morning:** Focus on fueling for the day.
     *   **IF Evening:** Focus on winding down and protein targets.
 
@@ -192,7 +202,13 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
     *   **Weight Loss (\`lose_fat\`):** Analyze if their caloric intake and food choices align with a deficit. Are they eating nutrient-dense foods that keep them full? Are there hidden calories?
     *   **Muscle Gain (\`gain_muscle\`):** Check if protein intake is sufficient and if they are eating enough overall to fuel growth.
     *   **Maintenance (\`maintain\`):** specific patterns that might cause fluctuations.
-    *   *Intermittent Fasting:* Check the 'Max Recorded Fasting Window' and 'hoursSinceLastMeal'. Assess if they are adhering to a window.
+    *   *Intermittent Fasting (Structure Advice into TWO parts):*
+        *   **A) Current Status:** Check 'hoursSinceLastMeal'.
+            *   IF > 2 hours: "Fast Started [X] hours ago." (Use projected times).
+            *   IF <= 2 hours: "In Eating Window/Fed State."
+        *   **B) Weekly Trend:** Analyze **'Recent Fasting Consistency'**.
+            *   Highlight days with > 14-16h fasts.
+            *   Praise streaks or identify inconsistent patterns.
     *   **Energy Flux Assessment:** Reference the "Flux Zones".
         *   **IMPORTANT:** If the "Flux Zones" indicate Stagnation but recent days (or today) show high activity, **Activity Trumps History.** Praise the recent effort to move!
         *   If truly sedentary, encourage movement *at appropriate times* (not midnight).

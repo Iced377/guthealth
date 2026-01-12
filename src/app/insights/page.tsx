@@ -125,6 +125,53 @@ export default function AIInsightsPage() {
     return Math.round(maxFastHours * 10) / 10;
   };
 
+  const calculateRecentFastingWindows = (logs: LoggedFoodItem[]): { date: string, durationHours: number }[] => {
+    // Filter out negligible calorie items
+    const fastingLogs = logs.filter(log => (log.calories || 0) >= FASTING_CALORIE_THRESHOLD);
+
+    if (fastingLogs.length < 2) return [];
+
+    // Sort ascending by time
+    const sortedLogs = [...fastingLogs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    // Group logs by day
+    const logsByDay: { [key: string]: LoggedFoodItem[] } = {};
+    sortedLogs.forEach(log => {
+      const dayKey = log.timestamp.toLocaleDateString();
+      if (!logsByDay[dayKey]) logsByDay[dayKey] = [];
+      logsByDay[dayKey].push(log);
+    });
+
+    const dayKeys = Object.keys(logsByDay).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const recentWindows: { date: string, durationHours: number }[] = [];
+
+    // Iterate to find overnight fasts
+    for (let i = 0; i < dayKeys.length - 1; i++) {
+      const currentDayLogs = logsByDay[dayKeys[i]];
+      const nextDayLogs = logsByDay[dayKeys[i + 1]];
+
+      if (currentDayLogs.length > 0 && nextDayLogs.length > 0) {
+        const lastMeal = currentDayLogs[currentDayLogs.length - 1];
+        const firstMeal = nextDayLogs[0];
+
+        const diffMs = firstMeal.timestamp.getTime() - lastMeal.timestamp.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        // Valid fast window check (between 4h and 48h)
+        if (diffHours > 4 && diffHours < 48) {
+          // We attribute the fast to the day it COMPLETED (the 'breakfast' day)
+          recentWindows.push({
+            date: firstMeal.timestamp.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            durationHours: Math.round(diffHours * 10) / 10
+          });
+        }
+      }
+    }
+
+    // Return only the last 7 entries
+    return recentWindows.slice(-7);
+  };
+
   const handleQuestionSubmit = async () => {
     if (!authUser) return;
 
@@ -196,6 +243,7 @@ export default function AIInsightsPage() {
       });
 
       const maxFastingWindowHours = calculateMaxFastingWindow(foodLogData);
+      const recentFastingWindows = calculateRecentFastingWindows(foodLogData);
 
       // EXTRACTED TIME ALGORITHMS
       // 1. Time of Day Context
@@ -222,8 +270,8 @@ export default function AIInsightsPage() {
         const diffMs = now.getTime() - lastMeal.timestamp.getTime();
         hoursSinceLastMeal = Number((diffMs / (1000 * 60 * 60)).toFixed(1));
 
-        // Calculate Projected End Times if fasting started after last meal
-        if (hoursSinceLastMeal > 0) {
+        // Calculate Projected End Times ONLY if fasting has officially started (> 2 hours)
+        if (hoursSinceLastMeal > 2) {
           const end16h = addHours(lastMeal.timestamp, 16);
           const endMax = addHours(lastMeal.timestamp, maxFastingWindowHours || 12); // Default to 12 if no max recorded
 
@@ -444,6 +492,7 @@ export default function AIInsightsPage() {
         timeOfDaySegment: timeOfDaySegment,
         hoursSinceLastMeal: hoursSinceLastMeal,
         projectedFastingEndTimes: projectedFastingEndTimes,
+        recentFastingWindows: recentFastingWindows,
         dailyTotals: dailyTotals,
         trendsAnalysis: {
           cumulativeNetCalories: Math.round(cumulativeNetCalories),

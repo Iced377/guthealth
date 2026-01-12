@@ -1,5 +1,10 @@
 # Release Notes
 
+## Beta 4.3.4 (Jan 12, 2026)
+-   **App Tour:** New walkthrough step for Navigation & Insights.
+-   **Fasting:** Corrected logic to prevent "Fast Started" alerts immediately after eating (2-hour minimum).
+-   **Consistency:** AI now analyzes your last 7 days to praise consistent intermittent fasting streaks.
+
 ## Beta 4.3.3 (Jan 12, 2026)
 -   **Fix:** Resolved a critical issue with Google Sign-In redirects on new devices (preventing silent failures).
 
