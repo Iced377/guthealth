@@ -1,5 +1,8 @@
 # Release Notes
 
+## Beta 4.4.3 (Jan 14, 2026)
+-   **Sync Fix:** Fixed a crash when syncing with Apple Health on some devices.
+
 ## Beta 4.4.2 (Jan 14, 2026)
 -   **Activity Sync:** Added native support for Apple Health to sync daily steps.
 -   **New Feature:** You can now connect Apple Health directly from the Trends dashboard.

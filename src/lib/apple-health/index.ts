@@ -1,7 +1,10 @@
-import { Capacitor } from '@capacitor/core';
-import { HealthKit, HealthKitOptions, ActivityType } from '@perfood/capacitor-healthkit';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
-const PERMISSIONS: HealthKitOptions = {
+// Safely obtain the plugin instance
+const HealthKit = registerPlugin<any>('HealthKit');
+
+// Define local interface for options if needed, or just use implicit objects
+const PERMISSIONS = {
     readTypes: ['steps'],
     writeTypes: [],
 };
@@ -10,6 +13,10 @@ export const AppleHealthService = {
     isAvailable: async (): Promise<boolean> => {
         if (Capacitor.getPlatform() !== 'ios') return false;
         try {
+            if (!HealthKit) {
+                console.warn('HealthKit plugin not registered');
+                return false;
+            }
             const { available } = await HealthKit.isAvailable();
             return available;
         } catch (e) {
@@ -37,23 +44,19 @@ export const AppleHealthService = {
             const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
             const endDate = now.toISOString();
 
-            const options = {
-                startDate: startDate,
-                endDate: endDate,
-                sampleType: 'steps', // Ensure this matches the library's expected type string or enum
-            };
-
-            // Query specifically for steps. The API might vary slightly, but this is standard.
-            // @perfood/capacitor-healthkit query HKSampleTypeIdentifierStepCount
-            const { count } = await HealthKit.queryHKitSampleType<ActivityType.STEP_COUNT>({
+            // Query specifically for steps.
+            const { count } = await HealthKit.queryHKitSampleType({
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
-                sampleName: 'stepCount', // Specific to @perfood plugin
+                sampleName: 'stepCount',
             });
 
             return count || 0;
         } catch (error) {
             console.error('Error getting step count:', error);
+            if (error instanceof Error) {
+                console.error(error.message);
+            }
             return 0; // Return 0 on error to avoid crashing UI
         }
     }
