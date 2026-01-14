@@ -1,7 +1,24 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-// Use the new plugin
-const CapacitorHealth = registerPlugin<any>('CapacitorHealth');
+// Define minimal interfaces based on the inspected definitions
+interface HealthSample {
+    value: number;
+    startDate: string;
+    endDate: string;
+}
+
+interface ReadSamplesResult {
+    samples: HealthSample[];
+}
+
+interface HealthPlugin {
+    isAvailable(): Promise<{ available: boolean }>;
+    requestAuthorization(options: { read: string[], write: string[] }): Promise<any>;
+    readSamples(options: { dataType: string, startDate: string, endDate: string }): Promise<ReadSamplesResult>;
+}
+
+// User confirmed plugin name is 'CapacitorHealth'
+const CapacitorHealth = registerPlugin<HealthPlugin>('CapacitorHealth');
 
 export const AppleHealthService = {
     isAvailable: async (): Promise<boolean> => {
@@ -21,7 +38,6 @@ export const AppleHealthService = {
         try {
             // New API structure for @capgo/capacitor-health
             await CapacitorHealth.requestAuthorization({
-                all: ['steps'],
                 read: ['steps'],
                 write: []
             });
@@ -38,19 +54,17 @@ export const AppleHealthService = {
             const now = new Date();
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            // The new plugin might have a different query format. 
-            // Assuming standard logic or generic query.
-            // Using 'steps' as the data type.
-            const { count } = await CapacitorHealth.query({
-                name: 'steps',
+            // Fetch all step samples for today
+            const result = await CapacitorHealth.readSamples({
+                dataType: 'steps',
                 startDate: startOfDay.toISOString(),
                 endDate: now.toISOString(),
-                dataType: 'count' // or similar aggregation
             });
 
-            // Note: If the return structure is different (e.g. { value: 100 }), we need to adjust.
-            // Based on common patterns in this community.
-            return typeof count === 'number' ? count : (count?.value || 0);
+            // Aggregate manually
+            const totalSteps = result.samples.reduce((sum, sample) => sum + sample.value, 0);
+
+            return Math.round(totalSteps);
 
         } catch (error) {
             console.error('Error getting step count:', error);

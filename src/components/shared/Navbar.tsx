@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.4.4";
+const APP_VERSION = "Beta 4.5.0";
 
 
 interface ReleaseNote {
@@ -63,6 +63,12 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.5.0",
+    date: "Jan 14, 2026",
+    title: "Apple Health Reborn",
+    description: "Rebuilt the Apple Health integration from scratch for rock-solid stability. This is a fresh start for syncing."
+  },
   {
     version: "Beta 4.4.4",
     date: "Jan 14, 2026",

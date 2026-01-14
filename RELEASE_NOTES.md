@@ -1,5 +1,8 @@
 # Release Notes
 
+## Beta 4.5.0 (Jan 14, 2026)
+-   **Apple Health Reborn:** Rebuilt the Apple Health integration from scratch using the robust CapGo engine. This update resolves all previous "not implemented" errors.
+
 ## Beta 4.4.4 (Jan 14, 2026)
 -   **Migration Fix:** Migrated to a more stable health plugin to resolve installation issues on iOS.
 
