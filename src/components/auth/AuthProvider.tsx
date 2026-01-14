@@ -15,6 +15,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { UserProfile } from '@/types';
+import { App } from '@capacitor/app';
 
 interface AuthContextType {
   user: User | null;
@@ -74,11 +75,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
   }, [toast]);
 
+
+
+  // ... (existing imports)
+
   // Handle Auth State Changes
   useEffect(() => {
+    // Listener for App Resume (background -> foreground)
+    const setupAppListener = async () => {
+      await App.addListener('resume', async () => {
+        console.log('App resumed, refreshing session...');
+        if (auth.currentUser) {
+          try {
+            // Force token refresh to ensure connection is alive
+            await auth.currentUser.getIdToken(true);
+            console.log('Session refreshed on resume');
+            // optional: toast({ title: "Welcome back!", description: "Session refreshed." });
+          } catch (e) {
+            console.error("Error refreshing token on resume", e);
+          }
+        }
+      });
+    };
+    setupAppListener();
+
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          // Force token refresh on initial load/change too
           const token = await firebaseUser.getIdToken();
           await fetch('/api/auth/login', {
             method: 'POST',
@@ -111,7 +135,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfileLoading(false);
     });
 
-    return () => unsub();
+    return () => {
+      unsub();
+      App.removeAllListeners();
+    };
   }, []);
 
   // Handle Setup Redirection

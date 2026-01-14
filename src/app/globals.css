@@ -159,11 +159,23 @@
     user-select: text;
   }
 
+  /* iOS Optimization: Prevent auto-zoom on inputs by enforcing 16px font size on mobile */
+  @media screen and (max-width: 768px) {
+
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+
   /* Re-disable on specific interactive wrappers if needed, but the above is a safe baseline */
   button,
   a {
     -webkit-user-select: none;
     user-select: none;
+    touch-action: manipulation;
+    /* Improves touch responsiveness */
   }
 
   h1,

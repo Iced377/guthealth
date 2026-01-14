@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     description: 'Log meal conveniently, get deep nutritional analysis, track reactions, and receive personalized insights to master your diet and well-being.',
     images: [
       {
-        url: '/Gutcheck_logo.png', 
+        url: '/logo-maximized.png',
         width: 512,
         height: 512,
         alt: 'GutCheck Logo',

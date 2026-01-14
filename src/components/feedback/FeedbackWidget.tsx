@@ -108,7 +108,7 @@ export default function FeedbackWidget() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-lg bg-card text-card-foreground border-border">
+        <DialogContent className="sm:max-w-lg bg-card text-card-foreground border-border max-h-[85vh] overflow-y-auto bottom-auto top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[90vw] rounded-xl">
           <DialogHeader>
             <DialogTitle className="font-headline text-xl">Share Your Feedback</DialogTitle>
             <DialogDescription className="text-muted-foreground">

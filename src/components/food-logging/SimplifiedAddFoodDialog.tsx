@@ -263,7 +263,7 @@ export default function SimplifiedAddFoodDialog({
             <Input
               id="name"
               {...form.register('name')}
-              placeholder="e.g. My Favorite Breakfast if left empty, AI will generate one."
+              placeholder="e.g. My Favorite Breakfast. If left empty, we will create one for you."
               className={inputClasses}
             />
           </div>

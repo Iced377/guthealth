@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.3.4";
+const APP_VERSION = "Beta 4.4.0";
 
 
 interface ReleaseNote {
@@ -63,6 +63,28 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.4.0",
+    date: "Jan 14, 2026",
+    title: "iOS Perfection & Performance",
+    description: [
+      "Instant Launch: The app now opens instantly with zero lag or white screen delay.",
+      "Native Feel: Fixed the 'app freeze' issue when switching back to GutCheck.",
+      "Typing Fixed: Inputs no longer annoyingly 'zoom in' when you tap them on iPhone.",
+      "Polish: Smoother menu interactions, better keyboard handling for feedback, and updated dialogs."
+    ]
+  },
+  {
+    version: "Beta 4.3.5",
+    date: "Jan 12, 2026",
+    title: "Landing Page & Walkthrough Polish",
+    description: [
+      "Landing Page: Restored smooth scroll snapping and animations.",
+      "UI: Login and Version buttons now elegantly fade out on scroll.",
+      "Walkthrough: New 'Grand Finale' step with a video avatar to welcome you properly.",
+      "Security: Fixed layout issues in the About section."
+    ]
+  },
   {
     version: "Beta 4.3.4",
     date: "Jan 12, 2026",
@@ -922,6 +944,18 @@ export default function Navbar({
     }
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
 
   const handleSignOut = async () => {
     const error = await signOutUser();
@@ -1206,11 +1240,11 @@ export default function Navbar({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-current hover:text-primary hover:bg-primary/10"
+                    className="h-12 w-12 text-current hover:text-primary hover:bg-primary/10"
                     aria-label="Open menu"
                     onClick={() => setIsMobileMenuOpen(true)}
                   >
-                    <Menu className="h-5 w-5" />
+                    <Menu className="h-7 w-7" />
                   </Button>
                 </div>
               )}
@@ -1237,7 +1271,7 @@ export default function Navbar({
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed top-0 right-0 bottom-0 h-full w-[85vw] max-w-sm bg-background border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-l-2xl"
             >
-              <div className="p-4 pt-[calc(env(safe-area-inset-top)+1rem)] flex items-center justify-between border-b border-border bg-muted/20">
+              <div className="p-4 safe-area-pt flex items-center justify-between border-b border-border bg-muted/20">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10 border border-border">
                     <AvatarImage src={authUser?.photoURL || undefined} alt={authUser?.displayName || 'User'} />

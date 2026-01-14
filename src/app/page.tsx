@@ -1210,8 +1210,8 @@ export default function RootPage() {
           {
             mealDescription: editingItem.sourceDescription ||
               (editingItem.sourceDescription?.startsWith("Identified by photo")
-                ? `${editingItem.originalName}. Ingredients: ${editingItem.ingredients}`
-                : editingItem.originalName || ''),
+                ? `${editingItem.originalName || editingItem.name}${editingItem.ingredients ? `. Ingredients: ${editingItem.ingredients}` : ''}`
+                : editingItem.originalName || editingItem.name || ''),
             calories: editingItem.calories ?? undefined,
             protein: editingItem.protein ?? undefined,
             carbs: editingItem.carbs ?? undefined,

@@ -311,8 +311,8 @@ export default function DashboardContent({
 
             <Popover open={isFabPopoverOpen} onOpenChange={setIsFabPopoverOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="default" className="absolute bottom-20 right-6 h-16 w-16 rounded-full shadow-2xl z-20" size="icon">
-                        <Plus className="h-8 w-8" />
+                    <Button variant="default" className="absolute bottom-20 right-6 h-20 w-20 rounded-full shadow-2xl z-20" size="icon">
+                        <Plus className="h-10 w-10" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent

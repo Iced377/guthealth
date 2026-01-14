@@ -1,7 +1,7 @@
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -15,9 +15,20 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+let db;
+if (typeof window !== 'undefined') {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache()
+  });
+} else {
+  // Use default settings for server-side rendering
+  // (persistentLocalCache requires IndexedDB which is not available in Node)
+  db = getFirestore(app);
+}
+
 const storage = getStorage(app);
 
 export { app, auth, db, storage };

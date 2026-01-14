@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { motion } from 'framer-motion';
 import { DailyNutritionSummary } from '@/types';
 import { Flame, Beef, Wheat, Droplet, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,17 @@ export default function NutritionOverview({ summary, currentDate, onPrevDate, on
 
     const getPercent = (current: number, target: number) => Math.min(100, (current / target) * 100);
 
+    const handleDragEnd = (event: any, info: any) => {
+        const SWIPE_THRESHOLD = 50;
+        if (info.offset.x > SWIPE_THRESHOLD) {
+            onPrevDate();
+        } else if (info.offset.x < -SWIPE_THRESHOLD) {
+            if (!isToday(currentDate)) {
+                onNextDate();
+            }
+        }
+    };
+
     return (
         <div className="space-y-4 w-full">
             <div className="flex items-center justify-between mb-2">
@@ -49,9 +61,15 @@ export default function NutritionOverview({ summary, currentDate, onPrevDate, on
                 </Button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+            <motion.div
+                className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full touch-pan-y"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={handleDragEnd}
+            >
                 {/* Calories */}
-                <Card className="shadow-sm border-orange-200/20 bg-orange-500/5 relative overflow-hidden group">
+                <Card className="shadow-sm border-orange-200/20 bg-orange-500/5 relative overflow-hidden group select-none">
                     <div className="absolute right-0 top-0 h-full w-1/2 flex items-center justify-center opacity-[0.15] pointer-events-none group-hover:opacity-[0.25] transition-opacity">
                         <Flame className="h-[120%] w-[120%] text-orange-500 translate-x-1/4" />
                     </div>
@@ -66,7 +84,7 @@ export default function NutritionOverview({ summary, currentDate, onPrevDate, on
                 </Card>
 
                 {/* Protein */}
-                <Card className="shadow-sm border-red-200/20 bg-red-500/5 relative overflow-hidden group">
+                <Card className="shadow-sm border-red-200/20 bg-red-500/5 relative overflow-hidden group select-none">
                     <div className="absolute right-0 top-0 h-full w-1/2 flex items-center justify-center opacity-[0.15] pointer-events-none group-hover:opacity-[0.25] transition-opacity">
                         <Beef className="h-[120%] w-[120%] text-red-500 translate-x-1/4" />
                     </div>
@@ -81,7 +99,7 @@ export default function NutritionOverview({ summary, currentDate, onPrevDate, on
                 </Card>
 
                 {/* Carbs */}
-                <Card className="shadow-sm border-yellow-200/20 bg-yellow-500/5 relative overflow-hidden group">
+                <Card className="shadow-sm border-yellow-200/20 bg-yellow-500/5 relative overflow-hidden group select-none">
                     <div className="absolute right-0 top-0 h-full w-1/2 flex items-center justify-center opacity-[0.15] pointer-events-none group-hover:opacity-[0.25] transition-opacity">
                         <Wheat className="h-[120%] w-[120%] text-yellow-500 translate-x-1/4" />
                     </div>
@@ -96,7 +114,7 @@ export default function NutritionOverview({ summary, currentDate, onPrevDate, on
                 </Card>
 
                 {/* Fat */}
-                <Card className="shadow-sm border-blue-200/20 bg-blue-500/5 relative overflow-hidden group">
+                <Card className="shadow-sm border-blue-200/20 bg-blue-500/5 relative overflow-hidden group select-none">
                     <div className="absolute right-0 top-0 h-full w-1/2 flex items-center justify-center opacity-[0.15] pointer-events-none group-hover:opacity-[0.25] transition-opacity">
                         <Droplet className="h-[120%] w-[120%] text-blue-500 translate-x-1/4" />
                     </div>
@@ -109,7 +127,7 @@ export default function NutritionOverview({ summary, currentDate, onPrevDate, on
                         <Progress value={getPercent(summary.fat, targets.fat)} className="h-2 bg-blue-500/20" indicatorClassName="bg-blue-500" />
                     </CardContent>
                 </Card>
-            </div>
+            </motion.div>
         </div>
     );
 }

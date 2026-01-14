@@ -150,6 +150,7 @@ export default function LandingPageClientContent({
             loop
             muted
             playsInline
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source src="/Intro_Video.mp4" type="video/mp4" />

@@ -31,7 +31,7 @@ export default function MicronutrientsPage() {
           <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-2xl font-semibold mb-2 text-foreground">Access Denied</h2>
           <p className="text-muted-foreground">Please log in to view your micronutrient progress.</p>
-           <div className="mt-8">
+          <div className="mt-8">
             <Button asChild variant="outline">
               <Link href="/?openDashboard=true">
                 <Home className="mr-2 h-4 w-4" /> Return to Dashboard
@@ -46,7 +46,7 @@ export default function MicronutrientsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 pb-32">
         <h1 className="text-3xl font-bold mb-8 text-foreground">Daily Micronutrient Tracker</h1>
         <MicronutrientProgressDisplay userId={user.uid} />
         <div className="mt-12 text-center">

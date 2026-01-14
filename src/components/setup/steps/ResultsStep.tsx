@@ -44,8 +44,8 @@ export default function ResultsStep({ results, onBack, onFinish, isSaving }: Res
     const fPct = Math.round((fCal / totalCal) * 100);
 
     return (
-        <Card className="w-full max-w-2xl mx-auto shadow-2xl border-none bg-white/95 backdrop-blur">
-            <CardHeader className="text-center">
+        <Card className="w-full max-w-2xl mx-auto shadow-2xl border-none bg-white/95 backdrop-blur flex flex-col max-h-[100dvh] overflow-hidden safe-area-pt safe-area-pb">
+            <CardHeader className="text-center shrink-0">
                 <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -53,17 +53,17 @@ export default function ResultsStep({ results, onBack, onFinish, isSaving }: Res
                 >
                     <CheckCircle2 className="w-8 h-8 text-[#2aac6b]" />
                 </motion.div>
-                <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                <CardTitle className="text-3xl font-bold text-primary">
                     Your Personalized Plan
                 </CardTitle>
                 <CardDescription className="text-lg">
                     Based on your data, here is your daily nutritional roadmap.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-6 overflow-y-auto flex-grow px-6 pb-4">
 
                 {/* Calories Highlight */}
-                <div className="text-center py-6 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="text-center py-6 bg-gray-50 rounded-2xl border border-gray-100 shrink-0">
                     <h3 className="text-gray-500 uppercase tracking-widest text-xs font-semibold mb-1">Daily Target</h3>
                     <div className="text-5xl font-black text-gray-900 flex items-center justify-center gap-2">
                         <Flame className="w-8 h-8 text-orange-500" />
@@ -147,7 +147,7 @@ export default function ResultsStep({ results, onBack, onFinish, isSaving }: Res
                     </div>
                 </div>
 
-                <div className="flex gap-4 pt-6">
+                <div className="flex gap-4 pt-4 pb-2 shrink-0 sticky bottom-0 bg-white/95 backdrop-blur">
                     <Button variant="ghost" onClick={onBack} disabled={isSaving} className="w-1/3">
                         Adjust Inputs
                     </Button>

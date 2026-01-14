@@ -20,6 +20,7 @@ export default function VideoAvatar({
                 muted
                 loop
                 playsInline
+                preload="auto"
             />
         </div>
     );

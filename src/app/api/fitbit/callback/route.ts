@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
     // Use NEXT_PUBLIC_BASE_URL if set, or hardcode production domain, or fall back to request origin if not 0.0.0.0
     // The "0.0.0.0" error happens because req.url internal to the container might be 0.0.0.0.
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mygutcheck.app';
-    return NextResponse.redirect(new URL('/trends?fitbit=success', baseUrl));
+    return NextResponse.redirect(new URL('/fitbit/connection-success', baseUrl));
 
   } catch (error: any) {
     console.error('Error during Fitbit callback processing:', error);

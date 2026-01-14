@@ -66,8 +66,8 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             onClick={() => { setIsOpen(false); onAddManualEntryClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Manual Entry</span>
-                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
-                                <CalendarDays className="h-5 w-5" />
+                            <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
+                                <CalendarDays className="h-6 w-6" />
                             </div>
                         </motion.button>
 
@@ -78,8 +78,8 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             onClick={() => { setIsOpen(false); onLogSymptomsClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Log Symptoms</span>
-                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
-                                <ListChecks className="h-5 w-5" />
+                            <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
+                                <ListChecks className="h-6 w-6" />
                             </div>
                         </motion.button>
 
@@ -90,8 +90,8 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             onClick={() => { setIsOpen(false); onLogFavoriteClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">From Favourites</span>
-                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
-                                <Heart className="h-5 w-5 fill-red-500 text-red-500" />
+                            <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
+                                <Heart className="h-6 w-6 fill-red-500 text-red-500" />
                             </div>
                         </motion.button>
 
@@ -102,8 +102,8 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             onClick={() => { setIsOpen(false); onScanBarcodeClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Scan / Photo</span>
-                            <div className="h-10 w-10 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
-                                <Camera className="h-5 w-5" />
+                            <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
+                                <Camera className="h-6 w-6" />
                             </div>
                         </motion.button>
 
@@ -114,8 +114,8 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
                         >
                             <span className="text-sm font-medium mr-3">Auto Food Log</span>
-                            <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:bg-indigo-700 transition-colors">
-                                <Sparkles className="h-5 w-5" />
+                            <div className="h-12 w-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:bg-indigo-700 transition-colors">
+                                <Sparkles className="h-6 w-6" />
                             </div>
                         </motion.button>
                     </motion.div>
@@ -125,7 +125,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
             <motion.button
                 id="fab-add-button"
                 className={cn(
-                    "h-14 w-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200 active-press",
+                    "h-20 w-20 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200 active-press",
                     isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-white"
                 )}
                 onClick={toggleMenu}
@@ -143,8 +143,8 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         >
                             {/* Combined Icon: Utensils + Plus? Or just Plus? User asked: "The icon should be a plus sign and a meal icon." */}
                             <div className="relative">
-                                <Utensils className="h-6 w-6" />
-                                <Plus className="h-3 w-3 absolute -top-1 -right-1 bg-white text-primary rounded-full p-[1px]" strokeWidth={4} />
+                                <Utensils className="h-8 w-8" />
+                                <Plus className="h-4 w-4 absolute -top-1 -right-1 bg-white text-primary rounded-full p-[1px]" strokeWidth={4} />
                             </div>
                         </motion.div>
                     ) : (
@@ -154,7 +154,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0 }}
                         >
-                            <Plus className="h-8 w-8" />
+                            <Plus className="h-10 w-10" />
                         </motion.div>
                     )}
                 </AnimatePresence>

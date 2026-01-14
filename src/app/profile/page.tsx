@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { App } from '@capacitor/app';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -119,6 +120,18 @@ export default function ProfilePage() {
         };
 
         fetchData();
+
+        // Listen for App Resume (Foreground) to refresh status
+        const listener = App.addListener('appStateChange', ({ isActive }) => {
+            if (isActive) {
+                console.log('App resumed, refreshing Fitbit status...');
+                fetchData();
+            }
+        });
+
+        return () => {
+            listener.then(l => l.remove());
+        };
     }, [user, loading, router, toast]);
 
     // Initialize edit form when profileData changes or dialog opens

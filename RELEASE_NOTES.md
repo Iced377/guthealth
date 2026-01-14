@@ -1,5 +1,12 @@
 # Release Notes
 
+## Beta 4.4.0 (Jan 14, 2026)
+-   **Instant Launch:** The app now opens instantly with zero lag or white screen delay.
+-   **Native Feel:** Fixed the 'app freeze' issue when switching back to GutCheck.
+-   **Typing Fixed:** Inputs no longer annoyingly 'zoom in' when you tap them on iPhone.
+-   **Polish:** Smoother menu interactions, better keyboard handling for feedback, and updated dialogs.
+
+
 ## Beta 4.3.5 (Jan 12, 2026)
 -   **Landing Page Polish:** Restored scroll snapping and animations; fixed Login button fade behavior.
 -   **Walkthrough:** Added a new final step with a video welcome avatar.

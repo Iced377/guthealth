@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.iced377.gutcheck',
+  appId: 'com.iced377.guthealth',
   appName: 'GutCheck',
   webDir: 'out',
   server: {

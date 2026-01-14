@@ -341,6 +341,7 @@ export default function FavoritesPage() {
     if (!authUser || !userProfile) return;
     const newItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
+    toast({ title: "Analyzing Meal...", description: "Re-calculating fresh insights..." });
     const newTimestamp = new Date();
     let processedFoodItem: LoggedFoodItem;
 
@@ -491,6 +492,12 @@ export default function FavoritesPage() {
       />
       {/* IdentifyFoodByPhotoDialog might not be directly needed for editing favorites unless we allow changing the source type. For now, not included here. */}
 
+      {Object.values(isLoadingAi).some(loading => loading) && (
+        <div className="fixed bottom-20 right-4 bg-card text-card-foreground p-3 rounded-lg shadow-lg flex items-center space-x-2 z-50">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span>Analyzing...</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -62,6 +62,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        {/* Preload critical hero video for instant playback on iOS */}
+        <link rel="preload" as="video" href="/Intro_Video.mp4" type="video/mp4" />
       </head>
       {/* Removed the inter.variable class name from the body */}
       <body suppressHydrationWarning className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">

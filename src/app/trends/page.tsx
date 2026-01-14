@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
-import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, HourlyCaloriePoint, HourlyMealCountPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -29,9 +29,10 @@ import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
 import PedometerImportDialog from '@/components/trends/PedometerImportDialog';
 import CaloriesStepsCorrelationChart, { CorrelationPoint } from '@/components/trends/CaloriesStepsCorrelationChart';
+import DataManagementDialog from '@/components/trends/DataManagementDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, AlertTriangle, BarChart3, Award, Zap, Bug } from 'lucide-react';
+import { Loader2, AlertTriangle, BarChart3, Award, Zap, Bug, Table as TableIcon } from 'lucide-react';
 import { subDays, subMonths, subYears, formatISO, startOfDay, endOfDay, parseISO, getHours, format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 
@@ -49,6 +50,44 @@ export default function TrendsPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('30D');
   const [error, setError] = useState<string | null>(null);
+
+  const [isWeightManagementOpen, setIsWeightManagementOpen] = useState(false);
+  const [isStepManagementOpen, setIsStepManagementOpen] = useState(false);
+
+  const handleSaveEntry = async (entry: Partial<FitbitLog | PedometerLog>, id?: string) => {
+    if (!user) return;
+    try {
+      const collectionRef = collection(db, 'users', user.uid, 'timelineEntries');
+      if (id) {
+        // Update
+        const docRef = doc(db, 'users', user.uid, 'timelineEntries', id);
+        await updateDoc(docRef, entry);
+      } else {
+        // Create
+        await addDoc(collectionRef, {
+          ...entry,
+          timestamp: entry.timestamp || new Date(), // ensure timestamp
+        });
+      }
+      await fetchData(); // Refresh
+      toast({ title: "Saved successfully" });
+    } catch (e) {
+      console.error("Error saving entry:", e);
+      throw e; // Let dialog handle loading state
+    }
+  };
+
+  const handleDeleteEntry = async (id: string) => {
+    if (!user) return;
+    try {
+      const docRef = doc(db, 'users', user.uid, 'timelineEntries', id);
+      await deleteDoc(docRef);
+      await fetchData(); // Refresh
+    } catch (e) {
+      console.error("Error deleting entry:", e);
+      throw e;
+    }
+  };
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -655,10 +694,34 @@ export default function TrendsPage() {
               </CardContent>
             </Card>
 
+            {/* Data Management Dialogs */}
+            <DataManagementDialog
+              isOpen={isWeightManagementOpen}
+              onOpenChange={setIsWeightManagementOpen}
+              dataType="weight"
+              data={filteredEntries.filter(e => e.entryType === 'fitbit_data' && e.weight) as FitbitLog[]}
+              onSave={handleSaveEntry}
+              onDelete={handleDeleteEntry}
+            />
+            <DataManagementDialog
+              isOpen={isStepManagementOpen}
+              onOpenChange={setIsStepManagementOpen}
+              dataType="steps"
+              data={filteredEntries.filter(e => (e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') && e.steps) as (FitbitLog | PedometerLog)[]}
+              onSave={handleSaveEntry}
+              onDelete={handleDeleteEntry}
+            />
+
+
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setIsWeightManagementOpen(true)}>
+                      <TableIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <GraphInfoButton
                     title="Body Weight Trend"
                     description="This graph plots your daily weight logs (lines) and calculates a smoothed trend (if enough data exists)."
@@ -674,7 +737,12 @@ export default function TrendsPage() {
             <Card className="bg-card shadow-lg border-border">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Daily Activity (Steps)</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-xl font-semibold text-foreground">Daily Activity (Steps)</CardTitle>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setIsStepManagementOpen(true)}>
+                      <TableIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <GraphInfoButton
                     title="Daily Activity"
                     description="A simple bar chart of your daily step count from Fitbit or Apple Health."
