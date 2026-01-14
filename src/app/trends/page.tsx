@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MouseEvent, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 import Navbar from '@/components/shared/Navbar';
 import GraphInfoButton from '@/components/shared/GraphInfoButton';
@@ -247,12 +249,17 @@ export default function TrendsPage() {
     if (!user) return;
     try {
       const idToken = await user.getIdToken();
+      const isNative = Capacitor.isNativePlatform();
+
       const response = await fetch('/api/fitbit/initiate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({
+          idToken,
+          platform: isNative ? 'ios' : 'web'
+        }),
       });
 
       if (!response.ok) {
@@ -261,7 +268,12 @@ export default function TrendsPage() {
 
       const { url } = await response.json();
       console.log("Redirecting to Fitbit URL:", url);
-      window.location.href = url;
+
+      if (isNative) {
+        await Browser.open({ url, windowName: '_self' });
+      } else {
+        window.location.href = url;
+      }
     } catch (error) {
       console.error("Error connecting to Fitbit:", error);
       alert(`Debug Error: ${error instanceof Error ? error.message : 'Unknown error'}`);

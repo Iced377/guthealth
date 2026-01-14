@@ -1,5 +1,8 @@
 # Release Notes
 
+## Beta 4.5.1 (Jan 14, 2026)
+-   **Native Authorization:** Implemented "Hybrid" auth strategy. iOS app now uses `ASWebAuthenticationSession` (Secure System Modal) for Fitbit and Native SDK for Google Sign-In, eliminating the annoying Safari context switch. Web version remains unchanged.
+
 ## Beta 4.5.0 (Jan 14, 2026)
 -   **Apple Health Reborn:** Rebuilt the Apple Health integration from scratch using the robust CapGo engine. This update resolves all previous "not implemented" errors.
 

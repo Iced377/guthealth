@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.5.0";
+const APP_VERSION = "Beta 4.5.1";
 
 
 interface ReleaseNote {
@@ -63,6 +63,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.5.1",
+    date: "Jan 14, 2026",
+    title: "Native Authorization Engine",
+    description: [
+      "Hybrid Architecture: Rebuilt Google and Fitbit login flows to be platform-aware.",
+      "No More Safari Redirects: Native iOS app now uses system dialogs and in-app browsers for a seamless login experience.",
+      "Web Safe: Fully preserved web functionality while upgrading the native experience."
+    ]
+  },
   {
     version: "Beta 4.5.0",
     date: "Jan 14, 2026",

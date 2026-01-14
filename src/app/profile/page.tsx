@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -224,15 +226,29 @@ export default function ProfilePage() {
             if (checked) {
                 // Connect: Initiate OAuth
                 const token = await user.getIdToken();
+                const isNative = Capacitor.isNativePlatform();
+
                 const response = await fetch('/api/fitbit/initiate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken: token }),
+                    body: JSON.stringify({
+                        idToken: token,
+                        platform: isNative ? 'ios' : 'web'
+                    }),
                 });
 
                 if (response.ok) {
                     const { url } = await response.json();
-                    window.location.href = url; // Redirect to Fitbit
+
+                    if (isNative) {
+                        // Native: Use In-App Browser (System Modal)
+                        // windowName: '_self' ensures it opens in a way that respects the session, 
+                        // but standard present() is usually fine.
+                        await Browser.open({ url, windowName: '_self' });
+                    } else {
+                        // Web: Standard Redirect
+                        window.location.href = url;
+                    }
                 } else {
                     throw new Error("Failed to initiate connection");
                 }

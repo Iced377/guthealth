@@ -6,7 +6,9 @@ import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
     try {
-        const { idToken } = await req.json();
+        // Read body once
+        const body = await req.json();
+        const { idToken, platform } = body;
 
         if (!idToken) {
             return new NextResponse('Missing ID Token', { status: 400 });
@@ -20,9 +22,7 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
 
-        // 2. Generate PKCE Verifier & Challenge (RFC 7636)
-        // Verifier: High-entropy cryptographic random string (43-128 chars)
-        // We use URL-Safe Base64 to match the tutorial's example style and standard.
+        // 2. Generate PKCE Verifier & Challenge
         const codeVerifier = crypto.randomBytes(32)
             .toString('base64')
             .replace(/\+/g, '-')
@@ -37,13 +37,10 @@ export async function POST(req: NextRequest) {
             .replace(/\//g, '_')
             .replace(/=+$/, '');
 
-        // 3. Generate Random State (this is the key!)
+        // 3. Generate Random State
         const state = crypto.randomBytes(16).toString('hex');
 
-        // 4. Store State -> { uid, codeVerifier } in Firestore
-        // We use 'fitbit_auth_states' collection.
-        // Cleanup: In a real app, you might want a Cloud Function to delete old states.
-        // For now, we just write it.
+        // 4. Store State
         await db.collection('fitbit_auth_states').doc(state).set({
             uid,
             codeVerifier,
@@ -52,10 +49,12 @@ export async function POST(req: NextRequest) {
 
         // 5. Construct Fitbit Authorization URL
         const clientId = process.env.FITBIT_CLIENT_ID;
-        // Callback URL must allow flexible deployments, but Fitbit needs exact match.
-        // We assume FITBIT_REDIRECT_URI is set correctly in ENV.
-        // If not, we fall back to a reasonable default or error out.
-        const redirectUri = process.env.FITBIT_REDIRECT_URI;
+
+        // Native Logic: Use custom scheme if platform is 'ios' or 'android'
+        const isNative = platform === 'ios' || platform === 'android';
+        const redirectUri = isNative
+            ? 'gutcheck://callback'
+            : process.env.FITBIT_REDIRECT_URI;
 
         if (!clientId || !redirectUri) {
             const missing = [];

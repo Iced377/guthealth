@@ -11,23 +11,36 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail, // Added import
 } from 'firebase/auth';
+// Native Imports
+import { Capacitor } from '@capacitor/core';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { auth } from '@/config/firebase';
+import { signInWithCredential } from 'firebase/auth';
 
 // Sign In with Google
+// Sign In with Google
 export const signInWithGoogle = async () => {
-  const provider = new GoogleAuthProvider();
-  // A simple way to detect mobile devices. More robust detection might be needed for edge cases.
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // Check if running on native iOS/Android
+  const isNative = Capacitor.isNativePlatform();
 
-  await setPersistence(auth, browserLocalPersistence);
+  if (isNative) {
+    try {
+      // Native Flow: Use System Dialog (No Safari Redirect)
+      // This requires @codetrix-studio/capacitor-google-auth
+      const user = await GoogleAuth.signIn();
 
-  if (isMobile) {
-    // For mobile, use signInWithRedirect. This navigates away and comes back.
-    // The result is handled by getRedirectResult in AuthProvider.
-    return signInWithRedirect(auth, provider);
+      // Create Firebase credential from the native token
+      const credential = GoogleAuthProvider.credential(user.authentication.idToken);
+      return signInWithCredential(auth, credential);
+    } catch (error) {
+      console.error("Native Google Sign-In Error", error);
+      // Fallback or re-throw
+      return error as AuthError;
+    }
   } else {
-    // For desktop, signInWithPopup is generally preferred.
-    // It returns a UserCredential upon successful sign-in.
+    // Web Flow: Use Standard Popup
+    // This preserves the existing web behavior perfectly.
+    const provider = new GoogleAuthProvider();
     return signInWithPopup(auth, provider);
   }
 };
