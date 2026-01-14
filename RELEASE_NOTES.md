@@ -1,5 +1,10 @@
 # Release Notes
 
+## Beta 4.4.1 (Jan 14, 2026)
+-   **Insights Fix:** Resolved a crash caused by duplicate code.
+-   **Stability:** Fixed a schema validation error preventing the AI from processing some food logs.
+-   **UI Polish:** Removed the brain icon and updated the check-in text for a friendlier experience.
+
 ## Beta 4.4.0 (Jan 14, 2026)
 -   **Instant Launch:** The app now opens instantly with zero lag or white screen delay.
 -   **Native Feel:** Fixed the 'app freeze' issue when switching back to GutCheck.

@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.4.0";
+const APP_VERSION = "Beta 4.4.1";
 
 
 interface ReleaseNote {
@@ -63,6 +63,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.4.1",
+    date: "Jan 14, 2026",
+    title: "Insights & UI Polish",
+    description: [
+      "Insights Fix: Resolved a crash caused by duplicate code.",
+      "Stability: Fixed a schema validation error preventing the AI from processing some food logs.",
+      "UI Polish: Removed the brain icon and updated the check-in text for a friendlier experience."
+    ]
+  },
   {
     version: "Beta 4.4.0",
     date: "Jan 14, 2026",
