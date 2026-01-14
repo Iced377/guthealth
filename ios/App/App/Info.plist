@@ -28,6 +28,10 @@
 	<string>GutCheck uses your camera to let you take photos of your meals for AI analysis and logging.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>GutCheck needs access to your photo library to let you choose food photos for analysis.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>GutCheck uses step count data from Apple Health to track your daily activity and calculate energy expenditure.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>GutCheck uses this permission to sync your activity data.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,19 +13,81 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, FileText } from 'lucide-react';
+import { Loader2, Upload, FileText, Activity, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { AppleHealthService } from '@/lib/apple-health';
+import { Capacitor } from '@capacitor/core';
+import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/config/firebase';
 
 export default function PedometerImportDialog() {
     const [isOpen, setIsOpen] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isIOS, setIsIOS] = useState(false);
     const { toast } = useToast();
     const { user } = useAuth();
+
+    useEffect(() => {
+        setIsIOS(Capacitor.getPlatform() === 'ios');
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
+        }
+    };
+
+    const handleAppleHealthSync = async () => {
+        if (!user) return;
+        setIsSyncing(true);
+        try {
+            await AppleHealthService.requestPermissions();
+            const steps = await AppleHealthService.getTodaySteps();
+
+            // Save to Firestore
+            // Consistent with the CSV import logic, we create a doc for today
+            const now = new Date();
+            const docId = `pedometer_${now.getTime()}`; // Or maybe utilize date-string for uniqueness per day? 
+            // The CSV import uses distinct timestamps. For daily sync, we might want to update a daily doc.
+            // But let's stick to the current pattern of appending entries or update "today's" entry.
+            // Actually, for "Timeline", distinct entries are key.
+            // Let's create a specific entry for "Apple Health Today" that we overwrite
+
+            const todayStr = now.toISOString().split('T')[0];
+            const syncDocId = `apple_health_${todayStr}`;
+
+            await setDoc(doc(db, 'users', user.uid, 'timelineEntries', syncDocId), {
+                id: syncDocId,
+                timestamp: Timestamp.fromDate(now),
+                entryType: 'pedometer_data',
+                steps: steps,
+                distance: 0, // We can fetch this too if expanded
+                floorsAscended: 0,
+                activeEnergy: 0,
+                source: 'apple_health',
+                syncedAt: Timestamp.now()
+            }, { merge: true });
+
+            toast({
+                title: 'Sync Complete',
+                description: `Synced ${steps} steps from Apple Health.`,
+            });
+
+            // Optional: Reload or Refetch
+            window.location.reload();
+
+        } catch (error: any) {
+            console.error('Apple Health Sync Error:', error);
+            toast({
+                title: 'Sync Failed',
+                description: error.message || 'Could not sync with Apple Health',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsSyncing(false);
+            setIsOpen(false);
         }
     };
 
@@ -64,12 +125,7 @@ export default function PedometerImportDialog() {
             }
             setIsOpen(false);
             setFile(null);
-
-            // Ideally trigger a refresh of the parent data here
-            // But page refresh is simple fallback or we can use a context/prop to refetch
-            // For now, let's just reload the page to be safe as data is massive
             window.location.reload();
-            // console.log('Import response:', data);
 
         } catch (error: any) {
             console.error('Import error:', error);
@@ -87,27 +143,52 @@ export default function PedometerImportDialog() {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Import Pedometer++
+                    {isIOS ? <Activity className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                    {isIOS ? 'Sync Activity' : 'Import Pedometer'}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Import Pedometer++ Data</DialogTitle>
+                    <DialogTitle>Activity Sync</DialogTitle>
                     <DialogDescription>
-                        Export your data from the Pedometer++ app as a CSV file and upload it here.
+                        Sync your steps from Apple Health or import a CSV file. <span className="text-xs text-muted-foreground ml-2">(Platform: {Capacitor.getPlatform()})</span>
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+
+                <div className="grid gap-6 py-4">
+                    {isIOS && (
+                        <div className="flex flex-col gap-2 p-4 border rounded-lg bg-secondary/10">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <Activity className="h-4 w-4" /> Apple Health
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                Automatically sync your today's step count from Apple Health.
+                            </p>
+                            <Button
+                                onClick={handleAppleHealthSync}
+                                disabled={isSyncing}
+                                className="w-full mt-2"
+                                variant="default"
+                            >
+                                {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                Sync Now
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <div className="h-px flex-1 bg-border" />
+                            <span className="text-xs text-muted-foreground uppercase">Or Import CSV</span>
+                            <div className="h-px flex-1 bg-border" />
+                        </div>
+
                         <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
-                            <p className="font-medium text-foreground mb-1">How to export:</p>
-                            <ol className="list-decimal list-inside space-y-1">
-                                <li>Open Pedometer++ on your iPhone.</li>
-                                <li>Go to <strong>Settings</strong> via the gear icon.</li>
-                                <li>Tap <strong>Export Data</strong>.</li>
-                                <li>Choose <strong>Export to CSV</strong>.</li>
-                                <li>Save the file and upload it here.</li>
+                            <p className="font-medium text-foreground mb-1">Pedometer++ CSV Import:</p>
+                            <ol className="list-decimal list-inside space-y-1 text-xs">
+                                <li>Open Pedometer++ &gt; Settings</li>
+                                <li>Export Data &gt; Export to CSV</li>
+                                <li>Upload here</li>
                             </ol>
                         </div>
 
@@ -126,17 +207,17 @@ export default function PedometerImportDialog() {
                                 </p>
                             )}
                         </div>
+                        <Button
+                            onClick={handleUpload}
+                            disabled={!file || isUploading}
+                            variant="secondary"
+                            className="w-full"
+                        >
+                            {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Import CSV
+                        </Button>
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isUploading}>
-                        Cancel
-                    </Button>
-                    <Button onClick={handleUpload} disabled={!file || isUploading}>
-                        {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Import Data
-                    </Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

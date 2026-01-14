@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.4.1";
+const APP_VERSION = "Beta 4.4.2";
 
 
 interface ReleaseNote {
@@ -63,6 +63,15 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.4.2",
+    date: "Jan 14, 2026",
+    title: "Apple Health Integration",
+    description: [
+      "Activity Sync: Added native support for Apple Health to sync daily steps.",
+      "New Feature: You can now connect Apple Health directly from the Trends dashboard."
+    ]
+  },
   {
     version: "Beta 4.4.1",
     date: "Jan 14, 2026",

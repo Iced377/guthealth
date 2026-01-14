@@ -1,5 +1,9 @@
 # Release Notes
 
+## Beta 4.4.2 (Jan 14, 2026)
+-   **Activity Sync:** Added native support for Apple Health to sync daily steps.
+-   **New Feature:** You can now connect Apple Health directly from the Trends dashboard.
+
 ## Beta 4.4.1 (Jan 14, 2026)
 -   **Insights Fix:** Resolved a crash caused by duplicate code.
 -   **Stability:** Fixed a schema validation error preventing the AI from processing some food logs.
