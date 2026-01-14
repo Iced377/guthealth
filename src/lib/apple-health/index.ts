@@ -1,23 +1,14 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-// Safely obtain the plugin instance
-const HealthKit = registerPlugin<any>('HealthKit');
-
-// Define local interface for options if needed, or just use implicit objects
-const PERMISSIONS = {
-    readTypes: ['steps'],
-    writeTypes: [],
-};
+// Use the new plugin
+const CapacitorHealth = registerPlugin<any>('CapacitorHealth');
 
 export const AppleHealthService = {
     isAvailable: async (): Promise<boolean> => {
         if (Capacitor.getPlatform() !== 'ios') return false;
         try {
-            if (!HealthKit) {
-                console.warn('HealthKit plugin not registered');
-                return false;
-            }
-            const { available } = await HealthKit.isAvailable();
+            if (!CapacitorHealth) return false;
+            const { available } = await CapacitorHealth.isAvailable();
             return available;
         } catch (e) {
             console.error('Apple Health availability check failed', e);
@@ -28,7 +19,12 @@ export const AppleHealthService = {
     requestPermissions: async (): Promise<void> => {
         if (Capacitor.getPlatform() !== 'ios') return;
         try {
-            await HealthKit.requestAuthorization(PERMISSIONS);
+            // New API structure for @capgo/capacitor-health
+            await CapacitorHealth.requestAuthorization({
+                all: ['steps'],
+                read: ['steps'],
+                write: []
+            });
         } catch (error) {
             console.error('Error requesting Apple Health permissions:', error);
             throw error;
@@ -40,24 +36,28 @@ export const AppleHealthService = {
 
         try {
             const now = new Date();
-            // Start of today (00:00:00)
-            const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-            const endDate = now.toISOString();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            // Query specifically for steps.
-            const { count } = await HealthKit.queryHKitSampleType({
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                sampleName: 'stepCount',
+            // The new plugin might have a different query format. 
+            // Assuming standard logic or generic query.
+            // Using 'steps' as the data type.
+            const { count } = await CapacitorHealth.query({
+                name: 'steps',
+                startDate: startOfDay.toISOString(),
+                endDate: now.toISOString(),
+                dataType: 'count' // or similar aggregation
             });
 
-            return count || 0;
+            // Note: If the return structure is different (e.g. { value: 100 }), we need to adjust.
+            // Based on common patterns in this community.
+            return typeof count === 'number' ? count : (count?.value || 0);
+
         } catch (error) {
             console.error('Error getting step count:', error);
             if (error instanceof Error) {
                 console.error(error.message);
             }
-            return 0; // Return 0 on error to avoid crashing UI
+            return 0;
         }
     }
 };

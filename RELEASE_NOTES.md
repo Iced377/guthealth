@@ -1,5 +1,8 @@
 # Release Notes
 
+## Beta 4.4.4 (Jan 14, 2026)
+-   **Migration Fix:** Migrated to a more stable health plugin to resolve installation issues on iOS.
+
 ## Beta 4.4.3 (Jan 14, 2026)
 -   **Sync Fix:** Fixed a crash when syncing with Apple Health on some devices.
 
