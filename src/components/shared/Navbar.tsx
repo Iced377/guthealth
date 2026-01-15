@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.5.1";
+const APP_VERSION = "Beta 4.5.2";
 
 
 interface ReleaseNote {
@@ -63,6 +63,16 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.5.2",
+    date: "Jan 15, 2026",
+    title: "Seamless Health",
+    description: [
+      "Step Counter: Added a minimalist step counter to the Dashboard.",
+      "Seamless Sync: Enabled background refresh for Apple Health when resuming the app.",
+      "Brand Logos: Updated icons and toggles for a more polished User Center."
+    ]
+  },
   {
     version: "Beta 4.5.1",
     date: "Jan 14, 2026",
@@ -1272,6 +1282,10 @@ export default function Navbar({
                         <FileText className="mr-2 h-4 w-4" />
                         <span>Terms of Use</span>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push('/health-debug')} className="cursor-pointer">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        <span>Health Debug</span>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
@@ -1353,6 +1367,7 @@ export default function Navbar({
                   { icon: PlayCircle, label: "App Tour", onClick: () => { setIsMobileMenuOpen(false); startWalkthrough('welcome'); } },
                   { icon: Shield, label: "Privacy Notice", onClick: () => { setIsMobileMenuOpen(false); router.push('/privacy'); } },
                   { icon: FileText, label: "Terms of Use", onClick: () => { setIsMobileMenuOpen(false); router.push('/terms'); } },
+                  { icon: BarChart3, label: "Health Debug", onClick: () => { setIsMobileMenuOpen(false); router.push('/health-debug'); } },
                   { icon: Info, label: "About", onClick: () => { setIsMobileMenuOpen(false); aboutLinkHandler(); } },
                   ].map((item, idx) => (
                     <motion.div key={idx} variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>

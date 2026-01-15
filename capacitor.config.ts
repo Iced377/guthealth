@@ -14,11 +14,10 @@ const config: CapacitorConfig = {
       "enabled": true
     }
   },
-  webDir: 'out',
   server: {
     androidScheme: 'https',
-    url: 'https://mygutcheck.app/',
-    // cleartext: true, // Use this if you want to test with a local server (http://localhost:3000)
+    url: 'http://192.168.100.188:9002',
+    cleartext: true,
   }
 };
 

@@ -10,8 +10,9 @@ import {
   setPersistence,
 } from 'firebase/auth';
 import { auth, db } from '@/config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
+import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { UserProfile } from '@/types';
@@ -90,9 +91,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Force token refresh to ensure connection is alive
             await auth.currentUser.getIdToken(true);
             console.log('Session refreshed on resume');
-            // optional: toast({ title: "Welcome back!", description: "Session refreshed." });
+
+            // Check & Sync Apple Health
+            const platform = Capacitor.getPlatform();
+            if (platform === 'ios') {
+              const userDocRef = doc(db, 'users', auth.currentUser.uid);
+              const userSnapshot = await getDoc(userDocRef);
+
+              if (userSnapshot.exists()) {
+                const data = userSnapshot.data() as UserProfile;
+                if (data.profile?.appleHealthEnabled) {
+                  try {
+                    const { AppleHealthService } = await import('@/lib/apple-health'); // Dynamic import to avoid SSR issues if any, though regular import is fine too as it's client comp
+                    const steps = await AppleHealthService.getTodaySteps();
+
+                    const now = new Date();
+                    const todayStr = now.toISOString().split('T')[0];
+                    const syncDocId = `apple_health_${todayStr}`;
+
+                    await setDoc(doc(db, 'users', auth.currentUser.uid, 'timelineEntries', syncDocId), {
+                      id: syncDocId,
+                      timestamp: Timestamp.fromDate(now),
+                      entryType: 'pedometer_data',
+                      steps: steps,
+                      distance: 0,
+                      floorsAscended: 0,
+                      activeEnergy: 0,
+                      source: 'apple_health',
+                      syncedAt: Timestamp.now()
+                    }, { merge: true });
+
+                    console.log(`Background sync: saved ${steps} steps`);
+                  } catch (healthError) {
+                    console.error("Background Apple Health sync failed:", healthError);
+                  }
+                }
+              }
+            }
+
           } catch (e) {
-            console.error("Error refreshing token on resume", e);
+            console.error("Error refreshing token or syncing on resume", e);
           }
         }
       });

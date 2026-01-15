@@ -5,10 +5,11 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail } from '@/types';
+import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail, PedometerLog } from '@/types';
 import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
 import TimelineSymptomCard from '@/components/food-logging/TimelineSymptomCard';
-import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle, Plus, PlusCircle, Camera, ListChecks, CalendarDays } from 'lucide-react';
+import { AppleHealthIcon } from '@/components/shared/BrandIcons';
+import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle, Plus, PlusCircle, Camera, ListChecks, CalendarDays, Footprints } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { startOfDay, endOfDay, format, addDays, isSameDay } from 'date-fns';
@@ -172,6 +173,21 @@ export default function DashboardContent({
         });
     }, [groupedTimelineEntries]);
 
+    // Pedometer Data
+    const stepsData = useMemo(() => {
+        // Find the latest step entry for the current date
+        const stepEntries = timelineEntries.filter(e =>
+            e.entryType === 'pedometer_data' &&
+            isSameDay(new Date(e.timestamp), currentDate)
+        ) as PedometerLog[];
+
+        if (stepEntries.length === 0) return null;
+
+        // If multiple (e.g. from different sources or syncs), take the latest one or max? 
+        // Sync usually overwrites daily ID, so should be one per day. Sort by timestamp just in case.
+        return stepEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    }, [timelineEntries, currentDate]);
+
 
     return (
         <div className="h-full flex flex-col p-4 bg-background text-foreground relative gap-4 max-w-5xl mx-auto w-full">
@@ -190,6 +206,29 @@ export default function DashboardContent({
                     } : undefined}
                 />
             </div>
+
+            {/* Step Counter (Minimalistic) */}
+            {stepsData && (
+                <div className="shrink-0 w-full animate-in fade-in slide-in-from-top-6 duration-600 delay-50">
+                    <div className="flex items-center justify-between bg-card/60 border border-border/50 rounded-xl p-3 shadow-sm backdrop-blur-[2px]">
+                        <div className="flex items-center gap-3">
+                            {/* Icon based on source */}
+                            <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shadow-sm text-white",
+                                stepsData.source === 'pedometer_plus_plus' ? "bg-blue-500" : "bg-gradient-to-br from-pink-500 to-red-600"
+                            )}>
+                                <Footprints className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Steps</span>
+                                <span className="text-lg font-bold font-headline leading-none tabular-nums">{stepsData.steps.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground font-medium">
+                            {stepsData.distance ? `${(stepsData.distance / 1000).toFixed(2)} km` : 'Today'}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Micronutrients Highlights (if any) */}
             {achievedMicronutrients.length > 0 && (

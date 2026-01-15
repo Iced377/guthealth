@@ -130,7 +130,7 @@ export interface PedometerLog {
   distance?: number; // meters
   floorsAscended?: number;
   activeEnergy?: number; // kcal
-  source?: 'pedometer_plus_plus';
+  source?: 'pedometer_plus_plus' | 'apple_health';
 }
 
 export type TimelineEntry = LoggedFoodItem | SymptomLog | FitbitLog | PedometerLog;
@@ -163,6 +163,7 @@ export interface UserProfile {
     goal: 'maintain' | 'lose_fat' | 'gain_muscle';
     symptoms: string[]; // e.g., ['bloating', 'fatigue']
     dietaryPreferences?: string[]; // e.g., ['keto', 'vegan']
+    appleHealthEnabled?: boolean; // Toggle for Apple Health sync
 
     // Walkthrough tracking
     walkthroughStatus?: {

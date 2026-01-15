@@ -1,5 +1,10 @@
 # Release Notes
 
+## Beta 4.5.2 (Jan 15, 2026)
+-   **Step Counter:** Added a minimalist step counter card to the Dashboard (with improved Apple Health icons).
+-   **Seamless Sync:** Apple Health now allows background refreshing; data syncs automatically when you resume the app.
+-   **UI Polish:** Updated "Connected Apps" with official brand logos and clearer "Active" states (Green toggles).
+
 ## Beta 4.5.1 (Jan 14, 2026)
 -   **Native Authorization:** Implemented "Hybrid" auth strategy. iOS app now uses `ASWebAuthenticationSession` (Secure System Modal) for Fitbit and Native SDK for Google Sign-In, eliminating the annoying Safari context switch. Web version remains unchanged.
 

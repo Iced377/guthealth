@@ -38,6 +38,8 @@ import { Calendar, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target, F
 import { UserProfile } from '@/types';
 import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
 import { generateUserDataExport } from '@/utils/data-export';
+import { AppleHealthService } from '@/lib/apple-health';
+import { AppleHealthIcon, FitbitIcon } from '@/components/shared/BrandIcons';
 
 // Helper to calculate age from DOB
 function getAge(dob: string) {
@@ -83,6 +85,59 @@ export default function ProfilePage() {
     const [isLoadingFitbit, setIsLoadingFitbit] = useState(true);
     const [isTogglingFitbit, setIsTogglingFitbit] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+
+
+    const [isAppleHealthConnected, setIsAppleHealthConnected] = useState(false);
+    const [isTogglingAppleHealth, setIsTogglingAppleHealth] = useState(false);
+
+    // Initial Data Fetch
+    useEffect(() => {
+        if (profileData) {
+            setIsAppleHealthConnected(!!profileData.appleHealthEnabled);
+        }
+    }, [profileData]);
+
+    const handleAppleHealthToggle = async (checked: boolean) => {
+        if (!user || !profileData) return;
+        setIsTogglingAppleHealth(true);
+        try {
+            if (checked) {
+                const available = await AppleHealthService.isAvailable();
+                if (!available) {
+                    toast({ title: "Not Available", description: "Apple Health is not available on this device." });
+                    return;
+                }
+
+                await AppleHealthService.requestPermissions();
+
+                await updateDoc(doc(db, 'users', user.uid), {
+                    'profile.appleHealthEnabled': true
+                });
+
+                setIsAppleHealthConnected(true);
+                toast({ title: "Connected", description: "Apple Health sync enabled." });
+
+                // Immediate initial fetch
+                if (window.location.protocol !== 'https:') { // Simple check to avoid running on server/static build if needed, though this is client-side
+                    const steps = await AppleHealthService.getTodaySteps();
+                    console.log('Initial sync steps:', steps);
+                }
+
+            } else {
+                await updateDoc(doc(db, 'users', user.uid), {
+                    'profile.appleHealthEnabled': false
+                });
+                setIsAppleHealthConnected(false);
+                toast({ title: "Disconnected", description: "Apple Health sync disabled." });
+            }
+        } catch (error) {
+            console.error("Apple Health toggle error:", error);
+            toast({ title: "Error", description: "Could not update Apple Health settings.", variant: "destructive" });
+        } finally {
+            setIsTogglingAppleHealth(false);
+        }
+    };
 
     // Initial Data Fetch
     useEffect(() => {
@@ -652,12 +707,32 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
 
+                        {/* Apple Health Item */}
+                        {Capacitor.getPlatform() === 'ios' && (
+                            <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30 mb-4">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-red-600 flex items-center justify-center text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+                                        <AppleHealthIcon className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-medium text-foreground">Apple Health</h3>
+                                        <p className="text-sm text-muted-foreground">Sync steps automatically.</p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    checked={isAppleHealthConnected}
+                                    onCheckedChange={handleAppleHealthToggle}
+                                    disabled={isTogglingAppleHealth}
+                                    className={isAppleHealthConnected ? "data-[state=checked]:bg-green-500" : ""}
+                                />
+                            </div>
+                        )}
+
                         {/* Fitbit Item */}
                         <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
                             <div className="flex items-center space-x-4">
-                                {/* Fitbit Logo/Icon placeholder using just text or generic icon */}
-                                <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center text-teal-700 dark:text-teal-400 font-bold text-sm">
-                                    fit
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#00B0B9]/10 text-[#00B0B9] dark:bg-[#00B0B9]/20">
+                                    <FitbitIcon className="h-6 w-6" />
                                 </div>
                                 <div>
                                     <h3 className="font-medium text-foreground">Fitbit</h3>
@@ -672,7 +747,7 @@ export default function ProfilePage() {
                                     checked={isFitbitConnected}
                                     onCheckedChange={handleFitbitToggle}
                                     disabled={isTogglingFitbit}
-                                    className={isFitbitConnected ? "data-[state=checked]:bg-teal-600" : ""}
+                                    className={isFitbitConnected ? "data-[state=checked]:bg-green-500" : ""}
                                 />
                             )}
                         </div>

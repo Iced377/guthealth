@@ -1,31 +1,11 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
-
-// Define minimal interfaces based on the inspected definitions
-interface HealthSample {
-    value: number;
-    startDate: string;
-    endDate: string;
-}
-
-interface ReadSamplesResult {
-    samples: HealthSample[];
-}
-
-interface HealthPlugin {
-    isAvailable(): Promise<{ available: boolean }>;
-    requestAuthorization(options: { read: string[], write: string[] }): Promise<any>;
-    readSamples(options: { dataType: string, startDate: string, endDate: string }): Promise<ReadSamplesResult>;
-}
-
-// User confirmed plugin name is 'CapacitorHealth'
-const CapacitorHealth = registerPlugin<HealthPlugin>('CapacitorHealth');
+import { Capacitor } from '@capacitor/core';
+import { Health } from '@capgo/capacitor-health';
 
 export const AppleHealthService = {
     isAvailable: async (): Promise<boolean> => {
         if (Capacitor.getPlatform() !== 'ios') return false;
         try {
-            if (!CapacitorHealth) return false;
-            const { available } = await CapacitorHealth.isAvailable();
+            const { available } = await Health.isAvailable();
             return available;
         } catch (e) {
             console.error('Apple Health availability check failed', e);
@@ -36,10 +16,9 @@ export const AppleHealthService = {
     requestPermissions: async (): Promise<void> => {
         if (Capacitor.getPlatform() !== 'ios') return;
         try {
-            // New API structure for @capgo/capacitor-health
-            await CapacitorHealth.requestAuthorization({
+            await Health.requestAuthorization({
                 read: ['steps'],
-                write: []
+                write: ['steps']
             });
         } catch (error) {
             console.error('Error requesting Apple Health permissions:', error);
@@ -49,13 +28,12 @@ export const AppleHealthService = {
 
     getTodaySteps: async (): Promise<number> => {
         if (Capacitor.getPlatform() !== 'ios') return 0;
-
         try {
             const now = new Date();
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             // Fetch all step samples for today
-            const result = await CapacitorHealth.readSamples({
+            const result = await Health.readSamples({
                 dataType: 'steps',
                 startDate: startOfDay.toISOString(),
                 endDate: now.toISOString(),
@@ -67,11 +45,49 @@ export const AppleHealthService = {
             return Math.round(totalSteps);
 
         } catch (error) {
-            console.error('Error getting step count:', error);
-            if (error instanceof Error) {
-                console.error(error.message);
-            }
+            console.error('Error fetching steps:', error);
             return 0;
+        }
+    },
+
+    saveSteps: async (steps: number): Promise<void> => {
+        if (Capacitor.getPlatform() !== 'ios') return;
+        try {
+            const now = new Date();
+            const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+            await Health.saveSample({
+                dataType: 'steps',
+                value: steps,
+                startDate: oneHourAgo.toISOString(),
+                endDate: now.toISOString(),
+                unit: 'count'
+            });
+        } catch (error) {
+            console.error('Error saving steps:', error);
+            throw error;
+        }
+    },
+
+    getRawStepSamples: async (days: number = 30): Promise<any[]> => {
+        if (Capacitor.getPlatform() !== 'ios') return [];
+        try {
+            const now = new Date();
+            const startDate = new Date();
+            startDate.setDate(now.getDate() - days);
+
+            const result = await Health.readSamples({
+                dataType: 'steps',
+                startDate: startDate.toISOString(),
+                endDate: now.toISOString(),
+                limit: 1000,
+                ascending: false
+            });
+
+            return result.samples;
+        } catch (error) {
+            console.error('Error fetching raw samples:', error);
+            throw error;
         }
     }
 };
