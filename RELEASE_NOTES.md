@@ -1,5 +1,9 @@
 # Release Notes
 
+## Beta 4.5.3 (Jan 15, 2026)
+-   **Precision Steps:** Implemented a smart deduplication algorithm for Apple Health. The app now intelligently merges steps from your iPhone and Apple Watch to prevent double-counting.
+-   **Auto-Sync:** Fixed an issue where steps wouldn't load immediately on app launch.
+
 ## Beta 4.5.2 (Jan 15, 2026)
 -   **Step Counter:** Added a minimalist step counter card to the Dashboard (with improved Apple Health icons).
 -   **Seamless Sync:** Apple Health now allows background refreshing; data syncs automatically when you resume the app.

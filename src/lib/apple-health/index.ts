@@ -37,10 +37,40 @@ export const AppleHealthService = {
                 dataType: 'steps',
                 startDate: startOfDay.toISOString(),
                 endDate: now.toISOString(),
+                limit: 5000,
             });
 
-            // Aggregate manually
-            const totalSteps = result.samples.reduce((sum, sample) => sum + sample.value, 0);
+            // Aggregate with Time-Bucket Deduplication (Watch Priority)
+            // Strategy: 
+            // 1. Bucketize time (minute slots).
+            // 2. Track Watch vs Phone steps per minute.
+            // 3. If bucket is claimed by Watch, ignore Phone.
+            // 4. Default to Phone if no Watch data.
+
+            const timeBuckets = new Map<string, { watchSteps: number, phoneSteps: number }>();
+
+            result.samples.forEach(sample => {
+                const key = new Date(sample.startDate).toISOString().substring(0, 16); // Minute bucket
+                const isWatch = (sample.sourceName || '').toLowerCase().includes('watch');
+
+                const bucket = timeBuckets.get(key) || { watchSteps: 0, phoneSteps: 0 };
+                if (isWatch) {
+                    bucket.watchSteps += sample.value;
+                } else {
+                    bucket.phoneSteps += sample.value;
+                }
+                timeBuckets.set(key, bucket);
+            });
+
+            let totalSteps = 0;
+            timeBuckets.forEach((bucket) => {
+                // If we have Watch data for this minute, use it ONLY. Ignore phone.
+                if (bucket.watchSteps > 0) {
+                    totalSteps += bucket.watchSteps;
+                } else {
+                    totalSteps += bucket.phoneSteps;
+                }
+            });
 
             return Math.round(totalSteps);
 

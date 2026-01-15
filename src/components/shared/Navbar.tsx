@@ -52,7 +52,7 @@ import {
 import type { UserProfile } from '@/types';
 
 const APP_NAME = "GutCheck";
-const APP_VERSION = "Beta 4.5.2";
+const APP_VERSION = "Beta 4.5.3";
 
 
 interface ReleaseNote {
@@ -63,6 +63,12 @@ interface ReleaseNote {
 }
 
 const releaseNotesData: ReleaseNote[] = [
+  {
+    version: "Beta 4.5.3",
+    date: "Jan 15, 2026",
+    title: "Precision Steps",
+    description: "Fixed double-counting issues by intelligently merging Apple Watch and iPhone step data."
+  },
   {
     version: "Beta 4.5.2",
     date: "Jan 15, 2026",
