@@ -1054,10 +1054,7 @@ export default function Navbar({
     router.push(pathname === '/trends' ? '/?openDashboard=true' : '/trends');
   };
 
-  const micronutrientsLinkHandler = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    router.push(pathname === '/micronutrients' ? '/?openDashboard=true' : '/micronutrients');
-  };
+
 
   const aiInsightsLinkHandler = (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -1226,9 +1223,7 @@ export default function Navbar({
                       <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" id="nav-item-trends" onClick={trendsLinkHandler}>
                         <BarChart3 className="h-5 w-5" />
                       </LiquidPressable>
-                      <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/micronutrients' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Micronutrients Progress" id="nav-item-micronutrients" onClick={micronutrientsLinkHandler}>
-                        <Atom className="h-5 w-5" />
-                      </LiquidPressable>
+
                       <div className="relative">
                         <LiquidPressable
                           variant="icon"
@@ -1323,7 +1318,7 @@ export default function Navbar({
                   {[{ icon: LayoutGrid, label: "Dashboard", onClick: () => { setIsMobileMenuOpen(false); dashboardLinkHandler(); } },
                   { icon: Heart, label: "Favorites", onClick: () => { setIsMobileMenuOpen(false); favoritesLinkHandler(); } },
                   { icon: BarChart3, label: "Trends", onClick: () => { setIsMobileMenuOpen(false); trendsLinkHandler(); } },
-                  { icon: Atom, label: "Micronutrients", onClick: () => { setIsMobileMenuOpen(false); micronutrientsLinkHandler(); } },
+
                   { icon: Lightbulb, label: "Insights", onClick: () => { setIsMobileMenuOpen(false); aiInsightsLinkHandler(); } },
                   { icon: User, label: "User Center", onClick: () => { setIsMobileMenuOpen(false); router.push('/profile'); } },
                   { icon: PlayCircle, label: "App Tour", onClick: () => { setIsMobileMenuOpen(false); startWalkthrough('welcome'); } },

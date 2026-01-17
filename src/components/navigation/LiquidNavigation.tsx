@@ -82,7 +82,7 @@ const EXPLORE_ITEMS: SubMenuItem[] = [
 const INSIGHTS_ITEMS: SubMenuItem[] = [
     { id: 'insights', icon: Lightbulb, label: 'Insights', path: '/insights', accessibilityLabel: 'Insights, AI analysis' },
     { id: 'trends', icon: Activity, label: 'Trends', path: '/trends', accessibilityLabel: 'Trends, view patterns' },
-    { id: 'micronutrients', icon: Leaf, label: 'Micronutrients', path: '/micronutrients', accessibilityLabel: 'Micronutrients Tracker, view daily nutrients' },
+
 ];
 
 // Profile sub-items
@@ -188,7 +188,7 @@ export default function LiquidNavigation({
     // Determine active tab
     const getActiveTab = useCallback(() => {
         if (pathname === '/') return 'home';
-        if (pathname.startsWith('/favorites') || pathname.startsWith('/micronutrients')) return 'explore';
+        if (pathname.startsWith('/favorites')) return 'explore';
         if (pathname.startsWith('/insights') || pathname.startsWith('/trends')) return 'insights';
         if (pathname.startsWith('/profile')) return 'profile';
         return 'home';
@@ -468,7 +468,7 @@ export default function LiquidNavigation({
                                     pressedItem === item.id ? "opacity-0" : "opacity-100",
                                     item.id === 'insights' && "bg-gradient-to-br from-amber-400 to-orange-500",
                                     item.id === 'trends' && "bg-gradient-to-br from-emerald-400 to-teal-500",
-                                    item.id === 'micronutrients' && "bg-gradient-to-br from-green-500 to-lime-500",
+
                                     "shadow-lg"
                                 )}>
                                     <item.icon className="w-6 h-6 text-white" />

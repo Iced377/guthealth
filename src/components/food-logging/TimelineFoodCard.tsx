@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import FodmapIndicator from '@/components/shared/FodmapIndicator';
 import GlycemicIndexIndicator from '@/components/shared/GlycemicIndexIndicator';
 import DietaryFiberIndicator from '@/components/shared/DietaryFiberIndicator';
-import MicronutrientsIndicator from '@/components/shared/MicronutrientsIndicator';
+
 import GutBacteriaIndicator from '@/components/shared/GutBacteriaIndicator';
 import KetoFriendlinessIndicator from '@/components/shared/KetoFriendlinessIndicator';
 import { Badge } from '@/components/ui/badge';
@@ -328,7 +328,7 @@ export default function TimelineFoodCard({
           {/* Health Indicators - Promoted to main view */}
           {hasHealthIndicators && item.fodmapData && (
             <div className={cn("text-xs pt-0 flex flex-wrap items-center gap-2")} id={cardId ? `${cardId}-indicators` : undefined}>
-              <div className="active-press"><MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} /></div>
+
               <div className="active-press"><DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} /></div>
               <div className="active-press"><GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} /></div>
               <div className="active-press"><KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} /></div>

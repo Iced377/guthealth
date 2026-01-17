@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PedometerLog, UserProfile, AchievedMicronutrient, DailyNutritionSummary } from '@/types';
+import { PedometerLog, UserProfile, DailyNutritionSummary } from '@/types';
 import { Footprints, Sprout } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NutritionOverview from './NutritionOverview';
-import AchievedMicronutrients from './AchievedMicronutrients';
+
 
 interface ParallaxVitalsHeaderProps {
     summary: DailyNutritionSummary;
@@ -15,7 +15,7 @@ interface ParallaxVitalsHeaderProps {
     onNextDate?: () => void;
     userProfile?: UserProfile;
     stepsData?: PedometerLog | null;
-    achievedMicronutrients?: AchievedMicronutrient[];
+
     scrollY?: number;
     className?: string;
 }
@@ -27,7 +27,7 @@ export default function ParallaxVitalsHeader({
     onNextDate,
     userProfile,
     stepsData,
-    achievedMicronutrients,
+
     scrollY = 0,
     className,
 }: ParallaxVitalsHeaderProps) {
@@ -145,13 +145,7 @@ export default function ParallaxVitalsHeader({
                     </GlassCard>
                 </motion.div>
 
-                {/* SECTION 3: Achieved Micronutrients - BOTTOM - Auto Height & Collapsible */}
-                <div className="w-full">
-                    {/* Auto height, no fixed h-24 */}
-                    <GlassCard className="h-auto border border-white/10 shadow-sm bg-white/5 dark:bg-black/20 backdrop-blur-md px-4 py-3 rounded-2xl">
-                        <AchievedMicronutrients achieved={achievedMicronutrients || []} />
-                    </GlassCard>
-                </div>
+
 
             </div>
         </div>

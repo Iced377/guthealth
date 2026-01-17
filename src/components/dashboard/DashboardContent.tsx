@@ -15,7 +15,7 @@ import {
 } from '@/types';
 import {
     calculateDaySummary,
-    processAchievedMicros,
+
     calculateDailyPedometerStats
 } from '@/lib/utils';
 import { useHealthKit } from '@/lib/apple-health/hooks';
@@ -107,12 +107,7 @@ export default function DashboardContent({
         return calculateDaySummary(daysLogs);
     }, [sortedEntries]);
 
-    const getMicrosForDate = useCallback((date: Date) => {
-        const daysLogs = sortedEntries.filter(log =>
-            isSameDay(new Date(log.timestamp), date) && log.entryType === 'food'
-        ) as LoggedFoodItem[];
-        return processAchievedMicros(daysLogs);
-    }, [sortedEntries]);
+
 
     const getStepsForDate = useCallback((date: Date) => {
         // If HealthKit hook returns total for today, use it if currentDate is Today.
@@ -172,7 +167,7 @@ export default function DashboardContent({
                         onNextDate={() => onDateChange(addDays(date, 1))}
                         userProfile={userProfile}
                         stepsData={getStepsForDate(date)}
-                        achievedMicronutrients={getMicrosForDate(date)}
+
                         scrollY={scrollY}
                         className="pt-2" // Reduced padding as there's no sticky date anymore
                     />

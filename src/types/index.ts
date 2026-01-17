@@ -19,17 +19,7 @@ export interface DietaryFiberInfo {
   quality?: 'Low' | 'Adequate' | 'High'; // Based on general guidelines
 }
 
-export interface MicronutrientDetail {
-  name: string; // e.g., "Iron", "Vitamin C"
-  amount?: string; // e.g., "10 mg", "90 mcg"
-  dailyValuePercent?: number; // e.g., 50 for 50% DV
-  iconName?: string; // Suggestion for a lucide-react icon name
-}
 
-export interface MicronutrientsInfo {
-  notable?: MicronutrientDetail[]; // Top 2-3 most significant or relevant micronutrients
-  fullList?: MicronutrientDetail[]; // Optional more comprehensive list for a tooltip/popover
-}
 
 export interface GutBacteriaImpactInfo {
   sentiment?: 'Positive' | 'Negative' | 'Neutral' | 'Unknown'; // Impact on gut microbiota
@@ -44,7 +34,7 @@ export interface KetoFriendlinessInfo {
 
 export interface AISummaries {
   fodmapSummary?: string;
-  micronutrientSummary?: string;
+
   glycemicIndexSummary?: string;
   gutImpactSummary?: string;
   ketoSummary?: string; // Added for Keto
@@ -53,7 +43,7 @@ export interface AISummaries {
 export type ExtendedAnalyzeFoodItemOutput = OriginalAnalyzeFoodItemOutput & {
   glycemicIndexInfo?: GlycemicIndexInfo;
   dietaryFiberInfo?: DietaryFiberInfo;
-  micronutrientsInfo?: MicronutrientsInfo;
+
   gutBacteriaImpact?: GutBacteriaImpactInfo;
   ketoFriendliness?: KetoFriendlinessInfo; // Added Keto
   detectedAllergens?: string[];
@@ -253,22 +243,7 @@ export interface SymptomFrequency {
   value: number;
 }
 
-export interface MicronutrientAchievement {
-  name: string;
-  achievedDays: number;
-  iconName?: string;
-}
 
-export interface SingleMicronutrientProgress {
-  name: string;
-  achievedValue?: number;
-  achievedDV: number;
-  icon: React.ElementType;
-  targetDV: number;
-  unit: '%' | 'mg' | 'IU';
-}
-
-export type UserMicronutrientProgress = Record<string, SingleMicronutrientProgress>;
 
 // Feedback System Types
 export interface FeedbackSubmission {
@@ -297,8 +272,4 @@ export interface AIInsight {
   read: boolean;
 }
 
-export interface AchievedMicronutrient {
-  name: string;
-  totalDV: number;
-  iconName?: string;
-}
+

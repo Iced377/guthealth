@@ -24,7 +24,7 @@ const featureIcons: Record<string, React.ElementType> = {
 
 const featureDescriptions: Record<string, string> = {
   "Snap a Photo or Log a Meal": "Our system can understand meal descriptions or analyze photos to identify ingredients.",
-  "Get Instant Deep Feedback": "Receive insights on FODMAPs, micronutrients, potential gut impact, and glycemic load specific to your meal and portion.",
+  "Get Instant Deep Feedback": "Receive insights on FODMAPs, potential gut impact, and glycemic load specific to your meal and portion.",
   "Track Your Reactions": "Correlate your logged symptoms with your meals to pinpoint personal sensitivities.",
   "Optimize with Smart Recommendations": "Get suggestions for food swaps and discover patterns for a healthier gut.",
 };

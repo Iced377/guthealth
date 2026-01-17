@@ -94,18 +94,18 @@ function WeightTrendChart({ data, isDarkMode }: WeightTrendChartProps) {
                 {/* Note: Original code had className prop on LiquidSegmentedControl, but I moved it to className prop. */}
             </div>
 
-            <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                    data={data}
-                    margin={{ top: 60, right: 0, left: 0, bottom: 0 }} /* Top margin for toggle */
-                    onMouseMove={() => {
-                        if (isChartInteractionEnabled && !isScrubbing) {
-                            setIsScrubbing(true);
-                            HapticsService.selection();
-                        }
-                    }}
-                >
-                    <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+            <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                        data={data}
+                        margin={{ top: 60, right: 0, left: 0, bottom: 0 }} /* Top margin for toggle */
+                        onMouseMove={() => {
+                            if (isChartInteractionEnabled && !isScrubbing) {
+                                setIsScrubbing(true);
+                                HapticsService.selection();
+                            }
+                        }}
+                    >
                         <defs>
                             <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor={weightColor} stopOpacity={0.8} />
@@ -198,9 +198,9 @@ function WeightTrendChart({ data, isDarkMode }: WeightTrendChartProps) {
                                 isAnimationActive={false}
                             />
                         )}
-                    </ChartInteractivityGate>
-                </AreaChart>
-            </ResponsiveContainer>
+                    </AreaChart>
+                </ResponsiveContainer>
+            </ChartInteractivityGate>
         </div >
     );
 }

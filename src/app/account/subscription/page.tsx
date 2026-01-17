@@ -51,7 +51,7 @@ export default function SubscriptionPage() {
             <CardContent className="space-y-4">
               <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Unlimited food & symptom logging history.</p>
               <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Advanced trend analysis.</p>
-              <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Detailed micronutrient tracking.</p>
+              <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Detailed macro & FODMAP tracking.</p>
               <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Priority Smart insights.</p>
             </CardContent>
             <CardFooter>
@@ -72,7 +72,7 @@ export default function SubscriptionPage() {
                 <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Log meals with Smart analysis</p>
                 <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> 2-day data retention for trends</p>
                 <p><CheckCircle className="inline-block mr-2 h-5 w-5 text-green-500" /> Basic FODMAP indicators</p>
-                <p className="text-muted-foreground"><Star className="inline-block mr-2 h-5 w-5 text-transparent" /> Limited micronutrient view</p>
+                <p className="text-muted-foreground"><Star className="inline-block mr-2 h-5 w-5 text-transparent" /> Limited analysis view</p>
               </CardContent>
               <CardFooter>
                 <Button variant="outline" className="w-full" disabled>
@@ -93,7 +93,7 @@ export default function SubscriptionPage() {
                 <p className="text-3xl font-bold text-primary">$9.99<span className="text-sm font-normal text-muted-foreground">/month</span></p>
                 <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Unlimited data retention</p>
                 <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Full trend analysis over time</p>
-                <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Detailed micronutrient tracking</p>
+                <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Detailed macro & FODMAP tracking</p>
                 <p><Star className="inline-block mr-2 h-5 w-5 text-yellow-400" /> Deeper Smart correlations</p>
               </CardContent>
               <CardFooter>

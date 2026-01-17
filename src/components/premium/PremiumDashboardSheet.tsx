@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter }
 import { Button } from "@/components/ui/button"
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail } from '@/types';
+import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem } from '@/types';
 import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
 import TimelineSymptomCard from '@/components/food-logging/TimelineSymptomCard';
 import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle, Plus, PlusCircle, Camera, ListChecks, CalendarDays } from 'lucide-react';
@@ -17,36 +17,6 @@ import { startOfDay, endOfDay, format } from 'date-fns';
 const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
   // General & Fallbacks
   Atom, Sparkles, HelpCircle,
-  // Specific by Nutrient Name (primary fallback if AI iconName isn't in map)
-  Iron: Wind,
-  Calcium: Bone,
-  Phosphorus: Bone,
-  Magnesium: Activity,
-  Sodium: Droplet,
-  Potassium: Droplet,
-  Chloride: Droplet,
-  Zinc: PersonStanding,
-  Copper: Network,
-  Manganese: Bone,
-  Selenium: ShieldCheck,
-  Iodine: Brain,
-  Chromium: Target,
-  VitaminA: Eye,
-  VitaminC: ShieldCheck,
-  VitaminD: ShieldCheck,
-  VitaminE: ShieldQuestion,
-  VitaminK: Heart,
-  VitaminB1: Brain,
-  VitaminB2: Activity,
-  VitaminB3: Activity,
-  VitaminB5: Activity,
-  VitaminB6: Brain,
-  VitaminB12: Brain,
-  Biotin: Activity,
-  Folate: Baby,
-  Omega3: Heart,
-  // Common AI-suggested iconNames from the prompt (to ensure they are mapped)
-  Bone: Bone, Nut: Nut, Activity: Activity, PersonStanding: PersonStanding, Eye: Eye, ShieldCheck: ShieldCheck, Droplet: Droplet, Wind: Wind, Brain: Brain, Baby: Baby, Heart: Heart, ShieldQuestion: ShieldQuestion, Network: Network, Target: Target
 };
 
 
@@ -72,11 +42,7 @@ interface PremiumDashboardSheetProps {
   groupedTimelineEntries: Record<string, TimelineEntry[]>;
 }
 
-interface AchievedMicronutrient {
-  name: string;
-  iconName?: string;
-  totalDV: number;
-}
+
 
 export default function PremiumDashboardSheet({
   children,
@@ -108,44 +74,7 @@ export default function PremiumDashboardSheet({
     setIsFabPopoverOpen(false);
   }
 
-  const achievedMicronutrients = useMemo<AchievedMicronutrient[]>(() => {
-    const todayStart = startOfDay(new Date());
-    const todayEnd = endOfDay(new Date());
-    const dailyTotals: Record<string, { totalDV: number, iconName?: string }> = {};
 
-    timelineEntries.forEach(entry => {
-      if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-        const entryDate = new Date(entry.timestamp);
-        if (entryDate >= todayStart && entryDate <= todayEnd) {
-          const foodItem = entry as LoggedFoodItem;
-          const microsInfo = foodItem.fodmapData?.micronutrientsInfo;
-          if (microsInfo) {
-            const allMicros: MicronutrientDetail[] = [];
-            if (microsInfo.notable) allMicros.push(...microsInfo.notable);
-            if (microsInfo.fullList) allMicros.push(...microsInfo.fullList);
-
-            allMicros.forEach(micro => {
-              if (micro.dailyValuePercent !== undefined) {
-                if (!dailyTotals[micro.name]) {
-                  dailyTotals[micro.name] = { totalDV: 0, iconName: micro.iconName };
-                }
-                dailyTotals[micro.name].totalDV += micro.dailyValuePercent;
-                if (micro.iconName && !dailyTotals[micro.name].iconName) {
-                  dailyTotals[micro.name].iconName = micro.iconName;
-                }
-              }
-            });
-          }
-        }
-      }
-    });
-
-    return Object.entries(dailyTotals)
-      .filter(([, data]) => data.totalDV >= 100)
-      .map(([name, data]) => ({ name, iconName: data.iconName, totalDV: data.totalDV }))
-      .sort((a, b) => b.totalDV - a.totalDV)
-      .slice(0, 5);
-  }, [timelineEntries]);
 
   const sortedDateKeys = useMemo(() => {
     return Object.keys(groupedTimelineEntries).sort((a, b) => {
@@ -183,26 +112,7 @@ export default function PremiumDashboardSheet({
               <p className="text-lg font-bold text-foreground">{Math.round(dailyNutritionSummary.fat)}g</p>
               <p className="text-xs text-muted-foreground">FAT</p>
             </div>
-            {achievedMicronutrients.length > 0 && (
-              <div className="text-sm font-semibold text-foreground mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
-                {achievedMicronutrients.map(micro => {
-                  const IconComponent = (micro.iconName && RepresentativeLucideIcons[micro.iconName]) || RepresentativeLucideIcons[micro.name] || Atom;
-                  return (
-                    <Popover key={micro.name}>
-                      <PopoverTrigger asChild>
-                        <div className="relative p-0.5 cursor-pointer flex items-center">
-                          <IconComponent className="h-4 w-4 text-green-500" />
-                          <Check className="absolute bottom-0 right-0 h-2.5 w-2.5 text-green-600 bg-background rounded-full" />
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto max-w-xs bg-popover text-popover-foreground border-border p-2 text-sm">
-                        <p><span className="font-semibold">{micro.name}:</span> {Math.round(micro.totalDV)}% DV achieved</p>
-                      </PopoverContent>
-                    </Popover>
-                  );
-                })}
-              </div>
-            )}
+
           </div>
         </SheetHeader>
 

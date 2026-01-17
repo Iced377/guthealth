@@ -24,13 +24,9 @@ const MOCK_FOOD_ITEM: LoggedFoodItem = {
     macrosOverridden: false,
     fodmapData: {
         overallRisk: 'Green',
+        ingredientFodmapScores: [],
         reason: 'Low FODMAP ingredients detected.',
-        micronutrientsInfo: {
-            notable: [
-                { name: "Vitamin D", amount: "15 mcg", dailyValuePercent: 75, iconName: "Sun" },
-                { name: "Omega-3", amount: "2.5 g", dailyValuePercent: 150, iconName: "Fish" }
-            ]
-        },
+
         dietaryFiberInfo: {
             amountGrams: 5,
             quality: "Adequate"
@@ -51,7 +47,7 @@ const MOCK_FOOD_ITEM: LoggedFoodItem = {
         detectedAllergens: [],
         aiSummaries: {
             fodmapSummary: "This meal is safe for most people.",
-            micronutrientSummary: "Excellent source of protein and healthy fats.",
+
         }
     }
 };

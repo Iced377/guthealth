@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import FodmapIndicator from '@/components/shared/FodmapIndicator';
 import GlycemicIndexIndicator from '@/components/shared/GlycemicIndexIndicator';
 import DietaryFiberIndicator from '@/components/shared/DietaryFiberIndicator';
-import MicronutrientsIndicator from '@/components/shared/MicronutrientsIndicator';
+
 import GutBacteriaIndicator from '@/components/shared/GutBacteriaIndicator';
 import KetoFriendlinessIndicator from '@/components/shared/KetoFriendlinessIndicator';
 
@@ -215,11 +215,7 @@ export default function LiquidCrystalCard({
                                 </div>
                             )}
 
-                            {item.fodmapData?.micronutrientsInfo && (
-                                <div className="scale-90 origin-left ml-[-8px]">
-                                    <MicronutrientsIndicator micronutrientsInfo={item.fodmapData.micronutrientsInfo} />
-                                </div>
-                            )}
+
 
                             {item.fodmapData?.gutBacteriaImpact && (
                                 <div className="scale-90 origin-left ml-[-8px]">

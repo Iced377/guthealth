@@ -70,24 +70,11 @@ const DietaryFiberInfoSchema = z.object({
   quality: z.enum(['Low', 'Adequate', 'High']).optional().describe("Qualitative assessment of fiber content (Low, Adequate, High) for the portion based on general dietary recommendations (e.g., a few grams is low, 5-7g is adequate, >7g is high for a single item).")
 }).describe("Information about the food item's estimated dietary fiber content.");
 
-const MicronutrientDetailSchemaNotable = z.object({
-  name: z.string().describe("Name of the micronutrient, e.g., 'Iron', 'Vitamin C', 'Calcium', 'Potassium', 'Magnesium', 'Vitamin B12', 'Vitamin D3', 'Omega-3', 'EPA', 'DHA'."),
-  amount: z.string().optional().describe("Estimated amount of the micronutrient in the portion, with units (e.g., '10 mg', '90 mcg', '50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'). If the user input specified a quantity (e.g., 'Vitamin D3 50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'), YOU MUST use that exact user-provided string or the correctly summed/transcribed value here (e.g., '50000 IU' for D3, or '800 mg' for Omega-3 if it's a sum of EPA/DHA). DO NOT use vague phrases like 'Varies, check label' or 'Varies by dose' if the user provided a specific quantity."),
-  dailyValuePercent: z.number().optional().describe("Estimated percentage of Daily Value (%DV) for the micronutrient, if applicable and known for an average adult. If a specific amount was provided by the user (e.g. '50000 IU Vitamin D3') and you cannot confidently convert this to %DV, omit this field or set to null."),
-  iconName: z.string().optional().describe("A suggested relevant lucide-react icon name based on the nutrient's primary **supported body part or physiological function**. Examples: 'Bone' for Calcium or Phosphorus, 'Activity' for Magnesium (muscle/nerve function), 'PersonStanding' for Zinc (growth), 'Eye' for Vitamin A, 'ShieldCheck' for Vitamin C & D (immune support), 'Droplet' for Potassium & Sodium (electrolyte balance), 'Wind' for Iron (oxygen transport), 'Brain' for B12 & Iodine, 'Baby' for Folate (development), 'Heart' for Vitamin K, Omega-3, EPA, DHA (cardiovascular support). Use generic names like 'Atom' or 'Sparkles' if a specific, intuitive functional icon is not available. If no good icon, omit."),
-}).describe("Details for a specific micronutrient.");
 
-const MicronutrientDetailSchemaFull = z.object({
-  name: z.string().describe("Name of the micronutrient, e.g., 'Iron', 'Vitamin C', 'Calcium', 'Potassium', 'Magnesium', 'Vitamin B12', 'Vitamin D3', 'Omega-3', 'EPA', 'DHA'."),
-  amount: z.string().optional().describe("Estimated amount of the micronutrient in the portion, with units (e.g., '10 mg', '90 mcg', '50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'). If the user input specified a quantity (e.g., 'Vitamin D3 50000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)'), YOU MUST use that exact user-provided string or the correctly summed/transcribed value here (e.g., '50000 IU' for D3, or '800 mg' for Omega-3 if it's a sum of EPA/DHA). DO NOT use vague phrases like 'Varies, check label' or 'Varies by dose' if the user provided a specific quantity."),
-  dailyValuePercent: z.number().optional().describe("Estimated percentage of Daily Value (%DV) for the micronutrient, if applicable and known for an average adult. If a specific amount was provided by the user (e.g. '50000 IU Vitamin D3') and you cannot confidently convert this to %DV, omit this field or set to null."),
-  iconName: z.string().optional().describe("A suggested relevant lucide-react icon name based on the nutrient's primary **supported body part or physiological function**. Examples: 'Bone' for Calcium or Phosphorus, 'Activity' for Magnesium (muscle/nerve function), 'PersonStanding' for Zinc (growth), 'Eye' for Vitamin A, 'ShieldCheck' for Vitamin C & D (immune support), 'Droplet' for Potassium & Sodium (electrolyte balance), 'Wind' for Iron (oxygen transport), 'Brain' for B12 & Iodine, 'Baby' for Folate (development), 'Heart' for Vitamin K, Omega-3, EPA, DHA (cardiovascular support). Use generic names like 'Atom' or 'Sparkles' if a specific, intuitive functional icon is not available. If no good icon, omit."),
-}).describe("Details for a specific micronutrient.");
 
-const MicronutrientsInfoSchema = z.object({
-  notable: z.array(MicronutrientDetailSchemaNotable).optional().describe("Up to 3-5 most notable or abundant micronutrients in the food item for the given portion, OR THOSE EXPLICITLY MENTIONED BY THE USER WITH QUANTITIES. User-specified nutrients (like 'D3 50,000 IU', 'Omega-3 800mg (480 EPA, 320 DHA)') MUST appear here with their user-specified amounts."),
-  fullList: z.array(MicronutrientDetailSchemaFull).optional().describe("Optionally, a more comprehensive list of micronutrients if readily available and concise, including any user-specified nutrients. Any user-specified nutrient with a quantity MUST be accurately represented here, including specific forms like EPA and DHA if detailed by the user."),
-}).describe("Overview of key micronutrients in the food item.");
+
+
+
 
 const GutBacteriaImpactInfoSchema = z.object({
   sentiment: z.enum(['Positive', 'Negative', 'Neutral', 'Unknown']).optional().describe("Estimated general impact on gut bacteria diversity or balance (Positive, Negative, Neutral, Unknown). Consider prebiotics, probiotics, processed ingredients, etc."),
@@ -102,7 +89,7 @@ const KetoFriendlinessInfoSchema = z.object({
 
 const AISummariesSchema = z.object({
   fodmapSummary: z.string().optional().describe("Optional concise summary of FODMAP analysis if the main 'reason' is very detailed. E.g., 'Mainly low FODMAP but watch portion of X'."),
-  micronutrientSummary: z.string().optional().describe("Brief (1-2 sentence) textual summary of key micronutrients. E.g., 'Good source of Vitamin C and Iron.' or 'Notable for Calcium content.' If specific user-provided nutrients like '50,000 IU D3' or 'Omega-3 800mg (EPA/DHA)' were included, acknowledge these if they are significant (e.g., 'Primarily a high dose Vitamin D3 supplement as specified.' or 'Contains specified amounts of Omega-3 fatty acids EPA and DHA.')."),
+
   glycemicIndexSummary: z.string().optional().describe("Brief (1 sentence) textual summary of glycemic impact. E.g., 'Likely has a low glycemic impact based on its ingredients.'"),
   gutImpactSummary: z.string().optional().describe("Optional concise summary of gut bacteria impact if 'gutBacteriaImpact.reasoning' is detailed."),
   ketoSummary: z.string().optional().describe("Brief (1-2 sentence) textual summary of keto-friendliness. E.g., 'Appears suitable for a strict keto diet.' or 'Too high in carbs for keto.'"),
@@ -120,7 +107,7 @@ const AnalyzeFoodItemOutputSchema = z.object({
   fat: z.number().optional().describe('Estimated total fat in grams for the given portion.'),
   glycemicIndexInfo: GlycemicIndexInfoSchema.optional().describe("Glycemic Index information."),
   dietaryFiberInfo: DietaryFiberInfoSchema.optional().describe("Dietary fiber information."),
-  micronutrientsInfo: MicronutrientsInfoSchema.optional().describe("Micronutrients overview."),
+
   gutBacteriaImpact: GutBacteriaImpactInfoSchema.optional().describe("Gut bacteria impact assessment."),
   ketoFriendliness: KetoFriendlinessInfoSchema.optional().describe("Keto-friendliness assessment."),
   detectedAllergens: z.array(z.string()).optional().describe("List of common allergens detected in the ingredients (e.g., Milk, Wheat, Soy). If none, can be empty or omitted."),
@@ -141,13 +128,13 @@ const defaultErrorOutput: AnalyzeFoodItemOutput = {
   fat: undefined,
   glycemicIndexInfo: { level: 'Unknown' },
   dietaryFiberInfo: { quality: 'Low' },
-  micronutrientsInfo: { notable: [{ name: "Error", amount: "Analysis incomplete" }] },
+
   gutBacteriaImpact: { sentiment: 'Unknown', reasoning: 'Analysis incomplete.' },
   ketoFriendliness: { score: 'Unknown', reasoning: 'Analysis incomplete.' },
   detectedAllergens: [],
   aiSummaries: {
     fodmapSummary: 'Analysis failed.',
-    micronutrientSummary: 'Analysis failed.',
+
     glycemicIndexSummary: 'Analysis failed.',
     gutImpactSummary: 'Analysis failed.',
     ketoSummary: 'Analysis failed.'
@@ -186,9 +173,7 @@ Key tasks:
     *   If '{{{foodItem}}}' has quantities (e.g., "4 eggs"), use them.
     *   Sum all components for final 'calories', 'protein', 'carbs', 'fat'.
 
-3.  **Micronutrients:**
-    *   Transcribe detailed quantities from input if present (e.g. "Vitamin D3 50,000 IU").
-    *   Estimate key micronutrients for the defined quantities.
+
 
 4.  **Other Health Indicators:**
     *   Provide estimates for GI, Fiber, Gut Impact, Keto, Allergens based on the *entire* portion.
@@ -239,7 +224,7 @@ const analyzeFoodItemFlow = ai.defineFlow(
         reason: `Error during AI analysis for "${input.foodItem}": ${errorMessage}.`,
         aiSummaries: {
           fodmapSummary: `FODMAP: ${specificSummaryMessage}`,
-          micronutrientSummary: `Micronutrients: ${specificSummaryMessage}`,
+
           glycemicIndexSummary: `Glycemic Index: ${specificSummaryMessage}`,
           gutImpactSummary: `Gut Impact: ${specificSummaryMessage}`,
           ketoSummary: `Keto: ${specificSummaryMessage}`,
