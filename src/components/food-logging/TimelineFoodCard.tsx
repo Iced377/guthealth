@@ -181,87 +181,105 @@ export default function TimelineFoodCard({
                       <div className="flex flex-col gap-2">
                         {/* Favorite */}
                         {!isManualMacroEntry && onToggleFavorite && (
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                            onClick={(e) => {
-                              handleFavoriteToggle(e);
-                              // Sheet implicitly closes or we might need a controlled state if we want to close it manually. 
-                              // Ideally, clicking an action closes the sheet. 
-                              // Since we are using uncontroller Sheet, we might need a reference or just rely on default behavior?
-                              // Default Sheet doesn't auto-close on custom button click unless using SheetClose.
-                              // Let's use SheetClose wrapper for actions that should close it.
-                            }}
-                          >
-                            <SheetClose className="flex items-center w-full">
+                          <SheetClose asChild>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
+                              onClick={(e) => {
+                                handleFavoriteToggle(e);
+                              }}
+                            >
                               <Heart className={cn("mr-4 h-6 w-6", item.isFavorite ? "fill-red-500 text-red-500" : "")} />
                               <span>{item.isFavorite ? "Unfavorite" : "Favorite"}</span>
-                            </SheetClose>
-                          </Button>
+                            </Button>
+                          </SheetClose>
                         )}
 
                         {/* Feedback */}
                         {!isManualMacroEntry && onSetFeedback && (
                           <>
-                            <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50">
-                              <SheetClose className="flex items-center w-full" onClick={() => handleFeedback('safe')}>
+                            <SheetClose asChild>
+                              <Button
+                                variant="ghost"
+                                className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
+                                onClick={() => handleFeedback('safe')}
+                              >
                                 <ThumbsUp className={cn("mr-4 h-6 w-6", item.userFeedback === 'safe' ? "fill-primary text-primary" : "")} />
                                 <span className="flex-1 text-left">Mark as Safe</span>
                                 {item.userFeedback === 'safe' && <CheckCheck className="h-5 w-5 text-primary" />}
-                              </SheetClose>
-                            </Button>
+                              </Button>
+                            </SheetClose>
 
-                            <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50">
-                              <SheetClose className="flex items-center w-full" onClick={() => handleFeedback('unsafe')}>
+                            <SheetClose asChild>
+                              <Button
+                                variant="ghost"
+                                className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
+                                onClick={() => handleFeedback('unsafe')}
+                              >
                                 <ThumbsDown className={cn("mr-4 h-6 w-6", item.userFeedback === 'unsafe' ? "fill-red-600 text-red-600" : "")} />
                                 <span className="flex-1 text-left">Mark as Unsafe</span>
                                 {item.userFeedback === 'unsafe' && <CheckCheck className="h-5 w-5 text-red-600" />}
-                              </SheetClose>
-                            </Button>
+                              </Button>
+                            </SheetClose>
                           </>
                         )}
 
                         {/* Log Symptoms */}
                         {!isManualMacroEntry && onLogSymptoms && (
-                          <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50">
-                            <SheetClose className="flex items-center w-full" onClick={() => onLogSymptoms(item.id)}>
+                          <SheetClose asChild>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
+                              onClick={() => onLogSymptoms(item.id)}
+                            >
                               <ListChecks className={cn("mr-4 h-6 w-6", (item.symptoms && item.symptoms.length > 0) ? "text-primary" : "")} />
                               <span className="flex-1 text-left">Log Symptoms</span>
                               {(item.symptoms && item.symptoms.length > 0) && <CheckCheck className="h-5 w-5 text-primary" />}
-                            </SheetClose>
-                          </Button>
+                            </Button>
+                          </SheetClose>
                         )}
 
                         {/* Edit */}
                         {onEditIngredients && (
-                          <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50">
-                            <SheetClose className="flex items-center w-full" onClick={() => onEditIngredients(item)}>
+                          <SheetClose asChild>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
+                              onClick={() => onEditIngredients(item)}
+                            >
                               <Edit3 className={cn("mr-4 h-6 w-6", item.macrosOverridden ? "text-primary" : "")} />
                               <span className="text-left">Edit Item</span>
-                            </SheetClose>
-                          </Button>
+                            </Button>
+                          </SheetClose>
                         )}
 
                         {/* Copy */}
                         {onRepeatMeal && item.entryType === 'food' && (
-                          <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50">
-                            <SheetClose className="flex items-center w-full" onClick={() => onRepeatMeal(item)}>
+                          <SheetClose asChild>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
+                              onClick={() => onRepeatMeal(item)}
+                            >
                               <Repeat className="mr-4 h-6 w-6" />
                               <span className="text-left">Copy Meal</span>
-                            </SheetClose>
-                          </Button>
+                            </Button>
+                          </SheetClose>
                         )}
 
                         {/* Delete */}
                         {onRemoveItem && (
-                          <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50 text-red-600 hover:text-red-700">
-                            <AlertDialogTrigger asChild>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50 text-red-600 hover:text-red-700"
+                            >
                               <div className="flex items-center w-full">
                                 <Trash2 className="mr-4 h-6 w-6" />
                                 <span className="text-left">Delete</span>
                               </div>
-                            </AlertDialogTrigger>
-                          </Button>
+                            </Button>
+                          </AlertDialogTrigger>
                         )}
                       </div>
                     </SheetContent>

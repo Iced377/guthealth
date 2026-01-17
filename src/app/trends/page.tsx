@@ -1,857 +1,365 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
-import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import type { TimelineEntry, LoggedFoodItem, SymptomLog, TimeRange, MacroPoint, CaloriePoint, SafetyPoint, GIPoint, HourlyCaloriePoint, HourlyMealCountPoint, SymptomFrequency, MicronutrientDetail, MicronutrientAchievement, UserProfile, FitbitLog, WeightPoint, ActivityPoint, PedometerLog } from '@/types';
-import { COMMON_SYMPTOMS } from '@/types';
+import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { UserProfile, TimelineEntry, LoggedFoodItem, TimeRange, CaloriePoint, WeightPoint, ActivityPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { MouseEvent, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
+import { startOfDay, endOfDay, subDays, subMonths, subYears, formatISO, parseISO, getHours, format } from 'date-fns';
 
-import Navbar from '@/components/shared/Navbar';
-import GraphInfoButton from '@/components/shared/GraphInfoButton';
-import TimeRangeToggle from '@/components/trends/TimeRangeToggle';
-import DailyMacrosTrendChart from '@/components/trends/DailyMacrosTrendChart';
+// Components
+import GlobalTimeControl from '@/components/trends/GlobalTimeControl';
+import LiquidGraphScene from '@/components/trends/LiquidGraphScene';
 import DailyCaloriesTrendChart from '@/components/trends/DailyCaloriesTrendChart';
-import CumulativeCalorieChangeChart from '@/components/trends/CumulativeCalorieChangeChart';
-import LoggedSafetyTrendChart from '@/components/trends/LoggedSafetyTrendChart';
-import SymptomOccurrenceChart from '@/components/trends/SymptomOccurrenceChart';
-import GITrendChart from '@/components/trends/GITrendChart';
-import HourlyCaloriesChart from '@/components/trends/HourlyCaloriesChart';
-import HourlyMealCountChart from '@/components/trends/HourlyMealCountChart';
 import WeightTrendChart from '@/components/trends/WeightTrendChart';
 import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
-import MicronutrientAchievementList from '@/components/trends/MicronutrientAchievementList';
-import PedometerImportDialog from '@/components/trends/PedometerImportDialog';
-import CaloriesStepsCorrelationChart, { CorrelationPoint } from '@/components/trends/CaloriesStepsCorrelationChart';
-import DataManagementDialog from '@/components/trends/DataManagementDialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, AlertTriangle, BarChart3, Award, Zap, Bug, Table as TableIcon } from 'lucide-react';
-import { subDays, subMonths, subYears, formatISO, startOfDay, endOfDay, parseISO, getHours, format } from 'date-fns';
-import { useSearchParams } from 'next/navigation';
+import CorrelationTrendChart from '@/components/trends/CorrelationTrendChart';
+import DailyMacrosTrendChart from '@/components/trends/DailyMacrosTrendChart';
 
-// --- TEMPORARY FEATURE UNLOCK FLAG ---
-const TEMPORARILY_UNLOCK_ALL_FEATURES = true; // Kept true as per previous state
-// --- END TEMPORARY FEATURE UNLOCK FLAG ---
+// Utils
+import { generateCalorieInsight, generateWeightInsight, generateStepInsight, generateCorrelationInsight } from '@/utils/insights';
+import { TrendsMotionControllerProvider } from '@/components/trends/useTrendsMotionController';
+
+
+
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { HapticsService } from '@/lib/haptics';
 
 export default function TrendsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { isDarkMode } = useTheme(); // Removed currentTheme as it's no longer used for charts
-  const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { isDarkMode } = useTheme();
+
+  // State
   const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('30D');
+  const [customRange, setCustomRange] = useState<{ start: Date | undefined; end: Date | undefined }>({
+    start: undefined,
+    end: undefined
+  });
   const [error, setError] = useState<string | null>(null);
+  const [macroViewMode, setMacroViewMode] = useState<'Protein' | 'Carbs' | 'Fat'>('Protein');
 
-  const [isWeightManagementOpen, setIsWeightManagementOpen] = useState(false);
-  const [isStepManagementOpen, setIsStepManagementOpen] = useState(false);
-
-  const handleSaveEntry = async (entry: Partial<FitbitLog | PedometerLog>, id?: string) => {
-    if (!user) return;
-    try {
-      const collectionRef = collection(db, 'users', user.uid, 'timelineEntries');
-      if (id) {
-        // Update
-        const docRef = doc(db, 'users', user.uid, 'timelineEntries', id);
-        await updateDoc(docRef, entry);
-      } else {
-        // Create
-        await addDoc(collectionRef, {
-          ...entry,
-          timestamp: entry.timestamp || new Date(), // ensure timestamp
-        });
-      }
-      await fetchData(); // Refresh
-      toast({ title: "Saved successfully" });
-    } catch (e) {
-      console.error("Error saving entry:", e);
-      throw e; // Let dialog handle loading state
-    }
-  };
-
-  const handleDeleteEntry = async (id: string) => {
-    if (!user) return;
-    try {
-      const docRef = doc(db, 'users', user.uid, 'timelineEntries', id);
-      await deleteDoc(docRef);
-      await fetchData(); // Refresh
-    } catch (e) {
-      console.error("Error deleting entry:", e);
-      throw e;
-    }
-  };
-
+  // Fetch Data
   const fetchData = useCallback(async () => {
     if (!user) return;
     setIsLoadingData(true);
-    setError(null);
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-      let isPremium = false;
+      // Profile for Goals
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid));
       if (userDocSnap.exists()) {
-        const profileData = userDocSnap.data() as UserProfile;
-        setUserProfile(profileData);
-        isPremium = profileData.premium || false;
-      } else {
-        setUserProfile({ uid: user.uid, email: user.email, displayName: user.displayName, safeFoods: [], premium: false });
+        setUserProfile(userDocSnap.data() as UserProfile);
       }
 
+      // Timeline Data
       const entriesColRef = collection(db, 'users', user.uid, 'timelineEntries');
-      let q;
-
-      if (TEMPORARILY_UNLOCK_ALL_FEATURES || isPremium) {
-        q = query(entriesColRef, orderBy('timestamp', 'desc'));
-      } else {
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-        q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
-      }
+      // Fetch reasonably far back (1Y+) to support typical ranges. 
+      // For truly "ALL" or "Custom" far back, pagination would be ideal, but for now 1Y or 2Y is safe.
+      const twoYearsAgo = subYears(new Date(), 2);
+      const q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoYearsAgo)));
 
       const querySnapshot = await getDocs(q);
-      const fetchedEntries: TimelineEntry[] = querySnapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          ...data,
-          id: docSnap.id,
-          timestamp: (data.timestamp as Timestamp).toDate(),
-        } as TimelineEntry;
-      });
+      const fetchedEntries = querySnapshot.docs.map(docSnap => ({
+        ...docSnap.data(),
+        id: docSnap.id,
+        timestamp: (docSnap.data().timestamp as Timestamp).toDate(),
+      })) as TimelineEntry[];
+
       setTimelineEntries(fetchedEntries);
-    } catch (err: any) {
-      console.error("Error fetching timeline data for trends:", err);
-      setError("Could not load your data for trend analysis. Please try again later.");
+    } catch (err) {
+      console.error("Trends fetch error:", err);
+      setError("Could not load metrics.");
     } finally {
       setIsLoadingData(false);
     }
   }, [user]);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setIsLoadingData(false);
-      return;
-    }
-    fetchData();
+    if (!authLoading && user) fetchData();
   }, [user, authLoading, fetchData]);
 
-  const syncFitbitData = useCallback(async () => {
-    if (!user) return;
-    try {
-      const idToken = await user.getIdToken();
-      toast({
-        title: 'Syncing Fitbit...',
-        description: 'Fetching your weight and activity data.',
-      });
-
-      const res = await fetch('/api/fitbit/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
-      });
-
-      if (!res.ok) throw new Error("Sync failed");
-
-      toast({
-        title: 'Sync Complete!',
-        description: 'Your dashboard has been updated.',
-        variant: 'default'
-      });
-      fetchData(); // Reload data
-    } catch (err) {
-      console.error("Fitbit sync error:", err);
-      toast({
-        title: 'Sync Error',
-        description: 'Could not fetch Fitbit data.',
-        variant: 'destructive'
-      });
-    }
-  }, [user, toast, fetchData]);
-
-  useEffect(() => {
-    const fitbitStatus = searchParams.get('fitbit');
-    if (fitbitStatus === 'success') {
-      toast({
-        title: 'Fitbit Connected!',
-        description: 'Your Fitbit account has been successfully linked.',
-        variant: 'default',
-      });
-      // Trigger sync automatically
-      syncFitbitData();
-    } else if (fitbitStatus === 'error') {
-      const message = searchParams.get('message');
-      toast({
-        title: 'Fitbit Connection Failed',
-        description: message ? `Error: ${decodeURIComponent(message)}` : 'There was a problem linking your Fitbit account. Please try again.',
-        variant: 'destructive',
-      });
-    } else if (user) {
-      // Auto-sync on load (incremental, handled by API rate limiting)
-      // We only trigger this if we think user IS connected. 
-      // We don't verify connection state client-side cheaply without profile fetch, 
-      // but `syncFitbitData` handles 404 gracefully?
-      // Let's rely on syncFitbitData to fail silently or we can assume if they visited this page they might want data.
-      // Better: Only auto-sync if we have *some* fitbit data logic or just try it.
-      // For now, attempting silent background sync.
-      syncFitbitDataWithoutToast();
-    }
-  }, [searchParams, toast, syncFitbitData, user]);
-
-  const syncFitbitDataWithoutToast = useCallback(async () => {
-    // Background sync - no blocking UI, no success toast (unless new data?), no error toast (fail silent)
-    if (!user) return;
-    try {
-      const idToken = await user.getIdToken();
-      await fetch('/api/fitbit/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
-      });
-      // After silent sync, reload data
-      fetchData();
-    } catch (e) {
-      // Silent fail
-      console.warn("Background fitbit sync failed/skipped", e);
-    }
-  }, [user, fetchData]);
-
-  const handleDebugSync = async () => {
-    if (!user) return;
-    try {
-      const idToken = await user.getIdToken();
-      const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const res = await fetch('/api/fitbit/debug', {
-        method: 'POST',
-        body: JSON.stringify({ idToken, clientTimezone })
-      });
-      const data = await res.json();
-      console.log("DEBUG RESPONSE:", data);
-      alert(JSON.stringify(data, null, 2)); // Simple alert for immediate visibility
-    } catch (e) {
-      alert("Debug failed");
-    }
-  };
-
-  const handleConnectFitbit = async (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) return;
-    try {
-      const idToken = await user.getIdToken();
-      const isNative = Capacitor.isNativePlatform();
-
-      const response = await fetch('/api/fitbit/initiate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idToken,
-          platform: isNative ? 'ios' : 'web'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to initiate Fitbit connection');
-      }
-
-      const { url } = await response.json();
-      console.log("Redirecting to Fitbit URL:", url);
-
-      if (isNative) {
-        await Browser.open({ url, windowName: '_self' });
-      } else {
-        window.location.href = url;
-      }
-    } catch (error) {
-      console.error("Error connecting to Fitbit:", error);
-      alert(`Debug Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      toast({
-        title: 'Connection Error',
-        description: `Failed to start Fitbit connection: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-
-
+  // Filtering
   const filteredEntries = useMemo(() => {
     if (timelineEntries.length === 0) return [];
-
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = endOfDay(now);
 
-    switch (selectedTimeRange) {
-      case '1D':
-        startDate = startOfDay(now);
-        break;
-      case '7D':
-        startDate = startOfDay(subDays(now, 7));
-        break;
-      case '30D':
+    if (selectedTimeRange === 'CUSTOM') {
+      if (customRange.start && customRange.end) {
+        startDate = startOfDay(customRange.start);
+        endDate = endOfDay(customRange.end);
+      } else {
+        // Fallback if custom dates not set yet, maybe default to 30D
         startDate = startOfDay(subDays(now, 30));
-        break;
-      case '90D':
-        startDate = startOfDay(subDays(now, 90));
-        break;
-      case '1Y':
-        startDate = startOfDay(subYears(now, 1));
-        break;
-      case 'ALL':
-      default:
-        return timelineEntries;
+      }
+    } else {
+      switch (selectedTimeRange) {
+        case '1D': startDate = startOfDay(now); break;
+        case '7D': startDate = startOfDay(subDays(now, 7)); break;
+        case '30D': startDate = startOfDay(subDays(now, 30)); break;
+        case '90D': startDate = startOfDay(subDays(now, 90)); break;
+        case '6M': startDate = startOfDay(subMonths(now, 6)); break; // 6M added
+        case '1Y': startDate = startOfDay(subYears(now, 1)); break;
+        case 'ALL': default: return timelineEntries;
+      }
     }
 
-    const endDate = endOfDay(now);
-
-    return timelineEntries.filter(entry => {
-      const entryDate = new Date(entry.timestamp);
-      return entryDate >= startDate && entryDate <= endDate;
-    });
-  }, [timelineEntries, selectedTimeRange]);
+    return timelineEntries.filter(entry => entry.timestamp >= startDate && entry.timestamp <= endDate);
+  }, [timelineEntries, selectedTimeRange, customRange]);
 
 
-  const aggregateDataByDay = <T extends { calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; userFeedback?: 'safe' | 'unsafe' | null }>(
-    entries: (LoggedFoodItem & T)[],
-    mapper: (date: string, itemsOnDate: (LoggedFoodItem & T)[]) => any
-  ) => {
-    const groupedByDay: Record<string, (LoggedFoodItem & T)[]> = {};
-    entries.forEach(entry => {
-      if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-        const dayKey = formatISO(new Date(entry.timestamp), { representation: 'date' });
-        if (!groupedByDay[dayKey]) {
-          groupedByDay[dayKey] = [];
-        }
-        groupedByDay[dayKey].push(entry);
-      }
-    });
-
-    const sortedDays = Object.keys(groupedByDay).sort((a, b) => parseISO(a).getTime() - parseISO(b).getTime());
-    return sortedDays.map(dayKey => mapper(dayKey, groupedByDay[dayKey]));
-  };
-
-  const macroData = useMemo<MacroPoint[]>(() => {
-    const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
-    return aggregateDataByDay(foodEntries, (date, items) => ({
-      date,
-      protein: items.reduce((sum, item) => sum + (item.protein ?? 0), 0),
-      carbs: items.reduce((sum, item) => sum + (item.carbs ?? 0), 0),
-      fat: items.reduce((sum, item) => sum + (item.fat ?? 0), 0),
-    }));
-  }, [filteredEntries]);
-
-
-
+  // Data Aggregation (Memoized)
   const calorieData = useMemo<CaloriePoint[]>(() => {
-    const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
-    return aggregateDataByDay(foodEntries, (date, items) => ({
-      date,
-      calories: items.reduce((sum, item) => sum + (item.calories ?? 0), 0),
-    }));
-  }, [filteredEntries]);
-
-
-
-
-
-
-
-
-
-
-  const hourlyCaloriesTrendData = useMemo<HourlyCaloriePoint[]>(() => {
-    const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
-    const hourlyCaloriesTotals: Record<number, { sum: number; count: number }> = {};
-
-    foodEntries.forEach(entry => {
-      if (entry.calories && entry.calories > 0) {
-        const hour = getHours(new Date(entry.timestamp));
-        if (!hourlyCaloriesTotals[hour]) {
-          hourlyCaloriesTotals[hour] = { sum: 0, count: 0 };
-        }
-        hourlyCaloriesTotals[hour].sum += entry.calories;
-        hourlyCaloriesTotals[hour].count += 1;
-      }
-    });
-
-    const result: HourlyCaloriePoint[] = [];
-    for (let i = 0; i < 24; i++) {
-      const data = hourlyCaloriesTotals[i];
-      // Note: We are calculating Average Calories per logged entry for that hour.
-      // Alternatively, it could be Sum of calories for that hour across all days (Total Volume per hour),
-      // OR Average Daily Calories for that hour (Total / Number of Days in Range).
-      // The user request says "y axis shows average calories consumed on that error. use Hourly Glycemic Index (GI) Trend for reference as it would follow the same logic for averaging".
-      // GI Trend averages the GI value of the food items.
-      // So here we should likely average the calories of the food items logged at that hour.
-      // i.e. "When I eat at 2pm, my meals average 500 calories".
-      result.push({
-        hour: format(new Date(0, 0, 0, i), 'HH:mm'),
-        calories: data ? Math.round(data.sum / data.count) : 0,
-      });
-    }
-    return result;
-  }, [filteredEntries]);
-
-  const hourlyMealCountData = useMemo<HourlyMealCountPoint[]>(() => {
     const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
-    const hourlyCounts: Record<number, number> = {};
-
-    foodEntries.forEach(entry => {
-      const hour = getHours(new Date(entry.timestamp));
-      hourlyCounts[hour] = (hourlyCounts[hour] || 0) + 1;
+    const grouped: Record<string, number> = {};
+    foodEntries.forEach(e => {
+      // e.timestamp is Date object
+      const key = formatISO(e.timestamp, { representation: 'date' });
+      grouped[key] = (grouped[key] || 0) + (e.calories || 0);
     });
-
-    const result: HourlyMealCountPoint[] = [];
-    for (let i = 0; i < 24; i++) {
-      result.push({
-        hour: format(new Date(0, 0, 0, i), 'HH:mm'),
-        count: hourlyCounts[i] || 0,
-      });
-    }
-    return result;
+    return Object.entries(grouped)
+      .map(([date, calories]) => ({ date, calories }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredEntries]);
-
-
-  const aggregateGenericByDay = <T extends { timestamp: Date }>(
-    entries: T[],
-    mapper: (date: string, itemsOnDate: T[]) => any
-  ) => {
-    const groupedByDay: Record<string, T[]> = {};
-    entries.forEach(entry => {
-      const dayKey = formatISO(new Date(entry.timestamp), { representation: 'date' });
-      if (!groupedByDay[dayKey]) {
-        groupedByDay[dayKey] = [];
-      }
-      groupedByDay[dayKey].push(entry);
-    });
-
-    const sortedDays = Object.keys(groupedByDay).sort((a, b) => parseISO(a).getTime() - parseISO(b).getTime());
-    return sortedDays.map(dayKey => mapper(dayKey, groupedByDay[dayKey]));
-  };
-
-  const weightData = useMemo<WeightPoint[]>(() => {
-    const weightEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data') as FitbitLog[];
-    return aggregateGenericByDay(weightEntries, (date, items) => {
-      const latest = items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-      const weight = latest?.weight || 0;
-      const fatPercent = latest?.fatPercent;
-      const fatMass = (weight && fatPercent) ? (weight * fatPercent / 100) : undefined;
-      return {
-        date,
-        weight,
-        fatPercent,
-        fatMass
-      };
-    }).filter(p => p.weight > 0); // Only show days experienced weight
-  }, [filteredEntries]);
-
-
 
   const activityData = useMemo<ActivityPoint[]>(() => {
-    // Combine Fitbit and Pedometer data
-    const activityEntries = filteredEntries.filter(e => e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') as (FitbitLog | PedometerLog)[];
+    // Collect step data from Fitbit or Pedometer
+    const stepEntries = filteredEntries.filter(e =>
+      (e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') &&
+      ('steps' in e)
+    );
+    const grouped: Record<string, { steps: number; burned: number }> = {};
 
-    return aggregateGenericByDay(activityEntries, (date, items) => {
-      // If we have both fitbit and pedometer for same day, we might prioritize one or sum?
-      // Typically users use one main source. If both exist, Pedometer++ might be duplicate of Health data.
-      // But here user is manually importing.
-      // Let's sum them if they are from different sources? Or take max?
-      // Safer to take max steps found for the day to avoid double counting if Pedometer++ export overlaps with Fitbit.
-      // Or if they are distinct sources, sum?
-      // Let's assume distinct and try to merge intelligently. 
-      // Actually, simplest logic: Take the entry with highest steps count for the day.
-      const maxStepsEntry = items.sort((a, b) => (b.steps || 0) - (a.steps || 0))[0];
-
-      const caloriesBurned = (maxStepsEntry as FitbitLog).caloriesBurned || (maxStepsEntry as PedometerLog).activeEnergy || 0;
-
-      return {
-        date,
-        steps: maxStepsEntry?.steps || 0,
-        burned: caloriesBurned,
-      };
-    }).filter(p => p.steps > 0);
-  }, [filteredEntries]);
-
-  const correlationData = useMemo<CorrelationPoint[]>(() => {
-    // Map by date for fast lookup
-    const caloriesByDate = new Map(calorieData.map(d => [d.date, d.calories]));
-
-    return activityData.reduce((acc, activity) => {
-      const calories = caloriesByDate.get(activity.date);
-      if (calories && calories > 0 && activity.steps > 0) {
-        acc.push({
-          date: activity.date,
-          steps: activity.steps,
-          calories: calories
-        });
-      }
-      return acc;
-    }, [] as CorrelationPoint[]);
-  }, [activityData, calorieData]);
-
-
-
-
-  const micronutrientAchievementData = useMemo<MicronutrientAchievement[]>(() => {
-    const foodEntries = filteredEntries.filter(e => e.entryType === 'food' || e.entryType === 'manual_macro') as LoggedFoodItem[];
-    const dailyMicronutrientTotals: Record<string, Record<string, { dv: number, iconName?: string }>> = {};
-
-    foodEntries.forEach(entry => {
-      const dayKey = formatISO(new Date(entry.timestamp), { representation: 'date' });
-      if (!dailyMicronutrientTotals[dayKey]) {
-        dailyMicronutrientTotals[dayKey] = {};
-      }
-
-      const microsInfo = entry.fodmapData?.micronutrientsInfo;
-      if (microsInfo) {
-        const allMicros: MicronutrientDetail[] = [];
-        if (microsInfo.notable) allMicros.push(...microsInfo.notable);
-        if (microsInfo.fullList) allMicros.push(...microsInfo.fullList);
-
-        allMicros.forEach(micro => {
-          if (micro.dailyValuePercent !== undefined) {
-            if (!dailyMicronutrientTotals[dayKey][micro.name]) {
-              dailyMicronutrientTotals[dayKey][micro.name] = { dv: 0, iconName: micro.iconName };
-            }
-            dailyMicronutrientTotals[dayKey][micro.name].dv += micro.dailyValuePercent;
-            if (micro.iconName && !dailyMicronutrientTotals[dayKey][micro.name].iconName) {
-              dailyMicronutrientTotals[dayKey][micro.name].iconName = micro.iconName;
-            }
-          }
-        });
-      }
+    stepEntries.forEach(e => {
+      const entry = e as any;
+      const key = formatISO(entry.timestamp, { representation: 'date' });
+      if (!grouped[key]) grouped[key] = { steps: 0, burned: 0 };
+      grouped[key].steps = Math.max(grouped[key].steps, (entry.steps || 0));
+      grouped[key].burned = Math.max(grouped[key].burned, (entry.caloriesBurned || entry.activeEnergy || 0));
     });
 
-    const achievementCounts: Record<string, { achievedDays: number, iconName?: string }> = {};
-    Object.values(dailyMicronutrientTotals).forEach(dayData => {
-      Object.entries(dayData).forEach(([nutrientName, data]) => {
-        if (data.dv >= 100) {
-          if (!achievementCounts[nutrientName]) {
-            achievementCounts[nutrientName] = { achievedDays: 0, iconName: data.iconName };
-          }
-          achievementCounts[nutrientName].achievedDays += 1;
-          if (data.iconName && !achievementCounts[nutrientName].iconName) {
-            achievementCounts[nutrientName].iconName = data.iconName;
-          }
-        }
+    return Object.entries(grouped)
+      .map(([date, val]) => ({ date, steps: val.steps, burned: val.burned }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [filteredEntries]);
+
+  const weightData = useMemo<WeightPoint[]>(() => {
+    const weights = filteredEntries.filter(e => 'weight' in e && (e as any).weight > 0);
+    const map = new Map<string, WeightPoint>();
+    weights.forEach(e => {
+      const entry = e as any; // Safe cast
+      const key = formatISO(entry.timestamp, { representation: 'date' });
+      map.set(key, {
+        date: key,
+        weight: entry.weight!,
+        fatMass: entry.fatPercent ? (entry.weight! * entry.fatPercent / 100) : undefined
       });
     });
-
-    return Object.entries(achievementCounts)
-      .map(([name, data]) => ({ name, achievedDays: data.achievedDays, iconName: data.iconName }))
-      .sort((a, b) => b.achievedDays - a.achievedDays);
+    return Array.from(map.values())
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredEntries]);
 
+  const macroData = useMemo(() => {
+    const foodEntries = filteredEntries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
+    const grouped: Record<string, { protein: number; carbs: number; fat: number }> = {};
+    foodEntries.forEach(e => {
+      const key = formatISO(e.timestamp, { representation: 'date' });
+      if (!grouped[key]) grouped[key] = { protein: 0, carbs: 0, fat: 0 };
+      grouped[key].protein += (e.protein || 0);
+      grouped[key].carbs += (e.carbs || 0);
+      grouped[key].fat += (e.fat || 0);
+    });
+    return Object.entries(grouped)
+      .map(([date, macros]) => ({ date, ...macros }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [filteredEntries]);
 
+  // Combine for Correlation (Steps vs Calories In)
+  const correlationData = useMemo(() => {
+    const map = new Map<string, { steps: number; calories: number; date: string }>();
+
+    // Fill Steps
+    activityData.forEach(d => {
+      map.set(d.date, { steps: d.steps, calories: 0, date: d.date });
+    });
+
+    // Fill Calories
+    calorieData.forEach(d => {
+      if (map.has(d.date)) {
+        const existing = map.get(d.date)!;
+        existing.calories = d.calories;
+      } else {
+        map.set(d.date, { steps: 0, calories: d.calories, date: d.date });
+      }
+    });
+
+    return Array.from(map.values())
+      .filter(d => d.steps > 0 && d.calories > 0) // Only plot valid intersection points
+      .map(d => ({ date: d.date, x: d.steps, y: d.calories }));
+  }, [activityData, calorieData]);
+
+  // Derived Insights
+  const targetCalories = userProfile?.profile?.tdee || 2000;
+  const calorieInsight = generateCalorieInsight(calorieData, targetCalories);
+  const weightInsight = generateWeightInsight(weightData);
+  const activityInsight = generateStepInsight(activityData);
+  const correlationInsight = generateCorrelationInsight(correlationData);
+
+  const macroInsight = useMemo(() => {
+    if (macroData.length === 0) return "Log meals to see macro balance.";
+
+    // Calculate average for the active macro
+    const total = macroData.reduce((acc, curr) => {
+      switch (macroViewMode) {
+        case 'Protein': return acc + curr.protein;
+        case 'Carbs': return acc + curr.carbs;
+        case 'Fat': return acc + curr.fat;
+      }
+    }, 0);
+    const avg = Math.round(total / macroData.length);
+
+    // Context msg
+    let label = "";
+    switch (macroViewMode) {
+      case 'Protein': label = "Avg Protein"; break;
+      case 'Carbs': label = "Avg Carbs"; break;
+      case 'Fat': label = "Avg Fat"; break;
+    }
+    return `${label}: ${avg}g`;
+
+  }, [macroData, macroViewMode]);
 
 
   if (authLoading || isLoadingData) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="ml-4 text-lg text-foreground">Loading trends...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
-          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-2xl font-semibold mb-2 text-foreground">Access Denied</h2>
-          <p className="text-muted-foreground">Please log in to view your trends.</p>
-        </div>
-      </div>
-    );
+    return <div className="h-screen w-full flex items-center justify-center bg-background"><Loader2 className="animate-spin text-muted-foreground" /></div>;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
-          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-2xl font-semibold mb-2 text-foreground">Error Loading Trends</h2>
-          <p className="text-muted-foreground">{error}</p>
-        </div>
-      </div>
-    );
+    return <div className="h-screen w-full flex items-center justify-center text-muted-foreground">{error}</div>;
   }
 
-  if (timelineEntries.length === 0) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-grow container mx-auto px-4 py-8 text-center">
-          <BarChart3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="text-3xl font-bold mb-2 text-foreground">Trends Dashboard</h1>
-          <p className="text-muted-foreground">
-            Not enough data yet. Start logging your meals and symptoms to see your trends over time!
-            {!TEMPORARILY_UNLOCK_ALL_FEATURES && !userProfile?.premium && " (Free users: trends based on last 2 days of data)"}
-          </p>
-          <div className="mt-12 text-center">
-            <Button asChild variant="outline">
-              <Link href="/?openDashboard=true">Return to Dashboard</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Use profile TDEE or default
-  const targetCalories = userProfile?.profile?.tdee || 2000;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-      <ScrollArea className="flex-grow">
-        <main className="container mx-auto px-4 py-8 pb-32">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-            <h1 className="text-3xl font-bold text-foreground">Trends Dashboard</h1>
-            <div className="flex flex-wrap gap-2 items-center">
-              <Button onClick={handleConnectFitbit} disabled={authLoading} type="button" size="sm">
-                <Zap className="mr-2 h-4 w-4" /> Connect Fitbit
-              </Button>
-              <PedometerImportDialog />
+    <TrendsMotionControllerProvider>
+      <div className="bg-background h-screen w-full relative">
+        {/* Fixed Global Time Control */}
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 pointer-events-none">
+          <div className="pointer-events-auto">
+            <GlobalTimeControl
+              selectedRange={selectedTimeRange}
+              onRangeChange={setSelectedTimeRange}
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
+            />
+          </div>
+        </div>
+
+        <div className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth pb-0">
+
+          {/* Empty State */}
+          {filteredEntries.length === 0 && (
+            <div className="h-screen w-full flex flex-col items-center justify-center snap-center p-8 text-center bg-background">
+              <p className="text-muted-foreground text-lg mb-2">No data found for this period.</p>
+              <p className="text-sm text-muted-foreground/50">Try selecting a different time range or logging some meals.</p>
             </div>
-          </div>
-          <div className="mb-8">
-            <TimeRangeToggle selectedRange={selectedTimeRange} onRangeChange={setSelectedTimeRange} />
-          </div>
-          {/* Removed upgrade prompt */}
+          )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Daily Calorie Intake</CardTitle>
-                  <GraphInfoButton
-                    title="Daily Calorie Intake"
-                    description="This bar chart displays your total calories consumed for each day. The dotted line represents your daily target."
-                    benefit="Quickly spot days where you went over or under your target. Consistently hitting your target is key for weight management."
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">Target: {targetCalories} kcal/day</p>
-              </CardHeader>
-              <CardContent>
-                {calorieData.length > 0 ? (
-                  <DailyCaloriesTrendChart
-                    data={calorieData}
-                    isDarkMode={isDarkMode}
-                    targetCalories={targetCalories}
-                  />
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">No calorie data for this period.</p>
-                )}
-              </CardContent>
-            </Card>
+          {/* SCENE 1: Calories */}
+          {calorieData.length > 0 && (
+            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+              <LiquidGraphScene id="calories"
+                contextLabel="Daily Calorie Intake"
+                insightTitle={calorieInsight}
+                description={`Your target is ${targetCalories} kcal. Keeping close to this helps maintain metabolic health.`}
+              >
+                <DailyCaloriesTrendChart
+                  data={calorieData}
+                  isDarkMode={isDarkMode}
+                  targetCalories={targetCalories}
+                />
+              </LiquidGraphScene>
+            </div>
+          )}
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Cumulative Net Calorie Change</CardTitle>
-                  <GraphInfoButton
-                    title="Cumulative Net Calorie Change"
-                    description="This line chart tracks your 'running total' of calorie surplus or deficit over time. If you eat 500 calories less than your TDEE, the line goes down. If you eat more, it goes up."
-                    benefit="This is the most powerful predictor of weight change. A downward trend means you are losing body fat, regardless of daily fluctuations."
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">Running balance vs. Target</p>
-              </CardHeader>
-              <CardContent>
-                {calorieData.length > 0 ? (
-                  <CumulativeCalorieChangeChart
-                    data={calorieData}
-                    isDarkMode={isDarkMode}
-                    targetCalories={targetCalories}
-                  />
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">No calorie data to calculate change.</p>
-                )}
-              </CardContent>
-            </Card>
+          {/* SCENE 2: Weight */}
+          {weightData.length > 0 && (
+            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+              <LiquidGraphScene id="weight"
+                contextLabel="Body Weight"
+                insightTitle={weightInsight}
+                description="Long-term weight trends are more important than daily fluctuations."
+              >
+                <WeightTrendChart
+                  data={weightData}
+                  isDarkMode={isDarkMode}
+                />
+              </LiquidGraphScene>
+            </div>
+          )}
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Daily Macronutrient Trends</CardTitle>
-                  <GraphInfoButton
-                    title="Daily Macronutrient Trends"
-                    description="This stacked bar chart breaks down your daily calories into Protein (Blue), Carbs (Green), and Fat (Orange). You can toggle between Grams and Percentages."
-                    benefit="Ensure you're getting enough protein for muscle recovery and balancing carbs/fats for energy. It helps you see *where* your calories are coming from."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {macroData.length > 0 ? <DailyMacrosTrendChart data={macroData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No macronutrient data for this period.</p>}
-              </CardContent>
-            </Card>
+          {/* SCENE 3: Activity (Steps) */}
+          {activityData.length > 0 && (
+            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+              <LiquidGraphScene id="activity"
+                contextLabel="Movement & Activity"
+                insightTitle={activityInsight}
+                description="Steps are a great proxy for NEAT (Non-Exercise Activity Thermogenesis)."
+              >
+                <ActivityTrendChart
+                  data={activityData}
+                  isDarkMode={isDarkMode}
+                />
+              </LiquidGraphScene>
+            </div>
+          )}
 
-            {/* Data Management Dialogs */}
-            <DataManagementDialog
-              isOpen={isWeightManagementOpen}
-              onOpenChange={setIsWeightManagementOpen}
-              dataType="weight"
-              data={filteredEntries.filter(e => e.entryType === 'fitbit_data' && e.weight) as FitbitLog[]}
-              onSave={handleSaveEntry}
-              onDelete={handleDeleteEntry}
-            />
-            <DataManagementDialog
-              isOpen={isStepManagementOpen}
-              onOpenChange={setIsStepManagementOpen}
-              dataType="steps"
-              data={filteredEntries.filter(e => (e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') && e.steps) as (FitbitLog | PedometerLog)[]}
-              onSave={handleSaveEntry}
-              onDelete={handleDeleteEntry}
-            />
+          {/* SCENE 4: Burn vs Steps Correlation */}
+          {correlationData.length > 5 && (
+            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+              <LiquidGraphScene id="correlation"
+                contextLabel="Metabolic Flux"
+                insightTitle={correlationInsight}
+                description="See how your activity correlates with your intake. Aim for 'Optimal Flux' (High Energy, High Activity)."
+              >
+                <CorrelationTrendChart
+                  data={correlationData}
+                  isDarkMode={isDarkMode}
+                />
+              </LiquidGraphScene>
+            </div>
+          )}
 
+          {/* SCENE 4: Macros */}
+          {macroData.length > 0 && (
+            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+              <LiquidGraphScene id="macros"
+                contextLabel="Macronutrient Balance"
+                insightTitle={macroInsight}
+                description={
+                  macroViewMode === 'Protein' ? "Essential for muscle repair and satiety." :
+                    macroViewMode === 'Carbs' ? "Your primary fuel source for high-intensity activity." :
+                      "Vital for hormone production and nutrient absorption."
+                }
+              >
+                <DailyMacrosTrendChart
+                  data={macroData}
+                  isDarkMode={isDarkMode}
+                  viewMode={macroViewMode}
+                  onViewChange={setMacroViewMode}
+                />
+              </LiquidGraphScene>
+            </div>
+          )}
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-xl font-semibold text-foreground">Body Weight Trend</CardTitle>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setIsWeightManagementOpen(true)}>
-                      <TableIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <GraphInfoButton
-                    title="Body Weight Trend"
-                    description="This graph plots your daily weight logs (lines) and calculates a smoothed trend (if enough data exists)."
-                    benefit="Weight fluctuates daily due to water/food volume. Focusing on the general direction of the line helps you ignore short-term noise and see real progress."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {weightData.length > 0 ? <WeightTrendChart data={weightData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No weight data (Sync Fitbit to see).</p>}
-              </CardContent>
-            </Card>
+          {/* Footer Padding/Spacer if needed, but with h-screen sections it might not be. 
+              Maybe a small spacer to allow overscroll on bottom. */}
+          <div className="h-[10vh] w-full snap-align-none" />
+        </div>
+      </div>
 
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-xl font-semibold text-foreground">Daily Activity (Steps)</CardTitle>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setIsStepManagementOpen(true)}>
-                      <TableIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <GraphInfoButton
-                    title="Daily Activity"
-                    description="A simple bar chart of your daily step count from Fitbit or Apple Health."
-                    benefit="Movement burns calories and improves insulin sensitivity. Use this to ensure you aren't being too sedentary on days you eat more."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {activityData.length > 0 ? <ActivityTrendChart data={activityData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No activity data (Sync Fitbit to see).</p>}
-              </CardContent>
-            </Card>
-
-
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Hourly Average Calories</CardTitle>
-                  <GraphInfoButton
-                    title="Hourly Average Calories"
-                    description="This heatmap shows *when* you eat during the day and how many calories you typically consume at that hour."
-                    benefit="Helps identify problem times (e.g., late-night snacking) or uneven energy distribution. Try to center your calories around your most active hours."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {hourlyCaloriesTrendData.length > 0 ? <HourlyCaloriesChart data={hourlyCaloriesTrendData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No calorie data available for this period.</p>}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Meal Timing Distribution</CardTitle>
-                  <GraphInfoButton
-                    title="Meal Timing Distribution"
-                    description="Counts how many meals you've logged at each hour of the day."
-                    benefit="Are you a grazer or a meal-eater? Use this to see your natural eating rhythm and adjust if you find yourself hungry at odd hours."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {hourlyMealCountData.length > 0 ? <HourlyMealCountChart data={hourlyMealCountData} isDarkMode={isDarkMode} /> : <p className="text-muted-foreground text-center py-8">No meal data available for this period (Count: {hourlyMealCountData.length}).</p>}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card shadow-lg border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground">Calories vs. Steps Correlation</CardTitle>
-                  <GraphInfoButton
-                    title="Energy Flux Correlation"
-                    description="This scatter plot compares how much you ate (Y-axis) vs. how much you moved (X-axis) for each day. The colored quadrants show your metabolic state."
-                    benefit="Aim for the 'G-Flux' zone (High Activity, High Food) for optimal performance and metabolism, rather than the 'Starvation' zone (Low Activity, Low Food)."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {correlationData.length > 0 ? <CaloriesStepsCorrelationChart data={correlationData} isDarkMode={isDarkMode} targetCalories={targetCalories} /> : <p className="text-muted-foreground text-center py-8">Not enough overlapping data (Steps + Calories) to show correlation.</p>}
-              </CardContent>
-            </Card>
-
-
-
-            <Card className="bg-card shadow-lg border-border lg:col-span-2">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold text-foreground flex items-center">
-                    <Award className="mr-2 h-6 w-6 text-yellow-500" /> Micronutrient Target Achievements
-                  </CardTitle>
-                  <GraphInfoButton
-                    title="Micronutrient Achievements"
-                    description="A leaderboard of your most consistent vitamins and minerals. It counts how many days you hit 100% of the recommended daily value."
-                    benefit="Calorie counting isn't enough. Use this to ensure you're getting actual nutrition (Quality) and not just Quantity."
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <MicronutrientAchievementList data={micronutrientAchievementData} />
-              </CardContent>
-            </Card>
-          </div>
-          <div className="mt-12 text-center">
-            <Button asChild variant="outline">
-              <Link href="/?openDashboard=true">Return to Dashboard</Link>
-            </Button>
-          </div>
-
-        </main>
-      </ScrollArea>
-    </div>
+    </TrendsMotionControllerProvider>
   );
 }
-
-const getPathname = () => {
-  if (typeof window !== "undefined") {
-    return window.location.pathname;
-  }
-  return "";
-};
-

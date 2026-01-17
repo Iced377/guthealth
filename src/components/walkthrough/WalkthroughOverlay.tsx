@@ -1,4 +1,5 @@
 'use client';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 
 import React, { useEffect, useState } from 'react';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
@@ -6,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
     Sheet,
@@ -20,7 +20,6 @@ import {
 export default function WalkthroughOverlay() {
     const { isWalkthroughActive, currentStep, nextStep, prevStep, endWalkthrough, currentStepIndex, activeTopic } = useWalkthrough();
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const { theme } = useTheme();
     const isMobile = useIsMobile();
 
     // Handle Target Highlighting
@@ -81,7 +80,7 @@ export default function WalkthroughOverlay() {
             {currentStep.mediaUrl && (
                 <div className="relative w-full h-40 rounded-lg overflow-hidden bg-muted mt-2">
                     {currentStep.mediaType === 'video' ? (
-                        <video src={currentStep.mediaUrl} autoPlay loop muted className="w-full h-full object-cover" />
+                        <video src={currentStep.mediaUrl} autoPlay loop muted playsInline preload="auto" className="w-full h-full object-cover" />
                     ) : (
                         <img src={currentStep.mediaUrl} alt={currentStep.title} className="w-full h-full object-cover" />
                     )}
@@ -199,6 +198,7 @@ export default function WalkthroughOverlay() {
                                     loop
                                     muted
                                     playsInline
+                                    preload="auto"
                                     className="w-full h-full object-cover object-center scale-150"
                                 />
                                 {/* Inner shadow overlay */}

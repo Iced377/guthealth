@@ -40,42 +40,34 @@ export const AppleHealthService = {
                 limit: 5000,
             });
 
-            // Aggregate with Time-Bucket Deduplication (Watch Priority)
-            // Strategy: 
-            // 1. Bucketize time (minute slots).
-            // 2. Track Watch vs Phone steps per minute.
-            // 3. If bucket is claimed by Watch, ignore Phone.
-            // 4. Default to Phone if no Watch data.
+            // Strict Source Prioritization
+            // Strategy: If ANY data exists from an Apple Watch, we use ONLY Apple Watch data for the day.
+            // This prevents double-counting where the Phone tracks steps alongside the Watch.
+            // While this might miss steps if the user takes off the watch and walks with the phone,
+            // it is the only reliable way to avoid duplication without native HKStatisticsQuery access.
 
-            const timeBuckets = new Map<string, { watchSteps: number, phoneSteps: number }>();
-
-            result.samples.forEach(sample => {
-                const key = new Date(sample.startDate).toISOString().substring(0, 16); // Minute bucket
-                const isWatch = (sample.sourceName || '').toLowerCase().includes('watch');
-
-                const bucket = timeBuckets.get(key) || { watchSteps: 0, phoneSteps: 0 };
-                if (isWatch) {
-                    bucket.watchSteps += sample.value;
-                } else {
-                    bucket.phoneSteps += sample.value;
-                }
-                timeBuckets.set(key, bucket);
-            });
+            const hasWatchData = result.samples.some(s => (s.sourceName || '').toLowerCase().includes('watch'));
 
             let totalSteps = 0;
-            timeBuckets.forEach((bucket) => {
-                // If we have Watch data for this minute, use it ONLY. Ignore phone.
-                if (bucket.watchSteps > 0) {
-                    totalSteps += bucket.watchSteps;
-                } else {
-                    totalSteps += bucket.phoneSteps;
-                }
-            });
+            if (hasWatchData) {
+                totalSteps = result.samples
+                    .filter(s => (s.sourceName || '').toLowerCase().includes('watch'))
+                    .reduce((acc, curr) => acc + curr.value, 0);
+            } else {
+                totalSteps = result.samples
+                    .reduce((acc, curr) => acc + curr.value, 0);
+            }
 
             return Math.round(totalSteps);
 
-        } catch (error) {
-            console.error('Error fetching steps:', error);
+        } catch (error: any) {
+            // "Authorization not determined" is expected if the user hasn't granted permissions yet.
+            // We shouldn't error loudly here as it blocks the UI in dev mode.
+            if (error?.message?.includes?.('Authorization') || typeof error === 'string' && error.includes('Authorization')) {
+                console.warn('Apple Health permission not yet granted (silent):', error);
+            } else {
+                console.warn('Error fetching steps:', error);
+            }
             return 0;
         }
     },

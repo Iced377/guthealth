@@ -39,6 +39,7 @@ export default function IntroVideo({ onComplete }: IntroVideoProps) {
                     autoPlay
                     muted
                     playsInline
+                    preload="auto"
                     onEnded={handleVideoEnd}
                 />
             </div>

@@ -4,6 +4,9 @@
 import type { GIPoint } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'; // Changed LineChart/Line to BarChart/Bar
+import { formatGraphNumber, formatTooltipValue } from '@/utils/format';
+import { ChartInteractivityGate } from './ChartInteractivityGate';
+import { useTrendsMotionController } from './useTrendsMotionController';
 
 interface GITrendChartProps {
   data: GIPoint[];
@@ -20,6 +23,7 @@ const getGIColors = (isDarkMode: boolean) => {
 };
 
 export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
+  const { isChartInteractionEnabled } = useTrendsMotionController();
   const colors = getGIColors(isDarkMode);
 
   const chartConfig = {
@@ -41,46 +45,48 @@ export default function GITrendChart({ data, isDarkMode }: GITrendChartProps) {
   const yAxisDomain = [0, yAxisDomainMax];
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-      <BarChart
-        accessibilityLayer
-        data={validData}
-        margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-        margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-      >
-        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
-        <XAxis
-          dataKey="hour"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={32}
-          tickFormatter={(value) => value} // Hour is already short "HH:mm"
-          stroke={colors.text}
-          angle={0}
-          interval="preserveStartEnd"
-          textAnchor="middle"
-          height={30}
-        />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          stroke={colors.text}
-          domain={yAxisDomain}
-          label={{ value: 'Avg. GI Value', angle: -90, position: 'insideLeft', fill: colors.text, dy: 40, dx: -5 }}
-        />
-        <ChartTooltip
-          cursor={true}
-          content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [value, chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
-        />
-        <Bar // Changed from Line
-          dataKey="gi"
-          fill={colors.gi} // Use fill for bars
-          radius={[4, 4, 0, 0]} // Optional: rounded tops for bars
-        />
-        <ChartLegend content={<ChartLegendContent />} />
-      </BarChart>
-    </ChartContainer>
+    <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+      <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+        <BarChart
+          accessibilityLayer
+          data={validData}
+          margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+        >
+          <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
+          <XAxis
+            dataKey="hour"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            minTickGap={32}
+            tickFormatter={(value) => value} // Hour is already short "HH:mm"
+            stroke={colors.text}
+            angle={0}
+            interval="preserveStartEnd"
+            textAnchor="middle"
+            height={30}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            stroke={colors.text}
+            domain={yAxisDomain}
+            label={{ value: 'Avg. GI Value', angle: -90, position: 'insideLeft', fill: colors.text, dy: 40, dx: -5 }}
+            tickFormatter={(val) => formatGraphNumber(val)}
+          />
+          <ChartTooltip
+            cursor={true}
+            content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [formatGraphNumber(value as number), chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
+          />
+          <Bar
+            dataKey="avgGI"
+            fill={colors.gi}
+            radius={[4, 4, 0, 0]}
+            isAnimationActive={false}
+          />
+        </BarChart>
+      </ChartContainer>
+    </ChartInteractivityGate>
   );
 }

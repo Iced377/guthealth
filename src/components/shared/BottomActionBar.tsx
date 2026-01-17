@@ -12,9 +12,10 @@ interface BottomActionBarProps {
 export const BottomActionBar: React.FC<BottomActionBarProps> = ({ children, className }) => {
     return (
         <div className={cn(
-            "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
-            "flex items-center gap-6 p-2 rounded-full",
-            "bg-background/90 backdrop-blur-xl border border-border/40 shadow-2xl",
+            "fixed bottom-0 left-1/2 -translate-x-1/2 z-50",
+            "flex items-center gap-6 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] rounded-t-3xl",
+            "bg-white/15 dark:bg-black/25 backdrop-blur-xl",
+            "border-t border-x border-white/20 dark:border-white/10 shadow-2xl",
             className
         )}>
             {children}

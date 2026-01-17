@@ -6,6 +6,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { formatGraphNumber } from '@/utils/format';
+import { ChartInteractivityGate } from './ChartInteractivityGate';
+import { useTrendsMotionController } from './useTrendsMotionController';
 
 interface CumulativeCalorieChangeChartProps {
     data: CaloriePoint[];
@@ -21,6 +24,8 @@ const COLORS = {
 };
 
 export default function CumulativeCalorieChangeChart({ data, isDarkMode, targetCalories }: CumulativeCalorieChangeChartProps) {
+    const { isChartInteractionEnabled } = useTrendsMotionController();
+
 
     const chartData = useMemo(() => {
         if (!data || data.length === 0) return [];
@@ -76,67 +81,71 @@ export default function CumulativeCalorieChangeChart({ data, isDarkMode, targetC
 
     return (
         <div className="space-y-4">
-            <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-                <AreaChart
-                    accessibilityLayer
-                    data={chartData}
-                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                >
-                    <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
-                    <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        minTickGap={32}
-                        tickFormatter={(value) => value.slice(5)}
-                        stroke={COLORS.text}
-                        fontSize={12}
-                    />
-                    <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        stroke={COLORS.text}
-                        fontSize={12}
-                        width={50}
-                    />
-                    <ReferenceLine y={0} stroke={COLORS.text} strokeDasharray="3 3" />
-                    <ChartTooltip
-                        cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
-                        content={({ active, payload, label }) => {
-                            if (!active || !payload || !payload.length) return null;
-                            const val = payload[0].value as number;
-                            return (
-                                <div className="rounded-lg border bg-background p-2 shadow-sm text-xs">
-                                    <div className="font-medium mb-1">{label}</div>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${val >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        <span className="text-muted-foreground">Net Balance:</span>
-                                        <span className={`font-mono font-medium ${val >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {val > 0 ? '+' : ''}{Math.round(val)} kcal
-                                        </span>
+            <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+                <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+                    <AreaChart
+                        accessibilityLayer
+                        data={chartData}
+                        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                    >
+                        <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
+                        <XAxis
+                            dataKey="date"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            minTickGap={32}
+                            tickFormatter={(value) => value.slice(5)}
+                            stroke={COLORS.text}
+                            fontSize={12}
+                        />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            stroke={COLORS.text}
+                            fontSize={12}
+                            width={50}
+                            tickFormatter={(val) => formatGraphNumber(val)}
+                        />
+                        <ReferenceLine y={0} stroke={COLORS.text} strokeDasharray="3 3" />
+                        <ChartTooltip
+                            cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
+                            content={({ active, payload, label }) => {
+                                if (!active || !payload || !payload.length) return null;
+                                const val = payload[0].value as number;
+                                return (
+                                    <div className="rounded-lg border bg-background p-2 shadow-sm text-xs">
+                                        <div className="font-medium mb-1">{label}</div>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${val >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                                            <span className="text-muted-foreground">Net Balance:</span>
+                                            <span className={`font-mono font-medium ${val >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                {val > 0 ? '+' : ''}{formatGraphNumber(val)} kcal
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        }}
-                    />
-                    <defs>
-                        <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset={off} stopColor={COLORS.deficit} stopOpacity={1} />
-                            <stop offset={off} stopColor={COLORS.surplus} stopOpacity={1} />
-                        </linearGradient>
-                    </defs>
-                    <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke="url(#splitColor)"
-                        fill="url(#splitColor)"
-                        fillOpacity={0.4}
-                        strokeWidth={2}
-                    />
-                </AreaChart>
-            </ChartContainer>
+                                )
+                            }}
+                        />
+                        <defs>
+                            <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset={off} stopColor={COLORS.deficit} stopOpacity={1} />
+                                <stop offset={off} stopColor={COLORS.surplus} stopOpacity={1} />
+                            </linearGradient>
+                        </defs>
+                        <Area
+                            type="monotone"
+                            dataKey="value"
+                            stroke="url(#splitColor)"
+                            fill="url(#splitColor)"
+                            fillOpacity={0.4}
+                            strokeWidth={2}
+                            isAnimationActive={false}
+                        />
+                    </AreaChart>
+                </ChartContainer>
+            </ChartInteractivityGate>
         </div>
     );
 }

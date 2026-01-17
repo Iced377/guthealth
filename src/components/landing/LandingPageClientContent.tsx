@@ -1,6 +1,8 @@
 
 "use client";
 
+import React, { useEffect, useRef } from 'react';
+
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -120,6 +122,20 @@ export default function LandingPageClientContent({
   finalCTAMessage,
   showBackgroundVideo = true,
 }: LandingPageClientContentProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Force play on mount to handle browser autoplay policies
+    if (videoRef.current) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log("Auto-play was prevented:", error);
+          // Optional: Add UI fallback here if needed
+        });
+      }
+    }
+  }, []);
   const placeholderFeedback = [
     {
       id: 1,
@@ -146,6 +162,7 @@ export default function LandingPageClientContent({
         {/* Video Background */}
         {showBackgroundVideo && (
           <video
+            ref={videoRef}
             autoPlay
             loop
             muted

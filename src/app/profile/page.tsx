@@ -787,6 +787,24 @@ export default function ProfilePage() {
                                 )}
                             </Button>
                         </div>
+                        {/* Privacy Notice and Terms Links */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => router.push('/privacy')}
+                            >
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Privacy Notice
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => router.push('/terms')}
+                            >
+                                Terms of Use
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
                 <div className="flex flex-col gap-4 text-center w-full pb-8">

@@ -9,7 +9,7 @@ import {
     DialogTrigger,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from '@/components/ui/button';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface GraphInfoButtonProps {
@@ -22,10 +22,15 @@ export default function GraphInfoButton({ title, description, benefit }: GraphIn
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-primary hover:text-primary-foreground rounded-full transition-colors">
+                <LiquidPressable
+                    variant="icon"
+                    size="sm"
+                    haptic="light"
+                    className="text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                >
                     <Info className="h-5 w-5" />
                     <span className="sr-only">Info about {title}</span>
-                </Button>
+                </LiquidPressable>
             </DialogTrigger>
             <DialogContent className="max-w-md">
                 <DialogHeader>
