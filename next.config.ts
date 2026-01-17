@@ -25,7 +25,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  transpilePackages: [
+    '@capacitor/browser',
+    '@capacitor/haptics',
+    '@capacitor/core',
+    '@capacitor/app'
+  ],
 };
 
 export default nextConfig;
-// Trigger restart

@@ -1,380 +1,184 @@
-
 'use client';
 
-import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail, PedometerLog } from '@/types';
-import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
-import TimelineSymptomCard from '@/components/food-logging/TimelineSymptomCard';
-import { AppleHealthIcon } from '@/components/shared/BrandIcons';
-import { Flame, Beef, Wheat, Droplet, Utensils, Check, Atom, Sparkles, Bone, Nut, Citrus, Carrot, Leaf, Milk, Sun, Brain, Activity, Zap as Bolt, Eye, Wind, Heart, ShieldCheck, ShieldQuestion, Anchor, PersonStanding, Baby, Target, Network, HelpCircle, Plus, PlusCircle, Camera, ListChecks, CalendarDays, Footprints } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { startOfDay, endOfDay, format, addDays, isSameDay } from 'date-fns';
-import NutritionOverview from '@/components/dashboard/NutritionOverview';
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useMemo, useCallback } from 'react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import ParallaxVitalsHeader from './ParallaxVitalsHeader';
+import LiquidCardCarousel from './LiquidCardCarousel';
+import { useActionContext } from '@/contexts/ActionContext';
+import { useWalkthrough } from '@/contexts/WalkthroughContext';
+import { format, isSameDay, addDays } from 'date-fns';
+import {
+    LoggedFoodItem,
+    PedometerLog,
+    TimelineEntry,
+    DailyNutritionSummary
+} from '@/types';
+import {
+    calculateDaySummary,
+    processAchievedMicros,
+    calculateDailyPedometerStats
+} from '@/lib/utils';
+import { useHealthKit } from '@/lib/apple-health/hooks';
 
-const RepresentativeLucideIcons: { [key: string]: React.ElementType } = {
-    // General & Fallbacks
-    Atom, Sparkles, HelpCircle,
-    // Specific by Nutrient Name (primary fallback if AI iconName isn't in map)
-    Iron: Wind,
-    Calcium: Bone,
-    Phosphorus: Bone,
-    Magnesium: Activity,
-    Sodium: Droplet,
-    Potassium: Droplet,
-    Chloride: Droplet,
-    Zinc: PersonStanding,
-    Copper: Network,
-    Manganese: Bone,
-    Selenium: ShieldCheck,
-    Iodine: Brain,
-    Chromium: Target,
-    VitaminA: Eye,
-    VitaminC: ShieldCheck,
-    VitaminD: ShieldCheck,
-    VitaminE: ShieldQuestion,
-    VitaminK: Heart,
-    VitaminB1: Brain,
-    VitaminB2: Activity,
-    VitaminB3: Activity,
-    VitaminB5: Activity,
-    VitaminB6: Brain,
-    VitaminB12: Brain,
-    Biotin: Activity,
-    Folate: Baby,
-    Omega3: Heart,
-    // Common AI-suggested iconNames from the prompt (to ensure they are mapped)
-    Bone: Bone, Nut: Nut, Activity: Activity, PersonStanding: PersonStanding, Eye: Eye, ShieldCheck: ShieldCheck, Droplet: Droplet, Wind: Wind, Brain: Brain, Baby: Baby, Heart: Heart, ShieldQuestion: ShieldQuestion, Network: Network, Target: Target
-};
-
-
+// Define props to make it a controlled component for date
 interface DashboardContentProps {
-    userProfile: UserProfile;
+    userProfile: any; // Using explicit type locally vs import for brevity in replacement? No, let's just use existing usage.
     timelineEntries: TimelineEntry[];
     dailyNutritionSummary: DailyNutritionSummary;
     isLoadingAi: Record<string, boolean>;
     onSetFeedback: (itemId: string, feedback: 'safe' | 'unsafe' | null) => void;
-    onRemoveTimelineEntry: (entryId: string) => void;
+    onRemoveTimelineEntry: (id: string) => void;
     onLogSymptomsForFood: (foodItemId?: string) => void;
-    onEditIngredients?: (item: LoggedFoodItem) => void;
-    onRepeatMeal?: (item: LoggedFoodItem) => void;
-    onToggleFavorite: (itemId: string, currentIsFavorite: boolean) => void;
-    onLogFoodAIClick?: () => void;
-    onIdentifyByPhotoClick?: () => void;
-    onLogSymptomsClick?: () => void;
-    onLogPreviousMealClick?: () => void;
+    onEditIngredients: (item: LoggedFoodItem) => void;
+    onRepeatMeal: (item: LoggedFoodItem) => void;
+    onToggleFavorite: (itemId: string, isFavorite: boolean) => void;
+    onLogFoodAIClick: () => void;
+    onIdentifyByPhotoClick: () => void;
+    onLogSymptomsClick: () => void;
+    onLogPreviousMealClick: () => void;
     groupedTimelineEntries: Record<string, TimelineEntry[]>;
-}
-
-interface AchievedMicronutrient {
-    name: string;
-    iconName?: string;
-    totalDV: number;
+    currentDate: Date;
+    onDateChange: (date: Date) => void;
 }
 
 export default function DashboardContent({
-    userProfile,
-    timelineEntries,
-    dailyNutritionSummary, // Initial summary (likely for Today)
+    timelineEntries, // Used for calculations
     isLoadingAi,
-    onSetFeedback,
-    onRemoveTimelineEntry,
-    onLogSymptomsForFood,
-    onEditIngredients,
-    onRepeatMeal,
-    onToggleFavorite,
-    onLogFoodAIClick,
-    onIdentifyByPhotoClick,
-    onLogSymptomsClick,
-    onLogPreviousMealClick,
-    groupedTimelineEntries,
+    currentDate,
+    onDateChange
 }: DashboardContentProps) {
+    const { userProfile } = useAuth();
 
-    const [isFabPopoverOpen, setIsFabPopoverOpen] = useState(false);
-    const [currentDate, setCurrentDate] = useState(new Date());
+    // Replace useFoodLogStore with useActionContext logic
+    const {
+        handleRemoveTimelineEntry,
+        handleRepeatMeal,
+        handleToggleFavoriteFoodItem,
+        handleSetFoodFeedback,
+        handleEditTimelineEntry,
+        openSymptomLogDialog,
+    } = useActionContext();
 
-    const handleFabActionClick = (action?: () => void) => {
-        if (action) {
-            action();
+    const { startWalkthrough } = useWalkthrough();
+    const { healthData } = useHealthKit();
+
+    // State
+    const [scrollY, setScrollY] = useState(0);
+
+    // Handlers mapped to ActionContext
+    const onRemoveTimelineEntry = (id: string) => {
+        handleRemoveTimelineEntry(id);
+    };
+
+    const onLogSymptomsForFood = (foodItemId?: string) => {
+        openSymptomLogDialog();
+    };
+
+    const onEditIngredients = (item: LoggedFoodItem) => {
+        handleEditTimelineEntry(item);
+    };
+
+    const onRepeatMeal = (item: LoggedFoodItem) => {
+        handleRepeatMeal(item);
+    };
+
+    const onToggleFavorite = (itemId: string, isFavorite: boolean) => {
+        handleToggleFavoriteFoodItem(itemId, isFavorite);
+    };
+
+    const onSetFeedback = (itemId: string, feedback: 'safe' | 'unsafe' | null) => {
+        handleSetFoodFeedback(itemId, feedback);
+    };
+
+
+    // Combined Timeline Entries for Carousel (ALL dates)
+    const sortedEntries = useMemo(() => {
+        return [...timelineEntries].sort((a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+    }, [timelineEntries]);
+
+
+    // Helper to get data for ANY date (efficiently enough for small lists)
+    const getSummaryForDate = useCallback((date: Date) => {
+        const daysLogs = sortedEntries.filter(log =>
+            isSameDay(new Date(log.timestamp), date) && log.entryType === 'food'
+        ) as LoggedFoodItem[];
+        return calculateDaySummary(daysLogs);
+    }, [sortedEntries]);
+
+    const getMicrosForDate = useCallback((date: Date) => {
+        const daysLogs = sortedEntries.filter(log =>
+            isSameDay(new Date(log.timestamp), date) && log.entryType === 'food'
+        ) as LoggedFoodItem[];
+        return processAchievedMicros(daysLogs);
+    }, [sortedEntries]);
+
+    const getStepsForDate = useCallback((date: Date) => {
+        // If HealthKit hook returns total for today, use it if currentDate is Today.
+        if (isSameDay(date, new Date()) && healthData) {
+            return {
+                id: 'today-steps',
+                timestamp: new Date(),
+                entryType: 'pedometer_data',
+                steps: healthData.steps,
+                distance: healthData.distance,
+                source: 'apple_health'
+            } as PedometerLog;
         }
-        setIsFabPopoverOpen(false);
-    }
-
-    // Dynamic Summary calculation based on selected Date
-    const currentDaySummary = useMemo<DailyNutritionSummary>(() => {
-        // If selected date is Today, we *could* use the prop, but calculating ensures consistency with client-side entries/nav
-        // Let's calculate from timelineEntries to support historical nav
-        let calories = 0, protein = 0, carbs = 0, fat = 0;
-
-        timelineEntries.forEach(entry => {
-            if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-                const item = entry as LoggedFoodItem;
-                if (isSameDay(new Date(item.timestamp), currentDate)) {
-                    calories += item.calories || 0;
-                    protein += item.protein || 0;
-                    carbs += item.carbs || 0;
-                    fat += item.fat || 0;
-                }
-            }
-        });
-
-        return { calories, protein, carbs, fat };
-    }, [timelineEntries, currentDate]);
-
-    const achievedMicronutrients = useMemo<AchievedMicronutrient[]>(() => {
-        const targetStart = startOfDay(currentDate);
-        const targetEnd = endOfDay(currentDate);
-        const dailyTotals: Record<string, { totalDV: number, iconName?: string }> = {};
-
-        timelineEntries.forEach(entry => {
-            if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-                const entryDate = new Date(entry.timestamp);
-                if (entryDate >= targetStart && entryDate <= targetEnd) {
-                    const foodItem = entry as LoggedFoodItem;
-                    const microsInfo = foodItem.fodmapData?.micronutrientsInfo;
-                    if (microsInfo) {
-                        const allMicros: MicronutrientDetail[] = [];
-                        if (microsInfo.notable) allMicros.push(...microsInfo.notable);
-                        if (microsInfo.fullList) allMicros.push(...microsInfo.fullList);
-
-                        allMicros.forEach(micro => {
-                            if (micro.dailyValuePercent !== undefined) {
-                                if (!dailyTotals[micro.name]) {
-                                    dailyTotals[micro.name] = { totalDV: 0, iconName: micro.iconName };
-                                }
-                                dailyTotals[micro.name].totalDV += micro.dailyValuePercent;
-                                if (micro.iconName && !dailyTotals[micro.name].iconName) {
-                                    dailyTotals[micro.name].iconName = micro.iconName;
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        });
-
-        return Object.entries(dailyTotals)
-            .filter(([, data]) => data.totalDV >= 100)
-            .map(([name, data]) => ({ name, iconName: data.iconName, totalDV: data.totalDV }))
-            .sort((a, b) => b.totalDV - a.totalDV)
-            .slice(0, 5);
-    }, [timelineEntries, currentDate]);
-
-    const sortedDateKeys = useMemo(() => {
-        return Object.keys(groupedTimelineEntries).sort((a, b) => {
-            // Find the latest timestamp for each date group to sort the groups themselves
-            const lastTimeA = new Date(groupedTimelineEntries[a][0].timestamp).getTime();
-            const lastTimeB = new Date(groupedTimelineEntries[b][0].timestamp).getTime();
-            return lastTimeB - lastTimeA;
-        });
-    }, [groupedTimelineEntries]);
-
-    // Pedometer Data
-    const stepsData = useMemo(() => {
-        // Find the latest step entry for the current date
-        const stepEntries = timelineEntries.filter(e =>
-            e.entryType === 'pedometer_data' &&
-            isSameDay(new Date(e.timestamp), currentDate)
+        const dayPedometerLogs = sortedEntries.filter(log =>
+            isSameDay(new Date(log.timestamp), date) && log.entryType === 'pedometer_data'
         ) as PedometerLog[];
 
-        if (stepEntries.length === 0) return null;
+        if (dayPedometerLogs.length > 0) {
+            return calculateDailyPedometerStats(dayPedometerLogs);
+        }
+        return null;
+    }, [sortedEntries, healthData]);
 
-        // If multiple (e.g. from different sources or syncs), take the latest one or max? 
-        // Sync usually overwrites daily ID, so should be one per day. Sort by timestamp just in case.
-        return stepEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-    }, [timelineEntries, currentDate]);
 
+    if (!userProfile) return null;
 
     return (
-        <div className="h-full flex flex-col p-4 bg-background text-foreground relative gap-4 max-w-5xl mx-auto w-full">
-            {/* Nutrition Overview Section */}
-            <div className="shrink-0 w-full animate-in fade-in slide-in-from-top-4 duration-500">
-                <NutritionOverview
-                    summary={currentDaySummary}
-                    currentDate={currentDate}
-                    onPrevDate={() => setCurrentDate(prev => addDays(prev, -1))}
-                    onNextDate={() => setCurrentDate(prev => addDays(prev, 1))}
-                    goals={userProfile.profile ? {
-                        calories: userProfile.profile.tdee,
-                        protein: userProfile.profile.macros.protein,
-                        carbs: userProfile.profile.macros.carbs,
-                        fat: userProfile.profile.macros.fats,
-                    } : undefined}
-                />
+        <div className="flex flex-col h-full w-full relative overflow-hidden bg-background">
+
+            {/* Background Gradient Mesh */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
             </div>
 
-            {/* Step Counter (Minimalistic) */}
-            {stepsData && (
-                <div className="shrink-0 w-full animate-in fade-in slide-in-from-top-6 duration-600 delay-50">
-                    <div className="flex items-center justify-between bg-card/60 border border-border/50 rounded-xl p-3 shadow-sm backdrop-blur-[2px]">
-                        <div className="flex items-center gap-3">
-                            {/* Icon based on source */}
-                            <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shadow-sm text-white",
-                                stepsData.source === 'pedometer_plus_plus' ? "bg-blue-500" : "bg-gradient-to-br from-pink-500 to-red-600"
-                            )}>
-                                <Footprints className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Steps</span>
-                                <span className="text-lg font-bold font-headline leading-none tabular-nums">{stepsData.steps.toLocaleString()}</span>
-                            </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground font-medium">
-                            {stepsData.distance ? `${(stepsData.distance / 1000).toFixed(2)} km` : 'Today'}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* REMOVED sticky date header */}
 
-            {/* Micronutrients Highlights (if any) */}
-            {achievedMicronutrients.length > 0 && (
-                <div className="shrink-0 w-full animate-in fade-in slide-in-from-top-8 duration-700 delay-100">
-                    <Card className="shadow-sm border-border bg-card/30">
-                        <CardContent className="p-3 flex items-center gap-3 overflow-x-auto no-scrollbar">
-                            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap mr-1">Micronutrient Goals ({isSameDay(currentDate, new Date()) ? 'Today' : format(currentDate, 'MMM d')}):</span>
-                            {achievedMicronutrients.map(micro => {
-                                const IconComponent = (micro.iconName && RepresentativeLucideIcons[micro.iconName]) || RepresentativeLucideIcons[micro.name] || Atom;
-                                return (
-                                    <Popover key={micro.name}>
-                                        <PopoverTrigger asChild>
-                                            <div className="relative p-1.5 cursor-pointer flex items-center bg-background rounded-full border border-border hover:bg-accent transition-colors">
-                                                <IconComponent className="h-4 w-4 text-primary" />
-                                                <span className="ml-1.5 text-xs font-semibold mr-1">{micro.name}</span>
-                                                <Check className="h-3 w-3 text-green-500 bg-green-500/10 rounded-full p-0.5" />
-                                            </div>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto max-w-xs bg-popover text-popover-foreground border-border p-2 text-sm z-50">
-                                            <p><span className="font-semibold">{micro.name}:</span> {Math.round(micro.totalDV)}% DV achieved</p>
-                                        </PopoverContent>
-                                    </Popover>
-                                );
-                            })}
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+            {/* 3-Panel Carousel with Fluid Header */}
+            <LiquidCardCarousel
+                currentDate={currentDate}
+                entries={sortedEntries}
+                isLoadingAi={isLoadingAi}
+                onSetFeedback={onSetFeedback}
+                onRemoveTimelineEntry={onRemoveTimelineEntry}
+                onLogSymptomsForFood={onLogSymptomsForFood}
+                onEditIngredients={onEditIngredients}
+                onRepeatMeal={onRepeatMeal}
+                onToggleFavorite={onToggleFavorite}
+                onDateChange={onDateChange}
+                isToday={isSameDay(currentDate, new Date())}
+                onScroll={setScrollY}
+                renderHeader={(date) => (
+                    <ParallaxVitalsHeader
+                        summary={getSummaryForDate(date)}
+                        currentDate={date}
+                        onPrevDate={() => onDateChange(addDays(date, -1))}
+                        onNextDate={() => onDateChange(addDays(date, 1))}
+                        userProfile={userProfile}
+                        stepsData={getStepsForDate(date)}
+                        achievedMicronutrients={getMicrosForDate(date)}
+                        scrollY={scrollY}
+                        className="pt-2" // Reduced padding as there's no sticky date anymore
+                    />
+                )}
+            />
 
-
-            <ScrollArea className="flex-1 -mx-4 px-4">
-                <div className="relative pb-24 pt-6">
-                    <div className="space-y-6">
-                        {timelineEntries.length === 0 && !Object.values(isLoadingAi).some(Boolean) && (
-                            <div className="text-center py-12 border-2 border-dashed border-border rounded-xl mt-4 bg-muted/20">
-                                <Utensils className="mx-auto h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                                <h2 className="text-xl font-semibold font-headline mb-2 text-foreground">Timeline is Empty</h2>
-                                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                                    {userProfile.premium ? "Start tracking your gut health by logging your first meal." : "Log food or symptoms to see them appear here."}
-                                </p>
-                            </div>
-                        )}
-                        {sortedDateKeys.map(dateKey => {
-                            const entriesOnDate = groupedTimelineEntries[dateKey];
-                            if (!entriesOnDate || entriesOnDate.length === 0) return null;
-
-                            // Check if there are any displayable entries (food, manual, symptom) before rendering header
-                            // This hides dates that might be in the list but have no valid content to show
-                            const displayableEntries = entriesOnDate.filter(
-                                e => ['food', 'manual_macro', 'symptom'].includes(e.entryType)
-                            );
-
-                            if (displayableEntries.length === 0) return null;
-
-                            return (
-                                <div key={dateKey} className="relative pl-8 pb-12 last:pb-0 border-l-2 border-primary/20 ml-2">
-                                    {/* Timeline Node */}
-                                    <div className="absolute left-[-9px] top-1 h-4 w-4 rounded-full bg-background border-2 border-primary ring-4 ring-background" />
-
-                                    {/* Date Header */}
-                                    <div className="flex items-center gap-2 mb-6 -mt-1">
-                                        <h3 className="text-sm font-bold text-primary uppercase tracking-wider bg-primary/10 px-3 py-1 rounded-full shadow-sm border border-primary/10">
-                                            {dateKey}
-                                        </h3>
-                                    </div>
-
-                                    {/* Cards Grid */}
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-                                        {displayableEntries.map((entry, entryIndex) => {
-                                            if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
-                                                return (
-                                                    <motion.div
-                                                        key={entry.id}
-                                                        className="h-full"
-                                                        initial={{ opacity: 0, x: -20, y: 20 }}
-                                                        whileInView={{ opacity: 1, x: 0, y: 0 }}
-                                                        viewport={{ once: true, margin: "-50px" }}
-                                                        transition={{ type: "spring", stiffness: 100, damping: 15, delay: entryIndex * 0.1 }}
-                                                    >
-                                                        <TimelineFoodCard
-                                                            item={entry}
-                                                            onSetFeedback={onSetFeedback}
-                                                            onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                                                            onLogSymptoms={() => onLogSymptomsForFood(entry.id)}
-                                                            isLoadingAi={!!isLoadingAi[entry.id]}
-                                                            onEditIngredients={onEditIngredients}
-                                                            onRepeatMeal={onRepeatMeal}
-                                                            onToggleFavorite={onToggleFavorite}
-                                                        />
-                                                    </motion.div>
-                                                );
-                                            }
-                                            if (entry.entryType === 'symptom') {
-                                                return (
-                                                    <motion.div
-                                                        key={entry.id}
-                                                        className="h-full"
-                                                        initial={{ opacity: 0, x: -20, y: 20 }}
-                                                        whileInView={{ opacity: 1, x: 0, y: 0 }}
-                                                        viewport={{ once: true, margin: "-50px" }}
-                                                        transition={{ type: "spring", stiffness: 100, damping: 15, delay: entryIndex * 0.1 }}
-                                                    >
-                                                        <TimelineSymptomCard
-                                                            item={entry}
-                                                            onRemoveItem={() => onRemoveTimelineEntry(entry.id)}
-                                                        />
-                                                    </motion.div>
-                                                );
-                                            }
-                                            return null;
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </ScrollArea>
-
-            <Popover open={isFabPopoverOpen} onOpenChange={setIsFabPopoverOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant="default" className="absolute bottom-20 right-6 h-20 w-20 rounded-full shadow-2xl z-20" size="icon">
-                        <Plus className="h-10 w-10" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                    side="top"
-                    align="end"
-                    className="w-auto bg-card text-card-foreground border-border shadow-xl rounded-xl p-0 mb-2"
-                >
-                    <div className="flex flex-col gap-1 p-2">
-                        <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
-                            <PlusCircle className="mr-3 h-5 w-5" /> Log Food with Text
-                        </Button>
-                        <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
-                            <Camera className="mr-3 h-5 w-5" /> Identify by Photo
-                        </Button>
-                        <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogSymptomsClick)}>
-                            <ListChecks className="mr-3 h-5 w-5" /> Log Symptoms
-                        </Button>
-                        <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogPreviousMealClick)}>
-                            <CalendarDays className="mr-3 h-5 w-5" /> Log Previous Meal
-                        </Button>
-                    </div>
-                </PopoverContent>
-            </Popover>
         </div>
     );
 }

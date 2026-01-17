@@ -11,6 +11,7 @@ import AnalyticsWithConsent from '@/components/shared/AnalyticsWithConsent';
 import { WalkthroughProvider } from '@/contexts/WalkthroughContext';
 import WalkthroughOverlay from '@/components/walkthrough/WalkthroughOverlay';
 import WalkthroughStage from '@/components/walkthrough/WalkthroughStage';
+import { GlobalNavigationLayout } from '@/components/layout/GlobalNavigationLayout';
 
 // `inter` variable is no longer needed here
 
@@ -70,14 +71,16 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <WalkthroughProvider>
-              <main className="flex-grow w-full">
-                {children}
-              </main>
-              <WalkthroughStage />
-              <WalkthroughOverlay />
-              <Toaster />
+              <GlobalNavigationLayout>
+                <main className="flex-grow w-full">
+                  {children}
+                </main>
+                <WalkthroughStage />
+                <WalkthroughOverlay />
+                <Toaster />
 
-              <CookieConsentBanner />
+                <CookieConsentBanner />
+              </GlobalNavigationLayout>
             </WalkthroughProvider>
           </ThemeProvider>
         </AuthProvider>

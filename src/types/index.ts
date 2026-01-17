@@ -190,6 +190,7 @@ export interface DailyNutritionSummary {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
 }
 
 export interface DailyFodmapCount {
@@ -198,7 +199,7 @@ export interface DailyFodmapCount {
   red: number;
 }
 
-export type TimeRange = '1D' | '7D' | '30D' | '90D' | '1Y' | 'ALL';
+export type TimeRange = '1D' | '7D' | '30D' | '90D' | '6M' | '1Y' | 'ALL' | 'CUSTOM';
 
 export interface MacroPoint {
   date: string;
@@ -294,4 +295,10 @@ export interface AIInsight {
   text: string;
   timestamp: Date;
   read: boolean;
+}
+
+export interface AchievedMicronutrient {
+  name: string;
+  totalDV: number;
+  iconName?: string;
 }

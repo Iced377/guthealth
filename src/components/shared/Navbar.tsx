@@ -4,9 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LogOut, LogIn, Sun, Moon, BarChart3, UserPlus, User, Atom, CreditCard, ShieldCheck as AdminIcon, Lightbulb, X, ScrollText, LayoutGrid, Plus, Shield, Menu, Camera, ListChecks, CalendarDays, PlusCircle, Heart, FileText, Info, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FloatingActionMenu } from './FloatingActionMenu';
-import { BottomActionBar } from './BottomActionBar';
-import FeedbackWidget from '../feedback/FeedbackWidget';
+// FloatingActionMenu, BottomActionBar, FeedbackWidget removed
 // ... existing imports ...
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
@@ -14,6 +12,7 @@ import { signOutUser } from '@/lib/firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import {
   Dialog,
   DialogContent,
@@ -934,6 +933,8 @@ interface NavbarProps {
   onLogPreviousMealClick?: () => void;
   hideFloatingActionMenu?: boolean;
   isScrolled?: boolean;
+  isReleaseNotesOpen?: boolean;
+  onReleaseNotesOpenChange?: (open: boolean) => void;
 }
 
 const LOCALSTORAGE_LAST_SEEN_VERSION_KEY = 'lastSeenAppVersion';
@@ -947,6 +948,8 @@ export default function Navbar({
   onLogPreviousMealClick,
   hideFloatingActionMenu = false,
   isScrolled: externalIsScrolled,
+  isReleaseNotesOpen: externalIsReleaseNotesOpen,
+  onReleaseNotesOpenChange,
 }: NavbarProps) {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -955,7 +958,16 @@ export default function Navbar({
   const { toast } = useToast();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
-  const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
+  const [internalIsReleaseNotesOpen, setInternalIsReleaseNotesOpen] = useState(false);
+
+  const isReleaseNotesOpen = externalIsReleaseNotesOpen !== undefined ? externalIsReleaseNotesOpen : internalIsReleaseNotesOpen;
+  const setIsReleaseNotesOpen = (open: boolean) => {
+    if (onReleaseNotesOpenChange) {
+      onReleaseNotesOpenChange(open);
+    } else {
+      setInternalIsReleaseNotesOpen(open);
+    }
+  };
   const [showNewReleaseIndicator, setShowNewReleaseIndicator] = useState(false);
   const [isActionPopoverOpen, setIsActionPopoverOpen] = useState(false);
   const { startWalkthrough } = useWalkthrough();
@@ -1083,7 +1095,12 @@ export default function Navbar({
     headerBaseClasses,
     isGuest
       ? "absolute top-0 bg-transparent border-none py-2"
-      : "sticky top-0 bg-card text-card-foreground border-b border-border"
+      : cn(
+        // Standard sticky position with Liquid Glass material
+        "sticky top-0",
+        "bg-white/15 dark:bg-black/25 backdrop-blur-xl",
+        "border-b border-white/20 dark:border-white/10"
+      )
   );
   const appNameBaseClasses = "font-bold font-headline text-xl";
 
@@ -1098,227 +1115,166 @@ export default function Navbar({
 
 
   return (
-    <header className={headerClasses}>
-      <div className={cn("flex h-16 w-full items-center justify-between", "px-2 sm:px-4")}>
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          <Link href="/" className="flex items-center space-x-2">
-            {!isGuest && (
-              <div className={cn("flex shrink-0 h-12 w-12 items-center justify-center rounded-full border-2 p-0 overflow-hidden relative", "bg-[#2aac6b] border-[#2aac6b]")}>
-                <video
-                  src="/happy-gestures.mp4"
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                />
-              </div>
-            )}
-            {!isGuest && (
-              <span className={cn(appNameBaseClasses, 'text-current', 'hidden sm:inline-block')}>{APP_NAME}</span>
-            )}
-          </Link>
-          <Dialog open={isReleaseNotesOpen} onOpenChange={handleReleaseNotesToggle}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className={cn(
-                  "text-xs p-1 h-auto ml-0 mt-1 rounded-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 relative",
-                  "text-primary underline underline-offset-2",
-                  "hover:bg-transparent hover:text-primary/80",
-                  "transition-opacity duration-300",
-                  isGuest && isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-                )}
-                aria-label={`App Version ${APP_VERSION}, click for release notes`}
-              >
-                {APP_VERSION}
-                {showNewReleaseIndicator && (
-                  <span
-                    className="absolute top-0.5 right-0.5 block h-2 w-2 rounded-full bg-red-500 border border-background"
-                    aria-hidden="true"
-                  />
-                )}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg bg-card text-card-foreground border-border">
-              <DialogHeader>
-                <DialogTitle className="font-headline text-xl flex items-center">
-                  <ScrollText className="mr-2 h-5 w-5" /> Release Notes
-                </DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[60vh] pr-2 -mr-2 py-2">
-                <div className="space-y-4">
-                  {releaseNotesData.map((release, index) => (
-                    <div key={index} className="pb-3 border-b border-border last:border-b-0">
-                      <h3 className="text-md font-semibold text-foreground">
-                        Version {release.version}
-                        {release.date && <span className="text-xs text-muted-foreground ml-2 font-normal">- {release.date}</span>}
-                      </h3>
-                      {release.title && <p className="text-sm font-medium text-primary mt-0.5">{release.title}</p>}
-                      {Array.isArray(release.description) ? (
-                        <ul className="list-disc list-inside text-sm text-muted-foreground mt-1 space-y-0.5">
-                          {release.description.map((note, noteIndex) => (
-                            <li key={noteIndex}>{note}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mt-1">{release.description}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              <DialogFooter className="sm:justify-start mt-2">
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary" className="w-full sm:w-auto">
-                    Close
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+    <>
+      <header className={headerClasses}>
+        <div className={cn("flex h-16 w-full items-center justify-between", "px-2 sm:px-4")}>
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
 
-
-        <div id="navbar-actions-container" className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
-          {isGuest ? (
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Show Log Out if user is authenticated but on guest view */}
-              {authUser && (
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut} aria-label="Log out">
-                  <LogOut className="h-5 w-5" />
-                </Button>
+              {!isGuest && (
+                <span className={cn(appNameBaseClasses, 'text-current')}>{APP_NAME}</span>
               )}
-
-              <Button
-                onClick={() => router.push('/login')}
-                className={cn(
-                  "flex h-9 px-3 sm:px-4 text-xs sm:text-sm transition-all duration-300", // Visible on all screens
-                  "bg-primary text-primary-foreground hover:bg-primary/90",
-                  isGuest && isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-                )}
-                variant={'default'}
-              >
-                <UserPlus className="mr-1.5 h-4 sm:h-5 w-4 sm:w-5" />
-                Sign In / Up
-              </Button>
-            </div>
-          ) : (
-            <>
-              {!authLoading && authUser && null}
-
-              <div className="hidden md:flex items-center space-x-0.5 sm:space-x-1">
-                {!authLoading && authUser && (
-                  <>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Dashboard" id="nav-item-dashboard" onClick={dashboardLinkHandler}>
-                      <LayoutGrid className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" id="nav-item-favorites" onClick={favoritesLinkHandler}>
-                      <Heart className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" id="nav-item-trends" onClick={trendsLinkHandler}>
-                      <BarChart3 className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/micronutrients' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Micronutrients Progress" id="nav-item-micronutrients" onClick={micronutrientsLinkHandler}>
-                      <Atom className="h-5 w-5" />
-                    </Button>
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/insights' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')}
-                        aria-label="Insights"
-                        id="nav-item-insights"
-                        onClick={aiInsightsLinkHandler}
-                      >
-                        <Lightbulb className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0", pathname === '/about' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="About" id="nav-item-about" onClick={aboutLinkHandler}>
-                      <Info className="h-5 w-5" />
-                    </Button>
-                  </>
-                )}
-
-                <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="h-8 w-8 text-current hover:text-primary hover:bg-primary/10" aria-label="Toggle dark mode">
-                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Link>
+            <Dialog open={isReleaseNotesOpen} onOpenChange={handleReleaseNotesToggle}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "text-xs p-1 h-auto ml-0 mt-1 rounded-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 relative",
+                    "text-primary underline underline-offset-2",
+                    "hover:bg-transparent hover:text-primary/80",
+                    "transition-opacity duration-300",
+                    isGuest && isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+                  )}
+                  aria-label={`App Version ${APP_VERSION}, click for release notes`}
+                >
+                  {APP_VERSION}
+                  {showNewReleaseIndicator && (
+                    <span
+                      className="absolute top-0.5 right-0.5 block h-2 w-2 rounded-full bg-red-500 border border-background"
+                      aria-hidden="true"
+                    />
+                  )}
                 </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg bg-card text-card-foreground border-border">
+                <DialogHeader>
+                  <DialogTitle className="font-headline text-xl flex items-center">
+                    <ScrollText className="mr-2 h-5 w-5" /> Release Notes
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-2 -mr-2 py-2">
+                  <div className="space-y-4">
+                    {releaseNotesData.map((release, index) => (
+                      <div key={index} className="pb-3 border-b border-border last:border-b-0">
+                        <h3 className="text-md font-semibold text-foreground">
+                          Version {release.version}
+                          {release.date && <span className="text-xs text-muted-foreground ml-2 font-normal">- {release.date}</span>}
+                        </h3>
+                        {release.title && <p className="text-sm font-medium text-primary mt-0.5">{release.title}</p>}
+                        {Array.isArray(release.description) ? (
+                          <ul className="list-disc list-inside text-sm text-muted-foreground mt-1 space-y-0.5">
+                            {release.description.map((note, noteIndex) => (
+                              <li key={noteIndex}>{note}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mt-1">{release.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <DialogFooter className="sm:justify-start mt-2">
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary" className="w-full sm:w-auto">
+                      Close
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+
+          <div id="navbar-actions-container" className={cn("flex items-center", "space-x-0.5 sm:space-x-1")}>
+            {isGuest ? (
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                {/* Show Log Out if user is authenticated but on guest view */}
+                {authUser && (
+                  <LiquidPressable variant="icon" size="sm" haptic="light" className="text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut} aria-label="Log out">
+                    <LogOut className="h-5 w-5" />
+                  </LiquidPressable>
+                )}
+
+                <Button
+                  onClick={() => router.push('/login')}
+                  className={cn(
+                    "flex h-9 px-3 sm:px-4 text-xs sm:text-sm transition-all duration-300", // Visible on all screens
+                    "bg-primary text-primary-foreground hover:bg-primary/90",
+                    isGuest && isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+                  )}
+                  variant={'default'}
+                >
+                  <UserPlus className="mr-1.5 h-4 sm:h-5 w-4 sm:w-5" />
+                  Sign In / Up
+                </Button>
+              </div>
+            ) : (
+              <>
+                {!authLoading && authUser && null}
+
+                <div className="hidden md:flex items-center space-x-0.5 sm:space-x-1">
+                  {!authLoading && authUser && (
+                    <>
+                      <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Dashboard" id="nav-item-dashboard" onClick={dashboardLinkHandler}>
+                        <LayoutGrid className="h-5 w-5" />
+                      </LiquidPressable>
+                      <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/favorites' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Favorites" id="nav-item-favorites" onClick={favoritesLinkHandler}>
+                        <Heart className="h-5 w-5" />
+                      </LiquidPressable>
+                      <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/trends' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Trends" id="nav-item-trends" onClick={trendsLinkHandler}>
+                        <BarChart3 className="h-5 w-5" />
+                      </LiquidPressable>
+                      <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/micronutrients' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="Micronutrients Progress" id="nav-item-micronutrients" onClick={micronutrientsLinkHandler}>
+                        <Atom className="h-5 w-5" />
+                      </LiquidPressable>
+                      <div className="relative">
+                        <LiquidPressable
+                          variant="icon"
+                          size="sm"
+                          haptic="light"
+                          className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/insights' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')}
+                          aria-label="Insights"
+                          id="nav-item-insights"
+                          onClick={aiInsightsLinkHandler}
+                        >
+                          <Lightbulb className="h-5 w-5" />
+                        </LiquidPressable>
+                      </div>
+                      <LiquidPressable variant="icon" size="sm" haptic="light" className={cn("focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors", pathname === '/about' ? 'bg-primary/10 text-primary' : 'text-current hover:text-primary hover:bg-primary/10')} aria-label="About" id="nav-item-about" onClick={aboutLinkHandler}>
+                        <Info className="h-5 w-5" />
+                      </LiquidPressable>
+                    </>
+                  )}
+
+                  <LiquidPressable variant="icon" size="sm" haptic="medium" onClick={toggleDarkMode} className="text-current hover:text-primary hover:bg-primary/10" aria-label="Toggle dark mode">
+                    {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </LiquidPressable>
+
+
+                </div>
 
                 {!authLoading && authUser && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className={cn("relative h-9 w-9 rounded-full border-2 border-current p-0 hover:bg-primary/10 hover:text-primary hover:border-primary")}>
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={authUser.photoURL || undefined} alt={authUser.displayName || 'User'} />
-                          <AvatarFallback className="bg-primary text-primary-foreground">
-                            {getInitials(authUser.displayName)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none text-foreground">{authUser.displayName || 'User'}</p>
-                          <p className="text-xs leading-none text-muted-foreground">{authUser.email}</p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {isCurrentUserAdmin && (
-                        <DropdownMenuItem onClick={() => router.push('/admin/feedback')} className="cursor-pointer flex justify-between items-center">
-                          <div className="flex items-center">
-                            <AdminIcon className="mr-2 h-4 w-4" />
-                            <span>Admin Dashboard</span>
-                          </div>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>User Center</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => startWalkthrough('welcome')} className="cursor-pointer">
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        <span>App Tour</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push('/privacy')} className="cursor-pointer">
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Privacy Notice</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push('/terms')} className="cursor-pointer">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span>Terms of Use</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push('/health-debug')} className="cursor-pointer">
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        <span>Health Debug</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="md:hidden">
+                    <LiquidPressable
+                      variant="icon"
+                      size="lg"
+                      haptic="medium"
+                      className="text-current hover:text-primary hover:bg-primary/10"
+                      aria-label="Open menu"
+                      onClick={() => setIsMobileMenuOpen(true)}
+                    >
+                      <Menu className="h-7 w-7" />
+                    </LiquidPressable>
+                  </div>
                 )}
-              </div>
-
-              {!authLoading && authUser && (
-                <div className="md:hidden">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-12 w-12 text-current hover:text-primary hover:bg-primary/10"
-                    aria-label="Open menu"
-                    onClick={() => setIsMobileMenuOpen(true)}
-                  >
-                    <Menu className="h-7 w-7" />
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+
+      </header>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
@@ -1336,7 +1292,7 @@ export default function Navbar({
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 bottom-0 h-full w-[85vw] max-w-sm bg-background border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden rounded-l-2xl"
+              className="fixed top-0 right-0 bottom-0 h-full w-[85vw] max-w-sm bg-background border-l border-border z-[100] flex flex-col shadow-2xl overflow-hidden rounded-l-2xl"
             >
               <div className="p-4 safe-area-pt flex items-center justify-between border-b border-border bg-muted/20">
                 <div className="flex items-center space-x-3">
@@ -1349,9 +1305,9 @@ export default function Navbar({
                     <p className="text-xs text-muted-foreground">{authUser?.email}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
+                <LiquidPressable variant="icon" size="sm" haptic="light" onClick={() => setIsMobileMenuOpen(false)}>
                   <X className="h-5 w-5" />
-                </Button>
+                </LiquidPressable>
               </div>
 
               <div className="flex-1 overflow-y-auto p-2">
@@ -1377,36 +1333,36 @@ export default function Navbar({
                   { icon: Info, label: "About", onClick: () => { setIsMobileMenuOpen(false); aboutLinkHandler(); } },
                   ].map((item, idx) => (
                     <motion.div key={idx} variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
-                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={item.onClick}>
+                      <LiquidPressable variant="ghost" size="lg" haptic="light" className="w-full justify-start text-base h-12 rounded-xl" onClick={item.onClick}>
                         <item.icon className="mr-3 h-5 w-5 text-muted-foreground" /> {item.label}
-                      </Button>
+                      </LiquidPressable>
                     </motion.div>
                   ))}
 
                   <div className="my-2 border-t border-border/50" />
 
                   <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={toggleDarkMode}>
+                    <LiquidPressable variant="ghost" size="lg" haptic="medium" className="w-full justify-start text-base h-12 rounded-xl" onClick={toggleDarkMode}>
                       {isDarkMode ? <Sun className="mr-3 h-5 w-5" /> : <Moon className="mr-3 h-5 w-5" />} Toggle Theme
-                    </Button>
+                    </LiquidPressable>
                   </motion.div>
 
                   {isCurrentUserAdmin && (
                     <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
-                      <Button variant="ghost" className="w-full justify-between text-base h-12 pr-4" onClick={() => { setIsMobileMenuOpen(false); router.push('/admin/feedback'); }}>
+                      <LiquidPressable variant="ghost" size="lg" haptic="light" className="w-full justify-between text-base h-12 pr-4 rounded-xl" onClick={() => { setIsMobileMenuOpen(false); router.push('/admin/feedback'); }}>
                         <div className="flex items-center">
                           <AdminIcon className="mr-3 h-5 w-5" /> Admin Dashboard
                         </div>
-                      </Button>
+                      </LiquidPressable>
                     </motion.div>
                   )}
 
                   <div className="my-2 border-t border-border/50" />
 
                   <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut}>
+                    <LiquidPressable variant="ghost" size="lg" haptic="light" className="w-full justify-start text-base h-12 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-xl" onClick={handleSignOut}>
                       <LogOut className="mr-3 h-5 w-5" /> Log out
-                    </Button>
+                    </LiquidPressable>
                   </motion.div>
                 </motion.div>
               </div>
@@ -1415,20 +1371,8 @@ export default function Navbar({
         )}
       </AnimatePresence>
 
-
-      {!authLoading && authUser && !isGuest && !isMobileMenuOpen && !hideFloatingActionMenu && (
-        <BottomActionBar>
-          <FeedbackWidget />
-          <FloatingActionMenu
-            onLogFoodAIClick={() => handleGenericActionItemClick(onLogFoodAIClick, 'logFoodAI')}
-            onScanBarcodeClick={() => handleGenericActionItemClick(onIdentifyByPhotoClick, 'logPhoto')}
-            onLogSymptomsClick={() => handleGenericActionItemClick(onLogSymptomsClick, 'logSymptoms')}
-            onLogFavoriteClick={() => handleGenericActionItemClick(favoritesLinkHandler)}
-            onAddManualEntryClick={() => handleGenericActionItemClick(onLogPreviousMealClick, 'logPrevious')}
-          />
-        </BottomActionBar>
-      )}
-    </header>
+      {/* Bottom Action Bar removed in favor of Global Liquid Navigation */}
+    </>
   );
 }
 

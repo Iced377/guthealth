@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetFooter } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { TimelineEntry, UserProfile, DailyNutritionSummary, LoggedFoodItem, MicronutrientDetail } from '@/types';
 import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
@@ -274,9 +275,9 @@ export default function PremiumDashboardSheet({
 
         <Popover open={isFabPopoverOpen} onOpenChange={setIsFabPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="default" className="absolute bottom-20 right-6 h-16 w-16 rounded-full shadow-2xl z-20" size="icon">
+            <LiquidPressable variant="fab" haptic="medium" className="absolute bottom-20 right-6 h-16 w-16 rounded-full shadow-2xl z-20 bg-primary text-primary-foreground hover:bg-primary/90 p-0 flex items-center justify-center">
               <Plus className="h-8 w-8" />
-            </Button>
+            </LiquidPressable>
           </PopoverTrigger>
           <PopoverContent
             side="top"
@@ -284,18 +285,18 @@ export default function PremiumDashboardSheet({
             className="w-auto bg-card text-card-foreground border-border shadow-xl rounded-xl p-0 mb-2"
           >
             <div className="flex flex-col gap-1 p-2">
-              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
+              <LiquidPressable variant="ghost" size="lg" haptic="light" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-xl h-auto" onClick={() => handleFabActionClick(onLogFoodAIClick)}>
                 <PlusCircle className="mr-3 h-5 w-5" /> Log Food with Text
-              </Button>
-              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
+              </LiquidPressable>
+              <LiquidPressable variant="ghost" size="lg" haptic="light" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-xl h-auto" onClick={() => handleFabActionClick(onIdentifyByPhotoClick)}>
                 <Camera className="mr-3 h-5 w-5" /> Identify by Photo
-              </Button>
-              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogSymptomsClick)}>
+              </LiquidPressable>
+              <LiquidPressable variant="ghost" size="lg" haptic="light" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-xl h-auto" onClick={() => handleFabActionClick(onLogSymptomsClick)}>
                 <ListChecks className="mr-3 h-5 w-5" /> Log Symptoms
-              </Button>
-              <Button variant="ghost" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground" onClick={() => handleFabActionClick(onLogPreviousMealClick)}>
+              </LiquidPressable>
+              <LiquidPressable variant="ghost" size="lg" haptic="light" className="justify-start w-full text-base py-3 px-4 text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-xl h-auto" onClick={() => handleFabActionClick(onLogPreviousMealClick)}>
                 <CalendarDays className="mr-3 h-5 w-5" /> Log Previous Meal
-              </Button>
+              </LiquidPressable>
             </div>
           </PopoverContent>
         </Popover>

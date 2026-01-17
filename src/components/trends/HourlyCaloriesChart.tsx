@@ -3,6 +3,9 @@
 import type { HourlyCaloriePoint } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatGraphNumber } from '@/utils/format';
+import { ChartInteractivityGate } from './ChartInteractivityGate';
+import { useTrendsMotionController } from './useTrendsMotionController';
 
 interface HourlyCaloriesChartProps {
     data: HourlyCaloriePoint[];
@@ -18,6 +21,7 @@ const getChartColors = (isDarkMode: boolean) => {
 };
 
 export default function HourlyCaloriesChart({ data, isDarkMode }: HourlyCaloriesChartProps) {
+    const { isChartInteractionEnabled } = useTrendsMotionController();
     const colors = getChartColors(isDarkMode);
 
     const chartConfig = {
@@ -33,45 +37,49 @@ export default function HourlyCaloriesChart({ data, isDarkMode }: HourlyCalories
     const yAxisDomain = [0, yAxisDomainMax];
 
     return (
-        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-            <BarChart
-                accessibilityLayer
-                data={data}
-                margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-            >
-                <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
-                <XAxis
-                    dataKey="hour"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    tickFormatter={(value) => value}
-                    stroke={colors.text}
-                    angle={0}
-                    interval="preserveStartEnd"
-                    textAnchor="middle"
-                    height={30}
-                />
-                <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    stroke={colors.text}
-                    domain={yAxisDomain}
-                    label={{ value: 'Avg. Calories', angle: -90, position: 'insideLeft', fill: colors.text, dy: 45, dx: -5 }}
-                />
-                <ChartTooltip
-                    cursor={true}
-                    content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [value, chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
-                />
-                <Bar
-                    dataKey="calories"
-                    fill={colors.calories}
-                    radius={[4, 4, 0, 0]}
-                />
-                <ChartLegend content={<ChartLegendContent />} />
-            </BarChart>
-        </ChartContainer>
+        <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+            <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+                <BarChart
+                    accessibilityLayer
+                    data={data}
+                    margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                >
+                    <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
+                    <XAxis
+                        dataKey="hour"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        minTickGap={32}
+                        tickFormatter={(value) => value}
+                        stroke={colors.text}
+                        angle={0}
+                        interval="preserveStartEnd"
+                        textAnchor="middle"
+                        height={30}
+                    />
+                    <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        stroke={colors.text}
+                        domain={yAxisDomain}
+                        tickFormatter={(val) => formatGraphNumber(val)}
+                        label={{ value: 'Avg. Calories', angle: -90, position: 'insideLeft', fill: colors.text, dy: 45, dx: -5 }}
+                    />
+                    <ChartTooltip
+                        cursor={true}
+                        content={<ChartTooltipContent indicator="dot" formatter={(value, name, props) => [formatGraphNumber(value as number), chartConfig[props.dataKey as keyof typeof chartConfig]?.label || name]} />}
+                    />
+                    <Bar
+                        dataKey="calories"
+                        fill={colors.calories}
+                        radius={[4, 4, 0, 0]}
+                        isAnimationActive={false}
+                    />
+                    <ChartLegend content={<ChartLegendContent />} />
+                </BarChart>
+            </ChartContainer>
+        </ChartInteractivityGate>
     );
 }

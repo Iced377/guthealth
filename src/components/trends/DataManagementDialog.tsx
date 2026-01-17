@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -245,12 +246,12 @@ export default function DataManagementDialog({
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleEditClick(entry)}>
+                                                            <LiquidPressable variant="icon" size="sm" haptic="light" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleEditClick(entry)}>
                                                                 <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClick(entry.id)}>
+                                                            </LiquidPressable>
+                                                            <LiquidPressable variant="icon" size="sm" haptic="medium" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClick(entry.id)}>
                                                                 <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            </LiquidPressable>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>

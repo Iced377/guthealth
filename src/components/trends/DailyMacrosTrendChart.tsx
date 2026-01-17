@@ -1,179 +1,254 @@
-import { useState, useMemo } from 'react'; // Added imports
+import { useState, useMemo } from 'react';
+import React from 'react';
 import type { MacroPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'; // Changed LineChart to BarChart
-import { Button } from "@/components/ui/button"; // For filters
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from 'framer-motion';
+import { HapticsService } from '@/lib/haptics';
+import { useTrendsMotionController } from './useTrendsMotionController';
+import { formatGraphNumber } from '@/utils/format';
+import { ChartInteractivityGate } from './ChartInteractivityGate';
 
 interface DailyMacrosTrendChartProps {
   data: MacroPoint[];
   isDarkMode: boolean;
+  viewMode: 'Protein' | 'Carbs' | 'Fat';
+  onViewChange: (mode: 'Protein' | 'Carbs' | 'Fat') => void;
 }
 
 const COLORS = {
-  protein: '#EF4444', // Red-500
-  carbs: '#EAB308',   // Yellow-500
-  fat: '#3B82F6',     // Blue-500
+  Protein: '#EF4444', // Red-500
+  Carbs: '#EAB308',   // Yellow-500
+  Fat: '#3B82F6',     // Blue-500
   grid: "hsl(var(--border))",
   text: "hsl(var(--muted-foreground))",
 };
 
-export default function DailyMacrosTrendChart({ data, isDarkMode }: DailyMacrosTrendChartProps) {
+function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: DailyMacrosTrendChartProps) {
+  const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
   const [unit, setUnit] = useState<'grams' | 'calories'>('grams');
-  const [visibleMacros, setVisibleMacros] = useState<string[]>(['protein', 'carbs', 'fat']);
-
-  const toggleMacro = (macro: string) => {
-    setVisibleMacros(prev =>
-      prev.includes(macro) ? prev.filter(m => m !== macro) : [...prev, macro]
-    );
-  };
-
-  const chartConfig = {
-    protein: { label: "Protein", color: COLORS.protein },
-    carbs: { label: "Carbs", color: COLORS.carbs },
-    fat: { label: "Fat", color: COLORS.fat },
-  } satisfies import("@/components/ui/chart").ChartConfig;
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   // Prepare Data based on Mode
   const chartData = useMemo(() => {
     return data.map(point => {
-      if (unit === 'grams') {
-        return point; // Already in grams
-      } else {
-        // Convert to Calorie Contribution
-        return {
-          ...point, // keep date
-          protein: (point.protein || 0) * 4,
-          carbs: (point.carbs || 0) * 4,
-          fat: (point.fat || 0) * 9,
-        };
+      let proteinVal = point.protein || 0;
+      let carbsVal = point.carbs || 0;
+      let fatVal = point.fat || 0;
+
+      if (unit === 'calories') {
+        proteinVal *= 4;
+        carbsVal *= 4;
+        fatVal *= 9;
       }
+
+      return {
+        ...point,
+        protein: proteinVal,
+        carbs: carbsVal,
+        fat: fatVal,
+        // For single view, we might want a generic 'value' key if we were simplifying, but Recharts handles keys fine.
+      };
     });
   }, [data, unit]);
 
-  if (!data || data.length === 0) {
-    return <p className="text-center text-muted-foreground py-8">No data available for the selected period.</p>;
+  const handleBarClick = (data: any) => {
+    if (!isChartInteractionEnabled) return;
+    HapticsService.selection();
+    if (selectedDate === data.date) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(data.date);
+    }
+  };
+
+  const handleViewChange = (mode: 'Protein' | 'Carbs' | 'Fat') => {
+    if (globalInputDisabled) return;
+    if (mode !== viewMode) {
+      // HapticsService.impact('light'); // Optional per spec
+      onViewChange(mode);
+    }
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Controls Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        {/* Filter Toggles */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          <button
-            onClick={() => toggleMacro('protein')}
-            className={cn("px-3 py-1.5 rounded-full border transition-colors flex items-center gap-2 font-medium",
-              visibleMacros.includes('protein') ? "bg-red-500/10 border-red-500 text-red-600 dark:text-red-400" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
-            )}
-          >
-            <div className={cn("w-2 h-2 rounded-full", visibleMacros.includes('protein') ? "bg-red-500" : "bg-muted-foreground")} />
-            Protein
-          </button>
-          <button
-            onClick={() => toggleMacro('carbs')}
-            className={cn("px-3 py-1.5 rounded-full border transition-colors flex items-center gap-2 font-medium",
-              visibleMacros.includes('carbs') ? "bg-yellow-500/10 border-yellow-500 text-yellow-600 dark:text-yellow-400" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
-            )}
-          >
-            <div className={cn("w-2 h-2 rounded-full", visibleMacros.includes('carbs') ? "bg-yellow-500" : "bg-muted-foreground")} />
-            Carbs
-          </button>
-          <button
-            onClick={() => toggleMacro('fat')}
-            className={cn("px-3 py-1.5 rounded-full border transition-colors flex items-center gap-2 font-medium",
-              visibleMacros.includes('fat') ? "bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
-            )}
-          >
-            <div className={cn("w-2 h-2 rounded-full", visibleMacros.includes('fat') ? "bg-blue-500" : "bg-muted-foreground")} />
-            Fat
-          </button>
-        </div>
+  // Determine active color for single bar view
+  const activeColor = COLORS[viewMode];
+  const pointerEventsStyle = globalInputDisabled ? 'none' : 'auto';
 
-        {/* Unit Toggle */}
-        <div className="border rounded-md p-0.5 bg-muted flex items-center">
+  return (
+    <div
+      className="w-full h-full flex flex-col relative"
+      style={{ minHeight: '400px', pointerEvents: pointerEventsStyle }}
+      onMouseEnter={() => isChartInteractionEnabled && setIsScrubbing(true)}
+      onMouseLeave={() => setIsScrubbing(false)}
+    >
+
+      {/* Controls Row - Compact & Liquid */}
+      <div className="absolute top-0 right-0 left-0 z-10 flex justify-between items-start px-4 pointer-events-none">
+        {/* Spacer to push controls to sides or center if needed. 
+              Actually, spec says "Collapse controls into a single compact control row".
+              Let's float them top right or center top. center top might conflict with header? 
+              LiquidGraphScene header is top left. So top right is good.
+          */}
+        <div className="flex-1" /> {/* Spacer */}
+
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "pointer-events-auto flex items-center gap-2 bg-background/50 backdrop-blur-md p-1 rounded-full border shadow-sm transition-all duration-300",
+            globalInputDisabled && "opacity-50 pointer-events-none"
+          )}
+        >
+          {/* Macro Segmented Control */}
+          <div className="flex relative items-center bg-muted/50 rounded-full p-1 h-8">
+            {(['Protein', 'Carbs', 'Fat'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => handleViewChange(m)}
+                className={cn(
+                  "relative px-3 py-1 text-xs font-semibold rounded-full transition-all z-10",
+                  viewMode === m ? "text-background" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {viewMode === m && (
+                  <motion.div
+                    layoutId="activeMacroTab"
+                    className="absolute inset-0 bg-foreground rounded-full"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{m}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="w-px h-4 bg-border/50" />
+
+          {/* Unit Toggle */}
           <button
-            onClick={() => setUnit('grams')}
-            className={cn("px-3 py-1 text-xs font-medium rounded-sm transition-all", unit === 'grams' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+            onClick={() => setUnit(unit === 'grams' ? 'calories' : 'grams')}
+            className="text-xs font-medium px-2 text-muted-foreground hover:text-foreground transition-colors w-14 text-center"
           >
-            Grams
-          </button>
-          <button
-            onClick={() => setUnit('calories')}
-            className={cn("px-3 py-1 text-xs font-medium rounded-sm transition-all", unit === 'calories' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-          >
-            % Kcal
+            {unit === 'grams' ? 'g' : '%Kcal'}
           </button>
         </div>
       </div>
 
-      <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-        <BarChart
-          accessibilityLayer
-          data={chartData}
-          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-          stackOffset={unit === 'calories' ? "expand" : "none"} // Expand creates 100% chart
+      <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+        <ChartContainer
+          config={{
+            protein: { label: "Protein", color: COLORS.Protein },
+            carbs: { label: "Carbs", color: COLORS.Carbs },
+            fat: { label: "Fat", color: COLORS.Fat },
+          }}
+          className="w-full flex-1 mt-12 mb-4"
         >
-          <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            minTickGap={32}
-            tickFormatter={(value) => value.slice(5)} // Show MM-DD
-            stroke={COLORS.text}
-            fontSize={12}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            stroke={COLORS.text}
-            tickFormatter={(value) => unit === 'calories' ? `${(value * 100).toFixed(0)}%` : value} // Format % for stackOffset="expand" (it processes 0-1)
-            fontSize={12}
-            width={45}
-          />
-          <ChartTooltip
-            cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
-            content={({ active, payload, label }) => {
-              if (!active || !payload || !payload.length) return null;
-              // Custom tooltip to show meaningful info
-              // In Calories mode, values are calories. In Grams mode, grams.
-              return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="col-span-2 border-b pb-1 mb-1 font-medium">{label}</div>
-                    {payload.map((entry: any, index: number) => (
-                      <div key={index} className="flex items-center gap-2 text-xs">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="capitalize text-muted-foreground">{entry.name}:</span>
-                        <span className="font-medium font-mono">
-                          {Math.round(entry.value)}
-                          {unit === 'calories' ? ' kcal' : 'g'}
-                          {/* Calculate percentage manually for Grams mode if needed, or show % for Calories mode */}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            }}
-          />
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+            // stackOffset={unit === 'calories' ? "expand" : "none"} // User said "Single macro view default". Stacking deliberate.
+            // But if user selects "Protein", we valid only show protein. 
+            // So stackOffset is irrelevant if only 1 bar is shown.
+            >
+              <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" opacity={0.1} />
+              {/* Remove Axes lines per spec, retain faint grid */}
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={(value) => value.slice(5)}
+                stroke={COLORS.text}
+                fontSize={12}
+                opacity={0.5} // Faint
+              />
+              {/* Y Axis - maybe hidden or very minimal? Spec says "More legible label in focus". Default faint. */}
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => unit === 'calories' ? `${formatGraphNumber(value)} kcal` : `${formatGraphNumber(value)}g`}
+                fontSize={10}
+                width={30}
+                opacity={0.0} // Hidden by default per "Remove axis lines entirely... gridlines faint"
+              />
 
-          {visibleMacros.includes('protein') && (
-            <Bar dataKey="protein" stackId="a" fill={COLORS.protein} radius={[0, 0, 4, 4]} />
-          )}
-          {visibleMacros.includes('carbs') && (
-            <Bar dataKey="carbs" stackId="a" fill={COLORS.carbs} radius={[0, 0, 0, 0]} />
-          )}
-          {visibleMacros.includes('fat') && (
-            <Bar dataKey="fat" stackId="a" fill={COLORS.fat} radius={[4, 4, 0, 0]} />
-          )}
-        </BarChart>
-      </ChartContainer>
+              {isChartInteractionEnabled && (
+                <ChartTooltip
+                  cursor={false} // We handle selection visual manually
+                  content={({ active, payload, label }) => {
+                    if (!selectedDate || label !== selectedDate) return null; // Only show for selected
+                    if (!active || !payload || !payload.length) return null;
+
+                    const dataPoint = payload[0].payload;
+
+                    // Calculate Percentage
+                    const p = dataPoint.protein || 0;
+                    const c = dataPoint.carbs || 0;
+                    const f = dataPoint.fat || 0;
+
+                    let totalCals = 0;
+                    let activeCals = 0;
+
+                    if (unit === 'grams') {
+                      totalCals = (p * 4) + (c * 4) + (f * 9);
+                      const val = dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint];
+                      if (viewMode === 'Protein') activeCals = val * 4;
+                      else if (viewMode === 'Carbs') activeCals = val * 4;
+                      else if (viewMode === 'Fat') activeCals = val * 9;
+                    } else {
+                      totalCals = p + c + f;
+                      activeCals = dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint];
+                    }
+
+                    const pct = totalCals > 0 ? Math.round((activeCals / totalCals) * 100) : 0;
+
+                    return (
+                      <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-4 shadow-xl text-white min-w-[160px]">
+                        <div className="text-sm font-medium text-white/50 mb-2">{label}</div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: activeColor }} />
+                              <span className="text-sm font-medium">{viewMode}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-lg font-bold font-mono leading-none">
+                                {formatGraphNumber(dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint])}
+                                <span className="text-xs text-white/50 ml-1">{unit === 'grams' ? 'g' : 'kcal'}</span>
+                              </span>
+                              <span className="text-xs text-white/70 font-mono mt-1">
+                                {formatGraphNumber(pct)}% of daily cals
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </ChartInteractivityGate>
+
+      {/* Persistent Popup if selectedDate is set? 
+           Recharts Tooltip is transient. If we need persistent selection, we should render a custom absolute div 
+           positioned relative to the chart?
+           Implementing "Tap to reveal" with persistence usually requires manual coordinate handling or 
+           just letting Recharts Tooltip handle 'click' (if properly configured) or just mimicking it.
+           For now, the standard tooltip with custom styling is a safe 90% solution. 
+           If the user insists on "persist until tap elsewhere", we might need more logic. 
+       */}
+
     </div>
   );
 }
+
+export default React.memo(DailyMacrosTrendChart);

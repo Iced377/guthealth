@@ -1,141 +1,208 @@
+import React, { useState } from 'react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { WeightPoint } from '@/types';
+import { format, parseISO } from 'date-fns';
+import { HapticsService } from '@/lib/haptics';
+import LiquidSegmentedControl from '@/components/ui/LiquidSegmentedControl';
+import { useTrendsMotionController } from './useTrendsMotionController';
+import { cn } from '@/lib/utils';
+import { formatGraphNumber } from '@/utils/format';
 
-'use client';
-
-import type { WeightPoint } from '@/types';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ChartInteractivityGate } from './ChartInteractivityGate';
 
 interface WeightTrendChartProps {
     data: WeightPoint[];
     isDarkMode: boolean;
 }
 
-const getColors = (isDarkMode: boolean) => {
-    return {
-        weight: isDarkMode ? 'hsl(var(--chart-1))' : 'hsl(var(--chart-1))', // Greenish/Primary
-        grid: isDarkMode ? "hsl(var(--border))" : "hsl(var(--border))",
-        text: isDarkMode ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))",
-    };
+// Helper for safe date formatting
+const safeFormatDate = (dateStr: string, formatStr: string) => {
+    try {
+        if (!dateStr) return '';
+        return format(parseISO(dateStr), formatStr);
+    } catch (e) {
+        return dateStr;
+    }
 };
 
-export default function WeightTrendChart({ data, isDarkMode }: WeightTrendChartProps) {
-    const colors = getColors(isDarkMode);
+type ViewMode = 'Weight' | 'Fat Mass' | 'Both';
+const VIEW_OPTIONS: ViewMode[] = ['Weight', 'Fat Mass', 'Both'];
 
-    const chartConfig = {
-        weight: { label: "Weight (kg)", color: "hsl(var(--chart-3))" }, // Matches 'not marked'
-        fatMass: { label: "Fat Mass (kg)", color: "hsl(var(--chart-2))" },
-    } satisfies import("@/components/ui/chart").ChartConfig;
+function WeightTrendChart({ data, isDarkMode }: WeightTrendChartProps) {
+    const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
+    const [isScrubbing, setIsScrubbing] = useState(false);
+    const [viewModeIndex, setViewModeIndex] = useState(0);
+    const viewMode = VIEW_OPTIONS[viewModeIndex];
 
-    if (!data || data.length === 0) {
-        return <p className="text-center text-muted-foreground py-8">No weight data available for the selected period.</p>;
-    }
+    const weightColor = '#2aac6b'; // Primary Green
+    const fatColor = '#f59e0b'; // Amber/Orange for Fat
+    const labelColor = isDarkMode ? '#a1a1aa' : '#71717a';
 
-    // Adaptive domain for weight
-    const minWeight = Math.min(...data.map(d => d.weight));
-    const maxWeight = Math.max(...data.map(d => d.weight));
-    const weightPadding = (maxWeight - minWeight) * 0.1 || 5;
-    const weightDomain = [Math.max(0, Math.floor(minWeight - weightPadding)), Math.ceil(maxWeight + weightPadding)];
+    // Calculate domain min/max dynamically based on view
+    const getDomain = () => {
+        const weights = data.map(d => d.weight).filter(Number);
+        const fats = data.map(d => d.fatMass || 0).filter(v => v > 0);
 
-    // Adaptive domain for fat mass
-    const fatMassData = data.map(d => d.fatMass || 0); // Handle potentially undefined
-    const minFat = Math.min(...fatMassData);
-    const maxFat = Math.max(...fatMassData);
-    const fatPadding = (maxFat - minFat) * 0.1 || 2;
-    // If no fat data, default to 0-10 or similar to avoid chart errors
-    const fatDomain = maxFat > 0
-        ? [Math.max(0, Math.floor(minFat - fatPadding)), Math.ceil(maxFat + fatPadding)]
-        : [0, 10];
+        let min = 0, max = 100;
+
+        if (viewMode === 'Weight') {
+            min = Math.min(...weights);
+            max = Math.max(...weights);
+        } else if (viewMode === 'Fat Mass') {
+            min = fats.length ? Math.min(...fats) : 0;
+            max = fats.length ? Math.max(...fats) : 20;
+        } else {
+            // Both
+            const allValues = [...weights, ...fats];
+            min = Math.min(...allValues);
+            max = Math.max(...allValues);
+        }
+
+        const padding = (max - min) * 0.2;
+        return [Math.max(0, min - padding), max + padding];
+    };
+
+    const domain = getDomain();
+
+    const pointerEventsStyle = globalInputDisabled ? 'none' : 'auto';
 
     return (
-        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-            <AreaChart
-                accessibilityLayer
-                data={data}
-                margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
-            >
-                <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
-                <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    tickFormatter={(value) => value.slice(5)}
-                    stroke={colors.text}
-                    angle={0}
-                    interval="preserveStartEnd"
-                    textAnchor="middle"
-                    height={30}
+        <div
+            className="w-full h-full relative"
+            style={{ pointerEvents: pointerEventsStyle }}
+            onTouchStart={() => isChartInteractionEnabled && setIsScrubbing(true)}
+            onTouchEnd={() => setIsScrubbing(false)}
+            onMouseEnter={() => isChartInteractionEnabled && setIsScrubbing(true)}
+            onMouseLeave={() => setIsScrubbing(false)}
+        >
+            {/* Toggle Control - Positioned Top Center */}
+            <div className="absolute top-0 left-0 right-0 flex justify-center z-20 pointer-events-auto p-2">
+                <LiquidSegmentedControl
+                    className={cn(globalInputDisabled && "opacity-50 pointer-events-none")}
+                    options={VIEW_OPTIONS.map(opt => ({ id: opt, label: opt }))}
+                    selected={VIEW_OPTIONS[viewModeIndex]}
+                    onChange={(id) => {
+                        if (globalInputDisabled) return;
+                        HapticsService.selection();
+                        const idx = VIEW_OPTIONS.indexOf(id as ViewMode);
+                        if (idx !== -1) setViewModeIndex(idx);
+                    }}
+                    layoutIdPrefix="weight-view-mode"
+                // className="w-full max-w-[300px]" // Passed via className prop above? No, separate prop.
+                // The original code passed it as prop.
                 />
-                <YAxis
-                    yAxisId="weight"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    stroke={colors.text}
-                    domain={weightDomain}
-                    label={{ value: 'Weight (kg)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: colors.text, fontSize: 12 } }}
-                    width={50}
-                />
-                <YAxis
-                    yAxisId="fat"
-                    orientation="right"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    stroke={colors.text} // Functionally same color for text, or use fat color?
-                    domain={fatDomain}
-                    label={{ value: 'Fat Mass (kg)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: colors.text, fontSize: 12 } }}
-                    width={50}
-                />
-                <ChartTooltip
-                    cursor={true}
-                    content={<ChartTooltipContent indicator="dot" />}
-                />
-                <defs>
-                    <linearGradient id="fillWeight" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                            offset="5%"
-                            stopColor="var(--color-weight)"
-                            stopOpacity={0.8}
+                {/* Note: Original code had className prop on LiquidSegmentedControl, but I moved it to className prop. */}
+            </div>
+
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                    data={data}
+                    margin={{ top: 60, right: 0, left: 0, bottom: 0 }} /* Top margin for toggle */
+                    onMouseMove={() => {
+                        if (isChartInteractionEnabled && !isScrubbing) {
+                            setIsScrubbing(true);
+                            HapticsService.selection();
+                        }
+                    }}
+                >
+                    <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+                        <defs>
+                            <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={weightColor} stopOpacity={0.8} />
+                                <stop offset="95%" stopColor={weightColor} stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={fatColor} stopOpacity={0.8} />
+                                <stop offset="95%" stopColor={fatColor} stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+
+                        {isScrubbing && isChartInteractionEnabled && (
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                        )}
+
+                        <XAxis
+                            dataKey="date"
+                            tickFormatter={(value) => safeFormatDate(value, 'MMM d')}
+                            stroke={labelColor}
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            hide={!isScrubbing}
+                            interval="preserveStartEnd"
                         />
-                        <stop
-                            offset="95%"
-                            stopColor="var(--color-weight)"
-                            stopOpacity={0.1}
+                        <YAxis
+                            stroke={labelColor}
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            hide={!isScrubbing}
+                            domain={domain}
+                            type="number"
+                            allowDataOverflow={false}
+                            tickFormatter={(val) => formatGraphNumber(val)}
                         />
-                    </linearGradient>
-                    <linearGradient id="fillFatMass" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                            offset="5%"
-                            stopColor="var(--color-fatMass)"
-                            stopOpacity={0.8}
-                        />
-                        <stop
-                            offset="95%"
-                            stopColor="var(--color-fatMass)"
-                            stopOpacity={0.1}
-                        />
-                    </linearGradient>
-                </defs>
-                <Area
-                    yAxisId="weight"
-                    dataKey="weight"
-                    type="monotone"
-                    fill="url(#fillWeight)"
-                    stroke="var(--color-weight)"
-                    strokeWidth={2.5}
-                />
-                <Area
-                    yAxisId="fat"
-                    dataKey="fatMass"
-                    type="monotone"
-                    fill="url(#fillFatMass)"
-                    stroke="var(--color-fatMass)"
-                    strokeWidth={2.5}
-                />
-                <ChartLegend content={<ChartLegendContent />} />
-            </AreaChart>
-        </ChartContainer>
+
+                        {isChartInteractionEnabled && (
+                            <Tooltip
+                                cursor={{ stroke: labelColor, strokeDasharray: '4 4' }}
+                                content={({ active, payload, label }) => {
+                                    if (active && payload && payload.length) {
+                                        return (
+                                            <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl">
+                                                <p className="font-semibold mb-1">{safeFormatDate(label, 'EEEE, MMM d')}</p>
+
+                                                {(viewMode === 'Weight' || viewMode === 'Both') && (
+                                                    <p className="text-xl font-bold flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-[#2aac6b]" />
+                                                        {formatGraphNumber(payload.find(p => p.dataKey === 'weight')?.value as number)} <span className="text-xs font-normal text-muted-foreground">kg</span>
+                                                    </p>
+                                                )}
+
+                                                {(viewMode === 'Fat Mass' || viewMode === 'Both') && (
+                                                    <p className="text-xl font-bold flex items-center gap-2 mt-1">
+                                                        <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
+                                                        {formatGraphNumber(payload.find(p => p.dataKey === 'fatMass')?.value as number || 0)} <span className="text-xs font-normal text-muted-foreground">kg fat</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                }}
+                            />
+                        )}
+
+                        {(viewMode === 'Weight' || viewMode === 'Both') && (
+                            <Area
+                                type="monotone"
+                                dataKey="weight"
+                                stroke={weightColor}
+                                strokeWidth={3}
+                                fillOpacity={1}
+                                fill="url(#colorWeight)"
+                                animationDuration={0}
+                                isAnimationActive={false}
+                            />
+                        )}
+
+                        {(viewMode === 'Fat Mass' || viewMode === 'Both') && (
+                            <Area
+                                type="monotone"
+                                dataKey="fatMass"
+                                stroke={fatColor}
+                                strokeWidth={3}
+                                fillOpacity={viewMode === 'Both' ? 0.6 : 1}
+                                fill="url(#colorFat)"
+                                animationDuration={0}
+                                isAnimationActive={false}
+                            />
+                        )}
+                    </ChartInteractivityGate>
+                </AreaChart>
+            </ResponsiveContainer>
+        </div >
     );
 }
+
+export default React.memo(WeightTrendChart);

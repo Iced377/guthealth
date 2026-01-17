@@ -143,18 +143,9 @@
     /* Prevent pull-to-refresh effect on body */
   }
 
-  /* Allow text selection on paragraphs and inputs */
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  span,
+  /* Allow text selection ONLY on inputs and textareas */
   input,
-  textarea,
-  div {
+  textarea {
     -webkit-user-select: text;
     user-select: text;
   }
@@ -301,6 +292,18 @@
 
 
 @layer utilities {
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-bottom {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+
   .animate-pulse-glow {
     animation: pulse-glow 3s infinite ease-in-out;
   }
@@ -371,5 +374,126 @@
 
   .ios-icon-button {
     @apply h-8 w-8 rounded-full bg-secondary/80 text-secondary-foreground flex items-center justify-center transition-transform active:scale-95 hover:bg-secondary;
+  }
+
+  /* Liquid Glass Background */
+  .animated-mesh-gradient {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background:
+      radial-gradient(at 0% 0%, hsla(150, 60%, 40%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(180, 70%, 50%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(280, 60%, 60%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(200, 70%, 50%, 0.2) 0px, transparent 50%);
+    background-size: 150% 150%;
+    animation: mesh-flow 20s ease-in-out infinite alternate;
+    filter: blur(80px);
+    /* Heavy blur for the "liquid" feel */
+    opacity: 0.8;
+  }
+
+  .dark .animated-mesh-gradient {
+    background:
+      radial-gradient(at 0% 0%, hsla(150, 60%, 20%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(180, 70%, 30%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(280, 60%, 30%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(200, 70%, 30%, 0.2) 0px, transparent 50%);
+  }
+}
+
+@keyframes mesh-flow {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+
+  33% {
+    transform: scale(1.1) translate(-2%, 2%);
+  }
+
+  66% {
+    transform: scale(0.9) translate(2%, -2%);
+  }
+
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+/* Apple Liquid Glass Material System */
+@layer utilities {
+
+  /* Ultra-thin glass - like iOS status bar */
+  .glass-ultra-thin {
+    @apply bg-white/5 dark:bg-black/10 backdrop-blur-lg saturate-150;
+  }
+
+  /* Regular glass - for cards and containers */
+  .glass-regular {
+    @apply bg-white/60 dark:bg-white/15 backdrop-blur-2xl saturate-150;
+    @apply border border-white/50 dark:border-white/20;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  /* Thick glass - for navigation bars */
+  .glass-thick {
+    @apply bg-white/70 dark:bg-white/20 backdrop-blur-3xl saturate-200;
+    @apply border border-white/60 dark:border-white/25;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+
+  /* Colored glass overlay - for action buttons */
+  .glass-colored {
+    @apply backdrop-blur-xl;
+    box-shadow: 0 4px 20px var(--glass-color, rgba(0, 0, 0, 0.2)), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    @apply border border-white/30;
+  }
+
+  /* Glass press animation - scale + fade on touch */
+  .glass-press {
+    @apply transition-all duration-150 ease-out;
+    @apply active:scale-[0.95] active:opacity-90;
+  }
+
+  /* Fluid transition for all glass elements */
+  .glass-fluid {
+    @apply transition-all duration-300 ease-[cubic-bezier(0.25, 0.1, 0.25, 1)];
+  }
+
+  /* Inner highlight effect */
+  .glass-highlight {
+    @apply relative;
+  }
+
+  .glass-highlight::before {
+    content: '';
+    @apply absolute inset-0 rounded-[inherit] pointer-events-none;
+    @apply bg-gradient-to-b from-white/30 to-transparent;
+  }
+
+  /* Dynamic shadow that updates based on content behind */
+  .glass-shadow-dynamic {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .glass-shadow-dynamic {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Liquid Crystal - Colored translucent glass for cards */
+  .glass-crystal {
+    @apply bg-card/40 dark:bg-card/20 backdrop-blur-xl saturate-150;
+    @apply border border-white/20 dark:border-white/10;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    @apply transition-all duration-300;
+  }
+
+  .glass-crystal:hover {
+    @apply bg-card/50 dark:bg-card/30;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    @apply transform scale-[1.01];
   }
 }

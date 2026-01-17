@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import ScrollSection from './ScrollSection';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,16 @@ import { cn } from '@/lib/utils';
 import { Shield, ShieldCheck, Lock, Network, FileLock2, DatabaseZap, Eye, Server, Key } from 'lucide-react';
 
 export function HeroSection() {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.play().catch(error => {
+                console.log("Hero video autoplay prevented:", error);
+            });
+        }
+    }, []);
+
     return (
         <ScrollSection className="relative z-10 pt-20">
             <motion.div
@@ -24,11 +34,13 @@ export function HeroSection() {
                 {/* Circular Mask Container */}
                 <div className="relative z-10 w-[280px] h-[280px] sm:w-[450px] sm:h-[450px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
                     <video
-                        src="/running .mp4"
+                        ref={videoRef}
+                        src="/running.mp4"
                         autoPlay
                         loop
                         muted
                         playsInline
+                        preload="auto"
                         className="w-full h-full object-cover object-center scale-150" // scale-150 to zoom in on avatar if needed
                     />
                     {/* Inner shadow overlay for better integration */}
@@ -239,6 +251,7 @@ function FeatureItem({ title, description, placeholder, videoSrc, align }: { tit
                             loop
                             muted
                             playsInline
+                            preload="auto"
                             className="w-full h-full object-contain"
                         />
                     </div>

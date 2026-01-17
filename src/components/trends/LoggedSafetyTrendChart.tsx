@@ -3,6 +3,9 @@ import type { SafetyPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatGraphNumber } from '@/utils/format';
+import { ChartInteractivityGate } from './ChartInteractivityGate';
+import { useTrendsMotionController } from './useTrendsMotionController';
 
 interface LoggedSafetyTrendChartProps {
   data: SafetyPoint[];
@@ -21,6 +24,7 @@ const getColors = (isDarkMode: boolean) => { // Removed theme parameter
 };
 
 export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafetyTrendChartProps) {
+  const { isChartInteractionEnabled } = useTrendsMotionController();
   const colors = getColors(isDarkMode);
 
   const chartConfig = {
@@ -46,33 +50,35 @@ export default function LoggedSafetyTrendChart({ data, isDarkMode }: LoggedSafet
   ];
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-      <BarChart
-        accessibilityLayer
-        data={validData}
-        margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
-        layout="vertical"
-      >
-        <CartesianGrid horizontal={false} stroke={colors.grid} />
-        <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} stroke={colors.text} domain={yAxisDomain} />
-        <YAxis
-          dataKey="date"
-          type="category"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          stroke={colors.text}
-          tickFormatter={(value) => value.slice(5)}
-        />
-        <ChartTooltip
-          cursor={true}
-          content={<ChartTooltipContent indicator="dot" />}
-        />
-        <Bar dataKey="unsafe" stackId="a" fill="var(--color-unsafe)" radius={[0, 4, 4, 0]} barSize={20} />
-        <Bar dataKey="safe" stackId="a" fill="var(--color-safe)" barSize={20} />
-        <Bar dataKey="notMarked" stackId="a" fill="var(--color-notMarked)" radius={[4, 0, 0, 4]} barSize={20} />
-        <ChartLegend content={<ChartLegendContent />} />
-      </BarChart>
-    </ChartContainer>
+    <ChartInteractivityGate isEnabled={isChartInteractionEnabled}>
+      <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+        <BarChart
+          accessibilityLayer
+          data={validData}
+          margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
+          layout="vertical"
+        >
+          <CartesianGrid horizontal={false} stroke={colors.grid} />
+          <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} stroke={colors.text} domain={yAxisDomain} tickFormatter={(val) => formatGraphNumber(val)} />
+          <YAxis
+            dataKey="date"
+            type="category"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            stroke={colors.text}
+            tickFormatter={(value) => value.slice(5)}
+          />
+          <ChartTooltip
+            cursor={true}
+            content={<ChartTooltipContent indicator="dot" formatter={(value) => formatGraphNumber(value as number)} />}
+          />
+          <Bar dataKey="unsafe" stackId="a" fill={colors.unsafe} radius={[0, 0, 4, 4]} isAnimationActive={false} />
+          <Bar dataKey="safe" stackId="a" fill={colors.safe} radius={[0, 0, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="notMarked" stackId="a" fill={colors.notMarked} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+          <ChartLegend content={<ChartLegendContent />} />
+        </BarChart>
+      </ChartContainer>
+    </ChartInteractivityGate>
   );
 }

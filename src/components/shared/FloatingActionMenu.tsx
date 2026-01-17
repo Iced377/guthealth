@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Camera, ListChecks, CalendarDays, Utensils, Sparkles, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button'; // Unused?
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { cn } from '@/lib/utils';
 
 interface FloatingActionMenuProps {
@@ -60,72 +61,84 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         )}
                     >
                         {/* Sub-Item 4: Manual/Recent */}
-                        <motion.button
-                            variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
+                        <LiquidPressable
+                            variant="ghost"
+                            haptic="light"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onAddManualEntryClick(); }}
+                            variants={itemVariants}
                         >
                             <span className="text-sm font-medium mr-3">Manual Entry</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <CalendarDays className="h-6 w-6" />
                             </div>
-                        </motion.button>
+                        </LiquidPressable>
 
                         {/* Sub-Item 3: Symptoms */}
-                        <motion.button
-                            variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
+                        <LiquidPressable
+                            variant="ghost"
+                            haptic="light"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogSymptomsClick(); }}
+                            variants={itemVariants}
                         >
                             <span className="text-sm font-medium mr-3">Log Symptoms</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <ListChecks className="h-6 w-6" />
                             </div>
-                        </motion.button>
+                        </LiquidPressable>
 
                         {/* Sub-Item 2.5: Favorites (New) */}
-                        <motion.button
-                            variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
+                        <LiquidPressable
+                            variant="ghost"
+                            haptic="light"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogFavoriteClick(); }}
+                            variants={itemVariants}
                         >
                             <span className="text-sm font-medium mr-3">From Favourites</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <Heart className="h-6 w-6 fill-red-500 text-red-500" />
                             </div>
-                        </motion.button>
+                        </LiquidPressable>
 
                         {/* Sub-Item 2: Photo/Barcode */}
-                        <motion.button
-                            variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
+                        <LiquidPressable
+                            variant="ghost"
+                            haptic="light"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onScanBarcodeClick(); }}
+                            variants={itemVariants}
                         >
                             <span className="text-sm font-medium mr-3">Scan / Photo</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
                                 <Camera className="h-6 w-6" />
                             </div>
-                        </motion.button>
+                        </LiquidPressable>
 
                         {/* Sub-Item 1: AI Log */}
-                        <motion.button
-                            variants={itemVariants}
-                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right active-press"
+                        <LiquidPressable
+                            variant="ghost"
+                            haptic="light"
+                            className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
+                            variants={itemVariants}
                         >
                             <span className="text-sm font-medium mr-3">Auto Food Log</span>
                             <div className="h-12 w-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:bg-indigo-700 transition-colors">
                                 <Sparkles className="h-6 w-6" />
                             </div>
-                        </motion.button>
+                        </LiquidPressable>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <motion.button
+            <LiquidPressable
                 id="fab-add-button"
+                variant="fab"
+                haptic="medium"
                 className={cn(
-                    "h-20 w-20 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-200 active-press",
+                    "h-20 w-20 rounded-full shadow-2xl transition-all duration-200",
                     isOpen ? "bg-red-500 hover:bg-red-600 text-white border-2 border-white" : "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-white"
                 )}
                 onClick={toggleMenu}
@@ -143,7 +156,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         >
                             {/* Combined Icon: Utensils + Plus? Or just Plus? User asked: "The icon should be a plus sign and a meal icon." */}
                             <div className="relative">
-                                <Utensils className="h-8 w-8" />
+                                <Utensils className="h-8 w-8 text-inherit" />
                                 <Plus className="h-4 w-4 absolute -top-1 -right-1 bg-white text-primary rounded-full p-[1px]" strokeWidth={4} />
                             </div>
                         </motion.div>
@@ -158,7 +171,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </motion.button>
+            </LiquidPressable>
         </div>
     );
 };

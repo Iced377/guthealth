@@ -4,6 +4,8 @@
 import type { DailyNutritionSummary } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { Flame, Beef, Wheat, Droplet, TrendingUp, Edit3 } from 'lucide-react';
 
 interface DailyTotalsCardProps {
@@ -23,9 +25,9 @@ export default function DailyTotalsCard({ summary, onEditMacrosClick }: DailyTot
           <TrendingUp className="mr-3 h-6 w-6 sm:h-7 sm:w-7 text-gray-400" />
           Today&apos;s Nutrition
         </CardTitle>
-        <Button variant="ghost" size="icon" onClick={onEditMacrosClick} aria-label="Edit Macros">
-            <Edit3 className="h-5 w-5 text-muted-foreground" />
-        </Button>
+        <LiquidPressable variant="icon" size="sm" haptic="light" onClick={onEditMacrosClick} aria-label="Edit Macros">
+          <Edit3 className="h-5 w-5 text-muted-foreground" />
+        </LiquidPressable>
       </CardHeader>
       <CardContent>
         {calories === 0 && protein === 0 && carbs === 0 && fat === 0 ? (
