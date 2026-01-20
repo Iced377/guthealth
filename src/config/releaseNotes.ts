@@ -5,9 +5,20 @@ export interface ReleaseNote {
     description: string | string[];
 }
 
-export const APP_VERSION = "Beta 4.5.3";
+export const APP_VERSION = "Beta 5.0.0";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: "Beta 5.0.0",
+        date: "Jan 20, 2026",
+        title: "Liquid Glass UI & Core Overhaul",
+        description: [
+            "Liquid Glass UI: A completely redesigned interface featuring our signature frosted glass aesthetic, smooth animations, and a modern dark mode.",
+            "Navigation 2.0: New side-drawer menu and unified navigation structure for easier access to everything.",
+            "Dashboard Reimagined: Interactive timeline with flying cards, parallax headers, and live health vitals.",
+            "Feedback 2.0: New interactive feedback system with ratings and motion-controlled input."
+        ]
+    },
     {
         version: "Beta 4.5.3",
         date: "Jan 15, 2026",

@@ -1,5 +1,11 @@
 # Release Notes
 
+## Beta 5.0.0 (Jan 20, 2026)
+-   **Liquid Glass UI:** A completely redesigned interface featuring our signature frosted glass aesthetic, smooth animations, and a modern dark mode.
+-   **Navigation 2.0:** New side-drawer menu and unified navigation structure for easier access to everything.
+-   **Dashboard Reimagined:** Interactive timeline with flying cards, parallax headers, and live health vitals.
+-   **Feedback 2.0:** New interactive feedback system with ratings and motion-controlled input.
+
 ## Beta 4.5.3 (Jan 15, 2026)
 -   **Precision Steps:** Implemented a smart deduplication algorithm for Apple Health. The app now intelligently merges steps from your iPhone and Apple Watch to prevent double-counting.
 -   **Auto-Sync:** Fixed an issue where steps wouldn't load immediately on app launch.
