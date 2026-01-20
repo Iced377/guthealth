@@ -5,11 +5,11 @@ export interface ReleaseNote {
     description: string | string[];
 }
 
-export const APP_VERSION = "Beta 5.0.0";
+export const APP_VERSION = "Beta 5.0.1";
 
 export const releaseNotesData: ReleaseNote[] = [
     {
-        version: "Beta 5.0.0",
+        version: "Beta 5.0.1",
         date: "Jan 20, 2026",
         title: "Liquid Glass UI & Core Overhaul",
         description: [

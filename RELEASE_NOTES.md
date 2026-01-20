@@ -1,6 +1,6 @@
 # Release Notes
 
-## Beta 5.0.0 (Jan 20, 2026)
+## Beta 5.0.1 (Jan 20, 2026)
 -   **Liquid Glass UI:** A completely redesigned interface featuring our signature frosted glass aesthetic, smooth animations, and a modern dark mode.
 -   **Navigation 2.0:** New side-drawer menu and unified navigation structure for easier access to everything.
 -   **Dashboard Reimagined:** Interactive timeline with flying cards, parallax headers, and live health vitals.
