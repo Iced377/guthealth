@@ -5,9 +5,19 @@ export interface ReleaseNote {
     description: string | string[];
 }
 
-export const APP_VERSION = "Beta 5.0.1";
+export const APP_VERSION = "Beta 5.0.3";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: "Beta 5.0.3",
+        date: "Jan 20, 2026",
+        title: "Critical Hotfix & Native Google Auth",
+        description: [
+            "CRITICAL: Restored AI Model to Gemini 2.0 Flash (Fixed analysis failure).",
+            "Native Google Sign-In: Improved iOS sign-in experience (no longer opens Safari).",
+            "Fixed various build and deployment issues."
+        ]
+    },
     {
         version: "Beta 5.0.1",
         date: "Jan 20, 2026",

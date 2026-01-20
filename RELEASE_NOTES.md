@@ -1,5 +1,10 @@
 # Release Notes
 
+## Beta 5.0.3 (Jan 20, 2026)
+-   **CRITICAL FIX:** Restored AI Model to Gemini 2.0 Flash (Fixed analysis failure).
+-   **Native Google Sign-In:** Improved iOS sign-in experience (no longer opens Safari).
+-   **Stability:** Fixed build configuration.
+
 ## Beta 5.0.1 (Jan 20, 2026)
 -   **Liquid Glass UI:** A completely redesigned interface featuring our signature frosted glass aesthetic, smooth animations, and a modern dark mode.
 -   **Navigation 2.0:** New side-drawer menu and unified navigation structure for easier access to everything.
