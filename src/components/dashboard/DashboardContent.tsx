@@ -39,13 +39,15 @@ interface DashboardContentProps {
     groupedTimelineEntries: Record<string, TimelineEntry[]>;
     currentDate: Date;
     onDateChange: (date: Date) => void;
+    isLoading?: boolean;
 }
 
 export default function DashboardContent({
     timelineEntries, // Used for calculations
     isLoadingAi,
     currentDate,
-    onDateChange
+    onDateChange,
+    isLoading = false
 }: DashboardContentProps) {
     const { userProfile } = useAuth();
 
@@ -57,10 +59,33 @@ export default function DashboardContent({
         handleSetFoodFeedback,
         handleEditTimelineEntry,
         openSymptomLogDialog,
+        lastAddedItem,
+        setLastAddedItem,
     } = useActionContext();
 
     const { startWalkthrough } = useWalkthrough();
     const { healthData } = useHealthKit();
+
+    // Scroll to New Item Logic
+    React.useEffect(() => {
+        if (lastAddedItem) {
+            // 1. Switch Date if needed
+            if (!isSameDay(lastAddedItem.date, currentDate)) {
+                onDateChange(lastAddedItem.date);
+            }
+
+            // 2. Scroll to Item (Wait for render/animation)
+            const timer = setTimeout(() => {
+                const element = document.getElementById(`timeline-card-${lastAddedItem.id}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                setLastAddedItem(null); // Reset trigger
+            }, 600); // Slightly longer delay for tab switching + animation
+
+            return () => clearTimeout(timer);
+        }
+    }, [lastAddedItem, currentDate, onDateChange, setLastAddedItem]);
 
     // State
     const [scrollY, setScrollY] = useState(0);
@@ -71,7 +96,19 @@ export default function DashboardContent({
     };
 
     const onLogSymptomsForFood = (foodItemId?: string) => {
-        openSymptomLogDialog();
+        if (foodItemId) {
+            const foodItem = timelineEntries.find(e => e.id === foodItemId);
+            if (foodItem && foodItem.entryType === 'food') {
+                openSymptomLogDialog({
+                    type: 'meal',
+                    mealId: foodItem.id,
+                    mealName: (foodItem as LoggedFoodItem).name || "Meal",
+                    mealTimestamp: new Date(foodItem.timestamp)
+                });
+                return;
+            }
+        }
+        openSymptomLogDialog({ type: 'checkin' });
     };
 
     const onEditIngredients = (item: LoggedFoodItem) => {
@@ -143,36 +180,44 @@ export default function DashboardContent({
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
             </div>
 
-            {/* REMOVED sticky date header */}
+            {isLoading ? (
+                <div className="flex flex-col h-full w-full animate-pulse p-4 gap-4 mt-20">
+                    {/* Header Skeleton */}
+                    <div className="w-full h-32 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5" />
 
-            {/* 3-Panel Carousel with Fluid Header */}
-            <LiquidCardCarousel
-                currentDate={currentDate}
-                entries={sortedEntries}
-                isLoadingAi={isLoadingAi}
-                onSetFeedback={onSetFeedback}
-                onRemoveTimelineEntry={onRemoveTimelineEntry}
-                onLogSymptomsForFood={onLogSymptomsForFood}
-                onEditIngredients={onEditIngredients}
-                onRepeatMeal={onRepeatMeal}
-                onToggleFavorite={onToggleFavorite}
-                onDateChange={onDateChange}
-                isToday={isSameDay(currentDate, new Date())}
-                onScroll={setScrollY}
-                renderHeader={(date) => (
-                    <ParallaxVitalsHeader
-                        summary={getSummaryForDate(date)}
-                        currentDate={date}
-                        onPrevDate={() => onDateChange(addDays(date, -1))}
-                        onNextDate={() => onDateChange(addDays(date, 1))}
-                        userProfile={userProfile}
-                        stepsData={getStepsForDate(date)}
+                    {/* Cards Skeleton */}
+                    <div className="flex-1 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5" />
+                </div>
+            ) : (
+                /* 3-Panel Carousel with Fluid Header */
+                <LiquidCardCarousel
+                    currentDate={currentDate}
+                    entries={sortedEntries}
+                    isLoadingAi={isLoadingAi}
+                    onSetFeedback={onSetFeedback}
+                    onRemoveTimelineEntry={onRemoveTimelineEntry}
+                    onLogSymptomsForFood={onLogSymptomsForFood}
+                    onEditIngredients={onEditIngredients}
+                    onRepeatMeal={onRepeatMeal}
+                    onToggleFavorite={onToggleFavorite}
+                    onDateChange={onDateChange}
+                    isToday={isSameDay(currentDate, new Date())}
+                    onScroll={setScrollY}
+                    renderHeader={(date) => (
+                        <ParallaxVitalsHeader
+                            summary={getSummaryForDate(date)}
+                            currentDate={date}
+                            onPrevDate={() => onDateChange(addDays(date, -1))}
+                            onNextDate={() => onDateChange(addDays(date, 1))}
+                            userProfile={userProfile}
+                            stepsData={getStepsForDate(date)}
 
-                        scrollY={scrollY}
-                        className="pt-2" // Reduced padding as there's no sticky date anymore
-                    />
-                )}
-            />
+                            scrollY={scrollY}
+                            className="pt-2" // Reduced padding as there's no sticky date anymore
+                        />
+                    )}
+                />
+            )}
 
         </div>
     );

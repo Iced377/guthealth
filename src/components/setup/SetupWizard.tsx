@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import IntroVideo from './steps/IntroVideo';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -11,12 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types';
 import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
 import BasicInfo from './steps/BasicInfo';
-import GoalsStep from './steps/GoalsStep';
+import GoalSelectionStep from './steps/GoalSelectionStep';
+import ActivityLevelStep from './steps/ActivityLevelStep';
 import SymptomsStep from './steps/SymptomsStep';
 import DietStep from './steps/DietStep';
 import ResultsStep from './steps/ResultsStep';
-
-type WizardStep = 'intro' | 'basic-info' | 'goals' | 'diet' | 'symptoms' | 'results';
+import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
+import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 
 export interface SetupData {
     gender: 'male' | 'female';
@@ -29,16 +31,19 @@ export interface SetupData {
     dietaryPreferences?: string[];
 }
 
+type WizardMode = 'intro' | 'wizard' | 'results';
+
 export default function SetupWizard() {
     const { user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    const { isDarkMode } = useTheme();
 
-    const [currentStep, setCurrentStep] = useState<WizardStep>('intro');
-    const [direction, setDirection] = useState(0); // For slide animations
+    const [mode, setMode] = useState<WizardMode>('intro');
+    const [carouselIndex, setCarouselIndex] = useState(0);
 
     const [formData, setFormData] = useState<SetupData>({
-        gender: 'female', // Default
+        gender: 'female',
         dob: '',
         height: 170,
         weight: 70,
@@ -53,16 +58,6 @@ export default function SetupWizard() {
 
     const updateFormData = (data: Partial<SetupData>) => {
         setFormData(prev => ({ ...prev, ...data }));
-    };
-
-    const nextStep = (next: WizardStep) => {
-        setDirection(1);
-        setCurrentStep(next);
-    };
-
-    const prevStep = (prev: WizardStep) => {
-        setDirection(-1);
-        setCurrentStep(prev);
     };
 
     const calculateResults = () => {
@@ -89,6 +84,24 @@ export default function SetupWizard() {
         return calculatedResults;
     };
 
+    // Navigation Handlers
+    const handleNext = () => {
+        // 0: BasicInfo, 1: GoalSelection, 2: ActivityLevel, 3: Diet, 4: Symptoms
+        if (carouselIndex < 4) {
+            setCarouselIndex(prev => prev + 1);
+        } else {
+            // Finished wizard steps
+            calculateResults();
+            setMode('results');
+        }
+    };
+
+    const handleBack = () => {
+        if (carouselIndex > 0) {
+            setCarouselIndex(prev => prev - 1);
+        }
+    };
+
     const handleFinish = async () => {
         if (!user || !results) return;
         setIsSaving(true);
@@ -108,7 +121,6 @@ export default function SetupWizard() {
                 macros: results.macros
             };
 
-            // Also save DOB to root user profile as originally designed
             await updateDoc(doc(db, 'users', user.uid), {
                 dateOfBirth: formData.dob,
                 profile: profileData
@@ -134,158 +146,144 @@ export default function SetupWizard() {
         }
     };
 
-    // Variants for slide animation
-    const variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 50 : -50,
-            opacity: 0,
-            scale: 0.95
-        }),
-        center: {
-            zIndex: 1,
-            x: 0,
-            opacity: 1,
-            scale: 1
-        },
-        exit: (direction: number) => ({
-            zIndex: 0,
-            x: direction < 0 ? 50 : -50,
-            opacity: 0,
-            scale: 0.95
-        })
+    // Ripple Effect Logic
+    const [ripple, setRipple] = useState<{ x: number, y: number } | null>(null);
+    const [prevGender, setPrevGender] = useState<SetupData['gender']>(formData.gender);
+
+    const handleGenderSelect = (gender: 'male' | 'female', x: number, y: number) => {
+        setPrevGender(formData.gender);
+        setRipple({ x, y });
+        updateFormData({ gender });
     };
 
-    // Theme Logic (Only for Basic Info step)
-    const getThemeGradient = () => {
-        if (currentStep === 'basic-info') {
-            if (formData.gender === 'male') return 'from-blue-100 to-sky-100';
-            if (formData.gender === 'female') return 'from-pink-100 to-rose-100';
-        }
-        return 'from-indigo-50 to-purple-50'; // Default
-    };
+    // Background State Logic
+    const isIntro = mode === 'intro';
+    const isResults = mode === 'results';
 
-    // Progress Logic
-    const steps: WizardStep[] = ['intro', 'basic-info', 'goals', 'diet', 'symptoms', 'results'];
-    const currentStepIndex = steps.indexOf(currentStep);
-    const progress = Math.min(100, Math.max(0, ((currentStepIndex) / (steps.length - 1)) * 100));
+    const blueGradient = "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20";
+    const pinkGradient = "bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20";
 
     return (
-        <div className={`min-h-screen bg-gradient-to-br ${getThemeGradient()} transition-colors duration-700 ease-in-out flex flex-col items-center justify-center p-4 overflow-hidden`}>
+        <div className="fixed inset-0 min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
-            {/* Progress Bar */}
-            {currentStep !== 'intro' && (
-                <div className="absolute top-0 left-0 w-full h-2 bg-black/5 z-50">
+            {/* Background Layers */}
+
+            {/* Intro Neutral Layer */}
+            <div className={cn(
+                "absolute inset-0 transition-opacity duration-1000 ease-in-out bg-zinc-50 dark:bg-[#0a0a0a]",
+                isIntro ? "opacity-100" : "opacity-0"
+            )} />
+
+            {/* Results Layer */}
+            <div className={cn(
+                "absolute inset-0 transition-opacity duration-1000 ease-in-out bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/20 dark:to-fuchsia-950/20",
+                isResults ? "opacity-100" : "opacity-0",
+                "z-20"
+            )} />
+
+            {/* Wizard Gender Layers */}
+            {!isIntro && !isResults && (
+                <>
+                    {/* Base Layer (Previous Gender or Current if no ripple) */}
+                    <div className={cn(
+                        "absolute inset-0 z-0",
+                        prevGender === 'male' ? blueGradient : pinkGradient
+                    )} />
+
+                    {/* Ripple Layer (Animate In) */}
                     <motion.div
-                        className="h-full bg-primary/80"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                        key={formData.gender} // Remounts on gender change to trigger new animation
+                        className={cn(
+                            "absolute inset-0 z-10",
+                            formData.gender === 'male' ? blueGradient : pinkGradient
+                        )}
+                        initial={{ clipPath: ripple ? `circle(0% at ${ripple.x}px ${ripple.y}px)` : "circle(150% at 50% 50%)" }}
+                        animate={{ clipPath: `circle(150% at ${ripple ? ripple.x : 0}px ${ripple ? ripple.y : 0}px)` }} // Using % is safer usually but px ensures origin accuracy. 
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} // smooth easeOut
                     />
-                </div>
+                </>
             )}
 
-            <div className="w-full max-w-4xl relative mt-8">
-                <AnimatePresence initial={false} custom={direction} mode="wait">
-                    {currentStep === 'intro' && (
-                        <IntroVideo key="intro" onComplete={() => nextStep('basic-info')} />
+            {/* Content Container (z-30 to sit above backgrounds) */}
+            <div className="relative z-30 w-full h-full flex flex-col items-center justify-center">
+
+                {/* Minimal Header Nav */}
+                <AnimatePresence>
+                    {mode === 'wizard' && carouselIndex > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="fixed top-12 left-6 z-50"
+                        >
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-foreground hover:bg-white/20 transition-colors"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 -ml-0.5"><path d="m15 18-6-6 6-6" /></svg>
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence mode="wait">
+                    {mode === 'intro' && (
+                        <IntroVideo key="intro" onComplete={() => setMode('wizard')} />
                     )}
 
-                    {currentStep === 'basic-info' && (
+                    {mode === 'wizard' && (
                         <motion.div
-                            key="basic-info"
-                            custom={direction}
-                            variants={variants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full"
+                            key="wizard"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="w-full h-full flex flex-col items-center justify-center"
                         >
-                            <BasicInfo
-                                data={formData}
-                                updateData={updateFormData}
-                                onNext={() => nextStep('goals')}
-                            />
+                            {/* Carousel Container - Full Screen/immersive */}
+                            <div className="w-full h-full relative">
+                                <LiquidChartCarousel
+                                    currentIndex={carouselIndex}
+                                    onIndexChange={setCarouselIndex}
+                                    showDots={true}
+                                    className="h-full w-full"
+                                >
+                                    <div className="h-full w-full flex items-center justify-center">
+                                        <BasicInfo
+                                            data={formData}
+                                            updateData={updateFormData}
+                                            onNext={handleNext}
+                                            onGenderSelect={handleGenderSelect}
+                                        />
+                                    </div>
+                                    <div className="h-full w-full flex items-center justify-center">
+                                        <GoalSelectionStep data={formData} updateData={updateFormData} onNext={handleNext} />
+                                    </div>
+                                    <div className="h-full w-full flex items-center justify-center">
+                                        <ActivityLevelStep data={formData} updateData={updateFormData} onNext={handleNext} />
+                                    </div>
+                                    <div className="h-full w-full flex items-center justify-center">
+                                        <DietStep data={formData} updateData={updateFormData} onNext={handleNext} />
+                                    </div>
+                                    <div className="h-full w-full flex items-center justify-center">
+                                        <SymptomsStep data={formData} updateData={updateFormData} onNext={handleNext} />
+                                    </div>
+                                </LiquidChartCarousel>
+                            </div>
                         </motion.div>
                     )}
 
-                    {currentStep === 'goals' && (
-                        <motion.div
-                            key="goals"
-                            custom={direction}
-                            variants={variants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full"
-                        >
-                            <GoalsStep
-                                data={formData}
-                                updateData={updateFormData}
-                                onBack={() => prevStep('basic-info')}
-                                onNext={() => nextStep('diet')}
-                            />
-                        </motion.div>
-                    )}
 
-                    {currentStep === 'diet' && (
-                        <motion.div
-                            key="diet"
-                            custom={direction}
-                            variants={variants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full"
-                        >
-                            <DietStep
-                                data={formData}
-                                updateData={updateFormData}
-                                onBack={() => prevStep('goals')}
-                                onNext={() => nextStep('symptoms')}
-                            />
-                        </motion.div>
-                    )}
-
-                    {currentStep === 'symptoms' && (
-                        <motion.div
-                            key="symptoms"
-                            custom={direction}
-                            variants={variants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full"
-                        >
-                            <SymptomsStep
-                                data={formData}
-                                updateData={updateFormData}
-                                onBack={() => prevStep('diet')}
-                                onNext={() => {
-                                    calculateResults();
-                                    nextStep('results');
-                                }}
-                            />
-                        </motion.div>
-                    )}
-
-                    {currentStep === 'results' && results && (
+                    {mode === 'results' && results && (
                         <motion.div
                             key="results"
-                            custom={direction}
-                            variants={variants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full"
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="w-full h-full flex items-center justify-center p-0"
                         >
                             <ResultsStep
                                 results={results}
-                                onBack={() => prevStep('symptoms')}
+                                onBack={() => { setMode('wizard'); setCarouselIndex(4); }}
                                 onFinish={handleFinish}
                                 isSaving={isSaving}
                             />

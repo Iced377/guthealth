@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
-    url: 'http://192.168.100.188:9002',
+    url: 'https://gutcheck-testflight--fodmapsafe.europe-west4.hosted.app',
     cleartext: true,
   }
 };

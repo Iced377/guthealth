@@ -87,13 +87,13 @@ export default function LiquidCardCarousel({
     const nextEntries = getEntriesForDate(entries, nextDate);
 
     // Drag Logic
-    const DRAG_THRESHOLD = width * 0.25;
+    const DRAG_THRESHOLD = width * 0.15;
 
     const handleDragEnd = (_: any, info: PanInfo) => {
         const offset = info.offset.x;
         const velocity = info.velocity.x;
 
-        if (offset > DRAG_THRESHOLD || velocity > 500) {
+        if (offset > DRAG_THRESHOLD || velocity > 300) {
             // Swiped Right -> Go to Prev
             animate(x, 0, {
                 type: "spring", stiffness: 300, damping: 30,
@@ -102,7 +102,7 @@ export default function LiquidCardCarousel({
                     x.set(-width);
                 }
             });
-        } else if ((offset < -DRAG_THRESHOLD || velocity < -500) && !isToday) {
+        } else if ((offset < -DRAG_THRESHOLD || velocity < -300) && !isToday) {
             // Swiped Left -> Go to Next
             animate(x, -2 * width, {
                 type: "spring", stiffness: 300, damping: 30,
@@ -130,7 +130,12 @@ export default function LiquidCardCarousel({
         return (
             <div className="space-y-6 pb-32">
                 {dayEntries.map((entry, index) => (
-                    <div key={entry.id} className="transform transition-all duration-500" style={{ animationDelay: `${index * 50}ms` }}>
+                    <div
+                        key={entry.id}
+                        id={`timeline-card-${entry.id}`}
+                        className="transform transition-all duration-500"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                    >
                         {entry.entryType === 'symptom' ? (
                             <div className="glass-crystal rounded-3xl overflow-hidden p-0 border-0">
                                 <TimelineSymptomCard item={entry} onRemoveItem={() => onRemoveTimelineEntry(entry.id)} />
@@ -170,8 +175,7 @@ export default function LiquidCardCarousel({
                     style={{ x, width: width * 3 }}
                     drag="x"
                     dragConstraints={{ left: isToday ? -width : -2 * width, right: 0 }}
-                    dragElastic={0.1}
-                    dragDirectionLock={true}
+                    dragElastic={0.2}
                     onDragEnd={handleDragEnd}
                 >
                     {/* PREVIOUS DAY PANEL */}

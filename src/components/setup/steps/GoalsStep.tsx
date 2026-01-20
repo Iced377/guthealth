@@ -1,11 +1,9 @@
 'use client';
 
 import { SetupData } from '../SetupWizard';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Target, Activity } from 'lucide-react';
+import { Target, Activity, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface GoalsStepProps {
     data: SetupData;
@@ -14,7 +12,8 @@ interface GoalsStepProps {
     onNext: () => void;
 }
 
-export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsStepProps) {
+export default function GoalsStep({ data, updateData, onNext }: GoalsStepProps) {
+    const { isDarkMode } = useTheme();
 
     const goals = [
         {
@@ -42,42 +41,62 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
         { id: 'lightly_active', label: 'Lightly Active', desc: '1-3 days/week exercise' },
         { id: 'moderately_active', label: 'Moderately Active', desc: '3-5 days/week exercise' },
         { id: 'very_active', label: 'Very Active', desc: '6-7 days/week hard exercise' },
-        // { id: 'super_active', label: 'Super Active', desc: 'Physical job + training' }, // Hidden for now to simplify
     ];
 
-    return (
-        <Card className="w-full max-w-2xl mx-auto shadow-xl border-none">
-            <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                    <div className="p-2 bg-[#2aac6b]/10 rounded-lg">
-                        <Target className="w-6 h-6 text-[#2aac6b]" />
-                    </div>
-                    Your Goals & Activity
-                </CardTitle>
-                <CardDescription>
-                    Help us understand your lifestyle to tailor your nutrition targets.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
+    const handleGoalSelect = (goalId: string) => {
+        updateData({ goal: goalId as any });
+        if (data.activityLevel) {
+            setTimeout(() => onNext(), 300); // Slight delay for visual feedback
+        }
+    };
 
+    const handleActivitySelect = (activityId: string) => {
+        updateData({ activityLevel: activityId as any });
+        if (data.goal) {
+            setTimeout(() => onNext(), 300);
+        }
+    };
+
+    return (
+        <div className="w-full max-w-sm mx-auto flex flex-col items-center justify-center p-6 h-full space-y-8">
+            <div className="flex flex-col items-center text-center space-y-4 shrink-0">
+                <div className={cn(
+                    "w-20 h-20 rounded-full flex items-center justify-center transition-colors duration-500 shadow-lg",
+                    isDarkMode ? "bg-white/5 text-muted-foreground" : "bg-white/80 text-[#2aac6b] shadow-[#2aac6b]/20"
+                )}>
+                    <Target className="w-10 h-10" />
+                </div>
+                <div>
+                    <h2 className="text-3xl font-bold font-headline mb-2">Goals & Activity</h2>
+                    <p className="text-sm text-muted-foreground max-w-[250px] mx-auto opacity-70">
+                        Tailor your nutrition targets to your lifestyle.
+                    </p>
+                </div>
+            </div>
+
+            <div className="w-full space-y-8">
                 {/* Goals Selection */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-foreground">What is your primary goal?</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <h3 className="font-bold text-sm uppercase tracking-wider opacity-60 pl-1">Primary Goal</h3>
+                    <div className="space-y-3">
                         {goals.map((g) => (
                             <div
                                 key={g.id}
-                                onClick={() => updateData({ goal: g.id as any })}
+                                onClick={() => handleGoalSelect(g.id)}
                                 className={cn(
-                                    "cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md",
+                                    "cursor-pointer rounded-2xl p-4 transition-all duration-200 border-2",
                                     data.goal === g.id
-                                        ? "border-[#2aac6b] bg-[#2aac6b]/10 ring-1 ring-[#2aac6b]"
-                                        : "border-border bg-card hover:border-[#2aac6b]/30 hover:bg-accent/50"
+                                        ? "border-[#2aac6b] bg-[#2aac6b]/10 shadow-[0_0_15px_rgba(42,172,107,0.2)] scale-[1.02]"
+                                        : "border-transparent bg-white/5 dark:bg-white/5 hover:bg-white/10 dark:hover:bg-white/10"
                                 )}
                             >
-                                <div className="text-3xl mb-2">{g.icon}</div>
-                                <div className="font-semibold text-foreground">{g.label}</div>
-                                <div className="text-xs text-muted-foreground mt-1">{g.desc}</div>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-3xl shrink-0">{g.icon}</div>
+                                    <div className="text-left">
+                                        <div className="font-bold text-foreground">{g.label}</div>
+                                        <div className="text-xs text-muted-foreground leading-tight mt-0.5 opacity-80">{g.desc}</div>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -85,39 +104,32 @@ export default function GoalsStep({ data, updateData, onBack, onNext }: GoalsSte
 
                 {/* Activity Level */}
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-muted-foreground" />
-                        How active are you?
+                    <h3 className="font-bold text-sm uppercase tracking-wider opacity-60 pl-1 flex items-center gap-2">
+                        <Activity className="w-4 h-4" /> Activity Level
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         {activities.map((a) => (
                             <div
                                 key={a.id}
-                                onClick={() => updateData({ activityLevel: a.id as any })}
+                                onClick={() => handleActivitySelect(a.id)}
                                 className={cn(
-                                    "cursor-pointer border rounded-lg p-3 transition-colors flex flex-col",
+                                    "cursor-pointer rounded-xl p-3 transition-all duration-200 border-2 flex flex-col items-center text-center justify-center min-h-[80px]",
                                     data.activityLevel === a.id
-                                        ? "border-[#2aac6b] bg-[#2aac6b]/10 relative"
-                                        : "border-border bg-card hover:bg-accent/50"
+                                        ? "border-[#2aac6b] bg-[#2aac6b]/10 shadow-sm scale-[1.02]"
+                                        : "border-transparent bg-white/5 dark:bg-white/5 hover:bg-white/10 dark:hover:bg-white/10"
                                 )}
                             >
-                                <span className="font-medium text-foreground">{a.label}</span>
-                                <span className="text-xs text-muted-foreground">{a.desc}</span>
+                                <span className="font-bold text-sm text-foreground">{a.label}</span>
+                                <span className="text-[10px] text-muted-foreground leading-tight mt-1 opacity-80">{a.desc}</span>
                             </div>
                         ))}
                     </div>
                 </div>
+            </div>
 
-                <div className="flex gap-4 pt-4">
-                    <Button variant="outline" onClick={onBack} className="w-1/3">
-                        <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                    </Button>
-                    <Button className="w-2/3" onClick={onNext}>
-                        Next Step <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-                </div>
-
-            </CardContent>
-        </Card>
+            <div className="absolute bottom-8 right-6 flex items-center gap-1 text-muted-foreground/40 text-xs font-medium animate-pulse pointer-events-none">
+                Swipe <ChevronRight className="w-3 h-3" />
+            </div>
+        </div>
     );
 }

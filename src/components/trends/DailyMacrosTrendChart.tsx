@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { MacroPoint } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { cn } from "@/lib/utils";
@@ -28,6 +28,11 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
   const [unit, setUnit] = useState<'grams' | 'calories'>('grams');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
+
+  // Animation gate for stability
+  const isFirstRender = useRef(true);
+  useEffect(() => { isFirstRender.current = false; }, []);
+  const shouldAnimate = isFirstRender.current;
 
   // Prepare Data based on Mode
   const chartData = useMemo(() => {
@@ -139,14 +144,16 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
 
             <XAxis
               dataKey="date"
-              tickLine={false}
-              axisLine={false}
               tickMargin={8}
               minTickGap={32}
               tickFormatter={(value) => value.slice(5)}
               stroke={COLORS.text}
               fontSize={12}
               opacity={0.5}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: isScrubbing ? COLORS.text : 'transparent', fontSize: 12 }}
+              mirror={true}
             />
 
             <YAxis
@@ -156,6 +163,8 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
               fontSize={10}
               width={30}
               opacity={0.0}
+              tick={{ fill: 'transparent', fontSize: 10 }}
+              mirror={true}
             />
 
             {isChartInteractionEnabled && (
@@ -219,8 +228,8 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
               fill={activeColor}
               radius={[4, 4, 4, 4]}
               onClick={handleBarClick}
-              animationDuration={0}
-              isAnimationActive={false}
+              animationDuration={1000}
+              isAnimationActive={shouldAnimate}
             >
               {/* 
                    We map cells to handle selection opacity.

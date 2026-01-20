@@ -7,10 +7,11 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { db } from '@/config/firebase';
+import { db, auth } from '@/config/firebase'; // Added auth
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth'; // Added signOut
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // REMOVED: Using glass panels instead
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -34,12 +35,23 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/shared/Navbar';
-import { Calendar, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target, Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil, Download, ShieldCheck } from 'lucide-react';
+import {
+    Calendar as CalendarIcon, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target,
+    Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil, Download,
+    ShieldCheck, ChevronRight, Settings, FileText
+} from 'lucide-react';
 import { UserProfile } from '@/types';
 import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
 import { generateUserDataExport } from '@/utils/data-export';
 import { AppleHealthService } from '@/lib/apple-health';
 import { AppleHealthIcon, FitbitIcon } from '@/components/shared/BrandIcons';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+// import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; // Removed
+// import { Calendar } from '@/components/ui/calendar'; // Removed local usage
+import LiquidDateSheet from '@/components/shared/LiquidDateSheet'; // Added
+import { format } from 'date-fns';
+import { releaseNotesData, releaseNotesData as allNotes, APP_VERSION } from '@/config/releaseNotes'; // Imports
 
 // Helper to calculate age from DOB
 function getAge(dob: string) {
@@ -64,8 +76,12 @@ export default function ProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
 
+    // DOB state is YYYY-MM-DD string
     const [dob, setDob] = useState('');
     const [isSavingDob, setIsSavingDob] = useState(false);
+
+    // Date Sheet State
+    const [isDateSheetOpen, setIsDateSheetOpen] = useState(false);
 
     const [profileData, setProfileData] = useState<UserProfile['profile'] | undefined>(undefined);
 
@@ -85,8 +101,8 @@ export default function ProfilePage() {
     const [isLoadingFitbit, setIsLoadingFitbit] = useState(true);
     const [isTogglingFitbit, setIsTogglingFitbit] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-
-
+    // const [versionTaps, setVersionTaps] = useState(0); // REMOVED: God Mode not wanted
+    const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false); // Added for Release Notes
 
     const [isAppleHealthConnected, setIsAppleHealthConnected] = useState(false);
     const [isTogglingAppleHealth, setIsTogglingAppleHealth] = useState(false);
@@ -118,8 +134,8 @@ export default function ProfilePage() {
                 setIsAppleHealthConnected(true);
                 toast({ title: "Connected", description: "Apple Health sync enabled." });
 
-                // Immediate initial fetch
-                if (window.location.protocol !== 'https:') { // Simple check to avoid running on server/static build if needed, though this is client-side
+                if (window.location.protocol !== 'https:') {
+                    // Simple check to avoid running on server/static build if needed
                     const steps = await AppleHealthService.getTodaySteps();
                     console.log('Initial sync steps:', steps);
                 }
@@ -143,7 +159,7 @@ export default function ProfilePage() {
     useEffect(() => {
         if (loading) return;
         if (!user) {
-            router.push('/'); // Redirect to landing if not logged in
+            router.push('/');
             return;
         }
 
@@ -206,8 +222,7 @@ export default function ProfilePage() {
     }, [profileData, isEditOpen]);
 
 
-    // Handle DOB Save
-    const handleSaveDob = async () => {
+    const handleSaveDob = async () => { // Kept for reference, logic merged into edit profile
         if (!user) return;
         setIsSavingDob(true);
         try {
@@ -234,6 +249,11 @@ export default function ProfilePage() {
                 setIsSavingProfile(false);
                 return;
             }
+
+            // Sync DOB as well if changed in dialog
+            await updateDoc(doc(db, 'users', user.uid), {
+                dateOfBirth: dob
+            });
 
             // Recalculate
             const newBmr = calculateBMR(editForm.weight, editForm.height, age, editForm.gender);
@@ -271,15 +291,12 @@ export default function ProfilePage() {
         }
     };
 
-
-    // Handle Fitbit Toggle
     const handleFitbitToggle = async (checked: boolean) => {
         if (!user) return;
         setIsTogglingFitbit(true);
 
         try {
             if (checked) {
-                // Connect: Initiate OAuth
                 const token = await user.getIdToken();
                 const isNative = Capacitor.isNativePlatform();
 
@@ -297,8 +314,6 @@ export default function ProfilePage() {
 
                     if (isNative) {
                         // Native: Use In-App Browser (System Modal)
-                        // windowName: '_self' ensures it opens in a way that respects the session, 
-                        // but standard present() is usually fine.
                         await Browser.open({ url, windowName: '_self' });
                     } else {
                         // Web: Standard Redirect
@@ -308,7 +323,6 @@ export default function ProfilePage() {
                     throw new Error("Failed to initiate connection");
                 }
             } else {
-                // Disconnect
                 const token = await user.getIdToken();
                 const response = await fetch('/api/fitbit/disconnect', {
                     method: 'POST',
@@ -349,473 +363,415 @@ export default function ProfilePage() {
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            router.push('/');
+        } catch (error) {
+            console.error("Sign out error", error);
+        }
+    };
+
+
+
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">Loading Profile...</div>;
+
+    // --- RENDER HELPERS ---
+    const GlassPanel = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+        <div className={cn(
+            "glass-crystal rounded-3xl p-5 border border-white/10 relative overflow-hidden",
+            className
+        )}>
+            {/* Inner Glow */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
+            {children}
+        </div>
+    );
+
+    const formatActivity = (level: string) => level.replace(/_/g, ' ');
 
     return (
-        <div className="min-h-screen bg-background pb-20 md:pb-0">
-            <Navbar />
+        <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
+            {/* Background Gradient Mesh (Strict Parity with Dashboard) */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
+            </div>
 
-            <main className="max-w-3xl mx-auto px-4 py-8 pt-24 space-y-8">
-                {/* Header with Edit Button */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-4">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <h1 className="text-3xl font-bold text-foreground">User Center</h1>
+            <main className="flex-1 overflow-y-auto no-scrollbar pb-32 pt-16 px-4 space-y-6 relative z-10 w-full max-w-lg mx-auto">
+
+                {/* A. Identity Header */}
+                <div className="glass-crystal rounded-full p-3 pr-5 flex items-center justify-between border border-white/10 backdrop-blur-xl">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border border-white/10 shadow-sm">
+                            <AvatarImage src={user?.photoURL || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                                {user?.displayName?.slice(0, 2).toUpperCase() || "ME"}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                            <h1 className="text-sm font-bold text-foreground leading-none">
+                                {user?.displayName || "Your Profile"}
+                            </h1>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium uppercase tracking-wide">
+                                Beta Member
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Edit Profile Dialog */}
+                    {/* Edit Profile Dialog Trigger */}
                     <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                         <DialogTrigger asChild>
-                            <Button size="sm" className="bg-[#2aac6b] hover:bg-[#25965e] text-white shadow-sm">
-                                <Pencil className="h-4 w-4 mr-2" />
+                            <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs hover:bg-white/10 transition-colors text-foreground/80 font-medium px-3">
                                 Edit Profile
                             </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        {/* --- EDIT DIALOG CONTENT START --- */}
+                        <DialogContent className="glass-crystal border-white/10 max-w-sm max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                                <DialogTitle>Edit Profile Data</DialogTitle>
-                                <DialogDescription>
-                                    Updating these values will recalculate your daily calorie and macro targets.
-                                </DialogDescription>
+                                <DialogTitle>Edit Profile</DialogTitle>
+                                <DialogDescription>Updates recalculate your daily targets.</DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-dob">Date of Birth</Label>
+
+                                    <Button
+                                        variant={"outline"}
+                                        onClick={() => setIsDateSheetOpen(true)}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal bg-white/5 border-white/10 hover:bg-white/10",
+                                            !dob && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {dob ? format(new Date(dob), "PPP") : <span>Pick a date</span>}
+                                    </Button>
+
+                                    <LiquidDateSheet
+                                        isOpen={isDateSheetOpen}
+                                        onClose={() => setIsDateSheetOpen(false)}
+                                        onSave={(date) => {
+                                            setDob(format(date, 'yyyy-MM-dd'));
+                                            setIsDateSheetOpen(false);
+                                        }}
+                                        initialDate={dob ? new Date(dob) : undefined}
+                                        title="Date of Birth"
+                                    />
+
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="edit-dob">Date of Birth</Label>
-                                        <Input
-                                            id="edit-dob"
-                                            type="date"
-                                            value={dob} // Using state 'dob' directly for now as it's synced on open
-                                            onChange={(e) => setDob(e.target.value)}
-                                        />
+                                    <div className="space-y-2">
+                                        <Label>Height (cm)</Label>
+                                        <Input type="number" value={editForm.height} onChange={(e) => setEditForm({ ...editForm, height: Number(e.target.value) })} className="bg-white/5 border-white/10" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="height">Height (cm)</Label>
-                                        <Input
-                                            id="height"
-                                            type="number"
-                                            value={editForm.height}
-                                            onChange={(e) => setEditForm({ ...editForm, height: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="weight">Weight (kg)</Label>
-                                        <Input
-                                            id="weight"
-                                            type="number"
-                                            value={editForm.weight}
-                                            onChange={(e) => setEditForm({ ...editForm, weight: Number(e.target.value) })}
-                                        />
+                                        <Label>Weight (kg)</Label>
+                                        <Input type="number" value={editForm.weight} onChange={(e) => setEditForm({ ...editForm, weight: Number(e.target.value) })} className="bg-white/5 border-white/10" />
                                     </div>
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="gender">Gender</Label>
-                                    <Select
-                                        value={editForm.gender}
-                                        onValueChange={(val: 'male' | 'female') => setEditForm({ ...editForm, gender: val })}
-                                    >
-                                        <SelectTrigger id="gender">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                    <Label>Activity Level</Label>
+                                    <Select value={editForm.activityLevel} onValueChange={(val: any) => setEditForm({ ...editForm, activityLevel: val })}>
+                                        <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="female">Female</SelectItem>
-                                            <SelectItem value="male">Male</SelectItem>
+                                            <SelectItem value="sedentary">Sedentary</SelectItem>
+                                            <SelectItem value="lightly_active">Lightly Active</SelectItem>
+                                            <SelectItem value="moderately_active">Moderately Active</SelectItem>
+                                            <SelectItem value="very_active">Very Active</SelectItem>
+                                            <SelectItem value="super_active">Super Active</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="activity">Activity Level</Label>
-                                    <Select
-                                        value={editForm.activityLevel}
-                                        onValueChange={(val: keyof typeof ACTIVITY_MULTIPLIERS) => setEditForm({ ...editForm, activityLevel: val })}
-                                    >
-                                        <SelectTrigger id="activity">
-                                            <SelectValue placeholder="Select activity level" />
-                                        </SelectTrigger>
+                                    <Label>Goal</Label>
+                                    <Select value={editForm.goal} onValueChange={(val: any) => setEditForm({ ...editForm, goal: val })}>
+                                        <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="sedentary">Sedentary (Little/no exercise)</SelectItem>
-                                            <SelectItem value="lightly_active">Lightly Active (1-3 days/week)</SelectItem>
-                                            <SelectItem value="moderately_active">Moderately Active (3-5 days/week)</SelectItem>
-                                            <SelectItem value="very_active">Very Active (6-7 days/week)</SelectItem>
-                                            <SelectItem value="super_active">Super Active (Physical job/training)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="goal">Primary Goal</Label>
-                                    <Select
-                                        value={editForm.goal}
-                                        onValueChange={(val: keyof typeof GOAL_ADJUSTMENTS) => setEditForm({ ...editForm, goal: val })}
-                                    >
-                                        <SelectTrigger id="goal">
-                                            <SelectValue placeholder="Select goal" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="maintain">Maintain Weight</SelectItem>
+                                            <SelectItem value="maintain">Maintain</SelectItem>
                                             <SelectItem value="lose_fat">Lose Fat</SelectItem>
                                             <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setIsEditOpen(false)}
+                                    className="flex-1 py-3.5 rounded-full font-semibold text-[15px] bg-white/10 text-white hover:bg-white/15 transition-colors active:scale-[0.98]"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveProfile}
+                                    disabled={isSavingProfile}
+                                    className={cn(
+                                        "flex-[2] py-3.5 rounded-full font-semibold text-[15px] text-white transition-all active:scale-[0.98]",
+                                        isSavingProfile
+                                            ? "bg-white/10 text-white/50 cursor-not-allowed"
+                                            : "bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20"
+                                    )}
+                                >
+                                    {isSavingProfile ? "Saving..." : "Save Changes"}
+                                </button>
+                            </div>
+                        </DialogContent>
+                        {/* --- EDIT DIALOG CONTENT END --- */}
+                    </Dialog>
+                </div>
 
-                                <div className="col-span-2 space-y-3">
-                                    <Label>Dietary Preferences</Label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {DIET_OPTIONS.map((diet) => {
-                                            const isSelected = editForm.dietaryPreferences.includes(diet.id);
-                                            return (
-                                                <div
-                                                    key={diet.id}
-                                                    className="flex items-start space-x-2"
-                                                >
-                                                    <Checkbox
-                                                        id={`edit-${diet.id}`}
-                                                        checked={isSelected}
-                                                        onCheckedChange={(checked) => {
-                                                            const current = editForm.dietaryPreferences;
-                                                            if (checked) {
-                                                                setEditForm({ ...editForm, dietaryPreferences: [...current, diet.id] });
-                                                            } else {
-                                                                setEditForm({ ...editForm, dietaryPreferences: current.filter(id => id !== diet.id) });
-                                                            }
-                                                        }}
-                                                    />
-                                                    <label
-                                                        htmlFor={`edit-${diet.id}`}
-                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                                    >
-                                                        {diet.name}
-                                                    </label>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                {/* B. Body Snapshot */}
+                {profileData && (
+                    <GlassPanel>
+                        <div className="grid grid-cols-2 gap-y-8 gap-x-4 p-2">
+                            <div className="flex flex-col space-y-1">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Height</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-bold text-foreground">{profileData.height}</span>
+                                    <span className="text-xs text-muted-foreground font-medium">cm</span>
                                 </div>
                             </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                                <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
-                                    {isSavingProfile ? "Recalculating..." : "Save Changes"}
+                            <div className="flex flex-col space-y-1">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Weight</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-bold text-foreground">{profileData.weight}</span>
+                                    <span className="text-xs text-muted-foreground font-medium">kg</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col space-y-1">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Sex</span>
+                                <span className="text-lg font-medium text-foreground capitalize">{profileData.gender}</span>
+                            </div>
+                            <div className="flex flex-col space-y-1">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Activity</span>
+                                <span className="text-lg font-medium text-foreground capitalize truncate">{formatActivity(profileData.activityLevel)}</span>
+                            </div>
+                        </div>
+                    </GlassPanel>
+                )}
+
+                {/* C. Health Intent */}
+                {profileData && (
+                    <GlassPanel className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Primary Goal</span>
+                                <h3 className="text-xl font-bold text-foreground capitalize flex items-center gap-2">
+                                    {formatActivity(profileData.goal)}
+                                    {profileData.goal === 'lose_fat' && <TrendingDown className="h-4 w-4 text-emerald-400" />}
+                                    {profileData.goal === 'gain_muscle' && <TrendingUp className="h-4 w-4 text-emerald-400" />}
+                                </h3>
+                            </div>
+                            <Target className="h-8 w-8 text-primary/20" />
+                        </div>
+
+                        <div className="space-y-3">
+                            {profileData.symptoms.length > 0 && (
+                                <div className="space-y-2">
+                                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block">Baseline Symptoms</span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profileData.symptoms.map(s => (
+                                            <Badge key={s} variant="secondary" className="px-2.5 py-0.5 text-xs font-normal bg-white/5 hover:bg-white/10 text-foreground border-white/5 capitalize">
+                                                {s}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block">Preferences</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {profileData.dietaryPreferences && profileData.dietaryPreferences.length > 0 ? profileData.dietaryPreferences.map(pref => (
+                                        <Badge key={pref} variant="secondary" className="px-2.5 py-0.5 text-xs font-normal bg-emerald-500/10 text-emerald-500 border-emerald-500/20 capitalize">
+                                            {formatActivity(pref)}
+                                        </Badge>
+                                    )) : (
+                                        <span className="text-xs text-muted-foreground/50 italic">None set</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </GlassPanel>
+                )}
+
+                {/* D. Daily Energy & Balance */}
+                {profileData && (
+                    <GlassPanel className="space-y-0 p-0">
+                        <div className="grid grid-cols-2 divide-x divide-white/5">
+                            <div className="p-5 space-y-1">
+                                <div className="flex items-center gap-2 text-orange-400 mb-1">
+                                    <Flame className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] uppercase tracking-wider font-bold">Daily TDEE</span>
+                                </div>
+                                <span className="text-2xl font-bold text-foreground block">{profileData.tdee}</span>
+                                <span className="text-[10px] text-muted-foreground">Calories / Day</span>
+                            </div>
+                            <div className="p-5 space-y-1">
+                                <div className="flex items-center gap-2 text-blue-400 mb-1">
+                                    <Activity className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] uppercase tracking-wider font-bold">BMR</span>
+                                </div>
+                                <span className="text-2xl font-bold text-foreground block">{profileData.bmr}</span>
+                                <span className="text-[10px] text-muted-foreground">Base Metabolic Rate</span>
+                            </div>
+                        </div>
+                        <div className="border-t border-white/5 p-5">
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-4">Macro Targets</span>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                    <span className="text-red-400 font-bold text-lg">{profileData.macros.protein}g</span>
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase">Protein</span>
+                                </div>
+                                <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                    <span className="text-yellow-400 font-bold text-lg">{profileData.macros.carbs}g</span>
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase">Carbs</span>
+                                </div>
+                                <div className="flex flex-col items-center p-2 rounded-xl bg-white/5 border border-white/5">
+                                    <span className="text-blue-400 font-bold text-lg">{profileData.macros.fats}g</span>
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase">Fats</span>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassPanel>
+                )}
+
+                {/* E. Data & Integrations */}
+                <div className="space-y-3">
+                    <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-widest opacity-70">Integrations & Data</h3>
+                    <GlassPanel className="p-0 overflow-hidden">
+                        {/* Apple Health */}
+                        {Capacitor.getPlatform() === 'ios' && (
+                            <div className="flex items-center justify-between p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center text-white">
+                                        <AppleHealthIcon className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">Apple Health</span>
+                                        <span className="text-xs text-muted-foreground">Sync steps</span>
+                                    </div>
+                                </div>
+                                <Switch checked={isAppleHealthConnected} onCheckedChange={handleAppleHealthToggle} disabled={isTogglingAppleHealth} />
+                            </div>
+                        )}
+
+                        {/* Fitbit */}
+                        <div className="flex items-center justify-between p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-[#00B0B9] flex items-center justify-center text-white">
+                                    <FitbitIcon className="h-5 w-5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">Fitbit</span>
+                                    <span className="text-xs text-muted-foreground">Syncs weight & steps</span>
+                                </div>
+                            </div>
+                            {isLoadingFitbit ? <div className="h-5 w-8 bg-white/10 rounded animate-pulse" /> :
+                                <Switch checked={isFitbitConnected} onCheckedChange={handleFitbitToggle} disabled={isTogglingFitbit} />}
+                        </div>
+
+                        {/* Data Export */}
+                        <button onClick={handleDataExport} disabled={isExporting} className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                    <Download className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">Download My Data</span>
+                                    <span className="text-xs text-muted-foreground">JSON Export</span>
+                                </div>
+                            </div>
+                            {isExporting ? <span className="text-xs text-muted-foreground animate-pulse">Saving...</span> : <ChevronRight className="h-4 w-4 text-muted-foreground/50" />}
+                        </button>
+
+                        {/* Terms of Use */}
+                        <button onClick={() => router.push('/terms')} className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left border-b border-white/5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                                    <FileText className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">Terms of Use</span>
+                                    <span className="text-xs text-muted-foreground">Read terms</span>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        </button>
+
+                        {/* Privacy */}
+                        <button onClick={() => router.push('/privacy')} className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                    <ShieldCheck className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">Privacy Notice</span>
+                                    <span className="text-xs text-muted-foreground">Read policy</span>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        </button>
+                    </GlassPanel>
+                </div>
+
+                {/* F. Exit & Reset */}
+                <div className="pt-4 pb-8 flex flex-col items-center gap-4">
+                    <Button variant="ghost" onClick={() => router.push('/setup')} className="text-muted-foreground hover:text-foreground hover:bg-white/5">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Redo Setup Wizard
+                    </Button>
+
+                    <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                    </Button>
+
+                    <p
+                        onClick={() => setIsReleaseNotesOpen(true)}
+                        className="text-[10px] text-muted-foreground/30 font-mono pt-4 select-none cursor-pointer active:scale-95 transition-transform hover:text-white/40"
+                    >
+                        {APP_VERSION}
+                    </p>
+
+                    {/* Release Notes Dialog */}
+                    <Dialog open={isReleaseNotesOpen} onOpenChange={setIsReleaseNotesOpen}>
+                        <DialogContent className="glass-crystal border-white/10 max-w-md max-h-[85vh] overflow-y-auto flex flex-col p-0 gap-0">
+                            <DialogHeader className="p-6 pb-2 border-b border-white/5 bg-white/5 backdrop-blur-xl sticky top-0 z-10">
+                                <DialogTitle className="text-xl">Release Notes</DialogTitle>
+                                <DialogDescription>What's new in GutCheck</DialogDescription>
+                            </DialogHeader>
+                            <div className="p-6 space-y-8">
+                                {releaseNotesData.map((note, idx) => (
+                                    <div key={idx} className="relative pl-6 border-l border-white/10">
+                                        <div className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+                                        <div className="flex flex-col gap-1 mb-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-bold text-foreground">{note.version}</span>
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{note.date}</span>
+                                            </div>
+                                            {note.title && <span className="text-xs font-medium text-emerald-400">{note.title}</span>}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground leading-relaxed space-y-1">
+                                            {Array.isArray(note.description) ? (
+                                                note.description.map((desc, i) => <p key={i}>• {desc}</p>)
+                                            ) : (
+                                                <p>{note.description}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <DialogFooter className="p-4 border-t border-white/5 bg-white/5 backdrop-blur-xl sticky bottom-0 z-10">
+                                <Button variant="ghost" onClick={() => setIsReleaseNotesOpen(false)} className="w-full h-12 rounded-xl bg-white/5 hover:bg-white/10 text-foreground">
+                                    Close
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
+            </main>
 
-                {/* Personal Information */}
-                <Card className="border-border shadow-sm bg-card text-card-foreground">
-                    <CardHeader>
-                        <CardTitle className="flex items-center text-xl">
-                            Personal Information
-                        </CardTitle>
-                        <CardDescription>Manage your personal details for better health insights.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="dob">Date of Birth</Label>
-                            <div className="flex gap-2">
-                                {/* DOB Input moved to Edit Dialog, display only here or just remove save button? 
-                                       User said: "remove the save button and make the birthday update follow the same edit button as the rest"
-                                       So we should just display it here read-only or remove this card if it only has DOB?
-                                       The card is "Personal Information". Detailed req: "remove the save button and make the birthday update follow the same edit button".
-                                       I will make this input read-only/disabled and remove the save button. The editing will happen in the main 'Edit' dialog.
-                                    */}
-                                <div className="relative flex-1">
-                                    <Input
-                                        type="date"
-                                        id="dob"
-                                        value={dob}
-                                        disabled
-                                        className="pl-10 bg-muted/20"
-                                    />
-                                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                </div>
-                                {/* Save Button Removed */}
-                            </div>
-                            <p className="text-xs text-muted-foreground">To update, click the "Edit" button above.</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Used to calculate age-related health metrics.</p>
-                    </CardContent>
-                </Card>
-
-                {/* Biometrics & Setup Data */}
-                {profileData && (
-                    <>
-                        <Card className="border-border shadow-sm bg-card text-card-foreground">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div>
-                                    <CardTitle className="flex items-center text-xl">
-                                        Your Profile
-                                    </CardTitle>
-                                    <CardDescription>Measured and calculated from your setup data.</CardDescription>
-                                </div>
-                                {/* Edit Button Moved to Top */}
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {/* Biometrics Grid */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
-                                        <Ruler className="h-5 w-5 text-[#2aac6b] mb-2" />
-                                        <span className="text-sm text-muted-foreground">Height</span>
-                                        <span className="font-semibold text-foreground">{profileData.height} cm</span>
-                                    </div>
-                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
-                                        <Scale className="h-5 w-5 text-[#2aac6b] mb-2" />
-                                        <span className="text-sm text-muted-foreground">Weight</span>
-                                        <span className="font-semibold text-foreground">{profileData.weight} kg</span>
-                                    </div>
-                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center capitalize">
-                                        <User className="h-5 w-5 text-[#2aac6b] mb-2" />
-                                        <span className="text-sm text-muted-foreground">Gender</span>
-                                        <span className="font-semibold text-foreground">{profileData.gender}</span>
-                                    </div>
-                                    <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center text-center">
-                                        <Zap className="h-5 w-5 text-[#2aac6b] mb-2" />
-                                        <span className="text-sm text-muted-foreground">Activity</span>
-                                        <span className="font-semibold capitalize text-foreground">{profileData.activityLevel.replace('_', ' ')}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-border shadow-sm bg-card text-card-foreground">
-                            <CardHeader>
-                                <CardTitle className="flex items-center text-xl">
-                                    Nutrition Targets
-                                </CardTitle>
-                                <CardDescription>Personalized goals based on your profile.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {/* Main Goals */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="p-4 border border-border rounded-xl flex items-center space-x-4 bg-card">
-                                        <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                                            <Flame className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-muted-foreground">Daily Calories (TDEE)</p>
-                                            <p className="text-2xl font-bold text-foreground">{profileData.tdee} <span className="text-sm font-normal text-muted-foreground">kcal</span></p>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 border border-border rounded-xl flex items-center space-x-4 bg-card">
-                                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                                            <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-muted-foreground">Basal Metabolic Rate</p>
-                                            <p className="text-xl font-bold text-foreground">{profileData.bmr} <span className="text-sm font-normal text-muted-foreground">kcal</span></p>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 border border-border rounded-xl flex items-center space-x-4 bg-card">
-                                        <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                                            {profileData.goal === 'lose_fat' ? <TrendingDown className="h-6 w-6 text-purple-600 dark:text-purple-400" /> :
-                                                profileData.goal === 'gain_muscle' ? <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" /> :
-                                                    <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-muted-foreground">Primary Goal</p>
-                                            <p className="text-xl font-bold text-foreground capitalize">{profileData.goal.replace('_', ' ')}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Macro Breakdown */}
-                                <div>
-                                    <h3 className="text-sm font-medium text-foreground mb-4 flex items-center">
-                                        <Utensils className="h-4 w-4 mr-2" /> Daily Macro Targets
-                                    </h3>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="bg-red-50 dark:bg-red-950/40 p-3 rounded-lg text-center">
-                                            <span className="block text-xs text-red-600 dark:text-red-400 font-semibold uppercase tracking-wider">Protein</span>
-                                            <span className="block text-xl font-bold text-red-900 dark:text-red-100">{profileData.macros.protein}g</span>
-                                        </div>
-                                        <div className="bg-yellow-50 dark:bg-yellow-950/40 p-3 rounded-lg text-center">
-                                            <span className="block text-xs text-yellow-600 dark:text-yellow-400 font-semibold uppercase tracking-wider">Carbs</span>
-                                            <span className="block text-xl font-bold text-yellow-900 dark:text-yellow-100">{profileData.macros.carbs}g</span>
-                                        </div>
-                                        <div className="bg-blue-50 dark:bg-blue-950/40 p-3 rounded-lg text-center">
-                                            <span className="block text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">Fats</span>
-                                            <span className="block text-xl font-bold text-blue-900 dark:text-blue-100">{profileData.macros.fats}g</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Baseline Symptoms */}
-                        {profileData.symptoms.length > 0 && (
-                            <Card className="border-border shadow-sm bg-card text-card-foreground">
-                                <CardHeader>
-                                    <CardTitle className=" text-xl flex items-center">
-                                        Baseline Symptoms
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex flex-wrap gap-2">
-                                        {profileData.symptoms.map(s => (
-                                            <Badge key={s} variant="secondary" className="px-3 py-1 capitalize">
-                                                {s}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Nutrition Preferences Card */}
-                        <Card className="border-border shadow-sm bg-card text-card-foreground">
-                            <CardHeader>
-                                <CardTitle className="flex items-center text-xl">
-                                    Nutrition Preferences
-                                </CardTitle>
-                                <CardDescription>Your specific dietary choices.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {profileData.dietaryPreferences && profileData.dietaryPreferences.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {profileData.dietaryPreferences.map(prefId => {
-                                            const dietName = DIET_OPTIONS.find(d => d.id === prefId)?.name || prefId;
-                                            return (
-                                                <Badge key={prefId} variant="outline" className="px-3 py-1 bg-[#2aac6b]/10 text-[#2aac6b] border-[#2aac6b]/20">
-                                                    {dietName}
-                                                </Badge>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground italic">No specific dietary preferences set.</p>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                    </>
-                )
-                }
-
-                {/* Connected Apps */}
-                <Card className="border-border shadow-sm bg-card text-card-foreground">
-                    <CardHeader>
-                        <CardTitle className="flex items-center text-xl">
-                            Connected Apps
-                        </CardTitle>
-                        <CardDescription>Manage your integrations with other health platforms.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-
-                        {/* Apple Health Item */}
-                        {Capacitor.getPlatform() === 'ios' && (
-                            <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30 mb-4">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-red-600 flex items-center justify-center text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10">
-                                        <AppleHealthIcon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-medium text-foreground">Apple Health</h3>
-                                        <p className="text-sm text-muted-foreground">Sync steps automatically.</p>
-                                    </div>
-                                </div>
-                                <Switch
-                                    checked={isAppleHealthConnected}
-                                    onCheckedChange={handleAppleHealthToggle}
-                                    disabled={isTogglingAppleHealth}
-                                    className={isAppleHealthConnected ? "data-[state=checked]:bg-green-500" : ""}
-                                />
-                            </div>
-                        )}
-
-                        {/* Fitbit Item */}
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
-                            <div className="flex items-center space-x-4">
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#00B0B9]/10 text-[#00B0B9] dark:bg-[#00B0B9]/20">
-                                    <FitbitIcon className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <h3 className="font-medium text-foreground">Fitbit</h3>
-                                    <p className="text-sm text-muted-foreground">Syncs steps, weight, and activity.</p>
-                                </div>
-                            </div>
-
-                            {isLoadingFitbit ? (
-                                <div className="h-6 w-10 bg-muted animate-pulse rounded-full" />
-                            ) : (
-                                <Switch
-                                    checked={isFitbitConnected}
-                                    onCheckedChange={handleFitbitToggle}
-                                    disabled={isTogglingFitbit}
-                                    className={isFitbitConnected ? "data-[state=checked]:bg-green-500" : ""}
-                                />
-                            )}
-                        </div>
-
-                    </CardContent>
-                </Card>
-
-                {/* Data & Privacy */}
-                <Card className="border-border shadow-sm bg-card text-card-foreground">
-                    <CardHeader>
-                        <CardTitle className="flex items-center text-xl">
-                            Data & Privacy
-                        </CardTitle>
-                        <CardDescription>Manage your personal data and privacy settings.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                                    <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <h3 className="font-medium text-foreground">Download My Data</h3>
-                                    <p className="text-sm text-muted-foreground">Get a copy of all your stored data (GDPR compliant).</p>
-                                </div>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleDataExport}
-                                disabled={isExporting}
-                            >
-                                {isExporting ? (
-                                    <span className="flex items-center">Generating...</span>
-                                ) : (
-                                    <span className="flex items-center"><Download className="mr-2 h-4 w-4" /> Download JSON</span>
-                                )}
-                            </Button>
-                        </div>
-                        {/* Privacy Notice and Terms Links */}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <Button
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => router.push('/privacy')}
-                            >
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Privacy Notice
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => router.push('/terms')}
-                            >
-                                Terms of Use
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-                <div className="flex flex-col gap-4 text-center w-full pb-8">
-                    <Button variant="outline" className="w-full max-w-xs mx-auto" onClick={() => router.push('/setup')}>
-                        Redo Setup Wizard
-                    </Button>
-                    <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => router.push('/api/auth/signout')}>
-                        <LogOut className="mr-2 h-4 w-4" /> Sign Out
-                    </Button>
-                </div>
-            </main >
-        </div >
+            <Navbar />
+        </div>
     );
 }

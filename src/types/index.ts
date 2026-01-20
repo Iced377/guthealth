@@ -92,13 +92,23 @@ export const COMMON_SYMPTOMS: Symptom[] = [
   { id: 'other', name: 'Other' },
 ];
 
+export interface LoggedSymptom extends Symptom {
+  severity: number;
+}
+
 export interface SymptomLog {
   id: string;
   linkedFoodItemIds?: string[];
-  symptoms: Symptom[];
+  symptoms: LoggedSymptom[];
   severity?: number;
   notes?: string;
   timestamp: Date;
+  experiencedAt: Date;
+  triggerContext?: {
+    type: 'meal' | 'checkin' | 'delayed';
+    mealId?: string;
+  };
+  appVersion?: string;
   entryType: 'symptom';
 }
 
@@ -144,6 +154,11 @@ export interface UserProfile {
   premium?: boolean;
   isAdmin?: boolean;
   dateOfBirth?: string; // YYYY-MM-DD
+  feedbackMeta?: {
+    hasSubmittedFeedback: boolean;
+    lastFeedbackAt: Timestamp;
+    lastFeedbackType: 'improve' | 'bug' | 'feature';
+  };
   profile?: {
     hasCompletedSetup: boolean;
     gender: 'male' | 'female';
@@ -246,16 +261,35 @@ export interface SymptomFrequency {
 
 
 // Feedback System Types
+// Feedback System Types (Liquid Glass)
 export interface FeedbackSubmission {
-  id: string; // Document ID from Firestore
-  userId: string; // UID or 'anonymous'
-  timestamp: Timestamp; // Firestore Timestamp
-  feedbackText: string;
-  category: string; // User-selected or 'Not specified'
-  route: string; // Pathname where feedback was submitted
-  status: 'new' | 'viewed' | 'in-progress' | 'planned' | 'completed' | 'dismissed';
-  aiAnalysis: AIProcessedFeedback | null; // Output from your Genkit flow
-  adminNotes?: string;
+  id: string;
+  uid: string | null;
+  isGuest: boolean;
+  type: 'improve' | 'bug' | 'feature';
+  createdAt: Timestamp;
+  appVersion: string;
+  buildNumber?: string;
+  routeContext: string;
+  deviceContext: {
+    userAgent: string;
+    platform: string;
+    viewportW: number;
+    viewportH: number;
+  };
+  ratings: {
+    accuracy: number | null;
+    convenience: number | null;
+    usability: number | null;
+    speed: number | null;
+    performance: number | null;
+  };
+  freeform: string | null;
+  didInteract: boolean;
+  gestureMeta?: {
+    cardsVisitedCount: number;
+    totalTimeMs: number;
+  };
 }
 
 export type FeedbackSubmissionCreate = Omit<FeedbackSubmission, 'id'>;

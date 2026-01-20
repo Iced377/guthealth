@@ -44,6 +44,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useState } from "react";
+import LiquidActionMenu from "@/components/shared/LiquidActionMenu";
 
 interface TimelineFoodCardProps {
   item: LoggedFoodItem;
@@ -70,6 +72,8 @@ export default function TimelineFoodCard({
   onToggleFavorite,
   cardId,
 }: TimelineFoodCardProps) {
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
   const handleFeedback = (newFeedback: 'safe' | 'unsafe') => {
     if (isGuestView || !onSetFeedback) return;
@@ -137,7 +141,7 @@ export default function TimelineFoodCard({
                     <Button
                       variant="ghost"
                       className={cn(
-                        "p-0 h-auto text-md sm:text-lg font-semibold font-headline break-words text-left text-primary-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
+                        "p-0 h-auto text-base sm:text-lg font-semibold font-headline break-words text-left text-primary-foreground hover:bg-transparent hover:underline decoration-white/50 underline-offset-4 leading-none justify-start whitespace-normal"
                       )}
                     >
                       {item.name}
@@ -166,126 +170,77 @@ export default function TimelineFoodCard({
             {/* Right Column: Action Menu */}
             {!isGuestView && (
               <div className="flex flex-col items-end gap-1 ml-0 shrink-0">
-                <AlertDialog>
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <button className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70" aria-label={`Actions for ${item.name}`} id={cardId ? `${cardId}-actions` : undefined}>
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto px-4 py-6">
-                      <SheetHeader className="mb-4 text-left px-2">
-                        <SheetTitle className="text-xl">Actions for {item.name}</SheetTitle>
-                      </SheetHeader>
+                <button
+                  className="ios-icon-button bg-black/5 hover:bg-black/10 text-foreground/70"
+                  aria-label={`Actions for ${item.name}`}
+                  id={cardId ? `${cardId}-actions` : undefined}
+                  onClick={() => setIsActionsOpen(true)}
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
 
-                      <div className="flex flex-col gap-2">
-                        {/* Favorite */}
-                        {!isManualMacroEntry && onToggleFavorite && (
-                          <SheetClose asChild>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                              onClick={(e) => {
-                                handleFavoriteToggle(e);
-                              }}
-                            >
-                              <Heart className={cn("mr-4 h-6 w-6", item.isFavorite ? "fill-red-500 text-red-500" : "")} />
-                              <span>{item.isFavorite ? "Unfavorite" : "Favorite"}</span>
-                            </Button>
-                          </SheetClose>
-                        )}
+                <LiquidActionMenu
+                  isOpen={isActionsOpen}
+                  onClose={() => setIsActionsOpen(false)}
+                  title={`Actions for ${item.name}`}
+                  actions={[
+                    // Favorite
+                    ...((!isManualMacroEntry && onToggleFavorite) ? [{
+                      label: item.isFavorite ? "Unfavorite" : "Favorite",
+                      icon: <Heart className={cn("w-5 h-5", item.isFavorite ? "fill-red-500 text-red-500" : "")} />,
+                      onClick: (e?: React.MouseEvent) => handleFavoriteToggle(e || { stopPropagation: () => { } } as React.MouseEvent)
+                    }] : []),
 
-                        {/* Feedback */}
-                        {!isManualMacroEntry && onSetFeedback && (
-                          <>
-                            <SheetClose asChild>
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                                onClick={() => handleFeedback('safe')}
-                              >
-                                <ThumbsUp className={cn("mr-4 h-6 w-6", item.userFeedback === 'safe' ? "fill-primary text-primary" : "")} />
-                                <span className="flex-1 text-left">Mark as Safe</span>
-                                {item.userFeedback === 'safe' && <CheckCheck className="h-5 w-5 text-primary" />}
-                              </Button>
-                            </SheetClose>
+                    // Mark Safe
+                    ...((!isManualMacroEntry && onSetFeedback) ? [{
+                      label: "Mark as Safe",
+                      icon: <ThumbsUp className={cn("w-5 h-5", item.userFeedback === 'safe' ? "fill-primary text-primary" : "")} />,
+                      onClick: () => handleFeedback('safe'),
+                      endIcon: item.userFeedback === 'safe' && <CheckCheck className="w-4 h-4 text-primary" />
+                    }] : []),
 
-                            <SheetClose asChild>
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                                onClick={() => handleFeedback('unsafe')}
-                              >
-                                <ThumbsDown className={cn("mr-4 h-6 w-6", item.userFeedback === 'unsafe' ? "fill-red-600 text-red-600" : "")} />
-                                <span className="flex-1 text-left">Mark as Unsafe</span>
-                                {item.userFeedback === 'unsafe' && <CheckCheck className="h-5 w-5 text-red-600" />}
-                              </Button>
-                            </SheetClose>
-                          </>
-                        )}
+                    // Mark Unsafe
+                    ...((!isManualMacroEntry && onSetFeedback) ? [{
+                      label: "Mark as Unsafe",
+                      icon: <ThumbsDown className={cn("w-5 h-5", item.userFeedback === 'unsafe' ? "fill-red-500 text-red-500" : "")} />,
+                      onClick: () => handleFeedback('unsafe'),
+                      endIcon: item.userFeedback === 'unsafe' && <CheckCheck className="w-4 h-4 text-red-500" />
+                    }] : []),
 
-                        {/* Log Symptoms */}
-                        {!isManualMacroEntry && onLogSymptoms && (
-                          <SheetClose asChild>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                              onClick={() => onLogSymptoms(item.id)}
-                            >
-                              <ListChecks className={cn("mr-4 h-6 w-6", (item.symptoms && item.symptoms.length > 0) ? "text-primary" : "")} />
-                              <span className="flex-1 text-left">Log Symptoms</span>
-                              {(item.symptoms && item.symptoms.length > 0) && <CheckCheck className="h-5 w-5 text-primary" />}
-                            </Button>
-                          </SheetClose>
-                        )}
+                    // Log Symptoms
+                    ...((!isManualMacroEntry && onLogSymptoms) ? [{
+                      label: "Log Symptoms",
+                      icon: <ListChecks className="w-5 h-5" />,
+                      onClick: () => onLogSymptoms(item.id),
+                      endIcon: (item.symptoms && item.symptoms.length > 0) && <CheckCheck className="w-4 h-4 text-primary" />
+                    }] : []),
 
-                        {/* Edit */}
-                        {onEditIngredients && (
-                          <SheetClose asChild>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                              onClick={() => onEditIngredients(item)}
-                            >
-                              <Edit3 className={cn("mr-4 h-6 w-6", item.macrosOverridden ? "text-primary" : "")} />
-                              <span className="text-left">Edit Item</span>
-                            </Button>
-                          </SheetClose>
-                        )}
+                    // Edit
+                    ...(onEditIngredients ? [{
+                      label: "Edit",
+                      icon: <Edit3 className="w-5 h-5" />,
+                      onClick: () => onEditIngredients(item)
+                    }] : []),
 
-                        {/* Copy */}
-                        {onRepeatMeal && item.entryType === 'food' && (
-                          <SheetClose asChild>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50"
-                              onClick={() => onRepeatMeal(item)}
-                            >
-                              <Repeat className="mr-4 h-6 w-6" />
-                              <span className="text-left">Copy Meal</span>
-                            </Button>
-                          </SheetClose>
-                        )}
+                    // Copy
+                    ...((onRepeatMeal && item.entryType === 'food') ? [{
+                      label: "Copy Meal",
+                      icon: <Repeat className="w-5 h-5" />,
+                      onClick: () => onRepeatMeal(item)
+                    }] : []),
 
-                        {/* Delete */}
-                        {onRemoveItem && (
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start h-14 text-lg font-normal border-b border-border/40 rounded-none px-2 hover:bg-transparent active:bg-muted/50 text-red-600 hover:text-red-700"
-                            >
-                              <div className="flex items-center w-full">
-                                <Trash2 className="mr-4 h-6 w-6" />
-                                <span className="text-left">Delete</span>
-                              </div>
-                            </Button>
-                          </AlertDialogTrigger>
-                        )}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
+                    // Delete
+                    ...(onRemoveItem ? [{
+                      label: "Delete",
+                      icon: <Trash2 className="w-5 h-5" />,
+                      variant: "destructive" as const,
+                      onClick: () => setIsDeleteAlertOpen(true)
+                    }] : [])
+                  ]}
+                />
 
-                  {/* Alert Dialog Content (Outside Sheet Content but inside AlertDialog scope) */}
+                {/* AlertDialog (Decoupled from Sheet, now independent) */}
+                <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                   <AlertDialogContent className="bg-card text-card-foreground border-border">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
@@ -359,12 +314,6 @@ export default function TimelineFoodCard({
       <DialogContent hideCloseButton>
         <div className="flex items-center justify-between pb-4 border-b border-border/40 mb-4">
           <DialogTitle className="text-lg font-semibold text-center w-full transform translate-x-4">Log Details</DialogTitle>
-          <DialogClose className="ios-icon-button bg-gray-100 dark:bg-gray-800 text-foreground shrink-0" asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full p-0">
-              <span className="sr-only">Close</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-            </Button>
-          </DialogClose>
         </div>
         <DialogDescription className="sr-only">
           Detailed information about this logged food entry.

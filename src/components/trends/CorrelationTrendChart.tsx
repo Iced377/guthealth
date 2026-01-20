@@ -1,5 +1,5 @@
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea, ReferenceLine, Label } from 'recharts';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { useTrendsMotionController } from './useTrendsMotionController';
@@ -20,9 +20,9 @@ interface CorrelationTrendChartProps {
 }
 
 const CustomYAxisTick = (props: any) => {
-    const { x, y, payload } = props;
+    const { x, y, payload, visible } = props;
     return (
-        <g transform={`translate(${x},${y})`}>
+        <g transform={`translate(${x},${y})`} style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.2s' }}>
             <text x={0} y={0} dy={0} textAnchor="end" fill="#71717a" fontSize={12}>
                 {formatGraphNumber(payload.value)}
             </text>
@@ -62,6 +62,11 @@ function CorrelationTrendChart({ data, isDarkMode }: CorrelationTrendChartProps)
     const labelColor = isDarkMode ? '#a1a1aa' : '#71717a';
     const [isScrubbing, setIsScrubbing] = useState(false);
     const [selectedPoint, setSelectedPoint] = useState<DataPoint | null>(null);
+
+    // Animation gate for stability
+    const isFirstRender = useRef(true);
+    useEffect(() => { isFirstRender.current = false; }, []);
+    const shouldAnimate = isFirstRender.current;
 
     return (
         <div className="w-full h-full relative">
@@ -107,19 +112,20 @@ function CorrelationTrendChart({ data, isDarkMode }: CorrelationTrendChartProps)
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            hide={!isScrubbing}
+                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+                            mirror={true}
                         />
                         <YAxis
                             type="number"
                             dataKey="y"
                             domain={[0, maxCals]}
-                            stroke={labelColor}
+                            stroke={isScrubbing ? labelColor : 'transparent'}
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            hide={!isScrubbing}
-                            tick={<CustomYAxisTick />}
+                            tick={<CustomYAxisTick visible={isScrubbing} />}
                             tickFormatter={(val) => formatGraphNumber(val)}
+                            width={0}
                         />
 
                         {isChartInteractionEnabled && (
@@ -162,9 +168,9 @@ function CorrelationTrendChart({ data, isDarkMode }: CorrelationTrendChartProps)
                             name="Trend"
                             data={trendData}
                             line={{ stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '5 5', opacity: isScrubbing ? 0.3 : 0.8 }}
-                            shape={() => null}
+                            shape={() => <g />}
                             legendType="none"
-                            isAnimationActive={false}
+                            isAnimationActive={shouldAnimate}
                         />
 
                         {/* Data Points */}
@@ -176,7 +182,7 @@ function CorrelationTrendChart({ data, isDarkMode }: CorrelationTrendChartProps)
                                 if (!isChartInteractionEnabled) return;
                                 setIsScrubbing(true);
                             }}
-                            isAnimationActive={false}
+                            isAnimationActive={shouldAnimate}
                         >
                         </Scatter>
 

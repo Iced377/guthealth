@@ -16,6 +16,10 @@ import { getFoodIcon } from '../food-logging/food-icons';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+// import { NativeActionSheet } from '@/components/ui/native-action-sheet'; // Replaced by LiquidActionMenu
+import LiquidActionMenu, { LiquidAction } from '@/components/shared/LiquidActionMenu';
+import { useState } from 'react';
 import FodmapIndicator from '@/components/shared/FodmapIndicator';
 import GlycemicIndexIndicator from '@/components/shared/GlycemicIndexIndicator';
 import DietaryFiberIndicator from '@/components/shared/DietaryFiberIndicator';
@@ -48,14 +52,16 @@ export default function LiquidCrystalCard({
     onToggleFavorite,
     className,
 }: LiquidCrystalCardProps) {
+    const [isActionsOpen, setIsActionsOpen] = useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
     const handleFeedback = (newFeedback: 'safe' | 'unsafe') => {
         if (isGuestView || !onSetFeedback) return;
         onSetFeedback(item.id, item.userFeedback === newFeedback ? null : newFeedback);
     };
 
-    const handleFavoriteToggle = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleFavoriteToggle = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         if (isGuestView || !onToggleFavorite) return;
         onToggleFavorite(item.id, !!item.isFavorite);
     };
@@ -74,201 +80,232 @@ export default function LiquidCrystalCard({
 
     return (
         <Dialog>
-            <Card className={cn(
-                "glass-crystal relative overflow-hidden rounded-3xl border-0 h-full flex flex-col group active:scale-[0.98] transition-all",
-                className
-            )}>
-                {/* Animated Background Mesh (Unique per card type?) */}
-                <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-primary/20 via-transparent to-transparent pointer-events-none" />
+            <DialogTrigger asChild>
+                <Card className={cn(
+                    "glass-crystal relative overflow-hidden rounded-3xl border-0 h-full flex flex-col group active:scale-[0.98] transition-all cursor-pointer",
+                    className
+                )}>
+                    {/* Animated Background Mesh (Unique per card type?) */}
+                    <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-primary/20 via-transparent to-transparent pointer-events-none" />
 
-                {isLoadingAi && !isManualMacroEntry && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-20">
-                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    {isLoadingAi && !isManualMacroEntry && (
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-20">
+                            <Loader2 className="h-8 w-8 animate-spin text-white" />
+                        </div>
+                    )}
+
+                    {/* Artistic Background Icon */}
+                    <div className="absolute -bottom-8 -right-8 pointer-events-none z-0 overflow-hidden opacity-[0.08] transform rotate-12 transition-transform group-hover:rotate-6 group-hover:scale-110 duration-700">
+                        <FoodIcon className="w-48 h-48 text-primary" strokeWidth={1} />
                     </div>
-                )}
 
-                {/* Artistic Background Icon */}
-                <div className="absolute -bottom-8 -right-8 pointer-events-none z-0 overflow-hidden opacity-[0.08] transform rotate-12 transition-transform group-hover:rotate-6 group-hover:scale-110 duration-700">
-                    <FoodIcon className="w-48 h-48 text-primary" strokeWidth={1} />
-                </div>
+                    <CardHeader className="px-5 py-4 relative z-10 space-y-0">
+                        <div className="flex justify-between items-start">
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <span
+                                        className="text-xs font-medium text-muted-foreground/80 bg-background/30 px-2 py-0.5 rounded-full border border-white/5 backdrop-blur-md"
+                                    >
+                                        {exactTime}
+                                    </span>
+                                    {item.isFavorite && <Heart className="h-3 w-3 text-red-500 fill-red-500" />}
+                                </div>
 
-                <CardHeader className="px-5 py-4 relative z-10 space-y-0">
-                    <div className="flex justify-between items-start">
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-muted-foreground/80 bg-background/30 px-2 py-0.5 rounded-full border border-white/5 backdrop-blur-md">
-                                    {exactTime}
-                                </span>
-                                {item.isFavorite && <Heart className="h-3 w-3 text-red-500 fill-red-500" />}
+                                <div className="text-left text-xl font-bold font-headline leading-tight text-foreground/90 line-clamp-2 group-hover:text-primary transition-colors">
+                                    {item.name}
+                                </div>
                             </div>
 
-                            <DialogTrigger asChild>
-                                <button className="text-left text-lg font-bold font-headline leading-tight text-foreground/90 line-clamp-2 hover:text-primary transition-colors">
-                                    {item.name}
-                                </button>
-                            </DialogTrigger>
-                        </div>
 
-                        {/* Actions Menu */}
-                        {!isGuestView && (
-                            <AlertDialog>
-                                <Sheet>
-                                    <SheetTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground/70 hover:text-foreground hover:bg-white/10 rounded-full">
-                                            <MoreHorizontal className="h-5 w-5" />
-                                        </Button>
-                                    </SheetTrigger>
+                            {/* Actions Menu - Stop Propagation to prevent opening Dialog AND allow clicking inside draggable */}
+                            {!isGuestView && (
+                                <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 -mr-2 text-muted-foreground/70 hover:text-foreground hover:bg-white/10 rounded-full"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsActionsOpen(true);
+                                        }}
+                                    >
+                                        <MoreHorizontal className="h-5 w-5" />
+                                    </Button>
 
-                                    {/* Reuse Sheet Layout from TimelineFoodCard */}
-                                    <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] px-4 py-6 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t border-white/20">
-                                        <SheetHeader className="mb-4 text-left px-2">
-                                            <SheetTitle className="text-xl">Actions for {item.name}</SheetTitle>
-                                        </SheetHeader>
+                                    <LiquidActionMenu
+                                        isOpen={isActionsOpen}
+                                        onClose={() => setIsActionsOpen(false)}
+                                        title={`Actions for ${item.name}`}
+                                        actions={[
+                                            // Reuse Meal
+                                            ...(onRepeatMeal ? [{
+                                                label: "Reuse Meal",
+                                                icon: <Repeat className="w-5 h-5" />,
+                                                onClick: () => onRepeatMeal(item)
+                                            }] : []),
 
-                                        <div className="flex flex-col gap-2">
-                                            {/* Action Buttons... (Same logic as TimelineFoodCard, simplified here for length) */}
-                                            {!isManualMacroEntry && onToggleFavorite && (
-                                                <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40" onClick={handleFavoriteToggle}>
-                                                    <SheetClose className="flex items-center w-full">
-                                                        <Heart className={cn("mr-4 h-6 w-6", item.isFavorite ? "fill-red-500 text-red-500" : "")} />
-                                                        <span>{item.isFavorite ? "Unfavorite" : "Favorite"}</span>
-                                                    </SheetClose>
-                                                </Button>
-                                            )}
-                                            {/* Feedback / Safe / Unsafe */}
-                                            {!isManualMacroEntry && onSetFeedback && (
-                                                <>
-                                                    <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40">
-                                                        <SheetClose className="flex items-center w-full" onClick={() => handleFeedback('safe')}>
-                                                            <ThumbsUp className={cn("mr-4 h-6 w-6", item.userFeedback === 'safe' ? "fill-primary text-primary" : "")} />
-                                                            <span className="flex-1 text-left">Mark as Safe</span>
-                                                            {item.userFeedback === 'safe' && <CheckCheck className="h-5 w-5 text-primary" />}
-                                                        </SheetClose>
-                                                    </Button>
-                                                    <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal border-b border-border/40">
-                                                        <SheetClose className="flex items-center w-full" onClick={() => handleFeedback('unsafe')}>
-                                                            <ThumbsDown className={cn("mr-4 h-6 w-6", item.userFeedback === 'unsafe' ? "fill-red-600 text-red-600" : "")} />
-                                                            <span className="flex-1 text-left">Mark as Unsafe</span>
-                                                            {item.userFeedback === 'unsafe' && <CheckCheck className="h-5 w-5 text-red-600" />}
-                                                        </SheetClose>
-                                                    </Button>
-                                                </>
-                                            )}
-                                            {onRemoveItem && (
-                                                <Button variant="ghost" className="w-full justify-start h-14 text-lg font-normal text-red-600 border-b border-border/40 hover:text-red-700">
-                                                    <AlertDialogTrigger asChild>
-                                                        <div className="flex items-center w-full">
-                                                            <Trash2 className="mr-4 h-6 w-6" />
-                                                            <span className="text-left">Delete</span>
-                                                        </div>
-                                                    </AlertDialogTrigger>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </SheetContent>
+                                            // Log Symptoms
+                                            ...(onLogSymptoms ? [{
+                                                label: "Log Symptoms",
+                                                icon: <ListChecks className="w-5 h-5" />,
+                                                onClick: () => onLogSymptoms(item.id)
+                                            }] : []),
 
-                                    {/* Alert Dialog (Delete Confirmation) */}
-                                    <AlertDialogContent className="glass-crystal border-0">
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
-                                            <AlertDialogDescription>Markdown cannot be recovered.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel className="bg-transparent border border-white/20">Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => onRemoveItem?.(item.id)} className="bg-red-600 hover:bg-red-700 text-white border-0">Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </Sheet>
-                            </AlertDialog>
-                        )}
-                    </div>
-                </CardHeader>
+                                            // Favorite
+                                            ...((!isManualMacroEntry && onToggleFavorite) ? [{
+                                                label: item.isFavorite ? "Unfavorite" : "Favorite",
+                                                icon: <Heart className={cn("w-5 h-5", item.isFavorite ? "fill-red-500 text-red-500" : "")} />,
+                                                onClick: () => handleFavoriteToggle()
+                                            }] : []),
 
-                <CardContent className="px-5 pb-5 pt-0 flex-grow flex flex-col justify-end relative z-10 gap-3">
+                                            // Edit
+                                            ...(onEditIngredients ? [{
+                                                label: "Edit",
+                                                icon: <Edit3 className="w-5 h-5" />,
+                                                onClick: () => onEditIngredients(item)
+                                            }] : []),
 
-                    {/* Macros Grid */}
-                    {macroParts.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-1">
-                            {macroParts.map((macro, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5 bg-background/40 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/5">
-                                    <macro.icon className={cn("w-3.5 h-3.5", macro.color)} />
-                                    <span className="text-xs font-semibold text-foreground/80">{macro.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                            // Mark Safe
+                                            ...((!isManualMacroEntry && onSetFeedback) ? [{
+                                                label: "Mark as Safe",
+                                                icon: <ThumbsUp className={cn("w-5 h-5", item.userFeedback === 'safe' ? "fill-primary text-primary" : "")} />,
+                                                onClick: () => handleFeedback('safe'),
+                                                endIcon: item.userFeedback === 'safe' && <CheckCheck className="w-4 h-4 text-primary" />
+                                            }] : []),
 
-                    {/* Health Indicators (Condensed Row) */}
-                    {hasHealthIndicators && (
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mask-linear-fade">
-                            <div className="scale-90 origin-left"><FodmapIndicator score={item.fodmapData!.overallRisk} /></div>
+                                            // Mark Unsafe
+                                            ...((!isManualMacroEntry && onSetFeedback) ? [{
+                                                label: "Mark as Unsafe",
+                                                icon: <ThumbsDown className={cn("w-5 h-5", item.userFeedback === 'unsafe' ? "fill-red-500 text-red-500" : "")} />,
+                                                onClick: () => handleFeedback('unsafe'),
+                                                endIcon: item.userFeedback === 'unsafe' && <CheckCheck className="w-4 h-4 text-red-500" />
+                                            }] : []),
 
-                            {item.fodmapData?.glycemicIndexInfo && (
-                                <div className="scale-90 origin-left ml-[-8px]">
-                                    <GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} />
-                                </div>
-                            )}
+                                            // Delete
+                                            ...(onRemoveItem ? [{
+                                                label: "Delete",
+                                                icon: <Trash2 className="w-5 h-5" />,
+                                                variant: "destructive" as const,
+                                                onClick: () => setIsDeleteAlertOpen(true)
+                                            }] : [])
+                                        ]}
+                                    />
 
-                            {item.fodmapData?.dietaryFiberInfo && (
-                                <div className="scale-90 origin-left ml-[-8px]">
-                                    <DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} />
-                                </div>
-                            )}
-
-
-
-                            {item.fodmapData?.gutBacteriaImpact && (
-                                <div className="scale-90 origin-left ml-[-8px]">
-                                    <GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} />
-                                </div>
-                            )}
-
-                            {item.fodmapData?.ketoFriendliness && (
-                                <div className="scale-90 origin-left ml-[-8px]">
-                                    <KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} />
+                                    {/* Delete Confirmation Alert */}
+                                    <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                                        <AlertDialogContent className="glass-crystal border-0 max-w-[320px] rounded-[20px]">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
+                                                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter className="sm:justify-between gap-2">
+                                                <AlertDialogCancel className="w-full sm:w-auto mt-0 bg-transparent border border-white/20 rounded-xl h-11">Cancel</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={() => onRemoveItem?.(item.id)}
+                                                    className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white border-0 rounded-xl h-11"
+                                                >
+                                                    Delete
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
                             )}
                         </div>
-                    )}
-                </CardContent>
+                    </CardHeader>
 
-                {/* Dialog: Full Detail View */}
-                <DialogContent className="glass-crystal border-white/20 max-w-sm rounded-[40px] p-0 overflow-hidden">
-                    <div className="relative h-40 bg-gradient-to-b from-primary/20 to-transparent">
-                        <FoodIcon className="absolute bottom-4 right-4 w-32 h-32 text-primary opacity-20 rotate-12" />
-                        <DialogClose className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 text-white rounded-full p-2 backdrop-blur-md transition-colors">
-                            <span className="sr-only">Close</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                        </DialogClose>
-                        <div className="absolute bottom-4 left-6">
-                            <h2 className="text-2xl font-bold font-headline">{item.name}</h2>
-                            <p className="text-sm opacity-70 flex items-center gap-1"><Clock className="w-3 h-3" /> {exactTime}</p>
-                        </div>
-                    </div>
+                    <CardContent className="px-5 pb-5 pt-0 flex-grow flex flex-col justify-end relative z-10 gap-3">
 
-                    <div className="p-6 space-y-4 bg-background/40 backdrop-blur-xl">
-                        {/* Details Content similar to TimelineFoodCard but styled */}
-                        <div className="space-y-1">
-                            <h3 className="text-sm font-semibold opacity-70 uppercase tracking-wider">Macros</h3>
-                            <div className="flex gap-4">
-                                {macroParts.map((m, i) => (
-                                    <div key={i} className="flex flex-col items-center p-2 bg-white/5 rounded-xl min-w-[60px]">
-                                        <m.icon className={cn("w-5 h-5 mb-1", m.color)} />
-                                        <span className="font-bold">{m.value}</span>
+                        {/* Macros Grid */}
+                        {macroParts.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-1">
+                                {macroParts.map((macro, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5 bg-background/40 backdrop-blur-md px-3 py-2 rounded-xl border border-white/5">
+                                        <macro.icon className={cn("w-4 h-4", macro.color)} />
+                                        <span className="text-sm font-semibold text-foreground/80">{macro.value}</span>
                                     </div>
                                 ))}
                             </div>
+                        )}
+
+                        {/* Health Indicators (Condensed Row) */}
+                        {hasHealthIndicators && (
+                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mask-linear-fade">
+                                <div className="scale-90 origin-left"><FodmapIndicator score={item.fodmapData!.overallRisk} /></div>
+
+                                {item.fodmapData?.glycemicIndexInfo && (
+                                    <div className="scale-90 origin-left ml-[-8px]">
+                                        <GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} />
+                                    </div>
+                                )}
+
+                                {item.fodmapData?.dietaryFiberInfo && (
+                                    <div className="scale-90 origin-left ml-[-8px]">
+                                        <DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} />
+                                    </div>
+                                )}
+
+
+
+                                {item.fodmapData?.gutBacteriaImpact && (
+                                    <div className="scale-90 origin-left ml-[-8px]">
+                                        <GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} />
+                                    </div>
+                                )}
+
+                                {item.fodmapData?.ketoFriendliness && (
+                                    <div className="scale-90 origin-left ml-[-8px]">
+                                        <KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+
+                    {/* Dialog: Full Detail View */}
+                    <DialogContent
+                        className="glass-crystal border-white/20 p-0 overflow-hidden 
+                    fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 
+                    w-[90vw] max-w-sm rounded-[40px] 
+                    data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-1/2
+                    data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-1/2"
+                    >
+                        <div className="relative h-40 bg-gradient-to-b from-primary/20 to-transparent">
+                            <FoodIcon className="absolute bottom-4 right-4 w-32 h-32 text-primary opacity-20 rotate-12" />
+
+                            <div className="absolute bottom-4 left-6">
+                                <DialogTitle className="text-2xl font-bold font-headline mb-1">{item.name}</DialogTitle>
+                                <p className="text-sm opacity-70 flex items-center gap-1"><Clock className="w-3 h-3" /> {exactTime}</p>
+                            </div>
                         </div>
 
-                        <div className="space-y-1">
-                            <h3 className="text-sm font-semibold opacity-70 uppercase tracking-wider">Ingredients</h3>
-                            <p className="text-sm bg-white/5 p-3 rounded-2xl leading-relaxed">
-                                {item.ingredients || item.sourceDescription || "No details provided."}
-                            </p>
+                        <div className="p-6 space-y-4 bg-background/40 backdrop-blur-xl">
+                            {/* Details Content similar to TimelineFoodCard but styled */}
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-semibold opacity-70 uppercase tracking-wider">Macros</h3>
+                                <div className="flex gap-4">
+                                    {macroParts.map((m, i) => (
+                                        <div key={i} className="flex flex-col items-center p-2 bg-white/5 rounded-xl min-w-[60px]">
+                                            <m.icon className={cn("w-5 h-5 mb-1", m.color)} />
+                                            <span className="font-bold">{m.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-semibold opacity-70 uppercase tracking-wider">Ingredients</h3>
+                                <p className="text-sm bg-white/5 p-3 rounded-2xl leading-relaxed">
+                                    {item.ingredients || item.sourceDescription || "No details provided."}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                </DialogContent>
-            </Card>
+                    </DialogContent>
+                </Card>
+            </DialogTrigger>
         </Dialog>
     );
 }

@@ -153,7 +153,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **Cumulative Net Calorie Change (Guardrailed):** {{#if trendsAnalysis.cumulativeNetCaloriesWithGuardrail}}{{trendsAnalysis.cumulativeNetCaloriesWithGuardrail}}{{else}}{{trendsAnalysis.cumulativeNetCalories}}{{/if}} kcal
   (Note: POSITIVE = Deficit/Savings. NEGATIVE = Surplus. "Guardrailed" means days with < 800 kcal are ignored to prevent false savings.)
 - **Activity-Appetite Correlation:** {{#if trendsAnalysis.calorieStepCorrelationSlope}}Slope: {{trendsAnalysis.calorieStepCorrelationSlope}} ({{trendsAnalysis.calorieStepCorrelationStrength}}).
-  (Note: Regression of Steps vs Calories. Positive slope (>0.05) implies the user eats more when active. Near zero implies no correlation. Negative implies they eat less when active.){{else}}N/A{{/if}}
+  (Note: Regression of Steps vs Calories. Positive slope (>0.05) implies the user eats more when active. Near zero implies no correlation. Inverse/Negative slope (<-0.05) implies they eat less when active.){{else}}N/A{{/if}}
 - **Adherence:** Exceeded daily calorie target ({{trendsAnalysis.dailyCalorieTarget}} kcal) on {{trendsAnalysis.daysOverCalorieTarget}} days out of {{trendsAnalysis.totalDaysAnalyzed}}.
 - **Average Daily Intake:** {{trendsAnalysis.averageDailyCalories}} kcal/day.
 {{#if trendsAnalysis.fluxZones}}

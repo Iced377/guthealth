@@ -57,7 +57,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         variants={menuVariants}
                         className={cn(
                             "absolute bottom-full right-0 mb-4 flex flex-col gap-1 p-2 min-w-[200px]",
-                            "bg-secondary/95 backdrop-blur-xl border border-border/40 shadow-2xl rounded-2xl"
+                            "bg-secondary/20 backdrop-blur-xl border border-border/40 shadow-2xl rounded-2xl"
                         )}
                     >
                         {/* Sub-Item 4: Manual/Recent */}

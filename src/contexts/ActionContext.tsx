@@ -17,7 +17,7 @@ import {
     getDoc,
     deleteDoc
 } from 'firebase/firestore';
-import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog } from '@/types';
+import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, LoggedSymptom } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
@@ -25,7 +25,7 @@ import { processMealDescription } from '@/ai/flows/process-meal-description-flow
 import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import type { SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
 import type { IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
-import { generateFallbackFodmapProfile } from '@/lib/utils';
+
 
 const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => {
     let hash = 0;
@@ -48,6 +48,13 @@ const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => 
     };
 };
 
+export interface SymptomLogTriggerContext {
+    type: 'meal' | 'checkin' | 'delayed';
+    mealId?: string;
+    mealName?: string;
+    mealTimestamp?: Date;
+}
+
 interface ActionContextType {
     // Data
     timelineEntries: TimelineEntry[];
@@ -65,7 +72,8 @@ interface ActionContextType {
     closeIdentifyByPhotoDialog: () => void;
 
     isSymptomLogDialogOpen: boolean;
-    openSymptomLogDialog: () => void;
+    symptomLogContext: SymptomLogTriggerContext | undefined;
+    openSymptomLogDialog: (context?: SymptomLogTriggerContext) => void;
     closeSymptomLogDialog: () => void;
 
     isAddManualMacroDialogOpen: boolean;
@@ -88,12 +96,12 @@ interface ActionContextType {
     editingItem: LoggedFoodItem | null;
     setEditingItem: (item: LoggedFoodItem | null) => void;
     handleEditTimelineEntry: (item: LoggedFoodItem) => void;
-
     // Actions
+    updateEntryTimestamp: (entryId: string, newTimestamp: Date) => Promise<void>;
     handleSubmitMealDescription: (formData: SimplifiedFoodLogFormValues, override: boolean, date?: Date) => Promise<void>;
     handleProcessAndLogPhotoIdentification: (data: IdentifiedPhotoData, date?: Date) => Promise<void>;
     handleSubmitManualMacroEntry: (data: any, date?: Date) => Promise<void>;
-    handleLogSymptoms: (symptoms: Symptom[], notes?: string, severity?: number, linkedIds?: string[]) => Promise<void>;
+    handleLogSymptoms: (symptoms: LoggedSymptom[], notes?: string, severity?: number, linkedIds?: string[], experiencedAt?: Date, triggerContext?: any) => Promise<void>;
     handleSetFoodFeedback: (id: string, feedback: 'safe' | 'unsafe' | null) => Promise<void>;
     handleToggleFavoriteFoodItem: (id: string, isFav: boolean) => Promise<void>;
     handleRemoveTimelineEntry: (id: string) => Promise<void>;
@@ -103,6 +111,9 @@ interface ActionContextType {
     // Previous Meal Date State
     selectedLogTimestampForPreviousMeal: Date | undefined;
     setSelectedLogTimestampForPreviousMeal: (d: Date | undefined) => void;
+
+    lastAddedItem: { id: string, date: Date } | null;
+    setLastAddedItem: (item: { id: string, date: Date } | null) => void;
 }
 
 const ActionContext = createContext<ActionContextType | undefined>(undefined);
@@ -137,6 +148,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [isSimplifiedAddFoodDialogOpen, setIsSimplifiedAddFoodDialogOpenState] = useState(false);
     const [isIdentifyByPhotoDialogOpen, setIsIdentifyByPhotoDialogOpenState] = useState(false);
     const [isSymptomLogDialogOpen, setIsSymptomLogDialogOpenState] = useState(false);
+    const [symptomLogContext, setSymptomLogContext] = useState<SymptomLogTriggerContext | undefined>(undefined);
     const [isAddManualMacroDialogOpen, setIsAddManualMacroDialogOpenState] = useState(false);
     const [isLogPreviousMealDialogOpen, setIsLogPreviousMealDialogOpenState] = useState(false);
     const [isAddFoodDialogOpen, setIsAddFoodDialogOpenState] = useState(false);
@@ -144,6 +156,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const [editingItem, setEditingItem] = useState<LoggedFoodItem | null>(null);
     const [selectedLogTimestampForPreviousMeal, setSelectedLogTimestampForPreviousMeal] = useState<Date | undefined>(undefined);
+    const [lastAddedItem, setLastAddedItem] = useState<{ id: string, date: Date } | null>(null);
 
     const openSimplifiedAddFoodDialog = useCallback(() => {
         setEditingItem(null);
@@ -159,8 +172,14 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, []);
     const closeIdentifyByPhotoDialog = useCallback(() => setIsIdentifyByPhotoDialogOpenState(false), []);
 
-    const openSymptomLogDialog = useCallback(() => setIsSymptomLogDialogOpenState(true), []);
-    const closeSymptomLogDialog = useCallback(() => setIsSymptomLogDialogOpenState(false), []);
+    const openSymptomLogDialog = useCallback((context?: SymptomLogTriggerContext) => {
+        setSymptomLogContext(context);
+        setIsSymptomLogDialogOpenState(true);
+    }, []);
+    const closeSymptomLogDialog = useCallback(() => {
+        setIsSymptomLogDialogOpenState(false);
+        setSymptomLogContext(undefined);
+    }, []);
 
     const openAddManualMacroDialog = useCallback(() => setIsAddManualMacroDialogOpenState(true), []);
     const closeAddManualMacroDialog = useCallback(() => setIsAddManualMacroDialogOpenState(false), []);
@@ -383,6 +402,30 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
     };
 
+    const updateEntryTimestamp = async (entryId: string, newTimestamp: Date) => {
+        // 1. Optimistic Local Update
+        setTimelineEntries(prev => {
+            const updated = prev.map(e => e.id === entryId ? { ...e, timestamp: newTimestamp } : e);
+            return updated.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        });
+
+        // Update editingItem if it's the one being edited, to keep UI in sync
+        if (editingItem && editingItem.id === entryId) {
+            setEditingItem(prev => prev ? { ...prev, timestamp: newTimestamp } : null);
+        }
+
+        // 2. Firebase Update
+        if (authUser && authUser.uid !== 'guest-user') {
+            try {
+                const docRef = doc(db, 'users', authUser.uid, 'timelineEntries', entryId);
+                await setDoc(docRef, { timestamp: Timestamp.fromDate(newTimestamp) }, { merge: true });
+            } catch (error) {
+                console.error("Failed to update timestamp", error);
+                toast({ title: "Error Updating Time", variant: "destructive" });
+            }
+        }
+    };
+
     const handleSubmitMealDescription = async (
         formData: SimplifiedFoodLogFormValues,
         userDidOverrideMacros: boolean,
@@ -391,22 +434,39 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const logTimestamp = newTimestamp || new Date();
 
+        // CHECK IF RE-ANALYSIS IS NEEDED
+        // We skip AI if:
+        // 1. We are editing an existing item AND
+        // 2. The description/ingredients (source of truth) hasn't changed
+        // This allows changing Time, Name, or Manual Macros without waiting for AI.
+        const descriptionHasChanged = editingItem ? (formData.mealDescription.trim() !== (editingItem.sourceDescription || "").trim()) : true;
+        const shouldSkipAnalysis = editingItem && !descriptionHasChanged;
+
         const optimisticItem: LoggedFoodItem = {
             id: currentItemId,
             name: formData.name || editingItem?.name || "Processing Meal...",
             originalName: formData.mealDescription,
-            ingredients: "Analyzing ingredients...",
-            portionSize: "...",
-            portionUnit: "",
+            ingredients: shouldSkipAnalysis ? (editingItem.ingredients || "") : "Analyzing ingredients...",
+            portionSize: shouldSkipAnalysis ? (editingItem.portionSize || "...") : "...",
+            portionUnit: shouldSkipAnalysis ? (editingItem.portionUnit || "") : "",
             sourceDescription: formData.mealDescription,
             timestamp: logTimestamp,
-            fodmapData: null,
-            isSimilarToSafe: false,
-            userFodmapProfile: _generateFallbackFodmapProfile(formData.mealDescription),
-            calories: userDidOverrideMacros ? formData.calories : null,
-            protein: userDidOverrideMacros ? formData.protein : null,
-            carbs: userDidOverrideMacros ? formData.carbs : null,
-            fat: userDidOverrideMacros ? formData.fat : null,
+
+            // If skipping analysis, preserve existing data
+            fodmapData: shouldSkipAnalysis ? (editingItem.fodmapData || null) : null,
+            isSimilarToSafe: shouldSkipAnalysis ? (editingItem.isSimilarToSafe || false) : false,
+            userFodmapProfile: shouldSkipAnalysis ? (editingItem.userFodmapProfile || null) : _generateFallbackFodmapProfile(formData.mealDescription),
+
+            // Macro Logic:
+            // If overriding -> Use form data
+            // If NOT overriding -> 
+            //    If Skipping Analysis -> Use original AI data (stored in fodmapData) or current values if fallback
+            //    If Analyzing -> null (waiting for AI)
+            calories: userDidOverrideMacros ? formData.calories : (shouldSkipAnalysis ? (editingItem.fodmapData?.calories ?? editingItem.calories) : null),
+            protein: userDidOverrideMacros ? formData.protein : (shouldSkipAnalysis ? (editingItem.fodmapData?.protein ?? editingItem.protein) : null),
+            carbs: userDidOverrideMacros ? formData.carbs : (shouldSkipAnalysis ? (editingItem.fodmapData?.carbs ?? editingItem.carbs) : null),
+            fat: userDidOverrideMacros ? formData.fat : (shouldSkipAnalysis ? (editingItem.fodmapData?.fat ?? editingItem.fat) : null),
+
             entryType: 'food',
             userFeedback: editingItem ? editingItem.userFeedback : null,
             macrosOverridden: userDidOverrideMacros,
@@ -417,12 +477,29 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setEditingItem(null);
         if (newTimestamp) setSelectedLogTimestampForPreviousMeal(undefined);
 
-        if (!authUser) {
-            setTimelineEntries(prev => [optimisticItem, ...prev]);
-        } else {
+        // Immediate UI Update (Optimistic) - For BOTH Auth and Guest to ensure instant sorting/update
+        const updateLocalState = (items: TimelineEntry[]): TimelineEntry[] => {
+            const updatedList = editingItem
+                ? items.map(e => e.id === editingItem.id ? optimisticItem : e)
+                : [optimisticItem, ...items];
+
+            // Re-sort immediately so date change moves the card
+            return updatedList.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        };
+
+        setTimelineEntries(prev => updateLocalState(prev));
+
+        if (authUser) {
             await submitToFirebase(optimisticItem, currentItemId);
         }
 
+        // IF SKIPPING ANALYSIS -> WE ARE DONE (Just toast and exit)
+        if (shouldSkipAnalysis) {
+            toast({ title: "Meal Updated", description: "Details updated successfully." });
+            return;
+        }
+
+        // IF ANALYZING -> PROCEED AS NORMAL
         setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
         try {
             const mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
@@ -469,6 +546,10 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             };
 
             if (authUser) await submitToFirebase(finalItem, currentItemId);
+
+            // Toast for new analysis completion
+            if (!editingItem) toast({ title: "Analysis Complete", description: "Your meal has been analyzed." });
+            else toast({ title: "Meal Re-analyzed", description: "New ingredients processed." });
 
         } catch (e) {
             console.error(e);
@@ -679,23 +760,28 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
     };
 
-    const handleLogSymptoms = async (symptoms: Symptom[], notes?: string, severity?: number, linkedIds?: string[]) => {
+    const handleLogSymptoms = async (symptoms: LoggedSymptom[], notes?: string, severity?: number, linkedIds?: string[], experiencedAt?: Date, triggerContext?: any) => {
         const newSymptomLog: SymptomLog = {
             id: `sym-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             symptoms,
             notes,
             severity,
             linkedFoodItemIds: linkedIds || [],
-            timestamp: new Date(),
-            entryType: 'symptom'
+            timestamp: new Date(), // Created At
+            experiencedAt: experiencedAt || new Date(), // Defaults to now if not passed
+            triggerContext: triggerContext || { type: 'checkin' },
+            entryType: 'symptom',
+            appVersion: '4.5.3' // Hardcoded or fetched from env? Let's use hardcoded or from constant for now.
         };
 
         setIsSymptomLogDialogOpenState(false);
+        setSymptomLogContext(undefined);
 
         if (authUser) {
             await addDoc(collection(db, 'users', authUser.uid, 'timelineEntries'), {
                 ...newSymptomLog,
-                timestamp: Timestamp.fromDate(newSymptomLog.timestamp)
+                timestamp: Timestamp.fromDate(newSymptomLog.timestamp),
+                experiencedAt: Timestamp.fromDate(newSymptomLog.experiencedAt)
             });
             toast({ title: "Symptoms Logged" });
         } else {
@@ -735,6 +821,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             closeIdentifyByPhotoDialog,
 
             isSymptomLogDialogOpen,
+            symptomLogContext,
             openSymptomLogDialog,
             closeSymptomLogDialog,
 
@@ -760,19 +847,20 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             handleSubmitMealDescription,
             handleProcessAndLogPhotoIdentification,
-            handleSubmitMealDescription,
-            handleProcessAndLogPhotoIdentification,
             handleSubmitManualMacroEntry,
             handleSubmitClassicFoodItem,
-            handleLogSymptoms,
             handleLogSymptoms,
             handleSetFoodFeedback,
             handleToggleFavoriteFoodItem,
             handleRemoveTimelineEntry,
+            updateEntryTimestamp,
             handleRepeatMeal,
 
             selectedLogTimestampForPreviousMeal,
             setSelectedLogTimestampForPreviousMeal,
+            // Scroll Signal
+            lastAddedItem,
+            setLastAddedItem,
         }}>
             {children}
         </ActionContext.Provider>

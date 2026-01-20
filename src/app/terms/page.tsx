@@ -2,12 +2,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Home } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const TermsOfUsePage = () => {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl pb-32">
-      <h1 className="text-3xl font-bold mb-6 text-foreground">Terms of Use</h1>
+    <div className="container mx-auto px-4 pt-16 max-w-3xl pb-32 relative">
+      <div className="flex items-center gap-4 mb-6">
+        <Link href="/profile" className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
+          <ArrowLeft className="w-6 h-6" />
+        </Link>
+        <h1 className="text-3xl font-bold text-foreground">Terms of Use</h1>
+      </div>
 
       <p className="text-sm text-muted-foreground mb-6">Last updated: January 09, 2026</p>
 
@@ -68,14 +73,8 @@ const TermsOfUsePage = () => {
         </p>
       </section>
 
-      <div className="mt-12 text-center">
-        <Button asChild variant="outline">
-          <Link href="/?openDashboard=true">
-            <Home className="mr-2 h-4 w-4" /> Return to Dashboard
-          </Link>
-        </Button>
-      </div>
     </div>
+
   );
 };
 

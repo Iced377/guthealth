@@ -9,7 +9,7 @@ import { Loader2, Heart, Home, PlusCircle, Camera, ListChecks, CalendarDays } fr
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile as DetailedFodmapProfileFromAI } from '@/ai/flows/fodmap-detection';
 import { isSimilarToSafeFoods, type FoodFODMAPProfile, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import { processMealDescription, type ProcessMealDescriptionOutput } from '@/ai/flows/process-meal-description-flow';
-
+import type { SimplifiedFoodLogFormValues } from '@/components/compose/ComposeOverlay';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
@@ -30,13 +30,15 @@ import {
 
 import { Button } from '@/components/ui/button';
 import AddFoodItemDialog, { type ManualEntryFormValues } from '@/components/food-logging/AddFoodItemDialog';
-import SimplifiedAddFoodDialog, { type SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
+import ComposeOverlay from '@/components/compose/ComposeOverlay';
 import SymptomLoggingDialog from '@/components/food-logging/SymptomLoggingDialog';
 import AddManualMacroEntryDialog, { type ManualMacroFormValues } from '@/components/food-logging/AddManualMacroEntryDialog';
 import IdentifyFoodByPhotoDialog, { type IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
-import Navbar from '@/components/shared/Navbar';
-import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// import Navbar from '@/components/shared/Navbar';
+// import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard'; // Replaced by LiquidCrystalCard
+import LiquidCrystalCard from '@/components/dashboard/LiquidCrystalCard';
+import LiquidHeader from '@/components/navigation/LiquidHeader';
+// import { ScrollArea } from '@/components/ui/scroll-area'; // Replaced by native scroll with padding
 
 const generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => {
   let hash = 0;
@@ -406,64 +408,67 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-foreground flex items-center">
-            <Heart className="mr-3 h-8 w-8 text-primary fill-primary/70" /> Your Favorite Meals
-          </h1>
-          <Button asChild variant="outline">
-            <Link href="/?openDashboard=true">
-              <Home className="mr-2 h-4 w-4" /> Back to Dashboard
-            </Link>
-          </Button>
-        </div>
+    <div className="flex flex-col h-screen bg-background relative overflow-hidden">
+      {/* Background Gradient Mesh (Strict Parity with DashboardContent) */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
+      </div>
 
+      <LiquidHeader title="Favorites" />
+
+      <main className="flex-grow container mx-auto px-4 py-4 sm:py-6 relative z-10 pb-32 overflow-y-auto no-scrollbar scroll-smooth">
         {favoriteItems.length === 0 ? (
-          <div className="text-center py-12">
-            <Heart className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-semibold mb-2 text-foreground">No Favorites Yet</h2>
-            <p className="text-muted-foreground">
+          <div className="text-center py-20 flex flex-col items-center justify-center min-h-[50vh]">
+            <Heart className="h-16 w-16 text-muted-foreground/30 mb-4" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground/80 font-headline">No Favorites Yet</h2>
+            <p className="text-muted-foreground max-w-sm mx-auto">
               Mark meals as favorites from your dashboard to see them here.
             </p>
+            <Button asChild variant="outline" className="mt-6 rounded-full glass-crystal border-white/20">
+              <Link href="/?openDashboard=true">
+                <Home className="mr-2 h-4 w-4" /> Back to Dashboard
+              </Link>
+            </Button>
           </div>
         ) : (
-          <ScrollArea className="h-[calc(100vh-10rem)]"> {/* Adjust height as needed */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8 pr-3">
-              {favoriteItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="card-reveal-animation"
-                  style={{ animationDelay: `${index * 0.07}s` }}
-                >
-                  <TimelineFoodCard
-                    item={item}
-                    onSetFeedback={handleSetFoodFeedback}
-                    onRemoveItem={handleRemoveTimelineEntry}
-                    onLogSymptoms={() => openSymptomLogDialogWithContext(item.id)}
-                    isLoadingAi={!!isLoadingAi[item.id]}
-                    onEditIngredients={handleEditTimelineEntry}
-                    onRepeatMeal={handleRepeatMeal}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {favoriteItems.map((item, index) => (
+              <div
+                key={item.id}
+                className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-backwards"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <LiquidCrystalCard
+                  item={item}
+                  onSetFeedback={handleSetFoodFeedback}
+                  onRemoveItem={handleRemoveTimelineEntry}
+                  onLogSymptoms={() => openSymptomLogDialogWithContext(item.id)}
+                  isLoadingAi={!!isLoadingAi[item.id]}
+                  onEditIngredients={handleEditTimelineEntry}
+                  onRepeatMeal={handleRepeatMeal}
+                  onToggleFavorite={handleToggleFavorite}
+                  className="h-full"
+                />
+              </div>
+            ))}
+          </div>
         )}
       </main>
 
-      {/* Dialogs for editing, etc. */}
-      <SimplifiedAddFoodDialog
+      {/* Dialogs for editing, etc. (Unchanged logic, just keeping them mounted) */}
+      <ComposeOverlay
         isOpen={isSimplifiedAddFoodDialogOpen}
-        onOpenChange={(open) => { if (!open) setEditingItem(null); setIsSimplifiedAddFoodDialogOpen(open); }}
+        onClose={() => {
+          setEditingItem(null);
+          setIsSimplifiedAddFoodDialogOpen(false);
+        }}
         onSubmitLog={handleSubmitMealDescription}
         isEditing={!!editingItem && editingItem.entryType === 'food'}
         initialValues={editingItem && editingItem.entryType === 'food' ? { mealDescription: editingItem.sourceDescription || editingItem.originalName || '', calories: editingItem.calories ?? undefined, protein: editingItem.protein ?? undefined, carbs: editingItem.carbs ?? undefined, fat: editingItem.fat ?? undefined } : { mealDescription: '' }}
         initialMacrosOverridden={editingItem?.macrosOverridden || false}
         initialTimestamp={editingItem?.timestamp || selectedLogTimestampForPreviousMeal}
-        key={editingItem?.id ? `edit-fav-simplified-${editingItem.id}` : 'new-fav-simplified'}
+        key={editingItem?.id ? `edit-fav-compose-${editingItem.id}` : 'new-fav-compose'}
       />
       <AddFoodItemDialog
         isOpen={isAddFoodDialogOpenState}
@@ -490,12 +495,11 @@ export default function FavoritesPage() {
         allSymptoms={COMMON_SYMPTOMS}
         context={contextualFoodItemIdForSymptomLog ? { foodItemIds: [contextualFoodItemIdForSymptomLog] } : undefined}
       />
-      {/* IdentifyFoodByPhotoDialog might not be directly needed for editing favorites unless we allow changing the source type. For now, not included here. */}
 
       {Object.values(isLoadingAi).some(loading => loading) && (
-        <div className="fixed bottom-20 right-4 bg-card text-card-foreground p-3 rounded-lg shadow-lg flex items-center space-x-2 z-50">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span>Analyzing...</span>
+        <div className="fixed bottom-24 right-4 bg-black/80 text-white backdrop-blur-md px-4 py-2 rounded-full shadow-2xl flex items-center space-x-3 z-50 animate-in slide-in-from-bottom-4">
+          <Loader2 className="h-4 w-4 animate-spin text-white" />
+          <span className="text-sm font-medium">Updating...</span>
         </div>
       )}
     </div>
@@ -505,8 +509,8 @@ export default function FavoritesPage() {
 // Temporary Loading/Error components for the Favorites page
 function FavoritesLoading() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
+    <div className="flex flex-col h-screen bg-background">
+      <LiquidHeader title="Favorites" />
       <div className="flex-grow flex items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
         <p className="ml-4 text-xl text-foreground">Loading Your Favorites...</p>
@@ -524,8 +528,8 @@ function FavoritesError({ error, reset }: FavoritesErrorProps) {
     console.error(error);
   }, [error]);
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
+    <div className="flex flex-col h-screen bg-background">
+      <LiquidHeader title="Favorites" />
       <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
         <Heart className="h-16 w-16 text-destructive mb-6" />
         <h2 className="text-3xl font-semibold mb-4 text-foreground">Oops! Something went wrong.</h2>

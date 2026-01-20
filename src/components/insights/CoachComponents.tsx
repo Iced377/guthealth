@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { useInsightsMotionController } from './useInsightsMotionController';
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { FrostBackplate } from './LiquidPrimitive';
-import { X, Send, Loader2 } from 'lucide-react';
+import { X, Send, Loader2, Copy, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLiquidTokens, LiquidMode } from '@/lib/liquid-tokens';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,8 @@ import { useActionContext } from '@/contexts/ActionContext';
 import { format, isSameDay } from 'date-fns';
 import { getPersonalizedDietitianInsight, PersonalizedDietitianOutput } from '@/ai/flows/personalized-dietitian-flow';
 import { calculateTrendsAnalysis } from '@/utils/insights';
+import { Button } from '@/components/ui/button';
+import { HapticsService } from '@/lib/haptics';
 
 // Helper to determine time of day
 const getTimeSegment = (hour: number) => {
@@ -36,8 +38,6 @@ export function CoachChatCapsule() {
         : "How am I doing today?";
 
     // Select avatar based on mode. User requested: coach-black for dark mode, coach-white for light mode.
-    // Wait, typical pattern: Black image ON white background? Or image OF black character?
-    // "user coach-black for the dark mode and coad-white for the light mode."
     const avatarSrc = isDarkMode ? '/coach-black.png' : '/coach-white.png';
 
     return (
@@ -51,7 +51,7 @@ export function CoachChatCapsule() {
                     transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                     className="fixed left-0 right-0 flex justify-center z-50 pointer-events-none"
                     style={{
-                        bottom: 'calc(env(safe-area-inset-bottom) + 92px)'
+                        bottom: 'calc(env(safe-area-inset-bottom) + 150px)'
                     }}
                 >
                     <div className="pointer-events-auto relative">
@@ -128,6 +128,45 @@ export function CoachSessionSheet() {
     // AI State
     const [aiOutput, setAiOutput] = useState<PersonalizedDietitianOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Copy State
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = async () => {
+        if (!aiOutput?.aiResponse) return;
+
+        try {
+            // Context: navigator.clipboard requires HTTPS or localhost. If testing on IP, it may be undefined.
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(aiOutput.aiResponse);
+            } else {
+                // Fallback for non-secure contexts (e.g., local IP dev)
+                const textArea = document.createElement("textarea");
+                textArea.value = aiOutput.aiResponse;
+
+                // Ensure it's not visible but part of DOM
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
+
+                document.body.removeChild(textArea);
+            }
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+    };
 
     // 1. Prepare Data for Advanced AI
     const preparedInput = useMemo(() => {
@@ -240,8 +279,34 @@ export function CoachSessionSheet() {
 
         if (aiOutput) {
             return (
-                <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 text-sm leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
-                    {aiOutput.aiResponse}
+                <div className="space-y-4">
+                    <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 text-sm leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
+                        {aiOutput.aiResponse}
+                    </div>
+                    {/* Copy Button */}
+                    <div className="flex justify-end pt-2">
+                        <LiquidPressable
+                            onClick={handleCopy}
+                            size="sm"
+                            variant="pill"
+                            className={cn(
+                                "flex items-center gap-2 text-xs font-medium px-3 py-1.5 backdrop-blur-md rounded-full transition-colors",
+                                mode === 'dark' ? "bg-white/10 hover:bg-white/20 text-white" : "bg-black/5 hover:bg-black/10 text-black"
+                            )}
+                        >
+                            {isCopied ? (
+                                <>
+                                    <Check className="w-3 h-3 text-green-500" />
+                                    <span className="text-green-500">Copied</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className={cn("w-3 h-3 opacity-60")} />
+                                    <span className="opacity-80">Copy Advice</span>
+                                </>
+                            )}
+                        </LiquidPressable>
+                    </div>
                 </div>
             );
         }
@@ -295,9 +360,7 @@ export function CoachSessionSheet() {
                                 </div>
                             </div>
 
-                            <LiquidPressable onClick={closeCoach} size="sm" variant="icon" className={mode === 'dark' ? "bg-white/5" : "bg-black/5"}>
-                                <X className={cn("h-4 w-4", tokens.text.primary)} />
-                            </LiquidPressable>
+
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -314,26 +377,8 @@ export function CoachSessionSheet() {
                             <div ref={bottomRef} />
                         </div>
 
-                        <div className={cn(
-                            "p-4 pt-2 border-t backdrop-blur-xl",
-                            mode === 'dark' ? "bg-black/20 border-white/5" : "bg-white/80 border-black/5"
-                        )} style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Ask anything..."
-                                    className={cn(
-                                        "w-full h-12 rounded-full pl-6 pr-12 focus:outline-none focus:ring-1 border transition-colors",
-                                        mode === 'dark'
-                                            ? "bg-white/5 text-white placeholder:text-white/30 focus:ring-white/20 border-white/5"
-                                            : "bg-black/5 text-black placeholder:text-black/30 focus:ring-black/10 border-black/5"
-                                    )}
-                                />
-                                <button className="absolute right-2 top-2 h-8 w-8 bg-indigo-500 rounded-full flex items-center justify-center text-white hover:bg-indigo-400 transition-colors">
-                                    <Send className="h-4 w-4" />
-                                </button>
-                            </div>
-                        </div>
+                        {/* Footer (Removed Input, just safe area spacer if needed, or nothing) */}
+                        <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }} />
                     </motion.div>
                 </>
             )}

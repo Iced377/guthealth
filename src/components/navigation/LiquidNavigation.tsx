@@ -27,8 +27,12 @@ import {
     Info,
     Tag,
 } from 'lucide-react';
+
+const CustomActivityIcon = Activity; // Alias for semantic clarity or future swap
+import { liquidDisplacementBase64 } from '@/config/liquidFilter';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -67,6 +71,7 @@ const PRIMARY_NAV: NavItem[] = [
 const LOG_ACTIONS: SubMenuItem[] = [
     { id: 'write', icon: PenSquare, label: 'Write', accessibilityLabel: 'Write, log food with AI' },
     { id: 'scan', icon: ScanLine, label: 'Scan', accessibilityLabel: 'Scan, capture food photo' },
+    { id: 'symptoms', icon: CustomActivityIcon, label: 'Symptoms', accessibilityLabel: 'Symptoms, log how you feel' },
     { id: 'reuse', icon: RotateCcw, label: 'Reuse', accessibilityLabel: 'Reuse, pick from favorites' },
 ];
 
@@ -118,14 +123,17 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
         className={cn(
             "absolute inset-0 rounded-[28px] overflow-hidden",
             // SUBSTRATE + MATERIAL:
-            "bg-gradient-to-b from-white/60 via-white/30 to-white/10",
+            "bg-gradient-to-b from-white/30 via-white/10 to-transparent", // Reduced opacity (from 60/30/10)
             "dark:from-white/30 dark:via-white/10 dark:to-transparent",
             "backdrop-blur-xl saturate-150",
             // OPTICAL DEPTH:
-            "shadow-[0_4px_20px_rgba(0,0,0,0.15),inset_0_1px_4px_rgba(255,255,255,0.8),inset_0_-2px_10px_rgba(0,0,0,0.1)]",
+            "shadow-[inset_0_1px_4px_rgba(255,255,255,0.8)]", // Removed drop shadow completely
             "border border-white/40 dark:border-white/10",
             className
         )}
+        style={{
+            filter: "url(#liquidDisplacement)"
+        }}
         animate={{
             scale: isPressed ? 0.85 : 1, // Significant "Squish" on press (3. Touch Response)
             filter: isPressed ? "brightness(0.9)" : "brightness(1)", // Darkens on press (3. Touch Response)
@@ -135,7 +143,7 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
         {/* Dynamic Color Reflection (4. Halfway Tip Reflection) */}
         {/* This layer picks up the icon's color and bleeds it into the bubble 'tip' */}
         <div
-            className="absolute inset-x-0 bottom-0 h-1/2 opacity-60 mix-blend-overlay transition-colors duration-500"
+            className="absolute inset-x-0 bottom-0 h-1/2 opacity-30 mix-blend-soft-light transition-colors duration-500" // Reduced opacity (60->30) & switched blend mode
             style={{
                 background: `linear-gradient(to top, ${activeColor || 'transparent'}, transparent)`
             }}
@@ -160,6 +168,7 @@ interface LiquidNavigationProps {
     onWriteClick?: () => void;
     onScanClick?: () => void;
     onReuseClick?: () => void;
+    onSymptomsClick?: () => void;
     onFeedbackClick?: () => void;
     onAppTourClick?: () => void;
     onVersionClick?: () => void;
@@ -171,6 +180,7 @@ export default function LiquidNavigation({
     onWriteClick,
     onScanClick,
     onReuseClick,
+    onSymptomsClick,
     onFeedbackClick,
     onAppTourClick,
     onVersionClick,
@@ -180,6 +190,7 @@ export default function LiquidNavigation({
     const router = useRouter();
     const pathname = usePathname();
     const { isDarkMode, toggleDarkMode } = useTheme();
+    const { isNavVisible } = useNavVisibility();
 
     // Panel states
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
@@ -236,6 +247,9 @@ export default function LiquidNavigation({
             case 'reuse':
                 onReuseClick?.();
                 break;
+            case 'symptoms':
+                onSymptomsClick?.();
+                break;
         }
     };
 
@@ -248,10 +262,7 @@ export default function LiquidNavigation({
             toggleDarkMode();
             return;
         }
-        if (item.id === 'feedback') {
-            onFeedbackClick?.();
-            return;
-        }
+
         if (item.id === 'app-tour') {
             onAppTourClick?.();
             return;
@@ -302,15 +313,21 @@ export default function LiquidNavigation({
             <AnimatePresence>
                 {activePanel === 'log' && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.94, y: 15 }} // Reduced scale & y delta
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center gap-3"
+                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate" // Bumped Z & added isolation
+                        style={{
+                            transform: 'translateZ(0)',
+                            willChange: 'opacity, transform',
+                            contain: 'layout paint style'
+                        }}
                     >
                         {LOG_ACTIONS.map((action, index) => (
                             <motion.button
                                 key={action.id}
+                                // Removed layoutId to prevent morphing conflict
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{
                                     opacity: 1,
@@ -325,13 +342,17 @@ export default function LiquidNavigation({
                                 className={cn(
                                     "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                     // Liquid Glass material
-                                    "bg-white/70 dark:bg-black/40",
+                                    "bg-white/15 dark:bg-black/40",
                                     "backdrop-blur-2xl saturate-150",
                                     "border border-white/50 dark:border-white/15",
-                                    "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+                                    "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                     "select-none"
                                 )}
                                 aria-label={action.accessibilityLabel}
+                                style={{
+                                    // Make sure it stays above during morph
+                                    zIndex: action.id === 'reuse' ? 60 : undefined
+                                }}
                             >
                                 {pressedItem === action.id && (
                                     <BubbleIndicator
@@ -346,6 +367,7 @@ export default function LiquidNavigation({
                                     pressedItem === action.id ? "opacity-0" : "opacity-100",
                                     action.id === 'write' && "bg-gradient-to-br from-violet-500 to-purple-600",
                                     action.id === 'scan' && "bg-gradient-to-br from-blue-500 to-cyan-600",
+                                    action.id === 'symptoms' && "bg-gradient-to-br from-red-400 to-orange-500", // Warm/Alert/Feelings color
                                     action.id === 'reuse' && "bg-gradient-to-br from-pink-500 to-rose-600",
                                     "shadow-lg"
                                 )}>
@@ -362,11 +384,16 @@ export default function LiquidNavigation({
             <AnimatePresence>
                 {activePanel === 'explore' && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.94, y: 15 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center gap-3"
+                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate"
+                        style={{
+                            transform: 'translateZ(0)',
+                            willChange: 'opacity, transform',
+                            contain: 'layout paint style'
+                        }}
                     >
                         {filteredExploreItems.map((item, index) => (
                             <motion.button
@@ -385,10 +412,10 @@ export default function LiquidNavigation({
                                 className={cn(
                                     "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                     // Liquid Glass material
-                                    "bg-white/70 dark:bg-black/40",
+                                    "bg-white/15 dark:bg-black/40",
                                     "backdrop-blur-2xl saturate-150",
                                     "border border-white/50 dark:border-white/15",
-                                    "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+                                    "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                     "select-none"
                                 )}
                                 aria-label={item.accessibilityLabel}
@@ -424,11 +451,16 @@ export default function LiquidNavigation({
             <AnimatePresence>
                 {activePanel === 'insights' && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.94, y: 15 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center gap-3"
+                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate"
+                        style={{
+                            transform: 'translateZ(0)',
+                            willChange: 'opacity, transform',
+                            contain: 'layout paint style'
+                        }}
                     >
                         {INSIGHTS_ITEMS.map((item, index) => (
                             <motion.button
@@ -447,10 +479,10 @@ export default function LiquidNavigation({
                                 className={cn(
                                     "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                     // Liquid Glass material (same as Log menu)
-                                    "bg-white/70 dark:bg-black/40",
+                                    "bg-white/15 dark:bg-black/40",
                                     "backdrop-blur-2xl saturate-150",
                                     "border border-white/50 dark:border-white/15",
-                                    "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+                                    "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                     "select-none"
                                 )}
                                 aria-label={item.accessibilityLabel}
@@ -484,11 +516,16 @@ export default function LiquidNavigation({
             <AnimatePresence>
                 {activePanel === 'profile' && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.94, y: 15 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center gap-3"
+                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate"
+                        style={{
+                            transform: 'translateZ(0)',
+                            willChange: 'opacity, transform',
+                            contain: 'layout paint style'
+                        }}
                     >
                         {filteredProfileItems.map((item, index) => {
                             const Icon = item.id === 'theme' && isDarkMode ? Moon : item.icon;
@@ -509,7 +546,7 @@ export default function LiquidNavigation({
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                         // Liquid Glass material
-                                        "bg-white/70 dark:bg-black/40",
+                                        "bg-white/15 dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
                                         "border border-white/50 dark:border-white/15",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
@@ -545,8 +582,8 @@ export default function LiquidNavigation({
             </AnimatePresence>
 
             {/* Main Navigation Bar - STABILIZED SHELL */}
-            {/* 1. NavShell: Static Container (No Animations) */}
-            <div
+            {/* 1. NavShell: Static Container (No Animations) - Now Animated for Hide/Show */}
+            <motion.div
                 className={cn(
                     "fixed left-4 right-4 z-50",
                     // Fix: Use bottom calc to handle safe area instead of padding which crushed the height
@@ -560,13 +597,24 @@ export default function LiquidNavigation({
                     willChange: 'transform, opacity',
                     contain: 'layout paint style'
                 }}
+                animate={{
+                    y: isNavVisible ? 0 : 120, // 120px should clear 4rem (64px) + .5rem (8px) + safe area + margin
+                    opacity: isNavVisible ? 1 : 0.8, // Optional: slightly dim when hidden, but user said translate only. Keeping visible opacity.
+                    scale: pressedItem ? 1.02 : 1 // Grow on press (User Request)
+                }}
+                transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 25,
+                    mass: 1
+                }}
             >
                 {/* 2. Backplate: Opacity Guard (Always Visible) */}
                 <div
                     className={cn(
                         "absolute inset-0 rounded-[32px]",
-                        "bg-white/85 dark:bg-black/40", // HARDENED OPACITY
-                        "shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.1)]",
+                        "bg-white/15 dark:bg-black/40", // HARDENED OPACITY -> 15%
+                        "shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05),0_0_0_1px_rgba(255,255,255,0.1)]",
                         "pointer-events-none"
                     )}
                 />
@@ -662,10 +710,9 @@ export default function LiquidNavigation({
                                             className={cn(
                                                 "w-6 h-6 transition-all duration-300",
                                                 (activePanel ? activePanel === item.id : activeTab === item.id)
-                                                    ? "text-white drop-shadow-md scale-105" // Active = White floating on reflection (3. Content Front)
-                                                    : "text-foreground/50 grayscale-[0.3]"
+                                                    ? "text-white drop-shadow-md scale-105 stroke-[2.5px]" // Active = White floating on reflection (3. Content Front)
+                                                    : "text-foreground/50 grayscale-[0.3] stroke-[2px]"
                                             )}
-                                            strokeWidth={(activePanel ? activePanel === item.id : activeTab === item.id) ? 2.5 : 2}
                                         />
                                     </div>
                                 )}
@@ -673,7 +720,27 @@ export default function LiquidNavigation({
                         );
                     })}
                 </div>
-            </div >
+            </motion.div >
+
+            {/* Liquid Glass Displacement Filter */}
+            <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
+                <filter id="liquidDisplacement">
+                    <feImage
+                        href={liquidDisplacementBase64}
+                        result="map"
+                        preserveAspectRatio="none"
+                        width="100%"
+                        height="100%"
+                    />
+                    <feDisplacementMap
+                        in="SourceGraphic"
+                        in2="map"
+                        scale="100"
+                        xChannelSelector="R"
+                        yChannelSelector="G"
+                    />
+                </filter>
+            </svg>
         </>
     );
 }

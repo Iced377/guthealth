@@ -7,6 +7,7 @@ import { Maximize2, Minimize2 } from 'lucide-react';
 import { HapticsService, ImpactStyle } from '@/lib/haptics';
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { useTrendsMotionController } from './useTrendsMotionController';
+import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
 
 interface LiquidGraphSceneProps {
     id: string; // Unique ID for controller
@@ -34,6 +35,8 @@ export default function LiquidGraphScene({
         globalInputDisabled
     } = useTrendsMotionController();
 
+    const { lockNav, unlockNav, setNavVisible } = useNavVisibility();
+
     const containerRef = useRef<HTMLDivElement>(null);
     const [frozenStyle, setFrozenStyle] = useState<React.CSSProperties>({});
 
@@ -45,11 +48,15 @@ export default function LiquidGraphScene({
     const handleExpand = () => {
         HapticsService.impact(ImpactStyle.Medium);
         requestFocus(id);
+        lockNav('CHART_EXPANDED');
+        setNavVisible(false);
     };
 
     const handleCollapse = () => {
         HapticsService.impact(ImpactStyle.Light);
         requestBrowse();
+        unlockNav('CHART_EXPANDED');
+        setNavVisible(true);
     };
 
     // Dimension Locking Logic
@@ -99,19 +106,31 @@ export default function LiquidGraphScene({
             // Actually, without a separate "overlay" component, `layout` prop handles the morph in place.
             onLayoutAnimationStart={onLayoutStart}
             onLayoutAnimationComplete={onLayoutComplete}
-            style={frozenStyle}
             className={cn(
                 "relative rounded-3xl overflow-hidden shadow-sm origin-center",
                 // Transition settings handled by Framer default or we can override transition prop
                 // Conditional Styling
                 !isFocused
                     ? "bg-card/40 backdrop-blur-md border border-white/5 my-4 mx-2 w-[calc(100%-1rem)] snap-center h-[60vh]"
-                    : "fixed inset-0 z-50 bg-background h-[100dvh] w-screen m-0 rounded-none border-none",
+                    : "fixed inset-0 z-[60] bg-background h-[100dvh] w-screen m-0 rounded-none border-none isolate", // Increased z-index to 60 to be above Nav (50) and NavReveal (49)
                 className
             )}
+            style={{
+                ...frozenStyle,
+                transform: 'translateZ(0)', // Force GPU
+                contain: 'layout paint style', // CSS Containment
+                touchAction: 'pan-x', // Disable vertical scroll on the card itself
+            }}
             onClick={() => !isFocused && !globalInputDisabled && handleExpand()}
         >
-            {/* Background Mesh */}
+            {/* STABILITY LAYER: Solid opacity guard (Backplate) */}
+            {isFocused && (
+                <div
+                    className="absolute inset-0 bg-background z-0"
+                />
+            )}
+
+            {/* Background Mesh (Only when collapsed to avoid interfering with backplate, or use z-index) */}
             {!isFocused && (
                 <div className="absolute inset-0 pointer-events-none opacity-20 bg-gradient-to-br from-white/5 to-transparent" />
             )}
@@ -155,9 +174,16 @@ export default function LiquidGraphScene({
                 </motion.div>
 
                 {/* Ink Layer (Chart) */}
-                <div className="flex-grow w-full h-full min-h-0 relative pointer-events-auto isolate">
-                    {/* The Chart children must handle their own non-intrusiveness during transition */}
-                    {children}
+                <div className="flex-grow w-full relative min-h-0 pointer-events-auto isolate">
+                    {/* 
+                        STABILITY FIX: 
+                        We wrap the chart in an absolute container to prevent feedback loops where 
+                        the chart's internal resize triggers parent growth -> trigger chart resize.
+                        The 'flex-grow' parent establishes the Size, and this child simply Fills it.
+                     */}
+                    <div className="absolute inset-0 w-full h-full overflow-hidden">
+                        {children}
+                    </div>
                 </div>
 
                 {/* Controls */}

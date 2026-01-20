@@ -200,8 +200,8 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         if (denominator !== 0) {
             slope = parseFloat(((n * sumXY - sumX * sumY) / denominator).toFixed(4));
 
-            if (slope > 0.1) strength = "Positive";
-            else if (slope < -0.1) strength = "Negative";
+            if (slope > 0.05) strength = "Positive";
+            else if (slope < -0.05) strength = "Inverse";
             else strength = "Neutral";
         }
     }

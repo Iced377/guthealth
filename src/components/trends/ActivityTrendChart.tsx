@@ -1,7 +1,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ActivityPoint } from '@/types';
 import { format, parseISO } from 'date-fns';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import React from 'react';
 import { HapticsService } from '@/lib/haptics';
 import LiquidSegmentedControl from '@/components/ui/LiquidSegmentedControl';
@@ -32,6 +32,11 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
     const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
     const [isScrubbing, setIsScrubbing] = useState(false);
 
+    // Animation gate for stability
+    const isFirstRender = useRef(true);
+    useEffect(() => { isFirstRender.current = false; }, []);
+    const shouldAnimate = isFirstRender.current;
+
     const stepsColor = '#3b82f6';
     const labelColor = isDarkMode ? '#a1a1aa' : '#71717a';
 
@@ -55,22 +60,24 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
 
                         <XAxis
                             dataKey="date"
-                            tickFormatter={(value) => safeFormatDate(value, 'MMM d')}
+                            tickFormatter={(value) => format(parseISO(value), 'MMM d')}
                             stroke={labelColor}
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            hide={!isScrubbing}
+                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
                             interval="preserveStartEnd"
+                            mirror={true}
                         />
                         <YAxis
                             stroke={labelColor}
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            hide={!isScrubbing}
+                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
                             domain={[0, 'auto']}
-                            tickFormatter={(val) => formatGraphNumber(val)}
+                            tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
+                            mirror={true}
                         />
 
                         {isChartInteractionEnabled && (
@@ -97,10 +104,10 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
                             dataKey="steps"
                             maxBarSize={60}
                             radius={[4, 4, 4, 4]}
-                            animationDuration={0}
                             fill={stepsColor}
                             opacity={0.8}
-                            isAnimationActive={false}
+                            animationDuration={1000}
+                            isAnimationActive={shouldAnimate}
                         />
                     </BarChart>
                 </ResponsiveContainer>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
@@ -16,6 +16,7 @@ import WeightTrendChart from '@/components/trends/WeightTrendChart';
 import ActivityTrendChart from '@/components/trends/ActivityTrendChart';
 import CorrelationTrendChart from '@/components/trends/CorrelationTrendChart';
 import DailyMacrosTrendChart from '@/components/trends/DailyMacrosTrendChart';
+import { CarouselDots } from '@/components/trends/LiquidChartCarousel';
 
 // Utils
 import { generateCalorieInsight, generateWeightInsight, generateStepInsight, generateCorrelationInsight } from '@/utils/insights';
@@ -25,6 +26,39 @@ import { TrendsMotionControllerProvider } from '@/components/trends/useTrendsMot
 
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { HapticsService } from '@/lib/haptics';
+
+// Nav Control
+import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+
+// --- NAV REVEAL ZONE COMPONENT ---
+// This is an invisible touch zone at the bottom to allow pulling the nav up
+const NavRevealZone = () => {
+  const { isNavVisible, setNavVisible, navLockReason } = useNavVisibility();
+
+  // If nav is already visible, or locked, don't interfere
+  if (isNavVisible || navLockReason !== 'NONE') return null;
+
+  return (
+    <motion.div
+      className="fixed bottom-0 left-0 right-0 h-4 z-[49] cursor-grab touch-none" // z-49 to be just below nav (z-50) but above content
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.2}
+      onDragEnd={(e, info) => {
+        // Drag up (negative y) by some threshold
+        if (info.offset.y < -18) {
+          setNavVisible(true);
+          // Haptic feedback
+          if (navigator.vibrate) navigator.vibrate(10);
+        }
+      }}
+    // Visual hint for debugging (remove later or make extremely subtle)
+    // style={{ background: 'rgba(255,0,0,0.1)' }} 
+    />
+  );
+};
+
 
 export default function TrendsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -41,6 +75,12 @@ export default function TrendsPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [macroViewMode, setMacroViewMode] = useState<'Protein' | 'Carbs' | 'Fat'>('Protein');
+
+  const [calorieViewIndex, setCalorieViewIndex] = useState(0); // 0 = Daily, 1 = Cumulative
+  const [weightViewIndex, setWeightViewIndex] = useState(0); // 0 = Weight, 1 = Fat, 2 = Both
+
+  const calorieDragControls = useDragControls();
+  const weightDragControls = useDragControls();
 
   // Fetch Data
   const fetchData = useCallback(async () => {
@@ -75,6 +115,56 @@ export default function TrendsPage() {
       setIsLoadingData(false);
     }
   }, [user]);
+
+  // Nav Control
+  const { isNavVisible, setNavVisible, navLockReason } = useNavVisibility();
+
+  // Scroll Handler
+  useEffect(() => {
+    // We attach to the scrollable container. Since this component renders the scrollable div,
+    // we can use a ref or just find it. But wait, current implementation puts `overflow-y-scroll` on a div.
+    // Let's add a ref to valid container.
+  }, []); // Placeholder, will implement loop below with ref
+
+  // Ref for scroll container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastScrollTop = useRef(0);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // If locked, do nothing
+      if (navLockReason !== 'NONE') return;
+
+      const currentScrollTop = container.scrollTop;
+      const diff = currentScrollTop - lastScrollTop.current;
+
+      // Thresholds
+      const HIDE_THRESHOLD = 12;
+      const SHOW_THRESHOLD = -12;
+
+      if (diff > HIDE_THRESHOLD) {
+        // Scrolling Down -> Hide
+        setNavVisible(false);
+      } else if (diff < SHOW_THRESHOLD) {
+        // Scrolling Up -> Show
+        setNavVisible(true);
+      }
+
+      lastScrollTop.current = currentScrollTop;
+    };
+
+    // Throttled or RAF? Browser events are often high frequency. 
+    // Let's use requestAnimationFrame for basic throttling if needed, or just let it fly for now as simplified logic.
+    // To avoid too many state updates, check current state? 
+    // `setNavVisible` usually is stable, but we should probably debounce slightly or only call if changing.
+    // For now, strict threshold logic is fine.
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [navLockReason, setNavVisible]);
 
   useEffect(() => {
     if (!authLoading && user) fetchData();
@@ -203,10 +293,41 @@ export default function TrendsPage() {
 
   // Derived Insights
   const targetCalories = userProfile?.profile?.tdee || 2000;
-  const calorieInsight = generateCalorieInsight(calorieData, targetCalories);
-  const weightInsight = generateWeightInsight(weightData);
+  // TODO: Update insight generators to accept view mode if needed, or just switch title here.
+  const baseCalorieInsight = generateCalorieInsight(calorieData, targetCalories);
+  const baseWeightInsight = generateWeightInsight(weightData);
   const activityInsight = generateStepInsight(activityData);
   const correlationInsight = generateCorrelationInsight(correlationData);
+
+  // Dynamic Context for Calories
+  const calorieContext = useMemo(() => {
+    if (calorieViewIndex === 0) { // Daily
+      return {
+        label: "Daily Intake",
+        description: `Your target is ${targetCalories} kcal. Keeping close to this helps maintain metabolic health.`
+      };
+    } else { // Cumulative
+      return {
+        label: "Cumulative Deficit",
+        description: "See your total caloric balance over time. Positive slope means deficit (weight loss)."
+      }
+    }
+  }, [calorieViewIndex, targetCalories]);
+
+  // Dynamic Context for Weight
+  const weightContext = useMemo(() => {
+    const labels = ["Body Weight", "Fat Mass", "Weight & Fat"];
+    const descs = [
+      "Tracking weight over time helps identify real trends vs water fluctuations.",
+      "Fat mass is a better health indicator than total weight.",
+      "Compare total weight vs fat mass to see body composition changes."
+    ];
+    return {
+      label: labels[weightViewIndex] || labels[0],
+      description: descs[weightViewIndex] || descs[0]
+    };
+  }, [weightViewIndex]);
+
 
   const macroInsight = useMemo(() => {
     if (macroData.length === 0) return "Log meals to see macro balance.";
@@ -246,7 +367,18 @@ export default function TrendsPage() {
     <TrendsMotionControllerProvider>
       <div className="bg-background h-screen w-full relative">
         {/* Fixed Global Time Control */}
-        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 pointer-events-none">
+        <motion.div
+          className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 pointer-events-none"
+          initial={{ y: 0, opacity: 1 }}
+          animate={{
+            y: isNavVisible ? 0 : -100,
+            opacity: isNavVisible ? 1 : 0
+          }}
+          transition={{
+            duration: 0.4,
+            ease: [0.32, 0.72, 0, 1] // Apple-style ease
+          }}
+        >
           <div className="pointer-events-auto">
             <GlobalTimeControl
               selectedRange={selectedTimeRange}
@@ -255,9 +387,12 @@ export default function TrendsPage() {
               onCustomRangeChange={setCustomRange}
             />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth pb-0">
+        <div
+          ref={scrollContainerRef}
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth pb-0"
+        >
 
           {/* Empty State */}
           {filteredEntries.length === 0 && (
@@ -269,34 +404,55 @@ export default function TrendsPage() {
 
           {/* SCENE 1: Calories */}
           {calorieData.length > 0 && (
-            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+            <div
+              className="w-full h-screen shrink-0 snap-center flex flex-col items-center justify-center p-0 relative"
+              onPointerDown={(e) => calorieDragControls.start(e)}
+              style={{ touchAction: "pan-y" }} // Allow vertical scroll but capture horizontal via controls
+            >
               <LiquidGraphScene id="calories"
-                contextLabel="Daily Calorie Intake"
-                insightTitle={calorieInsight}
-                description={`Your target is ${targetCalories} kcal. Keeping close to this helps maintain metabolic health.`}
+                contextLabel={calorieContext.label}
+                insightTitle={baseCalorieInsight} // Optionally make this dynamic too
+                description={calorieContext.description}
               >
                 <DailyCaloriesTrendChart
                   data={calorieData}
                   isDarkMode={isDarkMode}
                   targetCalories={targetCalories}
+                  viewModeIndex={calorieViewIndex}
+                  onViewModeChange={setCalorieViewIndex}
+                  dragControls={calorieDragControls}
                 />
               </LiquidGraphScene>
+              {/* External Dots */}
+              <CarouselDots
+                count={2}
+                currentIndex={calorieViewIndex}
+                className="mt-4"
+              />
             </div>
           )}
 
           {/* SCENE 2: Weight */}
           {weightData.length > 0 && (
-            <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
+            <div className="w-full h-screen shrink-0 snap-center flex flex-col items-center justify-center p-0">
               <LiquidGraphScene id="weight"
-                contextLabel="Body Weight"
-                insightTitle={weightInsight}
-                description="Long-term weight trends are more important than daily fluctuations."
+                contextLabel={weightContext.label}
+                insightTitle={baseWeightInsight}
+                description={weightContext.description}
               >
                 <WeightTrendChart
                   data={weightData}
                   isDarkMode={isDarkMode}
+                  viewModeIndex={weightViewIndex}
+                  onViewModeChange={setWeightViewIndex}
                 />
               </LiquidGraphScene>
+              {/* External Dots */}
+              <CarouselDots
+                count={3}
+                currentIndex={weightViewIndex}
+                className="mt-4"
+              />
             </div>
           )}
 
@@ -358,6 +514,9 @@ export default function TrendsPage() {
               Maybe a small spacer to allow overscroll on bottom. */}
           <div className="h-[10vh] w-full snap-align-none" />
         </div>
+
+        {/* Nav Reveal Zone */}
+        <NavRevealZone />
       </div>
 
     </TrendsMotionControllerProvider>

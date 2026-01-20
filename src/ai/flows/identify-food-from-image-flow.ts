@@ -16,6 +16,7 @@ const IdentifyFoodFromImageInputSchema = z.object({
     "A photo of a food item or packaging, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
   userLocale: z.string().optional().describe("User's locale, e.g., 'en-US', to help with units and food names if possible."),
+  additionalContext: z.string().optional().describe("User-provided context about the food to assist identification (e.g., 'made with almond flour', 'vegan burger', 'Cheetos')."),
 });
 export type IdentifyFoodFromImageInput = z.infer<typeof IdentifyFoodFromImageInputSchema>;
 
@@ -40,15 +41,17 @@ const identifyFoodPrompt = ai.definePrompt({
   input: { schema: IdentifyFoodFromImageInputSchema },
   output: { schema: IdentifyFoodFromImageOutputSchema },
   config: {
-    temperature: 0.2, // Set low temperature for consistent identification
+    temperature: 0.4, // Slightly higher for more flexible recognition
   },
   prompt: `You are an expert food identification AI. Analyze the provided image and respond strictly according to the IdentifyFoodFromImageOutputSchema.
 User's locale (optional, for context): {{{userLocale}}}
+User provided context: {{{additionalContext}}}
 Image: {{media url=imageDataUri}}
 
 Your tasks:
 1.  **'identifiedFoodName'**: Identify the primary food item. If packaged, the product name. If a dish, its name. For ambiguous cooking (e.g., eggs), use general terms ('cooked eggs') unless method is obvious.
 2.  **'identifiedIngredients'**: Provide a comma-separated list of main ingredients.
+    *   **CONTEXT USAGE**: If 'User provided context' is present, use it to refine the ingredients (e.g. if context says "gluten-free", ensure ingredients reflect that).
     *   **CRITICAL - QUANTITY ESTIMATION**: Where visually inferable, you **MUST** include an estimated quantity in round brackets next to each ingredient. Example: "Rice (200g), Chicken (150g)".
     *   **CRITICAL FOR SUPPLEMENTS/LABELS**: If OCR detects specific nutrient quantities (e.g., "Vitamin D3 50,000 IU", "Iron 10mg"), these exact strings MUST be included in 'identifiedIngredients'. Do not alter or omit these OCR'd quantities.
     *   For dishes, list common ingredients.
@@ -59,9 +62,18 @@ Your tasks:
 5.  **'recognitionSuccess'**: Set to true if 'identifiedFoodName' and 'identifiedIngredients' are confidently identified for form pre-filling. Otherwise, false.
 6.  **'errorMessage'**: If 'recognitionSuccess' is false or issues arise, briefly explain.
 
+7.  **RAW INGREDIENTS**: If the image shows a raw, unprocessed fruit, vegetable, or single ingredient (e.g. a carrot in hand), identify it simply (e.g., "Carrot"). Do not overcomplicate the name.
+
 Prioritize practical values for form pre-filling. If image is unclear or not food, set 'recognitionSuccess' to false and provide an 'errorMessage'.
 
 Examples:
+- Picture of a single raw carrot in hand:
+  identifiedFoodName: "Carrot"
+  identifiedIngredients: "Carrot"
+  estimatedPortionSize: "1"
+  estimatedPortionUnit: "medium carrot"
+  recognitionSuccess: true
+
 - Picture of four cooked eggs:
   identifiedFoodName: "Cooked Eggs"
   identifiedIngredients: "Eggs"

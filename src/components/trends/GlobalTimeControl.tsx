@@ -9,6 +9,8 @@ import { Calendar, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import TrendsDateRangeSheet from './TrendsDateRangeSheet';
 import LiquidSegmentedControl from '../ui/LiquidSegmentedControl';
+import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface GlobalTimeControlProps {
     selectedRange: TimeRange;
@@ -32,6 +34,16 @@ export default function GlobalTimeControl({
 }: GlobalTimeControlProps) {
     const { scrollY } = useScroll();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const { lockNav, unlockNav } = useNavVisibility();
+
+    // Lock Nav when sheet is open
+    useEffect(() => {
+        if (isSheetOpen) {
+            lockNav('SHEET_OPEN');
+        } else {
+            unlockNav('SHEET_OPEN');
+        }
+    }, [isSheetOpen, lockNav, unlockNav]);
 
     // State Machine: 'expanded' | 'compact'
     // 'expanded-on-idle' is handled via logic
@@ -103,6 +115,8 @@ export default function GlobalTimeControl({
             : `${RANGES.find(r => r.id === selectedRange)?.label || selectedRange} Trend`;
 
 
+    const { isDarkMode } = useTheme();
+
     return (
         <>
             <motion.div
@@ -115,7 +129,10 @@ export default function GlobalTimeControl({
                 <motion.div
                     layoutId="time-control-pill"
                     className={cn(
-                        "pointer-events-auto bg-black/60 backdrop-blur-xl border border-white/10 shadow-lg rounded-full overflow-hidden transition-all duration-500 ease-[0.23,1,0.32,1] relative",
+                        "pointer-events-auto backdrop-blur-3xl backdrop-saturate-200 border shadow-lg rounded-full overflow-hidden transition-all duration-500 ease-[0.23,1,0.32,1] relative",
+                        isDarkMode
+                            ? "bg-black/5 border-white/10"
+                            : "bg-white/5 border-black/5",
                         viewState === 'expanded' ? "p-1.5" : "px-4 py-2" // Padding shift
                     )}
                     onClick={() => {
@@ -142,7 +159,7 @@ export default function GlobalTimeControl({
                                 />
 
                                 {/* Divider */}
-                                <div className="w-px h-4 bg-white/10 mx-1" />
+                                <div className={cn("w-px h-4 mx-1", isDarkMode ? "bg-white/10" : "bg-black/10")} />
 
                                 {/* Custom Button (Visual Match to Liquid Control but independent trigger) */}
                                 <button
@@ -153,8 +170,8 @@ export default function GlobalTimeControl({
                                     className={cn(
                                         "relative px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 select-none flex items-center gap-1.5",
                                         selectedRange === 'CUSTOM'
-                                            ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-                                            : "text-white/40 hover:text-white/70"
+                                            ? (isDarkMode ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" : "text-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.5)]")
+                                            : (isDarkMode ? "text-white/40 hover:text-white/70" : "text-black/40 hover:text-black/70")
                                     )}
                                 >
                                     {selectedRange === 'CUSTOM' && (
@@ -164,13 +181,19 @@ export default function GlobalTimeControl({
                                             transition={{ type: "spring", stiffness: 350, damping: 30 }}
                                         >
                                             {/* 1. Base Liquid Body */}
-                                            <div className="absolute inset-0 bg-white/15 backdrop-blur-sm" />
+                                            <div className={cn("absolute inset-0 backdrop-blur-sm", isDarkMode ? "bg-white/15" : "bg-white/60")} />
                                             {/* 2. Radial Liquid Highlight */}
-                                            <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3)_0%,transparent_50%)] opacity-50" />
+                                            <div className={cn("absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3)_0%,transparent_50%)] opacity-50",
+                                                !isDarkMode && "bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.8)_0%,transparent_50%)]"
+                                            )} />
                                             {/* 3. Specular Streak */}
                                             <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/10 to-transparent skew-x-[-20deg] opacity-40 translate-x-[20%]" />
                                             {/* 4. Inset Thickness */}
-                                            <div className="absolute inset-0 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-1px_1px_rgba(0,0,0,0.1)]" />
+                                            <div className={cn("absolute inset-0 rounded-full",
+                                                isDarkMode
+                                                    ? "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-1px_1px_rgba(0,0,0,0.1)]"
+                                                    : "shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),inset_0_-1px_1px_rgba(0,0,0,0.05)]"
+                                            )} />
                                             {/* 5. Drop Shadow */}
                                             <div className="absolute inset-0 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.3)]" />
                                         </motion.div>
@@ -191,10 +214,10 @@ export default function GlobalTimeControl({
                                     "w-1.5 h-1.5 rounded-full animate-pulse",
                                     selectedRange === 'CUSTOM' ? "bg-blue-500" : "bg-green-500"
                                 )} />
-                                <span className="text-sm font-semibold text-white tracking-wide">
+                                <span className={cn("text-sm font-semibold tracking-wide", isDarkMode ? "text-white" : "text-zinc-800")}>
                                     {compactLabel}
                                 </span>
-                                <ChevronDown className="w-3 h-3 text-white/50 ml-1" />
+                                <ChevronDown className={cn("w-3 h-3 ml-1", isDarkMode ? "text-white/50" : "text-black/50")} />
                             </motion.div>
                         )}
                     </AnimatePresence>

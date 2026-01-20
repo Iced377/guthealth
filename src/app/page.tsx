@@ -123,15 +123,12 @@ export default function RootPage() {
     </div>
   );
 
-  if (authLoading || (isDataLoading && authUser)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-foreground">
-          {authLoading ? "Authenticating..." : "Loading your GutCheck dashboard..."}
-        </p>
-      </div>
-    );
+  // Removed blocking loader to prevent double-loading screen. 
+  // AuthProvider handles initial auth load. Data loading will be handled by UI skeletons.
+  if (authLoading) {
+    return null; // Or keep a very minimal spinner if auth takes a split second after hydration, but usually AuthProvider covers this.
+    // Actually AuthProvider blocks children, so this component only renders when authLoading is false.
+    // So we can remove this block entirely.
   }
 
   if (!authUser && !authLoading) {
@@ -163,6 +160,7 @@ export default function RootPage() {
         {authUser ? (
           <DashboardContent
             userProfile={userProfile!}
+            isLoading={isDataLoading}
             timelineEntries={timelineEntries}
             dailyNutritionSummary={dailyNutritionSummary}
             isLoadingAi={isLoadingAi}
