@@ -54,7 +54,7 @@ export default function BasicInfo({ data, updateData, onGenderSelect }: BasicInf
         { label: 'Apr', value: 3 }, { label: 'May', value: 4 }, { label: 'Jun', value: 5 },
         { label: 'Jul', value: 6 }, { label: 'Aug', value: 7 }, { label: 'Sep', value: 8 },
         { label: 'Oct', value: 9 }, { label: 'Nov', value: 10 }, { label: 'Dec', value: 11 }
-    ];
+    ].reverse();
 
     return (
         <LiquidWizardCard
@@ -150,7 +150,7 @@ export default function BasicInfo({ data, updateData, onGenderSelect }: BasicInf
                         {/* Day */}
                         <div className="w-[70px]">
                             <IOSWheelPicker
-                                items={Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
+                                items={Array.from({ length: 31 }, (_, i) => ({ label: `${31 - i}`, value: 31 - i }))}
                                 selectedValue={day}
                                 onValueChange={(val) => updateDob('day', val)}
                                 className="h-28 w-full"
@@ -160,7 +160,7 @@ export default function BasicInfo({ data, updateData, onGenderSelect }: BasicInf
                         <div className="w-[90px]">
                             <IOSWheelPicker
                                 items={Array.from({ length: 100 }, (_, i) => {
-                                    const y = new Date().getFullYear() - i;
+                                    const y = (new Date().getFullYear() - 100) + i;
                                     return { label: `${y}`, value: y };
                                 })}
                                 selectedValue={year}

@@ -98,12 +98,12 @@ export default function FeedbackEntrySheet({
                             "fixed z-[61] left-1/2 bottom-[15vh]",
                             "w-[90vw] max-w-sm mx-auto",
                             "rounded-[32px] overflow-hidden",
-                            "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)]",
+                            "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)]",
                             isDarkMode
                                 ? "bg-black/40 text-white"
                                 : "bg-white/60 text-black",
                             "backdrop-blur-[32px]",
-                            "border border-white/20"
+                            "border-0"
                         )}
                         style={{
                             transformOrigin: "bottom center"
@@ -116,7 +116,7 @@ export default function FeedbackEntrySheet({
                                     <button
                                         key={item.id}
                                         onClick={() => onOptionSelect(item.id as 'improve' | 'bug' | 'feature')}
-                                        className="flex items-center gap-4 px-6 py-4 w-full text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98]"
+                                        className="flex items-center gap-4 px-6 py-4 w-full text-left transition-transform active:scale-[0.98]"
                                     >
                                         <div className={cn(
                                             "w-12 h-12 rounded-full flex items-center justify-center shrink-0",

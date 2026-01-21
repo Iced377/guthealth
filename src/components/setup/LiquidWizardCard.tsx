@@ -32,8 +32,8 @@ export default function LiquidWizardCard({
                 className={cn(
                     "w-full max-w-sm h-[600px] rounded-[40px] relative overflow-hidden flex flex-col items-center p-8 text-center transition-all duration-500",
                     isDarkMode
-                        ? "bg-white/[0.05] border border-white/10 shadow-2xl"
-                        : "bg-white/60 border border-white/40 shadow-xl shadow-indigo-500/10",
+                        ? "bg-zinc-950/90 border border-white/10 shadow-2xl"
+                        : "bg-white/95 border border-white/40 shadow-xl shadow-indigo-500/10",
                     className
                 )}
                 style={{

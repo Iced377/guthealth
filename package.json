@@ -1,6 +1,6 @@
 {
   "name": "guthealth",
-  "version": "5.0.3",
+  "version": "5.0.4",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002 -H 0.0.0.0",
@@ -16,6 +16,7 @@
     "@capacitor/app": "^8.0.0",
     "@capacitor/browser": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
+    "@capacitor/clipboard": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@capacitor/haptics": "^8.0.0",
     "@capacitor/ios": "^8.0.0",

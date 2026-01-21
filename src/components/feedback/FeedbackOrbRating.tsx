@@ -37,13 +37,10 @@ export default function FeedbackOrbRating({ onRate, initialRating }: FeedbackOrb
                         initial={false}
                         animate={{
                             scale: isSelected ? 1.05 : 1,
-                            backgroundColor: isSelected ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.03)",
-                            borderWidth: isSelected ? 2 : 1,
                         }}
                         whileTap={{ scale: 0.98 }}
                         className={cn(
-                            "group w-full relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                            isSelected ? "border-white/40 shadow-lg shadow-black/5" : "border-white/10 hover:bg-white/5 hover:border-white/20"
+                            "group w-full relative flex items-center justify-between p-4 rounded-xl border-0 bg-transparent transition-all duration-300"
                         )}
                     >
                         <span className={cn(
@@ -67,6 +64,6 @@ export default function FeedbackOrbRating({ onRate, initialRating }: FeedbackOrb
                     </motion.button>
                 );
             })}
-        </div>
+        </div >
     );
 }

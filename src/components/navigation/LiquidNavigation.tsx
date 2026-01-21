@@ -33,6 +33,7 @@ import { liquidDisplacementBase64 } from '@/config/liquidFilter';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
+import { APP_VERSION } from '@/config/releaseNotes';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -80,7 +81,7 @@ const EXPLORE_ITEMS: SubMenuItem[] = [
     { id: 'app-tour', icon: HelpCircle, label: 'App Tour', accessibilityLabel: 'App Tour, start guided experience' },
     { id: 'about', icon: Info, label: 'About', path: '/about', accessibilityLabel: 'About, app information' },
     { id: 'feedback', icon: MessageSquare, label: 'Feedback', path: '/feedback', accessibilityLabel: 'Give Feedback, send feedback' },
-    { id: 'version', icon: Tag, label: 'v4.5.3', accessibilityLabel: 'Version, view release notes' },
+    { id: 'version', icon: Tag, label: APP_VERSION, accessibilityLabel: 'Version, view release notes' },
 ];
 
 // Insights sub-items
@@ -174,6 +175,7 @@ interface LiquidNavigationProps {
     onVersionClick?: () => void;
     isAdmin?: boolean;
     hasCompletedTour?: boolean;
+    isReleaseNotesOpen?: boolean;
 }
 
 export default function LiquidNavigation({
@@ -186,6 +188,7 @@ export default function LiquidNavigation({
     onVersionClick,
     isAdmin = false,
     hasCompletedTour = false,
+    isReleaseNotesOpen = false,
 }: LiquidNavigationProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -198,12 +201,13 @@ export default function LiquidNavigation({
 
     // Determine active tab
     const getActiveTab = useCallback(() => {
+        if (isReleaseNotesOpen) return 'explore';
         if (pathname === '/') return 'home';
         if (pathname.startsWith('/favorites')) return 'explore';
         if (pathname.startsWith('/insights') || pathname.startsWith('/trends')) return 'insights';
         if (pathname.startsWith('/profile')) return 'profile';
         return 'home';
-    }, [pathname]);
+    }, [pathname, isReleaseNotesOpen]);
 
     const activeTab = getActiveTab();
 
@@ -344,7 +348,7 @@ export default function LiquidNavigation({
                                     // Liquid Glass material
                                     "bg-white/15 dark:bg-black/40",
                                     "backdrop-blur-2xl saturate-150",
-                                    "border border-white/50 dark:border-white/15",
+                                    "border-0",
                                     "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                     "select-none"
                                 )}
@@ -414,7 +418,7 @@ export default function LiquidNavigation({
                                     // Liquid Glass material
                                     "bg-white/15 dark:bg-black/40",
                                     "backdrop-blur-2xl saturate-150",
-                                    "border border-white/50 dark:border-white/15",
+                                    "border-0",
                                     "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                     "select-none"
                                 )}
@@ -481,7 +485,7 @@ export default function LiquidNavigation({
                                     // Liquid Glass material (same as Log menu)
                                     "bg-white/15 dark:bg-black/40",
                                     "backdrop-blur-2xl saturate-150",
-                                    "border border-white/50 dark:border-white/15",
+                                    "border-0",
                                     "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                     "select-none"
                                 )}
@@ -548,7 +552,7 @@ export default function LiquidNavigation({
                                         // Liquid Glass material
                                         "bg-white/15 dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
-                                        "border border-white/50 dark:border-white/15",
+                                        "border-0",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
                                         "select-none"
                                     )}

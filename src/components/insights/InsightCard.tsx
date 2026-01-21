@@ -1,5 +1,5 @@
-'use client';
 
+import { Clipboard } from '@capacitor/clipboard';
 import type { SymptomCorrelationOutput } from '@/ai/flows/symptom-correlation-flow';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,13 +35,24 @@ const ConfidenceBadge = ({ confidence }: { confidence?: Insight['confidence'] })
 export default function InsightCard({ insight }: InsightCardProps) {
   const { toast } = useToast();
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const textToCopy = `${insight.title}\n\n${insight.description}\n${insight.suggestionToUser ? '\nSuggestion: ' + insight.suggestionToUser : ''}`;
-    navigator.clipboard.writeText(textToCopy);
-    toast({
-      title: "Copied to clipboard",
-      description: "Insight details copied!",
-    });
+    try {
+      await Clipboard.write({
+        string: textToCopy
+      });
+      toast({
+        title: "Copied to clipboard",
+        description: "Insight details copied!",
+      });
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast({
+        title: "Copy failed",
+        description: "Could not copy to clipboard.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

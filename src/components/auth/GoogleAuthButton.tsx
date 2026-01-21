@@ -29,7 +29,11 @@ export default function GoogleAuthButton({
 
     useEffect(() => {
         if (Capacitor.isNativePlatform()) {
-            GoogleAuth.initialize();
+            // Initialization is good practice but can fail if bridge isn't ready.
+            // We catch it so it doesn't crash the UI; the actual sign-in will try again.
+            GoogleAuth.initialize().catch(err => {
+                console.warn("GoogleAuth init warning:", err);
+            });
         }
     }, []);
     // We can use the global loading state if we suspect a redirect is happening, 

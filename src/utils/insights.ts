@@ -115,11 +115,20 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         if (e.entryType === 'food') {
             const food = e as LoggedFoodItem;
             dailyStats[dateKey].calories += (food.calories || 0);
-            foodTimestamps.push(e.timestamp.getTime());
+
+            // IGNORE negligible calories for Fasting Calculation (e.g. black coffee, water, supplements)
+            if ((food.calories || 0) > 5) {
+                foodTimestamps.push(e.timestamp.getTime());
+            }
+
         } else if (e.entryType === 'manual_macro') {
             const macro = e as any;
             dailyStats[dateKey].calories += (macro.calories || 0);
-            foodTimestamps.push(e.timestamp.getTime());
+            // IGNORE negligible calories for Fasting
+            if ((macro.calories || 0) > 5) {
+                foodTimestamps.push(e.timestamp.getTime());
+            }
+
         } else if ((e.entryType === 'fitbit_data' || e.entryType === 'pedometer_data') && 'steps' in e) {
             const stepData = e as any;
             // Take max steps for the day (assuming multiple sources might sync)
@@ -142,7 +151,14 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
 
 
     const dailyData = Object.values(dailyStats);
-    const totalDays = dailyData.length || 1;
+
+    // Calculate Valid Days for Average separate from Total Days
+    // We filter out days with < 100 calories (likely just logged water/supplements) for the AVERAGE calculation
+    // so we don't understate their actual intake.
+    const validEatingDays = dailyData.filter(d => d.calories > 100);
+    const daysForAverage = validEatingDays.length || 1;
+    const totalCalsForAverage = validEatingDays.reduce((acc, curr) => acc + curr.calories, 0);
+
     const target = profile?.profile?.tdee || 2000;
 
     // 2. Calculate Metrics
@@ -173,10 +189,11 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         }
 
         if (day.calories > target) daysOverTarget++;
-        totalCals += day.calories;
+        totalCals += day.calories; // Keep raw total for debugging if needed, but return smarter average
 
-        // Flux Check (only if we have steps data for that day)
-        if (day.steps > 0) {
+        // Flux Check (only if we have steps data for that day AND valid calorie data)
+        // Guardrail: Only use days with > 800 kcal for Correlation/Flux to avoid "Day 1" or "Forgot to log" zeros skewing data
+        if (day.steps > 0 && day.calories > 800) {
             points.push({ x: day.steps, y: day.calories });
             if (day.steps >= STEP_THRESHOLD && day.calories >= CALORIE_THRESHOLD) optimal++;
             else if (day.steps < STEP_THRESHOLD && day.calories >= CALORIE_THRESHOLD) sedentary++;
@@ -213,7 +230,7 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         calorieStepCorrelationStrength: strength,
         daysOverCalorieTarget: daysOverTarget,
         totalDaysAnalyzed: dailyData.length,
-        averageDailyCalories: Math.round(totalCals / totalDays),
+        averageDailyCalories: Math.round(totalCalsForAverage / daysForAverage),
         dailyCalorieTarget: target,
         maxFastingWindowHours: maxFast || 0,
         fluxZones: {

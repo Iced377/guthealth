@@ -138,6 +138,7 @@ export default function LiquidChartCarousel({
                         right: 0
                     }}
                     dragElastic={0.2} // Looser feel
+                    dragDirectionLock
                     onDragEnd={handleDragEnd}
                 >
                     {children.map((child, idx) => (

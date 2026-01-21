@@ -127,7 +127,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                     </div>
 
                     {/* Top Center (Protein - Blue) */}
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 text-center z-20">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-center z-20">
                         <div className="flex items-center justify-center gap-1 text-blue-500 font-bold text-xs uppercase tracking-wider mb-0.5"><Dumbbell className="w-3 h-3" /> Protein</div>
                         <div className="text-3xl font-black leading-none">{results.macros.protein}g</div>
                         <div className="text-[10px] text-muted-foreground">{pPct}%</div>

@@ -111,7 +111,7 @@ export default function LiquidCrystalCard({
                                     {item.isFavorite && <Heart className="h-3 w-3 text-red-500 fill-red-500" />}
                                 </div>
 
-                                <div className="text-left text-xl font-bold font-headline leading-tight text-foreground/90 line-clamp-2 group-hover:text-primary transition-colors">
+                                <div className="text-left text-xl font-bold font-headline leading-tight text-foreground/90 line-clamp-2 transition-colors">
                                     {item.name}
                                 </div>
                             </div>
@@ -267,7 +267,7 @@ export default function LiquidCrystalCard({
 
                     {/* Dialog: Full Detail View */}
                     <DialogContent
-                        className="glass-crystal border-white/20 p-0 overflow-hidden 
+                        className="glass-crystal border-0 outline-none ring-0 shadow-none p-0 overflow-hidden 
                     fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 
                     w-[90vw] max-w-sm rounded-[40px] 
                     data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-1/2
@@ -282,7 +282,7 @@ export default function LiquidCrystalCard({
                             </div>
                         </div>
 
-                        <div className="p-6 space-y-4 bg-background/40 backdrop-blur-xl">
+                        <div className="p-6 space-y-4 bg-background/40 backdrop-blur-xl max-h-[60vh] overflow-y-auto">
                             {/* Details Content similar to TimelineFoodCard but styled */}
                             <div className="space-y-1">
                                 <h3 className="text-sm font-semibold opacity-70 uppercase tracking-wider">Macros</h3>

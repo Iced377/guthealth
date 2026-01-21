@@ -114,6 +114,7 @@ const NavigationAndDialogs = () => {
 
                     onAppTourClick={() => startWalkthrough('welcome')}
                     onVersionClick={openReleaseNotes}
+                    isReleaseNotesOpen={isReleaseNotesOpen}
                     isAdmin={userProfile?.isAdmin ?? false}
                 />
             )}

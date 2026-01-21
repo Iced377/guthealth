@@ -212,9 +212,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (loading || (user && profileLoading)) { // Block until profile is checked
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-foreground">Loading GutCheck...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        {/* Custom Pulse Loader */}
+        <div className="relative mb-8">
+          <div className="absolute inset-y-0 left-[-20%] right-[-20%] h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 animate-pulse-width" />
+          {/* Rotating Orb */}
+          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          {/* Inner Glow */}
+          <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl animate-pulse" />
+        </div>
+
+        <h3 className="text-lg font-headline font-bold mb-2 animate-pulse">Loading...</h3>
+        <p className="text-sm text-muted-foreground max-w-[200px] text-center">
+          Preparing your personalized health dashboard.
+        </p>
       </div>
     );
   }

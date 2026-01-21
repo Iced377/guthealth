@@ -4,6 +4,7 @@ import { useInsightsMotionController } from './useInsightsMotionController';
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { FrostBackplate } from './LiquidPrimitive';
 import { X, Send, Loader2, Copy, Check } from 'lucide-react';
+import { Clipboard } from '@capacitor/clipboard';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLiquidTokens, LiquidMode } from '@/lib/liquid-tokens';
 import { cn } from '@/lib/utils';
@@ -132,35 +133,17 @@ export function CoachSessionSheet() {
     // Copy State
     const [isCopied, setIsCopied] = useState(false);
 
+
+
+    // ... inside component ...
+
     const handleCopy = async () => {
         if (!aiOutput?.aiResponse) return;
 
         try {
-            // Context: navigator.clipboard requires HTTPS or localhost. If testing on IP, it may be undefined.
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(aiOutput.aiResponse);
-            } else {
-                // Fallback for non-secure contexts (e.g., local IP dev)
-                const textArea = document.createElement("textarea");
-                textArea.value = aiOutput.aiResponse;
-
-                // Ensure it's not visible but part of DOM
-                textArea.style.position = "fixed";
-                textArea.style.left = "-9999px";
-                textArea.style.top = "0";
-                document.body.appendChild(textArea);
-
-                textArea.focus();
-                textArea.select();
-
-                try {
-                    document.execCommand('copy');
-                } catch (err) {
-                    console.error('Fallback copy failed', err);
-                }
-
-                document.body.removeChild(textArea);
-            }
+            await Clipboard.write({
+                string: aiOutput.aiResponse
+            });
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
         } catch (err) {
@@ -214,7 +197,13 @@ export function CoachSessionSheet() {
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
         // Calculate Time Since Last Meal
-        const lastMeal = timelineEntries.find(e => e.entryType === 'food' || e.entryType === 'manual_macro');
+        // Find last REAL meal > 5 calories (ignore water/supplements)
+        const lastMeal = timelineEntries.find(e => {
+            if (e.entryType === 'food') return (e.calories || 0) > 5;
+            if (e.entryType === 'manual_macro') return ((e as any).calories || 0) > 5;
+            return false;
+        });
+
         const hoursSinceLastMeal = lastMeal
             ? Math.abs(now.getTime() - new Date(lastMeal.timestamp).getTime()) / 36e5
             : 0;

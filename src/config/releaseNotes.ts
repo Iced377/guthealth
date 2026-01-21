@@ -1,13 +1,36 @@
 export interface ReleaseNote {
     version: string;
-    date?: string;
-    title?: string;
-    description: string | string[];
+    date?: string; // Keep optional for older entries
+    title?: string; // Keep optional for older entries
+    description: string | string[]; // Keep union type for older entries
+    features?: string[]; // Add optional for new structure
+    improvements?: string[]; // Add optional for new structure
+    fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "Beta 5.0.3";
+export const APP_VERSION = "5.0.4";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.0.4',
+        date: 'January 21, 2026', // Today's date
+        title: 'Polished & Precise',
+        description: 'A major visual refinement update focusing on a cleaner, borderless UI and smarter AI insights.',
+        features: [
+            'New "Pulse Orb" loading animation for a smoother app start.',
+            'Borderless "Liquid Glass" UI for all feedback and navigation menus.',
+        ],
+        improvements: [
+            'Feedback form now shows a "Scroll For More" hint.',
+            'Enhanced scrollability for long food details (ingredients/macros).',
+            'Removed visual clutter (borders/highlights) from Feedback options.',
+        ],
+        fixes: [
+            'Fixed AI falsely reporting positive Activity-Appetite correlation.',
+            'Fixed Navigation highlight jumping away from "Explore" when viewing Release Notes.',
+            'Resolved overlap issues with feedback scroll indicators.',
+        ]
+    },
     {
         version: "Beta 5.0.3",
         date: "Jan 20, 2026",

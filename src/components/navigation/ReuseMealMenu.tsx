@@ -94,12 +94,12 @@ export default function ReuseMealMenu({
 
                             "rounded-[32px] overflow-hidden", // More rounded for liquid feel
                             // Shadow & Glass Lensing Effect
-                            "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)]",
+                            "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)]",
                             isDarkMode
                                 ? "bg-black/10 text-white"
                                 : "bg-white/10 text-black",
                             "backdrop-blur-[32px] backdrop-saturate-[220%] backdrop-brightness-[1.1]", // Deep Lensing stack
-                            "border border-white/20" // Refraction edge
+                            "border-0" // Refraction edge
                         )}
                         style={{
                             transformOrigin: "bottom center"

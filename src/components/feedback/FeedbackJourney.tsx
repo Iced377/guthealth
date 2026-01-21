@@ -6,11 +6,11 @@ import FeedbackOrbRating from './FeedbackOrbRating';
 import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
 
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import FeedbackFreeformCard from './FeedbackFreeformCard';
 import { useFeedbackSubmission } from '@/hooks/useFeedbackSubmission';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 const METRICS = [
@@ -134,6 +134,26 @@ export default function FeedbackJourney() {
                 />
 
             </div>
+
+            {/* Scroll Hint */}
+            <AnimatePresence>
+                {lastScrollY < 50 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="fixed bottom-32 left-0 right-0 flex flex-col items-center justify-center pointer-events-none z-[100] text-muted-foreground"
+                    >
+                        <span className="text-[10px] uppercase tracking-widest font-semibold mb-1 opacity-80">Scroll For More</span>
+                        <motion.div
+                            animate={{ y: [0, 5, 0] }}
+                            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                        >
+                            <ChevronDown className="w-6 h-6" />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
