@@ -25,7 +25,7 @@ export default function FeedbackMetricCard({ title, description, index, children
         >
             <GlassCard
                 className={cn(
-                    "w-full max-w-sm flex flex-col items-center gap-8 p-8 bg-white/5 border-white/10 transition-all duration-500 relative",
+                    "w-full max-w-sm flex flex-col items-center gap-8 p-8 bg-white/5 border-white/5 transition-all duration-500 relative",
                     isActive ? "scale-105 border-primary/20 bg-white/10" : "scale-100 opacity-90"
                 )}
             >

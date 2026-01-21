@@ -166,7 +166,7 @@ export default function NutritionOverview({ summary, goals }: NutritionOverviewP
                 <MacroCard
                     title="Calories"
                     value={Math.round(summary.calories)}
-                    subtext="kcal"
+                    subtext={`${Math.round(getPercent(summary.calories, targets.calories))}% of target`}
                     percent={getPercent(summary.calories, targets.calories)}
                     icon={Flame}
                     colorTheme="orange"
