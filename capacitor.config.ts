@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
-    url: 'https://mygutcheck.app',
+    url: 'http://localhost:3000',
     cleartext: true,
   }
 };
