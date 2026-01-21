@@ -14,11 +14,11 @@ const config: CapacitorConfig = {
       "enabled": true
     }
   },
-  server: {
-    androidScheme: 'https',
-    url: 'http://localhost:9002',
-    cleartext: true,
-  }
+  // server: {
+  //   androidScheme: 'https',
+  //   url: 'http://localhost:9002',
+  //   cleartext: true,
+  // }
 };
 
 export default config;
