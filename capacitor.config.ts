@@ -7,11 +7,6 @@ const config: CapacitorConfig = {
   plugins: {
     "CapacitorCookies": {
       "enabled": true
-    },
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "serverClientId": "960636731129-m5ie0qkjfpmak5524v76pdko845masg5.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": true
     }
   },
   server: {
