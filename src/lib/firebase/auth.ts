@@ -11,44 +11,21 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail, // Added import
 } from 'firebase/auth';
-// Native Imports
-import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { auth } from '@/config/firebase';
-import { signInWithCredential } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 
-// Sign In with Google
-// Sign In with Google
+
+// Sign In with Google - Web-Based Flow (Works on all platforms)
 export const signInWithGoogle = async () => {
-  console.log("Starting signInWithGoogle...");
-  const isNative = Capacitor.isNativePlatform();
-  console.log("Platform check:", isNative ? "Native" : "Web");
+  console.log("Starting signInWithGoogle (web-based)...");
+  const provider = new GoogleAuthProvider();
 
-  if (isNative) {
-    try {
-      console.log("Initializing GoogleAuth plugin (Safety check)...");
-      await GoogleAuth.initialize();
-
-      console.log("Calling GoogleAuth.signIn()...");
-      const user = await GoogleAuth.signIn();
-      console.log("GoogleAuth.signIn() success:", user ? "User returned" : "No user");
-
-      if (!user) throw new Error("GoogleAuth.signIn() returned null");
-
-      const idToken = user.authentication.idToken;
-      console.log("Got idToken:", idToken ? "Yes (hidden)" : "No");
-
-      const credential = GoogleAuthProvider.credential(idToken);
-      console.log("Signing into Firebase...");
-      return await signInWithCredential(auth, credential);
-    } catch (error) {
-      console.error("Critical Native Google Sign-In Error:", error);
-      // Re-throw to allow component to handle UI
-      throw error;
-    }
+  // Use redirect on native platforms (iOS/Android) to avoid popup blocking
+  if (Capacitor.isNativePlatform()) {
+    console.log("Native platform detected, using signInWithRedirect");
+    return signInWithRedirect(auth, provider);
   } else {
-    // Web Flow: Use Standard Popup
-    const provider = new GoogleAuthProvider();
+    console.log("Web platform detected, using signInWithPopup");
     return signInWithPopup(auth, provider);
   }
 };

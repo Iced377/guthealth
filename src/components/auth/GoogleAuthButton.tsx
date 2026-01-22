@@ -8,7 +8,7 @@ import { Chrome, Loader2 } from 'lucide-react';
 import type { AuthError } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+
 import { Capacitor } from '@capacitor/core';
 
 interface GoogleAuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,13 +28,7 @@ export default function GoogleAuthButton({
     const { toast } = useToast();
 
     useEffect(() => {
-        if (Capacitor.isNativePlatform()) {
-            // Initialization is good practice but can fail if bridge isn't ready.
-            // We catch it so it doesn't crash the UI; the actual sign-in will try again.
-            GoogleAuth.initialize().catch(err => {
-                console.warn("GoogleAuth init warning:", err);
-            });
-        }
+        // Native Google Auth (via @capacitor-firebase/authentication) is auto-initialized.
     }, []);
     // We can use the global loading state if we suspect a redirect is happening, 
     // but for the button itself, local loading state is better for immediate feedback.
