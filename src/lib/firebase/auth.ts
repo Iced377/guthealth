@@ -9,23 +9,37 @@ import {
   browserLocalPersistence,
   setPersistence,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail, // Added import
+  sendPasswordResetEmail,
+  signInWithCredential,
 } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { Capacitor } from '@capacitor/core';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
 
-// Sign In with Google - Web-Based Flow (Works on all platforms)
+// Sign In with Google - Platform-Aware Flow
 export const signInWithGoogle = async () => {
-  console.log("Starting signInWithGoogle (web-based)...");
-  const provider = new GoogleAuthProvider();
+  console.log("Starting signInWithGoogle...");
 
-  // Use redirect on native platforms (iOS/Android) to avoid popup blocking
   if (Capacitor.isNativePlatform()) {
-    console.log("Native platform detected, using signInWithRedirect");
-    return signInWithRedirect(auth, provider);
+    // Native iOS/Android flow - uses native Google Sign-In SDK
+    console.log("Native platform detected, using GoogleAuth plugin");
+
+    try {
+      const googleUser = await GoogleAuth.signIn();
+      const credential = GoogleAuthProvider.credential(
+        googleUser.authentication.idToken
+      );
+
+      return signInWithCredential(auth, credential);
+    } catch (error) {
+      console.error("Native Google Sign-In error:", error);
+      throw error;
+    }
   } else {
+    // Web flow - uses popup (existing behavior)
     console.log("Web platform detected, using signInWithPopup");
+    const provider = new GoogleAuthProvider();
     return signInWithPopup(auth, provider);
   }
 };
