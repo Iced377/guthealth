@@ -1,16 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithGoogle } from '@/lib/firebase/auth';
 import { Chrome, Loader2 } from 'lucide-react';
-import type { AuthError } from 'firebase/auth';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/components/auth/AuthProvider';
-
-import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
 interface GoogleAuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     text?: string;
@@ -28,12 +23,7 @@ export default function GoogleAuthButton({
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
-    useEffect(() => {
-        // Initialize GoogleAuth plugin for native platforms
-        if (Capacitor.isNativePlatform()) {
-            GoogleAuth.initialize();
-        }
-    }, []);
+
     // We can use the global loading state if we suspect a redirect is happening, 
     // but for the button itself, local loading state is better for immediate feedback.
 
