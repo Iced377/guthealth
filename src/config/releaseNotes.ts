@@ -8,24 +8,27 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.0.4";
+export const APP_VERSION = "5.0.5";
 
 export const releaseNotesData: ReleaseNote[] = [
     {
-        version: '5.0.4',
-        date: 'January 21, 2026', // Today's date
+        version: '5.0.5',
+        date: 'January 22, 2026',
         title: 'Polished & Precise',
-        description: 'A major visual refinement update focusing on a cleaner, borderless UI and smarter AI insights.',
+        description: 'A major visual refinement update focusing on a cleaner, borderless UI and smarter AI insights, plus a critical fix for Google Sign-In on iOS.',
         features: [
             'New "Pulse Orb" loading animation for a smoother app start.',
             'Borderless "Liquid Glass" UI for all feedback and navigation menus.',
+            'Native Google Sign-In: iOS and Android now use native authentication (no browser redirect).',
         ],
         improvements: [
             'Feedback form now shows a "Scroll For More" hint.',
             'Enhanced scrollability for long food details (ingredients/macros).',
             'Removed visual clutter (borders/highlights) from Feedback options.',
+            'Platform-aware authentication ensures the best sign-in experience on every device.',
         ],
         fixes: [
+            'Fixed persistent issue where iOS users were redirected to Safari for Google authentication but couldn\'t return to the app. Now uses native iOS Google Sign-In SDK.',
             'Fixed AI falsely reporting positive Activity-Appetite correlation.',
             'Fixed Navigation highlight jumping away from "Explore" when viewing Release Notes.',
             'Resolved overlap issues with feedback scroll indicators.',

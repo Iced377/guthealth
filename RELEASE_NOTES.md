@@ -1,6 +1,6 @@
 # Release Notes
 
-## v5.0.4 (January 22, 2026) - Polished & Precise
+## v5.0.5 (January 22, 2026) - Polished & Precise
 **A major visual refinement update focusing on a cleaner, borderless UI and smarter AI insights, plus a critical fix for Google Sign-In on iOS.**
 
 ### ✨ New Features
