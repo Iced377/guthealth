@@ -14,7 +14,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 
 // Sign In with Google - Platform-Aware Flow
@@ -22,14 +22,12 @@ export const signInWithGoogle = async () => {
   console.log("Starting signInWithGoogle...");
 
   if (Capacitor.isNativePlatform()) {
-    // Native iOS/Android flow - uses native Google Sign-In SDK
-    console.log("Native platform detected, using GoogleAuth plugin");
+    // Native iOS/Android flow - uses Firebase Authentication plugin
+    console.log("Native platform detected, using Firebase Authentication plugin");
 
     try {
-      const googleUser = await GoogleAuth.signIn();
-      const credential = GoogleAuthProvider.credential(
-        googleUser.authentication.idToken
-      );
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      const credential = GoogleAuthProvider.credential(result.credential?.idToken);
 
       return signInWithCredential(auth, credential);
     } catch (error) {
