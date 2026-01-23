@@ -116,7 +116,7 @@ export default function FeedbackEntrySheet({
                                     <button
                                         key={item.id}
                                         onClick={() => onOptionSelect(item.id as 'improve' | 'bug' | 'feature')}
-                                        className="flex items-center gap-4 px-6 py-4 w-full text-left transition-transform active:scale-[0.98]"
+                                        className="flex items-center gap-4 px-6 py-4 w-full text-left transition-transform active-press"
                                     >
                                         <div className={cn(
                                             "w-12 h-12 rounded-full flex items-center justify-center shrink-0",

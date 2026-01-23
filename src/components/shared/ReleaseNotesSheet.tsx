@@ -74,7 +74,6 @@ export default function ReleaseNotesSheet({ isOpen, onClose }: ReleaseNotesSheet
                                 ? "bg-black/60 text-white"
                                 : "bg-white/80 text-black",
                             "backdrop-blur-[32px] backdrop-saturate-[180%]",
-                            "border border-white/20",
                             "flex flex-col max-h-[60vh]"
                         )}
                         style={{

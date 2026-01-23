@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'GutHealth',
   webDir: 'out',
   server: {
-    url: 'https://mygutcheck.app',
+    url: 'http://172.20.10.2:9002',
     cleartext: true
   },
   plugins: {

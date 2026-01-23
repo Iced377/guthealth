@@ -82,7 +82,7 @@ export default function LiquidCrystalCard({
         <Dialog>
             <DialogTrigger asChild>
                 <Card className={cn(
-                    "glass-crystal relative overflow-hidden rounded-3xl border-0 h-full flex flex-col group active:scale-[0.98] transition-all cursor-pointer",
+                    "glass-crystal relative overflow-hidden rounded-3xl border-0 h-full flex flex-col group active-press cursor-pointer",
                     className
                 )}>
                     {/* Animated Background Mesh (Unique per card type?) */}

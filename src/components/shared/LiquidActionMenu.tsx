@@ -94,15 +94,14 @@ export default function LiquidActionMenu({
                             isDarkMode
                                 ? "bg-black/10 text-white"
                                 : "bg-white/10 text-black",
-                            "backdrop-blur-[32px] backdrop-saturate-[220%] backdrop-brightness-[1.1]",
-                            "border border-white/20"
+                            "backdrop-blur-[32px] backdrop-saturate-[220%] backdrop-brightness-[1.1]"
                         )}
                         style={{
                             transformOrigin: "bottom center"
                         }}
                     >
                         {title && (
-                            <div className="px-6 py-4 border-b border-white/10 dark:border-white/5">
+                            <div className="px-6 py-4">
                                 <h3 className="font-headline font-bold text-lg text-center opacity-90">{title}</h3>
                             </div>
                         )}
@@ -118,20 +117,19 @@ export default function LiquidActionMenu({
                                     className={cn(
                                         "flex items-center gap-3 px-4 py-3.5 w-full text-left transition-colors outline-none focus:outline-none focus:ring-0 focus:bg-transparent select-none",
                                         isDarkMode ? "active:bg-white/15" : "active:bg-black/10",
-                                        index !== actions.length - 1 && "border-b border-gray-200/10 dark:border-gray-700/30",
                                         action.variant === 'destructive' && "text-red-500 hover:text-red-400"
                                     )}
                                 >
                                     {/* Icon Container - Matching Reuse Menu Style */}
                                     <div className={cn(
-                                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                                        "w-12 h-12 rounded-full flex items-center justify-center shrink-0 active-press",
                                         action.variant === 'destructive'
                                             ? "bg-red-500/10"
                                             : "bg-gradient-to-br from-green-400/20 to-emerald-500/20"
                                     )}>
                                         {action.icon && React.cloneElement(action.icon as React.ReactElement, {
                                             className: cn(
-                                                "w-5 h-5",
+                                                "w-6 h-6 transition-transform duration-300",
                                                 action.variant === 'destructive' ? "text-red-500" : "text-emerald-500"
                                             )
                                         })}
