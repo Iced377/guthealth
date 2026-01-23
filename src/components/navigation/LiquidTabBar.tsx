@@ -114,9 +114,9 @@ export default function LiquidTabBar({ onAddClick, onPhotoClick, className }: Li
                                 "relative flex items-center justify-around",
                                 "px-2 py-2 rounded-[28px]",
                                 // Liquid Glass material
-                                "bg-white/20 dark:bg-black/30",
-                                "backdrop-blur-2xl",
-                                "border border-white/30 dark:border-white/10",
+                                "bg-white/30 dark:bg-black/40",
+                                "backdrop-blur-3xl saturate-200",
+                                "border border-white/10 dark:border-white/5",
                                 "shadow-2xl shadow-black/20"
                             )}
                         >
@@ -143,8 +143,7 @@ export default function LiquidTabBar({ onAddClick, onPhotoClick, className }: Li
                                                 layoutId="activeTab"
                                                 className={cn(
                                                     "absolute inset-0 rounded-2xl",
-                                                    "bg-white/40 dark:bg-white/20",
-                                                    "shadow-lg shadow-white/10"
+                                                    "bg-white/40 dark:bg-white/20"
                                                 )}
                                                 transition={SPRING_CONFIG}
                                             />
