@@ -84,7 +84,7 @@ export default function TimelineSymptomCard({ item, onRemoveItem }: TimelineSymp
 
       {/* Expanded Card (Liquid Crystal Style) */}
       <DialogContent
-        className="glass-crystal border-white/20 p-0 overflow-hidden 
+        className="glass-crystal p-0 overflow-hidden 
                 fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 
                 w-[90vw] max-w-sm rounded-[40px] shadow-2xl
                 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-1/2

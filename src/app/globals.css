@@ -498,13 +498,13 @@
   /* Liquid Crystal - Colored translucent glass for cards */
   .glass-crystal {
     @apply bg-card/40 dark:bg-card/20 backdrop-blur-xl saturate-150;
-    @apply border border-white/20 dark:border-white/5;
+    @apply border border-white/20 dark:border-0;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
     @apply transition-all duration-300;
   }
 
   .dark .glass-crystal {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
   .glass-crystal:hover {
@@ -514,6 +514,6 @@
   }
 
   .dark .glass-crystal:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   }
 }
