@@ -3,6 +3,9 @@
 ## v5.0.7 (January 23, 2026) - Sync & Polish
 **Restoring essential data connectivity and refining the chart interaction experience.**
 
+### ✨ New Features
+- **Weight Card in Dashboard**: Added a new swipeable card to the Vitals Header (alongside Steps and Fiber) that displays your daily weight log.
+
 ### 🐛 Bug Fixes
 - **Fitbit Weight Sync**: Fixed a critical issue where weight and body fat data stopped syncing automatically. The background sync engine now initializes correctly on app launch.
 - **Chart Tooltips**: The Average Macro Chart tooltip now behaves consistently with other charts, floating naturally without being cut off or obscuring the filter controls.

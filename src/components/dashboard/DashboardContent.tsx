@@ -11,7 +11,8 @@ import {
     LoggedFoodItem,
     PedometerLog,
     TimelineEntry,
-    DailyNutritionSummary
+    DailyNutritionSummary,
+    FitbitLog
 } from '@/types';
 import {
     calculateDaySummary,
@@ -169,6 +170,20 @@ export default function DashboardContent({
     }, [sortedEntries, healthData]);
 
 
+    const getWeightForDate = useCallback((date: Date) => {
+        // If HealthKit or Fitbit hook had real-time data we could merge it here.
+        // For now, we rely on timelineEntries (which includes synced Fitbit data).
+        const dayWeightLogs = sortedEntries.filter(log =>
+            isSameDay(new Date(log.timestamp), date) && log.entryType === 'fitbit_data' && log.weight
+        ) as FitbitLog[];
+
+        if (dayWeightLogs.length > 0) {
+            // Return the latest weight entry for the day
+            return dayWeightLogs[0];
+        }
+        return null;
+    }, [sortedEntries]);
+
     if (!userProfile) return null;
 
     return (
@@ -211,6 +226,7 @@ export default function DashboardContent({
                             onNextDate={() => onDateChange(addDays(date, 1))}
                             userProfile={userProfile}
                             stepsData={getStepsForDate(date)}
+                            weightData={getWeightForDate(date)}
 
                             scrollY={scrollY}
                             className="pt-2" // Reduced padding as there's no sticky date anymore

@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PedometerLog, UserProfile, DailyNutritionSummary } from '@/types';
-import { Footprints, Sprout } from 'lucide-react';
+import { PedometerLog, UserProfile, DailyNutritionSummary, FitbitLog } from '@/types';
+import { Footprints, Sprout, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NutritionOverview from './NutritionOverview';
 
@@ -15,6 +15,7 @@ interface ParallaxVitalsHeaderProps {
     onNextDate?: () => void;
     userProfile?: UserProfile;
     stepsData?: PedometerLog | null;
+    weightData?: FitbitLog | null;
 
     scrollY?: number;
     className?: string;
@@ -27,6 +28,7 @@ export default function ParallaxVitalsHeader({
     onNextDate,
     userProfile,
     stepsData,
+    weightData,
 
     scrollY = 0,
     className,
@@ -38,14 +40,13 @@ export default function ParallaxVitalsHeader({
     const handleStatDragEnd = (event: any, info: any) => {
         const SWIPE_THRESHOLD = 20;
         if (info.offset.x < -SWIPE_THRESHOLD) {
-            if (activeStatIndex === 0) setActiveStatIndex(1);
+            // Swipe Left (Next)
+            if (activeStatIndex < 2) setActiveStatIndex(prev => prev + 1);
         } else if (info.offset.x > SWIPE_THRESHOLD) {
-            if (activeStatIndex === 1) setActiveStatIndex(0);
+            // Swipe Right (Prev)
+            if (activeStatIndex > 0) setActiveStatIndex(prev => prev - 1);
         }
     };
-
-    const stepsTarget = 10000;
-    const fiberTarget = 30;
 
     const GlassCard = ({ children, className }: { children: React.ReactNode, className?: string }) => (
         <div className={cn("glass-panel relative overflow-hidden", className)}>
@@ -74,9 +75,9 @@ export default function ParallaxVitalsHeader({
                     />
                 </div>
 
-                {/* SECTION 2: Swiper Card (Steps / Fiber) - MIDDLE (Compact Height) */}
+                {/* SECTION 2: Swiper Card (Steps / Fiber / Weight) - MIDDLE */}
                 <motion.div
-                    className="w-full h-16 cursor-grab active:cursor-grabbing relative" // Reduced height to h-16 (~64px)
+                    className="w-full h-16 cursor-grab active:cursor-grabbing relative"
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={0.1}
@@ -106,16 +107,17 @@ export default function ParallaxVitalsHeader({
                                         </div>
                                     </div>
 
-                                    {/* Right: Dots */}
+                                    {/* Right: Dots (0 active) */}
                                     <div className="flex gap-1.5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-foreground/80" />
                                         <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
                                     </div>
                                 </motion.div>
-                            ) : (
+                            ) : activeStatIndex === 1 ? (
                                 <motion.div
                                     key="fiber"
-                                    initial={{ opacity: 0, x: 10 }}
+                                    initial={{ opacity: 0, x: 10 }} // Direction depends on prev, simplifies to slide in
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
                                     transition={{ duration: 0.2 }}
@@ -134,8 +136,38 @@ export default function ParallaxVitalsHeader({
                                         </div>
                                     </div>
 
-                                    {/* Right: Dots */}
+                                    {/* Right: Dots (1 active) */}
                                     <div className="flex gap-1.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/80" />
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="weight"
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="w-full h-full flex items-center justify-between"
+                                >
+                                    {/* Left: Icon + Label */}
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-9 w-9 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                            <Scale className="w-5 h-5 text-blue-500" />
+                                        </div>
+                                        <div className="flex flex-row items-baseline gap-2">
+                                            <span className="text-xl font-bold font-headline text-foreground leading-none">
+                                                {weightData?.weight ? weightData.weight : '--'}
+                                            </span>
+                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">kg</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Dots (2 active) */}
+                                    <div className="flex gap-1.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
                                         <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
                                         <div className="w-1.5 h-1.5 rounded-full bg-foreground/80" />
                                     </div>
@@ -144,8 +176,6 @@ export default function ParallaxVitalsHeader({
                         </AnimatePresence>
                     </GlassCard>
                 </motion.div>
-
-
 
             </div>
         </div>
