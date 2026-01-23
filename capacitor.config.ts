@@ -3,7 +3,11 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.iced377.guthealth',
   appName: 'GutHealth',
-  webDir: 'dist',
+  webDir: 'out',
+  server: {
+    url: 'https://mygutcheck.app',
+    cleartext: true
+  },
   plugins: {
     FirebaseAuthentication: {
       skipNativeAuth: false,
