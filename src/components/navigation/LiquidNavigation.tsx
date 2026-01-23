@@ -123,35 +123,25 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
         layoutId={layoutId} // Enables the fluid morphing travel
         className={cn(
             "absolute inset-0 rounded-[28px] overflow-hidden",
-            // SUBSTRATE + MATERIAL:
-            "bg-gradient-to-b from-white/30 via-white/10 to-transparent", // Reduced opacity (from 60/30/10)
-            "dark:from-white/30 dark:via-white/10 dark:to-transparent",
-            "backdrop-blur-xl saturate-150",
-            // OPTICAL DEPTH:
-            "shadow-[inset_0_1px_4px_rgba(255,255,255,0.8)]", // Removed drop shadow completely
-            "border border-white/40 dark:border-white/10",
+            // PURE LENS EFFECT:
+            "bg-white/5 dark:bg-white/5", // Very subtle tint
+            "backdrop-blur-md", // Standard blue
+            "border border-white/20 dark:border-white/10",
             className
         )}
-        style={{
-            filter: "url(#liquidDisplacement)"
-        }}
+        // Removed SVG filter for now as it might be distorting the highlight improperly
         animate={{
-            scale: isPressed ? 0.85 : 1, // Significant "Squish" on press (3. Touch Response)
-            filter: isPressed ? "brightness(0.9)" : "brightness(1)", // Darkens on press (3. Touch Response)
+            scale: isPressed ? 0.9 : 1,
         }}
         transition={LIQUID_SPRING}
     >
-        {/* Dynamic Color Reflection (4. Halfway Tip Reflection) */}
-        {/* This layer picks up the icon's color and bleeds it into the bubble 'tip' */}
+        {/* Subtle Gradient Glow (Ambient Light) */}
         <div
-            className="absolute inset-x-0 bottom-0 h-1/2 opacity-30 mix-blend-soft-light transition-colors duration-500" // Reduced opacity (60->30) & switched blend mode
+            className="absolute inset-0 opacity-20 transition-colors duration-500"
             style={{
-                background: `linear-gradient(to top, ${activeColor || 'transparent'}, transparent)`
+                background: `radial-gradient(circle at center, ${activeColor || 'transparent'}, transparent 70%)`
             }}
         />
-
-        {/* Specular Highlight (Wet Surface) */}
-        <div className="absolute top-2 left-3 right-3 h-[3px] bg-gradient-to-r from-transparent via-white to-transparent opacity-90 blur-[1px] rounded-full" />
     </motion.div>
 );
 

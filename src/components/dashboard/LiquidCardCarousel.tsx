@@ -65,12 +65,14 @@ export default function LiquidCardCarousel({
         }
     }, [x]);
 
-    // Reset scroll when Date changes (with slight delay for state to settle)
+    // Reset scroll when Date changes (Window Scroll)
     useEffect(() => {
+        // Immediate reset for native feel
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
+        // Backup timeout for any layout shifts
         const timer = setTimeout(() => {
-            if (centerPanelRef.current) {
-                centerPanelRef.current.scrollTop = 0;
-            }
+            window.scrollTo({ top: 0, behavior: 'instant' });
         }, 10);
         return () => clearTimeout(timer);
     }, [currentDate]);
@@ -78,8 +80,9 @@ export default function LiquidCardCarousel({
     // Handle Window Resize
     useEffect(() => {
         const handleResize = () => {
+            // Use window width if container is undetermined in full-page mode
             if (containerRef.current) {
-                const newWidth = containerRef.current.offsetWidth;
+                const newWidth = containerRef.current.offsetWidth || window.innerWidth;
                 setWidth(newWidth);
                 x.set(-newWidth);
             }
