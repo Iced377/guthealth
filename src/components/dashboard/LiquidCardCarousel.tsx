@@ -52,6 +52,7 @@ export default function LiquidCardCarousel({
 }: LiquidCardCarouselProps) {
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const centerPanelRef = useRef<HTMLDivElement>(null);
     const x = useMotionValue(0);
     const [width, setWidth] = useState(0);
 
@@ -63,6 +64,16 @@ export default function LiquidCardCarousel({
             x.set(-measuredWidth); // Start at Center Panel
         }
     }, [x]);
+
+    // Reset scroll when Date changes (with slight delay for state to settle)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (centerPanelRef.current) {
+                centerPanelRef.current.scrollTop = 0;
+            }
+        }, 10);
+        return () => clearTimeout(timer);
+    }, [currentDate]);
 
     // Handle Window Resize
     useEffect(() => {
@@ -100,6 +111,8 @@ export default function LiquidCardCarousel({
                 onComplete: () => {
                     onDateChange(prevDate);
                     x.set(-width);
+                    // Explicitly scroll new center to top immediately after state change concept
+                    // But key prop handled this better
                 }
             });
         } else if ((offset < -DRAG_THRESHOLD || velocity < -300) && !isToday) {
@@ -190,6 +203,8 @@ export default function LiquidCardCarousel({
 
                     {/* CURRENT DAY PANEL (Center) */}
                     <div
+                        key={currentDate.toISOString()} // Force remount on date change to reset scroll
+                        ref={centerPanelRef}
                         style={{ width: width }}
                         // NOTE: IDK why but overflow-y-hidden helps lock vertical on horizontal swipe sometimes,
                         // but we need scroll. touch-pan-y is the CSS solution.
