@@ -221,11 +221,11 @@ export default function LiquidCrystalCard({
 
                         {/* Macros Grid */}
                         {macroParts.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-1">
+                            <div className="flex flex-wrap gap-1.5 mb-1">
                                 {macroParts.map((macro, idx) => (
-                                    <div key={idx} className="flex items-center gap-1.5 bg-background/40 backdrop-blur-md px-3 py-2 rounded-xl border border-white/5">
-                                        <macro.icon className={cn("w-4 h-4", macro.color)} />
-                                        <span className="text-sm font-semibold text-foreground/80">{macro.value}</span>
+                                    <div key={idx} className="flex items-center gap-1 bg-background/40 backdrop-blur-md px-2 py-1 z-20 rounded-lg border border-white/5">
+                                        <macro.icon className={cn("w-3 h-3", macro.color)} />
+                                        <span className="text-[10px] sm:text-xs font-bold text-foreground/90">{macro.value}</span>
                                     </div>
                                 ))}
                             </div>

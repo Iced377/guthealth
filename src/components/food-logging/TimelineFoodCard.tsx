@@ -151,7 +151,7 @@ export default function TimelineFoodCard({
               </div>
 
               {/* Macros - Aligned with Bottom Row Actions */}
-              <div className="flex items-center h-7 text-xs sm:text-sm font-medium opacity-90 gap-3" id={cardId ? `${cardId}-macros` : undefined}>
+              <div className="flex items-center h-7 text-[10px] sm:text-xs font-medium opacity-90 gap-1.5 sm:gap-2" id={cardId ? `${cardId}-macros` : undefined}>
                 {macroParts.length > 0 ? (
                   <>
                     {item.calories != null && <span className="flex items-center"><Flame className="w-3.5 h-3.5 mr-1 text-orange-200" />{Math.round(item.calories)}</span>}
