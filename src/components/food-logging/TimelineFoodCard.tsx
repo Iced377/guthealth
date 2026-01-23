@@ -87,7 +87,7 @@ export default function TimelineFoodCard({
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isGuestView || !onToggleFavorite) return;
-    onToggleFavorite(item.id, !!item.isFavorite);
+    onToggleFavorite(item.id, !item.isFavorite);
   };
 
   const timestampDate = new Date(item.timestamp);

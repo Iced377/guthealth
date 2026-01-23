@@ -63,7 +63,7 @@ export default function LiquidCrystalCard({
     const handleFavoriteToggle = (e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         if (isGuestView || !onToggleFavorite) return;
-        onToggleFavorite(item.id, !!item.isFavorite);
+        onToggleFavorite(item.id, !item.isFavorite);
     };
 
     const exactTime = format(new Date(item.timestamp), 'h:mm a');
@@ -120,8 +120,11 @@ export default function LiquidCrystalCard({
                             {/* Actions Menu - Stop Propagation to prevent opening Dialog AND allow clicking inside draggable */}
                             {!isGuestView && (
                                 <div
+                                    className="relative z-50 cursor-auto"
                                     onClick={(e) => e.stopPropagation()}
                                     onPointerDown={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onTouchStart={(e) => e.stopPropagation()}
                                 >
                                     <Button
                                         variant="ghost"
@@ -302,6 +305,59 @@ export default function LiquidCrystalCard({
                                     {item.ingredients || item.sourceDescription || "No details provided."}
                                 </p>
                             </div>
+
+                            {/* Detail View Actions - Fallback/Primary Interaction */}
+                            {!isGuestView && (
+                                <div className="grid grid-cols-4 gap-2 pt-2">
+                                    {onSetFeedback && !isManualMacroEntry && (
+                                        <>
+                                            <button
+                                                onClick={() => handleFeedback('safe')}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center p-2 rounded-xl transition-all active:scale-95 gap-1",
+                                                    item.userFeedback === 'safe' ? "bg-primary/20 text-primary" : "bg-white/5 hover:bg-white/10 opacity-70 hover:opacity-100"
+                                                )}
+                                            >
+                                                <ThumbsUp className={cn("w-5 h-5", item.userFeedback === 'safe' && "fill-primary")} />
+                                                <span className="text-[10px] font-medium">Safe</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleFeedback('unsafe')}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center p-2 rounded-xl transition-all active:scale-95 gap-1",
+                                                    item.userFeedback === 'unsafe' ? "bg-red-500/20 text-red-500" : "bg-white/5 hover:bg-white/10 opacity-70 hover:opacity-100"
+                                                )}
+                                            >
+                                                <ThumbsDown className={cn("w-5 h-5", item.userFeedback === 'unsafe' && "fill-red-500")} />
+                                                <span className="text-[10px] font-medium">Unsafe</span>
+                                            </button>
+                                        </>
+                                    )}
+
+                                    {onRepeatMeal && (
+                                        <button
+                                            onClick={() => onRepeatMeal(item)}
+                                            className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 hover:bg-white/10 opacity-70 hover:opacity-100 transition-all active:scale-95 gap-1"
+                                        >
+                                            <Repeat className="w-5 h-5" />
+                                            <span className="text-[10px] font-medium">Reuse</span>
+                                        </button>
+                                    )}
+
+                                    {onToggleFavorite && !isManualMacroEntry && (
+                                        <button
+                                            onClick={() => handleFavoriteToggle()}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center p-2 rounded-xl transition-all active:scale-95 gap-1",
+                                                item.isFavorite ? "bg-red-500/10 text-red-500" : "bg-white/5 hover:bg-white/10 opacity-70 hover:opacity-100"
+                                            )}
+                                        >
+                                            <Heart className={cn("w-5 h-5", item.isFavorite && "fill-red-500")} />
+                                            <span className="text-[10px] font-medium">Fav</span>
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </DialogContent>
                 </Card>
