@@ -192,7 +192,11 @@ export default function LiquidCardCarousel({
                     onDragEnd={handleDragEnd}
                 >
                     {/* PREVIOUS DAY PANEL */}
-                    <div style={{ width: width }} className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y">
+                    <div
+                        key={prevDate.toISOString()}
+                        style={{ width: width }}
+                        className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y"
+                    >
                         {/* Render Header for Prev Day */}
                         <div className="pt-2 pb-4">
                             {renderHeader?.(prevDate)}
@@ -222,7 +226,11 @@ export default function LiquidCardCarousel({
                     </div>
 
                     {/* NEXT DAY PANEL */}
-                    <div style={{ width: width }} className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y">
+                    <div
+                        key={nextDate.toISOString()}
+                        style={{ width: width }}
+                        className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y"
+                    >
                         {/* Render Header for Next Day - Only if allowed to navigate there (future allowed?) */}
                         {/* Logic says "if !isToday" usually for next, but swiping logic handles constraint. Rendering logic should just render. */}
                         <div className="pt-2 pb-4 opacity-50">
