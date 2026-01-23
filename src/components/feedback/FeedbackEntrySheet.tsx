@@ -116,18 +116,32 @@ export default function FeedbackEntrySheet({
                                     <button
                                         key={item.id}
                                         onClick={() => onOptionSelect(item.id as 'improve' | 'bug' | 'feature')}
-                                        className="flex items-center gap-4 px-6 py-4 w-full text-left transition-transform active-press"
+                                        className={cn(
+                                            "group flex items-center gap-4 px-4 py-4 w-full text-left transition-all duration-300 active-press",
+                                            "rounded-2xl border mb-3 last:mb-0",
+                                            isDarkMode
+                                                ? "bg-white/5 border-white/10 hover:bg-white/10"
+                                                : "bg-white/60 border-black/5 hover:bg-white/80",
+                                            "shadow-sm hover:shadow-md"
+                                        )}
                                     >
                                         <div className={cn(
-                                            "w-12 h-12 rounded-full flex items-center justify-center shrink-0",
-                                            item.bg
+                                            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 duration-500",
+                                            item.bg,
+                                            "shadow-inner"
                                         )}>
                                             <Icon className={cn("w-6 h-6", item.color)} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-semibold text-base">{item.title}</h4>
+                                            <h4 className="font-headline font-bold text-lg">{item.title}</h4>
+                                            <p className="text-xs opacity-60 font-medium">Tap to select</p>
                                         </div>
-                                        <ChevronRight className="w-5 h-5 opacity-30" />
+                                        <div className={cn(
+                                            "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                                            isDarkMode ? "bg-white/5 group-hover:bg-white/10" : "bg-black/5 group-hover:bg-black/10"
+                                        )}>
+                                            <ChevronRight className="w-4 h-4 opacity-50" />
+                                        </div>
                                     </button>
                                 );
                             })}
