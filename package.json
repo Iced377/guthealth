@@ -1,6 +1,6 @@
 {
   "name": "guthealth",
-  "version": "5.0.5",
+  "version": "5.0.6",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002 -H 0.0.0.0",
@@ -16,11 +16,11 @@
     "@capacitor/android": "^8.0.0",
     "@capacitor/app": "^8.0.0",
     "@capacitor/browser": "^8.0.0",
-    "@capacitor/cli": "^8.0.0",
+    "@capacitor/cli": "^8.0.1",
     "@capacitor/clipboard": "^8.0.0",
-    "@capacitor/core": "^8.0.0",
+    "@capacitor/core": "^8.0.1",
     "@capacitor/haptics": "^8.0.0",
-    "@capacitor/ios": "^8.0.0",
+    "@capacitor/ios": "^8.0.1",
     "@capgo/capacitor-health": "^8.2.4",
     "@genkit-ai/googleai": "^1.27.0",
     "@genkit-ai/next": "^1.27.0",

@@ -162,11 +162,7 @@ const NavigationAndDialogs = () => {
                         await updateEntryTimestamp(editingItem.id, newDate);
                     }
                 }}
-                onUpdateTime={async (newDate) => {
-                    if (editingItem && editingItem.entryType === 'food') {
-                        await updateEntryTimestamp(editingItem.id, newDate);
-                    }
-                }}
+
                 isGuestView={!userProfile || userProfile.uid === 'guest-user'}
                 // Keep keys to force remount on state change if needed, though ComposeOverlay handles its own resetting
                 key={editingItem?.id ? `edit-compose-${editingItem.id}` : (selectedLogTimestampForPreviousMeal ? `new-prev-compose-${selectedLogTimestampForPreviousMeal.toISOString()}` : 'new-compose')}

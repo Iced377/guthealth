@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import FirebaseCore
+import GoogleSignIn
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -11,6 +12,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         // Initialize Firebase
         FirebaseApp.configure()
+
+        // Explicitly set GoogleSignIn configuration and log
+        let iosClientId = "960636731129-m5ie0qkjfpmak5524v76pdko845masg5.apps.googleusercontent.com"
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: iosClientId)
+        print("Configured GIDSignIn with iOS client ID: \(iosClientId)")
         return true
     }
 
@@ -39,7 +45,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         // Called when the app was launched with a url. Feel free to add additional processing here,
         // but if you want the App API to support tracking app url opens, make sure to keep this call
-        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+        print("AppDelegate openURL: \(url.absoluteString)")
+
+        // Forward Google Sign-In redirect URLs to the SDK FIRST
+        if GIDSignIn.sharedInstance.handle(url) {
+            print("AppDelegate: Google handled URL")
+            return true
+        }
+        
+        // Try Capacitor next
+        if ApplicationDelegateProxy.shared.application(app, open: url, options: options) {
+            print("AppDelegate: Capacitor handled URL")
+            return true
+        }
+
+        print("AppDelegate: URL not handled by Capacitor or Google")
+        return false
     }
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {

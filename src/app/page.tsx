@@ -166,7 +166,7 @@ export default function RootPage() {
             isLoadingAi={isLoadingAi}
             onSetFeedback={handleSetFoodFeedback}
             onRemoveTimelineEntry={handleRemoveTimelineEntry}
-            onLogSymptomsForFood={openSymptomLogDialog}
+            onLogSymptomsForFood={(foodItemId) => openSymptomLogDialog({ type: 'meal', mealId: foodItemId })}
             onEditIngredients={handleEditTimelineEntry}
             onRepeatMeal={handleRepeatMeal}
             onToggleFavorite={handleToggleFavoriteFoodItem}
