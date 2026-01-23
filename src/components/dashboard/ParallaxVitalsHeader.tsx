@@ -82,7 +82,7 @@ export default function ParallaxVitalsHeader({
                     dragElastic={0.1}
                     onDragEnd={handleStatDragEnd}
                 >
-                    <GlassCard className="h-full flex flex-col justify-center items-center px-4 py-0 border border-white/10 shadow-sm bg-white/5 dark:bg-black/20 backdrop-blur-md rounded-2xl">
+                    <GlassCard className="h-full flex flex-col justify-center items-center px-4 py-0 border-0 shadow-sm bg-white/5 dark:bg-black/20 backdrop-blur-md rounded-2xl">
                         <AnimatePresence mode="wait" initial={false}>
                             {activeStatIndex === 0 ? (
                                 <motion.div

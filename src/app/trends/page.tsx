@@ -505,6 +505,7 @@ export default function TrendsPage() {
                   isDarkMode={isDarkMode}
                   viewMode={macroViewMode}
                   onViewChange={setMacroViewMode}
+                  graphId="macros"
                 />
               </LiquidGraphScene>
             </div>

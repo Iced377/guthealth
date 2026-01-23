@@ -102,9 +102,9 @@ const PROFILE_ITEMS: SubMenuItem[] = [
 // iOS 26 "Liquid Glass" Physics - Cartoonish, mass-aware, spring-loaded
 const LIQUID_SPRING = {
     type: "spring" as const,
-    stiffness: 280, // High snapping force
-    damping: 18,    // Low friction for bounce/overshoot
-    mass: 1.2,      // Heavy feel
+    stiffness: 400, // Higher stiffness for faster snap
+    damping: 12,    // Lower damping for more bounce/wobble
+    mass: 0.8,      // Lighter feel for quick response
     restDelta: 0.001
 };
 
@@ -131,7 +131,7 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
         )}
         // Removed SVG filter for now as it might be distorting the highlight improperly
         animate={{
-            scale: isPressed ? 0.9 : 1,
+            scale: isPressed ? 0.75 : 1, // Deep press effect (0.75 scale)
         }}
         transition={LIQUID_SPRING}
     >
@@ -668,7 +668,7 @@ export default function LiquidNavigation({
                                 aria-label={item.accessibilityLabel}
                                 aria-current={isActive ? 'page' : undefined}
                                 // PRESS ANIMATION IS HERE NOW, NOT ON CONTAINER
-                                animate={{ scale: isPressed ? 0.92 : 1 }}
+                                animate={{ scale: isPressed ? 0.85 : 1 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                             >
                                 {/* Active State "Bubble" Indicator */}

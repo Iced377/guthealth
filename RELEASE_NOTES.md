@@ -1,5 +1,15 @@
 # Release Notes
 
+## v5.0.7 (January 23, 2026) - Sync & Polish
+**Restoring essential data connectivity and refining the chart interaction experience.**
+
+### 🐛 Bug Fixes
+- **Fitbit Weight Sync**: Fixed a critical issue where weight and body fat data stopped syncing automatically. The background sync engine now initializes correctly on app launch.
+- **Chart Tooltips**: The Average Macro Chart tooltip now behaves consistently with other charts, floating naturally without being cut off or obscuring the filter controls.
+- **Chart Expansion**: Fixed an issue where the Macro Chart would appear truncated in expanded view. It now correctly fills the available screen space.
+
+---
+
 ## v5.0.5 (January 22, 2026) - Polished & Precise
 **A major visual refinement update focusing on a cleaner, borderless UI and smarter AI insights, plus a critical fix for Google Sign-In on iOS.**
 

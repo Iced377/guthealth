@@ -48,44 +48,44 @@ const MacroCard = ({
     // Theme configurations
     const themes = {
         orange: {
-            border: "border-orange-500/20",
+            border: "border-0",
             bg: "bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent",
             iconColor: "text-orange-500",
             textColor: "text-orange-950 dark:text-orange-100",
             subTextColor: "text-orange-800/60 dark:text-orange-200/60",
             progressTrack: "bg-orange-950/10",
             progressIndicator: "bg-orange-500",
-            shadow: "shadow-orange-500/5"
+            shadow: "shadow-none"
         },
         red: {
-            border: "border-red-500/20",
+            border: "border-0",
             bg: "bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent",
             iconColor: "text-red-500",
             textColor: "text-red-950 dark:text-red-100",
             subTextColor: "text-red-800/60 dark:text-red-200/60",
             progressTrack: "bg-red-950/10",
             progressIndicator: "bg-red-500",
-            shadow: "shadow-red-500/5"
+            shadow: "shadow-none"
         },
         yellow: {
-            border: "border-yellow-500/20",
+            border: "border-0",
             bg: "bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent",
             iconColor: "text-yellow-500",
             textColor: "text-yellow-950 dark:text-yellow-100",
             subTextColor: "text-yellow-800/60 dark:text-yellow-200/60",
             progressTrack: "bg-yellow-950/10",
             progressIndicator: "bg-yellow-500",
-            shadow: "shadow-yellow-500/5"
+            shadow: "shadow-none"
         },
         blue: {
-            border: "border-blue-500/20",
+            border: "border-0",
             bg: "bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent",
             iconColor: "text-blue-500",
             textColor: "text-blue-950 dark:text-blue-100",
             subTextColor: "text-blue-800/60 dark:text-blue-200/60",
             progressTrack: "bg-blue-950/10",
             progressIndicator: "bg-blue-500",
-            shadow: "shadow-blue-500/5"
+            shadow: "shadow-none"
         }
     };
 

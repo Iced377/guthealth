@@ -75,6 +75,7 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
                                 <label className={labelClass}>Cals</label>
                                 <input
                                     type="number"
+                                    step="any"
                                     {...register('calories')}
                                     placeholder="0"
                                     className={inputClass}
@@ -86,6 +87,7 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
                                 <label className={labelClass}>Prot</label>
                                 <input
                                     type="number"
+                                    step="any"
                                     {...register('protein')}
                                     placeholder="0g"
                                     className={inputClass}
@@ -97,6 +99,7 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
                                 <label className={labelClass}>Carb</label>
                                 <input
                                     type="number"
+                                    step="any"
                                     {...register('carbs')}
                                     placeholder="0g"
                                     className={inputClass}
@@ -108,6 +111,7 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
                                 <label className={labelClass}>Fat</label>
                                 <input
                                     type="number"
+                                    step="any"
                                     {...register('fat')}
                                     placeholder="0g"
                                     className={inputClass}

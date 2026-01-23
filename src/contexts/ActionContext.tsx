@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
 import { processMealDescription } from '@/ai/flows/process-meal-description-flow';
 import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
+import { useFitbitSync } from '@/hooks/useFitbitSync';
 import type { SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
 import type { IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
 
@@ -139,6 +140,18 @@ const TEMPORARILY_UNLOCK_ALL_FEATURES = true;
 export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user: authUser, loading: authLoading } = useAuth();
     const { toast } = useToast();
+    const { syncFitbit } = useFitbitSync();
+
+    // Trigger Fitbit Sync on User Load
+    useEffect(() => {
+        if (authUser && !authLoading) {
+            // We give it a small delay to not block critical initial rendering
+            const timer = setTimeout(() => {
+                syncFitbit();
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [authUser, authLoading, syncFitbit]);
 
     const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile>(initialGuestProfile);

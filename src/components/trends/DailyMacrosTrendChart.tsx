@@ -13,6 +13,8 @@ interface DailyMacrosTrendChartProps {
   isDarkMode: boolean;
   viewMode: 'Protein' | 'Carbs' | 'Fat';
   onViewChange: (mode: 'Protein' | 'Carbs' | 'Fat') => void;
+  isExpanded?: boolean;
+  graphId?: string; // ID to check against focusedSceneId
 }
 
 const COLORS = {
@@ -23,8 +25,12 @@ const COLORS = {
   text: "hsl(var(--muted-foreground))",
 };
 
-function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: DailyMacrosTrendChartProps) {
-  const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
+function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExpanded: propExpanded = false, graphId }: DailyMacrosTrendChartProps) {
+  const { isChartInteractionEnabled, globalInputDisabled, focusedSceneId } = useTrendsMotionController();
+
+  // Determine expanded state from prop OR context
+  const isExpanded = propExpanded || (graphId && focusedSceneId === graphId);
+
   const [unit, setUnit] = useState<'grams' | 'calories'>('grams');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
@@ -81,7 +87,7 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
   return (
     <div
       className="w-full h-full flex flex-col relative"
-      style={{ minHeight: '400px', pointerEvents: pointerEventsStyle }}
+      style={{ minHeight: isExpanded ? '100%' : '400px', pointerEvents: pointerEventsStyle }}
       onMouseEnter={() => isChartInteractionEnabled && setIsScrubbing(true)}
       onMouseLeave={() => setIsScrubbing(false)}
     >
@@ -138,7 +144,7 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+            margin={{ top: 20, right: 0, left: 0, bottom: 20 }} // Increased bottom margin for labels
           >
             <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" opacity={0.1} />
 
@@ -172,8 +178,6 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                 content={({ active, payload, label }) => {
                   if (!active || !payload || !payload.length) return null;
-                  // Note: Recharts Tooltip doesn't automatically filter by 'selectedDate' unless we manage 'active' state manually.
-                  // For now, standard hover behavior is safer. We can respect selectedDate for styling bars.
 
                   const dataPoint = payload[0].payload;
 
@@ -198,9 +202,10 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
 
                   const pct = totalCals > 0 ? Math.round((activeCals / totalCals) * 100) : 0;
 
+                  // Matches DailyCaloriesTrendChart structure
                   return (
-                    <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-4 shadow-xl text-white min-w-[160px]">
-                      <div className="text-sm font-medium text-white/50 mb-2">{label}</div>
+                    <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl min-w-[140px] z-50">
+                      <p className="text-xs font-semibold mb-1 text-muted-foreground">{label}</p>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-2">
@@ -210,9 +215,9 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange }: Dai
                           <div className="flex flex-col items-end">
                             <span className="text-lg font-bold font-mono leading-none">
                               {formatGraphNumber(dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint])}
-                              <span className="text-xs text-white/50 ml-1">{unit === 'grams' ? 'g' : 'kcal'}</span>
+                              <span className="text-xs text-muted-foreground font-normal ml-1">{unit === 'grams' ? 'g' : 'kcal'}</span>
                             </span>
-                            <span className="text-xs text-white/70 font-mono mt-1">
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
                               {formatGraphNumber(pct)}% of daily cals
                             </span>
                           </div>
