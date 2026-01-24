@@ -28,6 +28,8 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [pendingTopicId, setPendingTopicId] = useState<string | null>(null);
 
+    const [localHasSeenIntro, setLocalHasSeenIntro] = useState(false);
+
     const router = useRouter();
     const pathname = usePathname();
 
@@ -85,6 +87,9 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
             return;
         }
 
+        // Optimistic update to prevent re-trigger loop
+        setLocalHasSeenIntro(true);
+
         // Save progress to Firebase
         try {
             const userRef = doc(db, 'users', user.uid);
@@ -102,6 +107,8 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
     };
 
     const dismissWalkthrough = async () => {
+        // Optimistic update
+        setLocalHasSeenIntro(true);
         if (user) {
             try {
                 const userRef = doc(db, 'users', user.uid);
@@ -117,20 +124,30 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
 
     // Initial Check (e.g., automatically start welcome)
     useEffect(() => {
-        if (userProfile && !userProfile.profile?.walkthroughStatus?.hasSeenIntro && !userProfile.profile?.walkthroughStatus?.isDismissed) {
+        // Prevent auto-start if tour is already active or pending
+        if (activeTopic || pendingTopicId) return;
+
+        // Combine remote profile state with local optimistic state
+        const hasSeenIntro = (userProfile?.profile?.walkthroughStatus?.hasSeenIntro) || localHasSeenIntro;
+        const isDismissed = (userProfile?.profile?.walkthroughStatus?.isDismissed) || localHasSeenIntro;
+
+        if (userProfile && !hasSeenIntro && !isDismissed) {
             // Only trigger if they have completed setup
             if (userProfile.profile?.hasCompletedSetup) {
                 // Ensure we are on dashboard before auto-starting
                 if (pathname === '/') {
                     // Delay slightly to ensure UI is ready
                     const timer = setTimeout(() => {
-                        startTopic('welcome');
+                        // Double check inside timeout to be safe
+                        if (!localHasSeenIntro) {
+                            startTopic('welcome');
+                        }
                     }, 1000);
                     return () => clearTimeout(timer);
                 }
             }
         }
-    }, [userProfile, pathname]);
+    }, [userProfile, pathname, activeTopic, pendingTopicId, localHasSeenIntro]);
 
 
     const currentStep = activeTopic ? activeTopic.steps[currentStepIndex] : null;

@@ -1,3 +1,5 @@
+'use client';
+
 import { InsightScene } from './InsightScene';
 import { useInsightsMotionController } from './useInsightsMotionController';
 import { FrostBackplate } from './LiquidPrimitive';

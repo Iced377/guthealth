@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -26,6 +26,7 @@ import {
     FileText,
     Info,
     Tag,
+    ChevronRight,
 } from 'lucide-react';
 
 const CustomActivityIcon = Activity; // Alias for semantic clarity or future swap
@@ -34,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
 import { APP_VERSION } from '@/config/releaseNotes';
+import { useWalkthrough } from '@/contexts/WalkthroughContext';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -184,10 +186,19 @@ export default function LiquidNavigation({
     const pathname = usePathname();
     const { isDarkMode, toggleDarkMode } = useTheme();
     const { isNavVisible } = useNavVisibility();
+    const { currentStep, isWalkthroughActive } = useWalkthrough();
 
     // Panel states
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
     const [pressedItem, setPressedItem] = useState<string | null>(null);
+
+    // Auto-open Explore panel during Walkthrough Feedback step
+    useEffect(() => {
+        if (isWalkthroughActive && currentStep?.id === 'welcome-4') {
+            setActivePanel('explore');
+            return () => setActivePanel(null);
+        }
+    }, [isWalkthroughActive, currentStep]);
 
     // Determine active tab
     const getActiveTab = useCallback(() => {
@@ -392,6 +403,7 @@ export default function LiquidNavigation({
                         {filteredExploreItems.map((item, index) => (
                             <motion.button
                                 key={item.id}
+                                id={`nav-item-${item.id}`} // Keeping the ID for walkthrough targeting
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{
                                     opacity: 1,

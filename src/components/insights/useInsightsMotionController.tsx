@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
 // STRICT MODES
@@ -25,6 +27,8 @@ interface InsightsMotionContextType {
 
     // Lifecycle methods for animation callbacks
     notifyTransitionComplete: () => void;
+    notifyExpandComplete: () => void;
+    notifyCollapseComplete: () => void;
 }
 
 const InsightsMotionContext = createContext<InsightsMotionContextType | null>(null);

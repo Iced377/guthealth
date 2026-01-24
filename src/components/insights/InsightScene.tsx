@@ -1,3 +1,5 @@
+'use client';
+// Force build refresh
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';

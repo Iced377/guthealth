@@ -98,7 +98,7 @@ export default function FeedbackEntrySheet({
                             "fixed z-[61] left-1/2 bottom-[15vh]",
                             "w-[90vw] max-w-sm mx-auto",
                             "rounded-[32px] overflow-hidden",
-                            "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.5)]",
+                            // Removed shadow
                             isDarkMode
                                 ? "bg-black/40 text-white"
                                 : "bg-white/60 text-black",
@@ -117,31 +117,14 @@ export default function FeedbackEntrySheet({
                                         key={item.id}
                                         onClick={() => onOptionSelect(item.id as 'improve' | 'bug' | 'feature')}
                                         className={cn(
-                                            "group flex items-center gap-4 px-4 py-4 w-full text-left transition-all duration-300 active-press",
-                                            "rounded-2xl border mb-3 last:mb-0",
-                                            isDarkMode
-                                                ? "bg-white/5 border-white/10 hover:bg-white/10"
-                                                : "bg-white/60 border-black/5 hover:bg-white/80",
-                                            "shadow-sm hover:shadow-md"
+                                            "group flex items-center justify-between px-6 py-5 w-full text-left transition-colors duration-200 active:bg-white/5",
+                                            "border-b border-white/10 last:border-0", // Separators
+                                            // No background on items themselves, purely transparent on the blurred popup
+                                            "hover:bg-white/5"
                                         )}
                                     >
-                                        <div className={cn(
-                                            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 duration-500",
-                                            item.bg,
-                                            "shadow-inner"
-                                        )}>
-                                            <Icon className={cn("w-6 h-6", item.color)} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-headline font-bold text-lg">{item.title}</h4>
-                                            <p className="text-xs opacity-60 font-medium">Tap to select</p>
-                                        </div>
-                                        <div className={cn(
-                                            "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
-                                            isDarkMode ? "bg-white/5 group-hover:bg-white/10" : "bg-black/5 group-hover:bg-black/10"
-                                        )}>
-                                            <ChevronRight className="w-4 h-4 opacity-50" />
-                                        </div>
+                                        <span className="font-headline font-bold text-lg text-foreground">{item.title}</span>
+                                        <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity" />
                                     </button>
                                 );
                             })}

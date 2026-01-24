@@ -1,4 +1,4 @@
-import { Heart, Edit3, Repeat, ListChecks, Trash2, LayoutGrid, BarChart3, Atom, Info, Lightbulb } from 'lucide-react';
+import { LayoutGrid, Compass, PlusCircle, LineChart, User, Atom, Lightbulb } from 'lucide-react';
 
 export type WalkthroughStep = {
     id: string;
@@ -41,7 +41,7 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
             {
                 id: 'tour-meal-card-intro',
                 title: 'Your Food Log',
-                content: "Every meal you log appears as a card on your timeline. It shows the time, calories, and a quick summary.",
+                content: "Every meal you log appears as a card on your timeline. Tap any card to view full analysis, ingredients, and more details.",
                 targetId: 'walkthrough-mock-card',
                 position: 'bottom',
             },
@@ -55,46 +55,16 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
             {
                 id: 'tour-meal-card-indicators',
                 title: 'Health Indicators',
-                content: "I analyze your food for Gut Impact, FODMAPs, Allergens, and Micronutrients. These badges show you what matters.",
+                content: "I analyze your food for Gut Impact, FODMAPs, Allergens, and other info. These badges show you what matters.",
                 targetId: 'walkthrough-mock-card-indicators',
                 position: 'bottom',
             },
             {
                 id: 'tour-meal-card-actions',
                 title: 'Actions Menu',
-                content: (
-                    <div className="space-y-3 mt-1">
-                        <p>Tap the three dots to render more options:</p>
-                        <ul className="grid grid-cols-1 gap-2 text-sm">
-                            <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <Heart className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Favorite:</strong> Save for quick re-logging</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <ListChecks className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Log Symptoms:</strong> Track how you feel</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Edit:</strong> Modify ingredients or macros</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <Repeat className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Copy:</strong> Eat this again? Copy it!</span>
-                            </li>
-                        </ul>
-                    </div>
-                ),
+                content: "Access actions for your meals. Quickly reuse previous meals, log symptoms, toggle favorites, or edit ingredients in seconds.",
                 targetId: 'walkthrough-mock-card-actions',
-                position: 'bottom',
+                position: 'top',
             },
             // -----------------------------
             {
@@ -102,43 +72,39 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
                 title: 'Navigation & Insights',
                 content: (
                     <div className="space-y-3 mt-1">
-                        <p>Use the top bar to explore:</p>
+                        <p>The floating menu puts everything at your fingertips:</p>
                         <ul className="grid grid-cols-1 gap-2 text-sm">
                             <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <LayoutGrid className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Dashboard:</strong> Your daily overview</span>
+                                <span className="p-1 rounded bg-muted"><LayoutGrid className="w-3.5 h-3.5" /></span>
+                                <span><strong>Home:</strong> Your daily dashboard.</span>
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <BarChart3 className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Trends:</strong> Helpful analytics</span>
+                                <span className="p-1 rounded bg-muted"><Compass className="w-3.5 h-3.5" /></span>
+                                <span><strong>Explore:</strong> The latest information about your GutCheck.</span>
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <Lightbulb className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Insights:</strong> Your smart advisor</span>
+                                <span className="p-1 rounded bg-muted bg-emerald-500/10 text-emerald-500"><PlusCircle className="w-3.5 h-3.5" /></span>
+                                <span><strong>Log:</strong> The magic button: write, scan, or quickly reuse a previous meal.</span>
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="p-1 rounded bg-muted">
-                                    <Atom className="w-3.5 h-3.5" />
-                                </span>
-                                <span><strong>Micronutrients:</strong> Vitamins & Minerals</span>
+                                <span className="p-1 rounded bg-muted"><LineChart className="w-3.5 h-3.5" /></span>
+                                <span><strong>Insights:</strong> Review your progress with me, as your private advanced coach.</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <span className="p-1 rounded bg-muted"><User className="w-3.5 h-3.5" /></span>
+                                <span><strong>Profile:</strong> Manage your settings, permissions and app theme.</span>
                             </li>
                         </ul>
                     </div>
                 ),
-                targetId: 'navbar-actions-container',
-                position: 'bottom',
+                targetId: 'liquid-tab-bar',
+                position: 'top',
             },
             {
                 id: 'welcome-4',
                 title: 'We Value Your Feedback',
-                content: "Use this button to tell us what you like, what you don't, or report any bugs or features that aren't working. Your input helps us improve!",
-                targetId: 'feedback-widget-button',
+                content: "Use the orange Feedback button to tell us what you like, what you don't, or report any bugs. Your input helps us improve!",
+                targetId: 'nav-item-feedback',
                 position: 'top',
             },
             {

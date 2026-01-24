@@ -73,90 +73,118 @@ export function HeroSection() {
 
 import { Scale, FileWarning, TrendingDown } from 'lucide-react';
 
-export function ProblemSection() {
+export function ProblemSection({ scrollContainerRef }: { scrollContainerRef?: React.RefObject<HTMLElement> }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { scrollYProgress } = useScroll({
+        target: containerRef,
+        container: scrollContainerRef,
+        offset: ["start start", "end end"]
+    });
+
+    // Reveal timings for 3 cards
+    const opacity1 = useTransform(scrollYProgress, [0.05, 0.2], [0, 1]); // Earlier fade in
+    const y1 = useTransform(scrollYProgress, [0.05, 0.2], [50, 0]);
+
+    const opacity2 = useTransform(scrollYProgress, [0.3, 0.45], [0, 1]);
+    const y2 = useTransform(scrollYProgress, [0.3, 0.45], [50, 0]);
+
+    const opacity3 = useTransform(scrollYProgress, [0.55, 0.7], [0, 1]);
+    const y3 = useTransform(scrollYProgress, [0.55, 0.7], [50, 0]);
+
     return (
-        <ScrollSection className="py-24 relative overflow-hidden">
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="text-center mb-16 space-y-4">
+        <section ref={containerRef} className="relative h-[300vh] bg-background z-20 snap-start">
+            <div className="sticky top-0 h-screen w-full flex flex-col items-center pt-24 px-4 overflow-hidden z-40">
+                {/* Header (Always Visible) */}
+                <div className="text-center mb-8 space-y-4 max-w-3xl shrink-0 bg-background/95 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl z-30">
                     <h2 className="text-3xl sm:text-5xl font-bold tracking-tight">The old way is broken.</h2>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Traditional food logging hasn't changed in years. It's demanding, vaguely accurate, and often demotivating.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <ProblemCard
-                        icon={FileWarning}
-                        title="It's a Chore"
-                        description="Manual logging is tedious. Searching huge databases and guessing portions turns a healthy habit into a full-time job."
-                        delay={0}
-                    />
-                    <ProblemCard
-                        icon={Scale}
-                        title="The Scale Struggle"
-                        description="Nobody brings a food scale to a restaurant. Guessing ingredients and weighing every gram is impossible in the real world."
-                        delay={0.1}
-                    />
-                    <ProblemCard
-                        icon={TrendingDown}
-                        title="Zero Insight"
-                        description="Great, you logged 2000 calories. Now what? Raw numbers without context or guidance won't help you reach your goals."
-                        delay={0.2}
-                    />
+                {/* Cards Container - Stacked Vertically */}
+                <div className="w-full max-w-md flex flex-col gap-4 relative z-10 pb-20">
+                    <motion.div style={{ opacity: opacity1, y: y1 }} className="shrink-0">
+                        <StaticProblemCard
+                            icon={FileWarning}
+                            title="It's a Chore"
+                            description="Manual logging is tedious. Searching huge databases and guessing portions turns a healthy habit into a full-time job."
+                        />
+                    </motion.div>
+
+                    <motion.div style={{ opacity: opacity2, y: y2 }} className="shrink-0">
+                        <StaticProblemCard
+                            icon={Scale}
+                            title="The Scale Struggle"
+                            description="Nobody brings a food scale to a restaurant. Guessing ingredients and weighing every gram is impossible in the real world."
+                        />
+                    </motion.div>
+
+                    <motion.div style={{ opacity: opacity3, y: y3 }} className="shrink-0">
+                        <StaticProblemCard
+                            icon={TrendingDown}
+                            title="Zero Insight"
+                            description="Great, you logged 2000 calories. Now what? Raw numbers without context or guidance won't help you reach your goals."
+                        />
+                    </motion.div>
                 </div>
             </div>
-        </ScrollSection>
+        </section>
     );
 }
 
-function ProblemCard({ icon: Icon, title, description, delay }: { icon: any, title: string, description: string, delay: number }) {
+// Simplified Card Component for the sticky view (removes internal animations to let parent control)
+function StaticProblemCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay }}
-            className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-primary/20 transition-colors"
-        >
-            <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6 text-red-500">
+        <div className="p-6 rounded-3xl bg-card border border-border shadow-lg flex items-start gap-4 hover:border-primary/20 transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 text-red-500 mt-1">
                 <Icon className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold mb-3">{title}</h3>
-            <p className="text-muted-foreground leading-relaxed">
-                {description}
-            </p>
-        </motion.div>
+            <div>
+                <h3 className="text-xl font-bold mb-2">{title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">
+                    {description}
+                </p>
+            </div>
+        </div>
     )
 }
 
 
+
+
 export function StorySection() {
     return (
-        <section className="relative bg-foreground text-background py-32 px-4 snap-start">
-            <div className="container mx-auto max-w-5xl">
-                <div className="sticky top-32 mb-20 z-10 py-6 bg-foreground/80 backdrop-blur-md rounded-3xl border border-white/10 px-8 shadow-2xl">
-                    <h2 className="text-4xl sm:text-6xl font-bold tracking-tighter">
+        <section className="relative bg-foreground text-background py-24 px-4 snap-start">
+            <div className="container mx-auto max-w-sm sm:max-w-md relative">
+                {/* Sticky Header */}
+                <div className="sticky top-24 z-10 mb-8 py-6 bg-foreground/80 backdrop-blur-md rounded-3xl border border-white/10 px-8 shadow-2xl snap-start snap-always">
+                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
                         Why generic AI <br />
                         <span className="opacity-50">isn't enough.</span>
                     </h2>
                 </div>
 
-                <div className="space-y-40 relative z-0">
+                {/* Stacking Cards */}
+                <div className="space-y-[80vh] pb-[50vh]">
                     <StoryCard
                         title="Chatbots don't know you."
                         subtitle="LLMs are smart, but they don't know what you ate for breakfast last Tuesday, or that dairy makes you bloated."
                         index={1}
+                        stickyTop="top-64"
                     />
                     <StoryCard
                         title="Diaries are just data."
                         subtitle="Writing down your food is useless if you don't have an intelligence engine to analyze the patterns."
                         index={2}
+                        stickyTop="top-72"
                     />
                     <StoryCard
                         title="You need Context."
                         subtitle="GutCheck combines a seamless food diary with clinical-grade intelligence. It remembers everything, so you don't have to."
                         index={3}
                         highlight
+                        stickyTop="top-80"
                     />
                 </div>
             </div>
@@ -164,25 +192,20 @@ export function StorySection() {
     );
 }
 
-function StoryCard({ title, subtitle, index, highlight = false }: { title: string, subtitle: string, index: number, highlight?: boolean }) {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { margin: "-20%" });
-
+function StoryCard({ title, subtitle, index, highlight = false, stickyTop }: { title: string, subtitle: string, index: number, highlight?: boolean, stickyTop: string }) {
     return (
-        <motion.div
-            ref={ref}
-            initial={{ opacity: 0, y: 50 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className={cn(
-                "min-h-[50vh] flex flex-col justify-center p-8 sm:p-12 rounded-3xl border border-white/10",
-                highlight ? "bg-primary text-primary-foreground" : "bg-white/5 backdrop-blur-sm"
-            )}
-        >
-            <span className="text-sm font-mono opacity-50 mb-4">0{index}</span>
-            <h3 className="text-3xl sm:text-5xl font-bold mb-6 tracking-tight">{title}</h3>
-            <p className="text-xl opacity-80 leading-relaxed max-w-2xl">{subtitle}</p>
-        </motion.div>
+        <div className={cn(
+            "sticky min-h-[50vh] flex flex-col justify-start pt-12 p-8 rounded-3xl border border-white/10 shadow-2xl transition-transform origin-top snap-start snap-always",
+            highlight ? "bg-primary text-primary-foreground" : "bg-[#1A1A1A] text-slate-100",
+            stickyTop
+        )}>
+            <div className="flex items-center justify-between mb-6">
+                <span className="text-sm font-mono opacity-50">0{index}</span>
+            </div>
+
+            <h3 className="text-3xl font-bold mb-6 tracking-tight leading-tight">{title}</h3>
+            <p className="text-lg opacity-80 leading-relaxed">{subtitle}</p>
+        </div>
     );
 }
 
@@ -242,7 +265,7 @@ function FeatureItem({ title, description, placeholder, videoSrc, align }: { tit
                 )}
             >
                 {videoSrc ? (
-                    <div className="relative w-full h-[600px]">
+                    <div className="relative w-full aspect-square h-auto">
                         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background z-10 pointer-events-none" />
                         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background z-10 pointer-events-none" />
                         <video
@@ -252,7 +275,7 @@ function FeatureItem({ title, description, placeholder, videoSrc, align }: { tit
                             muted
                             playsInline
                             preload="auto"
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-cover rounded-2xl"
                         />
                     </div>
                 ) : (

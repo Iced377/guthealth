@@ -17,6 +17,8 @@ export interface IdentifiedPhotoData {
   ingredients: string;
   portionSize: string;
   portionUnit: string;
+  imageUri?: string;
+  additionalContext?: string;
 }
 
 interface IdentifyFoodByPhotoDialogProps {
@@ -150,6 +152,19 @@ export default function IdentifyFoodByPhotoDialog({
       setScanState('PREVIEW'); // Go to Preview/Context step
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleOptimisticLog = () => {
+    if (!imagePreview) return;
+    onFoodIdentified({
+      name: 'Analyzing Photo...',
+      ingredients: 'Identifying ingredients...',
+      portionSize: '...',
+      portionUnit: '',
+      imageUri: imagePreview,
+      additionalContext: contextText.trim(),
+    });
+    handleClose();
   };
 
   const handleRunAnalysis = async () => {
@@ -328,10 +343,10 @@ export default function IdentifyFoodByPhotoDialog({
                   <div className="pt-2 flex gap-3">
                     <Button
                       className="flex-1 rounded-2xl h-10 font-semibold text-sm shadow-lg shadow-primary/25 active:scale-[0.98] transition-transform"
-                      onClick={handleRunAnalysis}
+                      onClick={handleOptimisticLog}
                     >
-                      <ScanLine className="w-4 h-4 mr-2" />
-                      Analyze
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      Log Meal
                     </Button>
                   </div>
                 </div>

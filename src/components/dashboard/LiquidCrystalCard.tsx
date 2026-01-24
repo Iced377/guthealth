@@ -224,9 +224,16 @@ export default function LiquidCrystalCard({
 
                         {/* Macros Grid */}
                         {macroParts.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-1">
+                            <div
+                                id={item.id === 'walkthrough-mock-item' ? "walkthrough-mock-card-macros" : undefined}
+                                className="flex flex-wrap gap-1.5 mb-1"
+                            >
                                 {macroParts.map((macro, idx) => (
-                                    <div key={idx} className="flex items-center gap-1 bg-background/40 backdrop-blur-md px-2 py-1 z-20 rounded-lg border border-white/5">
+                                    <div
+                                        key={idx}
+                                        id={(item.id === 'walkthrough-mock-item' && idx === macroParts.length - 1) ? 'walkthrough-macro-anchor' : undefined}
+                                        className="flex items-center gap-1 bg-background/40 backdrop-blur-md px-2 py-1 z-20 rounded-lg border border-white/5"
+                                    >
                                         <macro.icon className={cn("w-3 h-3", macro.color)} />
                                         <span className="text-[10px] sm:text-xs font-bold text-foreground/90">{macro.value}</span>
                                     </div>
@@ -236,7 +243,10 @@ export default function LiquidCrystalCard({
 
                         {/* Health Indicators (Condensed Row) */}
                         {hasHealthIndicators && (
-                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mask-linear-fade">
+                            <div
+                                id={item.id === 'walkthrough-mock-item' ? "walkthrough-mock-card-indicators" : undefined}
+                                className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mask-linear-fade"
+                            >
                                 <div className="scale-90 origin-left"><FodmapIndicator score={item.fodmapData!.overallRisk} /></div>
 
                                 {item.fodmapData?.glycemicIndexInfo && (
@@ -285,7 +295,7 @@ export default function LiquidCrystalCard({
                             </div>
                         </div>
 
-                        <div className="p-6 space-y-4 bg-background/40 backdrop-blur-xl max-h-[60vh] overflow-y-auto">
+                        <div className="p-6 pb-10 space-y-4 bg-background/40 backdrop-blur-xl max-h-[60vh] overflow-y-auto">
                             {/* Details Content similar to TimelineFoodCard but styled */}
                             <div className="space-y-1">
                                 <h3 className="text-sm font-semibold opacity-70 uppercase tracking-wider">Macros</h3>

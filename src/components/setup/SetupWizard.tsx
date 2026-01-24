@@ -132,7 +132,7 @@ export default function SetupWizard() {
             });
 
             router.refresh();
-            router.push('/?startTour=true');
+            router.push('/');
 
         } catch (error) {
             console.error("Error saving profile:", error);

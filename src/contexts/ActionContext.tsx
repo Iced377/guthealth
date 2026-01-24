@@ -21,6 +21,7 @@ import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, L
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
+import { identifyFoodFromImage } from '@/ai/flows/identify-food-from-image-flow';
 import { processMealDescription } from '@/ai/flows/process-meal-description-flow';
 import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import { useFitbitSync } from '@/hooks/useFitbitSync';
@@ -88,6 +89,16 @@ interface ActionContextType {
     isAddFoodDialogOpen: boolean;
     openAddFoodDialog: () => void;
     closeAddFoodDialog: () => void;
+
+    // Vitals Dialog
+    isAddVitalsDialogOpen: boolean;
+    vitalsDialogDate: Date; // The date we are adding/editing vitals for
+    // Vitals Dialog State
+    initialVitalsWeight?: number | null;
+    initialVitalsSteps?: number | null;
+    openAddVitalsDialog: (date: Date, currentWeight?: number | null, currentSteps?: number | null) => void;
+    closeAddVitalsDialog: () => void;
+    handleLogVitals: (weight: number | null, steps: number | null, date: Date) => Promise<void>;
 
     isReleaseNotesOpen: boolean;
     openReleaseNotes: () => void;
@@ -165,11 +176,24 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [isAddManualMacroDialogOpen, setIsAddManualMacroDialogOpenState] = useState(false);
     const [isLogPreviousMealDialogOpen, setIsLogPreviousMealDialogOpenState] = useState(false);
     const [isAddFoodDialogOpen, setIsAddFoodDialogOpenState] = useState(false);
+    const [isAddVitalsDialogOpen, setIsAddVitalsDialogOpenState] = useState(false);
+    const [vitalsDialogDate, setVitalsDialogDate] = useState<Date>(new Date());
+    const [initialVitalsWeight, setInitialVitalsWeight] = useState<number | null>(null);
+    const [initialVitalsSteps, setInitialVitalsSteps] = useState<number | null>(null);
+
     const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
 
     const [editingItem, setEditingItem] = useState<LoggedFoodItem | null>(null);
     const [selectedLogTimestampForPreviousMeal, setSelectedLogTimestampForPreviousMeal] = useState<Date | undefined>(undefined);
     const [lastAddedItem, setLastAddedItem] = useState<{ id: string, date: Date } | null>(null);
+
+    const openAddVitalsDialog = useCallback((date: Date, currentWeight?: number | null, currentSteps?: number | null) => {
+        setVitalsDialogDate(date);
+        setInitialVitalsWeight(currentWeight ?? null);
+        setInitialVitalsSteps(currentSteps ?? null);
+        setIsAddVitalsDialogOpenState(true);
+    }, []);
+    const closeAddVitalsDialog = useCallback(() => setIsAddVitalsDialogOpenState(false), []);
 
     const openSimplifiedAddFoodDialog = useCallback(() => {
         setEditingItem(null);
@@ -208,6 +232,88 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const openReleaseNotes = useCallback(() => setIsReleaseNotesOpen(true), []);
     const closeReleaseNotes = useCallback(() => setIsReleaseNotesOpen(false), []);
+
+    const handleLogVitals = async (weight: number | null, steps: number | null, date: Date) => {
+        // Prepare batch updates mainly for steps cleanup
+        // Note: Firestore batch is good but for ActionContext we often do single writes.
+        // Let's do parallel awaits for simplicity.
+
+        // 1. WEIGHT
+        if (weight !== null) {
+            const weightLogId = `fitbit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const weightEntry: FitbitLog = {
+                id: weightLogId,
+                timestamp: date, // Using the passed date (noon usually or whatever selected)
+                entryType: 'fitbit_data',
+                weight: weight,
+                // We leave others undefined or 0
+            };
+
+            if (authUser) {
+                await submitToFirebase(weightEntry, weightLogId);
+            } else {
+                setTimelineEntries(prev => [weightEntry, ...prev]);
+            }
+        }
+
+        // 2. STEPS
+        if (steps !== null) {
+            // Calculate Auto Steps for the day
+            const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+
+            const dayPedometerLogs = timelineEntries.filter(log =>
+                log.entryType === 'pedometer_data' &&
+                log.timestamp >= startOfDay &&
+                log.timestamp <= endOfDay
+            ) as PedometerLog[];
+
+            const autoSteps = dayPedometerLogs
+                .filter(l => l.source !== 'manual')
+                .reduce((sum, l) => sum + l.steps, 0);
+
+            // Our target is 'steps'. Manual adjustment needed = Target - Auto.
+            // If Target < Auto, we technically need negative manual steps to correct it? 
+            // Or we assume manual override implies "This is the real value".
+            // Adding a negative steps entry might be confusing but mathematically correct for sum.
+            const manualStepsNeeded = Math.round(steps - autoSteps);
+
+            // Cleanup old manual entries for this day to avoid accumulation
+            const oldManualLogs = dayPedometerLogs.filter(l => l.source === 'manual');
+
+            // Local cleanup
+            setTimelineEntries(prev => prev.filter(p => !oldManualLogs.some(old => old.id === p.id)));
+
+            if (authUser) {
+                // Delete old manual logs from Firebase
+                for (const oldLog of oldManualLogs) {
+                    await deleteDoc(doc(db, 'users', authUser.uid, 'timelineEntries', oldLog.id));
+                }
+            }
+
+            // Create new manual entry
+            const stepsLogId = `pedometer-manual-${Date.now()}`;
+            const stepsEntry: PedometerLog = {
+                id: stepsLogId,
+                timestamp: date,
+                entryType: 'pedometer_data',
+                steps: manualStepsNeeded, // Can be negative effectively
+                source: 'manual',
+                distance: 0, // Ignore distance for manual override
+                activeEnergy: 0
+            };
+
+            // Add new
+            if (authUser) {
+                await submitToFirebase(stepsEntry, stepsLogId);
+            } else {
+                setTimelineEntries(prev => [stepsEntry, ...prev]);
+            }
+        }
+
+        toast({ title: "Health Data Updated" });
+        setIsAddVitalsDialogOpenState(false);
+    };
 
     const handleEditTimelineEntry = useCallback((itemToEdit: LoggedFoodItem) => {
         setEditingItem(itemToEdit);
@@ -578,15 +684,15 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         const optimisticItem: LoggedFoodItem = {
             id: currentItemId,
-            name: photoData.name,
-            originalName: photoData.name,
-            ingredients: photoData.ingredients,
-            portionSize: photoData.portionSize,
-            portionUnit: photoData.portionUnit,
+            name: photoData.name || "Analyzing Photo...",
+            originalName: photoData.name || "Photo Upload",
+            ingredients: photoData.ingredients || "Processing image...",
+            portionSize: photoData.portionSize || "...",
+            portionUnit: photoData.portionUnit || "",
             timestamp: logTimestamp,
             fodmapData: null,
             isSimilarToSafe: false,
-            userFodmapProfile: _generateFallbackFodmapProfile(photoData.name),
+            userFodmapProfile: _generateFallbackFodmapProfile("Photo"),
             calories: null, protein: null, carbs: null, fat: null,
             entryType: 'food',
             userFeedback: null,
@@ -606,6 +712,40 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
         try {
+            // STEP 1: IDENTIFY FOOD (If imageUri provided)
+            let identifiedData = {
+                identifiedFoodName: photoData.name,
+                identifiedIngredients: photoData.ingredients,
+                estimatedPortionSize: photoData.portionSize,
+                estimatedPortionUnit: photoData.portionUnit
+            };
+
+            if (photoData.imageUri) {
+                // Background Analysis
+                const identificationResult = await identifyFoodFromImage({
+                    imageDataUri: photoData.imageUri,
+                    additionalContext: photoData.additionalContext,
+                    userLocale: navigator.language
+                });
+
+                if (identificationResult.recognitionSuccess) {
+                    identifiedData = {
+                        identifiedFoodName: identificationResult.identifiedFoodName || "Unknown Food",
+                        identifiedIngredients: identificationResult.identifiedIngredients || "No ingredients detected",
+                        estimatedPortionSize: identificationResult.estimatedPortionSize || "1",
+                        estimatedPortionUnit: identificationResult.estimatedPortionUnit || "serving"
+                    };
+
+                    // Allow UI to show "Identified: Pizza" before FODMAP analysis finishes? 
+                    // Optional: Intermediate update here if FODMAP analysis is slow.
+                } else {
+                    // Fallback if ID fails
+                    identifiedData.identifiedFoodName = "Unidentified Food";
+                    identifiedData.identifiedIngredients = "Could not identify food from image.";
+                }
+            }
+
+            // STEP 2: ANALYZE FODMAPS / NUTRITION BASE ON ID
             const safeFoodItemsForAnalysis = (userProfile?.safeFoods?.length > 0)
                 ? userProfile.safeFoods.map(sf => ({
                     name: sf.name,
@@ -616,18 +756,23 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 : undefined;
 
             const fodmapAnalysis = await analyzeFoodItem({
-                foodItem: photoData.name,
-                ingredients: photoData.ingredients,
-                portionSize: photoData.portionSize,
-                portionUnit: photoData.portionUnit,
+                foodItem: identifiedData.identifiedFoodName,
+                ingredients: identifiedData.identifiedIngredients,
+                portionSize: identifiedData.estimatedPortionSize,
+                portionUnit: identifiedData.estimatedPortionUnit,
                 userSafeFoodItems: safeFoodItemsForAnalysis,
             });
 
             const processedItem = {
                 ...optimisticItem,
+                name: identifiedData.identifiedFoodName,
+                originalName: identifiedData.identifiedFoodName,
+                ingredients: identifiedData.identifiedIngredients,
+                portionSize: identifiedData.estimatedPortionSize,
+                portionUnit: identifiedData.estimatedPortionUnit,
                 fodmapData: fodmapAnalysis ?? null,
                 isSimilarToSafe: fodmapAnalysis?.similarityAnalysis?.isSimilar ?? false,
-                userFodmapProfile: fodmapAnalysis?.detailedFodmapProfile ?? _generateFallbackFodmapProfile(photoData.name),
+                userFodmapProfile: fodmapAnalysis?.detailedFodmapProfile ?? _generateFallbackFodmapProfile(identifiedData.identifiedFoodName),
                 calories: fodmapAnalysis?.calories ?? null,
                 protein: fodmapAnalysis?.protein ?? null,
                 carbs: fodmapAnalysis?.carbs ?? null,
@@ -635,9 +780,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             };
 
             if (authUser) await submitToFirebase(processedItem, currentItemId);
+            toast({ title: "Analysis Complete", description: `Identified: ${identifiedData.identifiedFoodName}` });
 
         } catch (e) {
             console.error(e);
+            toast({ title: 'Analysis Failed', description: "Could not process photo.", variant: 'destructive' });
         } finally {
             setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
         }
@@ -824,6 +971,14 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             userProfile,
             isDataLoading,
             isLoadingAi,
+
+            isAddVitalsDialogOpen,
+            vitalsDialogDate,
+            initialVitalsWeight,
+            initialVitalsSteps,
+            openAddVitalsDialog,
+            closeAddVitalsDialog,
+            handleLogVitals,
 
             isSimplifiedAddFoodDialogOpen,
             openSimplifiedAddFoodDialog,

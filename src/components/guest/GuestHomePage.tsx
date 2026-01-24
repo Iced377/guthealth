@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronUp } from 'lucide-react';
@@ -38,6 +38,7 @@ export default function GuestHomePage({
 }) {
   const { isDarkMode } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -45,10 +46,23 @@ export default function GuestHomePage({
     }
   }, [isDarkMode]);
 
+  // Handle scroll state for navbar style (using ref instead of window)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      setIsScrolled(el.scrollTop > 50);
+    };
+
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div
+      ref={scrollRef}
       className="h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-background text-foreground overflow-x-hidden selection:bg-primary/30 flex flex-col font-body antialiased"
-      onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 50)}
     >
       <Navbar isGuest={true} isScrolled={isScrolled} />
 
@@ -56,7 +70,7 @@ export default function GuestHomePage({
       {useMemo(() => (
         <main className="contents">
           <HeroSection />
-          <ProblemSection />
+          <ProblemSection scrollContainerRef={scrollRef} />
           <StorySection />
           <FeatureGrid />
           <SecuritySection />

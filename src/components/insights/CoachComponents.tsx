@@ -1,3 +1,5 @@
+'use client';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useInsightsMotionController } from './useInsightsMotionController';
@@ -50,9 +52,9 @@ export function CoachChatCapsule() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 200, opacity: 0 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    className="fixed left-0 right-0 flex justify-center z-50 pointer-events-none"
+                    className="fixed left-0 right-0 flex justify-center z-[80] pointer-events-none" // Increased z-index to 80 to be above most layers but below Sheet (z-70? Sheet is usually higher)
                     style={{
-                        bottom: 'calc(env(safe-area-inset-bottom) + 150px)'
+                        bottom: 'calc(env(safe-area-inset-bottom) + 24px)'
                     }}
                 >
                     <div className="pointer-events-auto relative">

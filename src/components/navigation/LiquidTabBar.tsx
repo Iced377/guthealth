@@ -98,6 +98,7 @@ export default function LiquidTabBar({ onAddClick, onPhotoClick, className }: Li
 
             {/* Main Tab Bar */}
             <motion.nav
+                id="liquid-tab-bar"
                 className={cn(
                     "fixed bottom-0 left-0 right-0 z-50",
                     "pb-[env(safe-area-inset-bottom)]",

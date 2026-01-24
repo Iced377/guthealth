@@ -130,7 +130,7 @@ export interface PedometerLog {
   distance?: number; // meters
   floorsAscended?: number;
   activeEnergy?: number; // kcal
-  source?: 'pedometer_plus_plus' | 'apple_health';
+  source?: 'pedometer_plus_plus' | 'apple_health' | 'manual';
 }
 
 export type TimelineEntry = LoggedFoodItem | SymptomLog | FitbitLog | PedometerLog;

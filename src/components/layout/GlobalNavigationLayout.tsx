@@ -11,6 +11,7 @@ import SymptomLoggingDialog from '@/components/food-logging/SymptomLoggingDialog
 import LogPreviousMealDialog from '@/components/food-logging/LogPreviousMealDialog';
 import AddManualMacroEntryDialog from '@/components/food-logging/AddManualMacroEntryDialog';
 import AddFoodItemDialog from '@/components/food-logging/AddFoodItemDialog';
+import AddVitalsDialog from '@/components/food-logging/AddVitalsDialog';
 import { COMMON_SYMPTOMS, LoggedFoodItem } from '@/types';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { NavVisibilityProvider } from '@/components/navigation/useNavVisibilityController';
@@ -30,6 +31,9 @@ const NavigationAndDialogs = () => {
         isAddManualMacroDialogOpen, closeAddManualMacroDialog, openAddManualMacroDialog,
         isAddFoodDialogOpen, closeAddFoodDialog,
         isReleaseNotesOpen, closeReleaseNotes, openReleaseNotes,
+
+        isAddVitalsDialogOpen, closeAddVitalsDialog, handleLogVitals, vitalsDialogDate,
+        initialVitalsWeight, initialVitalsSteps,
 
         handleSubmitMealDescription,
         handleProcessAndLogPhotoIdentification,
@@ -238,6 +242,15 @@ const NavigationAndDialogs = () => {
                     if (method === 'Manual') openAddManualMacroDialog(); // or openAddFoodDialog?
                 }}
                 currentSelectedDate={selectedLogTimestampForPreviousMeal}
+            />
+
+            <AddVitalsDialog
+                isOpen={isAddVitalsDialogOpen}
+                onOpenChange={(open) => !open && closeAddVitalsDialog()}
+                onSubmit={(w, s) => handleLogVitals(w, s, vitalsDialogDate)}
+                currentDate={vitalsDialogDate}
+                initialWeight={initialVitalsWeight}
+                initialSteps={initialVitalsSteps}
             />
 
             <ReleaseNotesSheet

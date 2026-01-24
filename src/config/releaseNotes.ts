@@ -8,19 +8,25 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.0.6";
+export const APP_VERSION = "5.1.0";
 
 export const releaseNotesData: ReleaseNote[] = [
     {
-        version: '5.0.6',
+        version: '5.1.0',
         date: 'January 23, 2026',
-        title: 'Release Candidate',
-        description: 'Final preparations for the production release, including version bumps and configuration checks.',
-        features: [],
-        improvements: [
-            'Updated application version and configurations for release readiness.'
+        title: 'Interactive Health Updates',
+        description: 'Major enhancements to the Vitals logger, smoother animations, and critical fixes for the app tour.',
+        features: [
+            'Editable Vitals: You can now tap on Weight and Step cards to manually edit your daily logs via a new, beautiful dialog.',
+            'Match Vitals UI: The Vitals logger now shares the same premium "frosted glass" design as the food logger.',
         ],
-        fixes: []
+        improvements: [
+            'Animation Polish: Added a smooth entry animation to the Back button on the About page.',
+        ],
+        fixes: [
+            'Tour Loop Fixed: Resolved a bug where the App Tour would incorrectly restart after completion.',
+            'Stability: Improved server response times and build stability.'
+        ]
     },
     {
         version: '5.0.5',

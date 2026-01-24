@@ -1,15 +1,18 @@
 # Release Notes
 
-## v5.0.7 (January 23, 2026) - Sync & Polish
-**Restoring essential data connectivity and refining the chart interaction experience.**
+## v5.1.0 (January 23, 2026) - Interactive Health Updates
+**Major enhancements to the Vitals logger, smoother animations, and critical fixes for the app tour.**
 
 ### ✨ New Features
-- **Weight Card in Dashboard**: Added a new swipeable card to the Vitals Header (alongside Steps and Fiber) that displays your daily weight log.
+- **Editable Vitals**: You can now tap on Weight and Step cards to manually edit your daily logs via a new, beautiful dialog.
+- **Match Vitals UI**: The Vitals logger now shares the same premium "frosted glass" design as the food logger.
+
+### 🚀 Improvements
+- **Animation Polish**: Added a smooth entry animation to the Back button on the About page.
 
 ### 🐛 Bug Fixes
-- **Fitbit Weight Sync**: Fixed a critical issue where weight and body fat data stopped syncing automatically. The background sync engine now initializes correctly on app launch.
-- **Chart Tooltips**: The Average Macro Chart tooltip now behaves consistently with other charts, floating naturally without being cut off or obscuring the filter controls.
-- **Chart Expansion**: Fixed an issue where the Macro Chart would appear truncated in expanded view. It now correctly fills the available screen space.
+- **Tour Loop Fixed**: Resolved a bug where the App Tour would incorrectly restart after completion.
+- **Stability**: Improved server response times and build stability.
 
 ---
 

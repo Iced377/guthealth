@@ -6,6 +6,7 @@ import { PedometerLog, UserProfile, DailyNutritionSummary, FitbitLog } from '@/t
 import { Footprints, Sprout, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NutritionOverview from './NutritionOverview';
+import { useActionContext } from '@/contexts/ActionContext';
 
 
 interface ParallaxVitalsHeaderProps {
@@ -55,6 +56,19 @@ export default function ParallaxVitalsHeader({
         </div>
     );
 
+    const { openAddVitalsDialog } = useActionContext();
+
+    const handleCardClick = () => {
+        // Open dialog with current values
+        // Note: stepsData might be null, defaults to 0 if so? Or just pass undefined.
+        // We pass what we see on screen approximately
+        openAddVitalsDialog(
+            currentDate,
+            weightData?.weight,
+            stepsData?.steps
+        );
+    };
+
     return (
         <div
             className={cn("relative z-30 w-full flex flex-col items-center perspective-1000", className)}
@@ -82,8 +96,9 @@ export default function ParallaxVitalsHeader({
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={0.1}
                     onDragEnd={handleStatDragEnd}
+                    onClick={handleCardClick}
                 >
-                    <GlassCard className="h-full flex flex-col justify-center items-center px-4 py-0 border-0 shadow-sm bg-white/5 dark:bg-black/20 backdrop-blur-md rounded-2xl">
+                    <GlassCard className="h-full flex flex-col justify-center items-center px-4 py-0 border-0 shadow-sm bg-white/5 dark:bg-black/20 backdrop-blur-md rounded-2xl cursor-pointer hover:bg-white/10 transition-colors">
                         <AnimatePresence mode="wait" initial={false}>
                             {activeStatIndex === 0 ? (
                                 <motion.div

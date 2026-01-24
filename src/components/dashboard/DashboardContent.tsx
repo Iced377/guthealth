@@ -187,7 +187,7 @@ export default function DashboardContent({
     if (!userProfile) return null;
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-hidden bg-background">
+        <div id="dashboard-container" className="flex flex-col h-full w-full relative overflow-hidden bg-background">
 
             {/* Background Gradient Mesh */}
             <div className="absolute inset-0 z-0 pointer-events-none opacity-30">

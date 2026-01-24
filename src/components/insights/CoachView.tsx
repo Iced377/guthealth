@@ -1,0 +1,267 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getLiquidTokens, LiquidMode } from '@/lib/liquid-tokens';
+import { cn } from '@/lib/utils';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useActionContext } from '@/contexts/ActionContext';
+import { format, isSameDay } from 'date-fns';
+import { getPersonalizedDietitianInsight, PersonalizedDietitianOutput } from '@/ai/flows/personalized-dietitian-flow';
+import { calculateTrendsAnalysis } from '@/utils/insights';
+import { FrostBackplate } from './LiquidPrimitive';
+import { LiquidPressable } from '@/components/ui/LiquidPressable';
+import { Loader2, Copy, Check, Send } from 'lucide-react';
+import { Clipboard } from '@capacitor/clipboard';
+
+// Helper to determine time of day
+const getTimeSegment = (hour: number) => {
+    if (hour < 5) return 'Late Night';
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    if (hour < 22) return 'Evening';
+    return 'Late Night';
+};
+
+export function CoachView() {
+    const { isDarkMode } = useTheme();
+    const mode: LiquidMode = isDarkMode ? 'dark' : 'light';
+    const tokens = getLiquidTokens(mode);
+    const { timelineEntries, userProfile } = useActionContext();
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    // AI State
+    const [aiOutput, setAiOutput] = useState<PersonalizedDietitianOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
+    const [isAnalysisRequested, setIsAnalysisRequested] = useState(false);
+
+    // Prepare Data for Advanced AI (Reused from CoachSessionSheet)
+    const preparedInput = useMemo(() => {
+        const now = new Date();
+        const todayEntries = timelineEntries.filter(e => isSameDay(new Date(e.timestamp), now));
+
+        // Format Food Log for Schema
+        const foodLog = timelineEntries.slice(0, 50).filter(e => e.entryType === 'food' || e.entryType === 'manual_macro').map(e => {
+            const item = e as any;
+            return {
+                name: item.name,
+                ingredients: item.ingredients || '',
+                portionSize: item.portionSize || '1 serving',
+                portionUnit: item.portionUnit || '',
+                timestamp: format(new Date(item.timestamp), 'yyyy-MM-dd HH:mm'),
+                calories: item.calories || 0,
+                protein: item.protein || 0,
+                carbs: item.carbs || 0,
+                fat: item.fat || 0,
+            };
+        });
+
+        // Format Symptoms
+        const symptomLog = timelineEntries.slice(0, 20).filter(e => e.entryType === 'symptom').map(e => {
+            const item = e as any;
+            return {
+                symptoms: item.symptoms?.map((s: any) => ({ name: s.name })) || [],
+                severity: item.severity,
+                timestamp: format(new Date(item.timestamp), 'yyyy-MM-dd HH:mm'),
+            };
+        });
+
+        // Calculate Daily Totals
+        const dailyTotals = todayEntries.reduce((acc, curr) => {
+            if (curr.entryType === 'food' || curr.entryType === 'manual_macro') {
+                const item = curr as any;
+                acc.calories += item.calories || 0;
+                acc.protein += item.protein || 0;
+                acc.carbs += item.carbs || 0;
+                acc.fat += item.fat || 0;
+            }
+            return acc;
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+        // Calculate Time Since Last Meal
+        const lastMeal = timelineEntries.find(e => {
+            if (e.entryType === 'food') return (e.calories || 0) > 5;
+            if (e.entryType === 'manual_macro') return ((e as any).calories || 0) > 5;
+            return false;
+        });
+
+        const hoursSinceLastMeal = lastMeal
+            ? Math.abs(now.getTime() - new Date(lastMeal.timestamp).getTime()) / 36e5
+            : 0;
+
+        // Fasting Projections
+        const lastMealTime = lastMeal ? new Date(lastMeal.timestamp) : now;
+        const target16h = new Date(lastMealTime.getTime() + 16 * 36e5);
+
+        // Calculate Trends
+        const trends = calculateTrendsAnalysis(timelineEntries, userProfile);
+
+        return {
+            userQuestion: "How am I doing today? Give me a full update.",
+            foodLog,
+            symptomLog,
+            userProfile: {
+                ...userProfile,
+                dietaryPreferences: userProfile?.profile?.dietaryPreferences || [],
+                tdee: userProfile?.profile?.tdee,
+                goal: userProfile?.profile?.goal,
+                currentWeight: userProfile?.profile?.weight
+            },
+            currentLocalTime: format(now, 'h:mm a'),
+            dailyTotals,
+            hoursSinceLastMeal: parseFloat(hoursSinceLastMeal.toFixed(1)),
+            projectedFastingEndTimes: {
+                target16h: format(target16h, 'h:mm a'),
+                targetMax: format(new Date(lastMealTime.getTime() + (trends.maxFastingWindowHours || 18) * 36e5), 'h:mm a')
+            },
+            timeOfDaySegment: getTimeSegment(now.getHours()),
+            trendsAnalysis: trends
+        };
+
+    }, [timelineEntries, userProfile]);
+
+    // Fetch Insights
+    useEffect(() => {
+        // Only fetch if requested, not already fetched, not loading, and we have input
+        if (isAnalysisRequested && !aiOutput && !isLoading && preparedInput) {
+            setIsLoading(true);
+            getPersonalizedDietitianInsight(preparedInput as any)
+                .then(result => {
+                    setAiOutput(result);
+                })
+                .catch(err => {
+                    console.error("AI Insight Error:", err);
+                    setAiOutput({ aiResponse: "I'm having trouble connecting to my brain right now." });
+                })
+                .finally(() => setIsLoading(false));
+        }
+    }, [isAnalysisRequested, aiOutput, isLoading, preparedInput]);
+
+    const handleCopy = async () => {
+        if (!aiOutput?.aiResponse) return;
+        try {
+            await Clipboard.write({ string: aiOutput.aiResponse });
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+    };
+
+    const handleStartSession = () => {
+        setIsAnalysisRequested(true);
+    };
+
+    const renderContent = () => {
+        // 1. Idle State (Video + CTA)
+        if (!isAnalysisRequested) {
+            return (
+                <div className="flex flex-col items-center justify-center py-10 gap-8 animate-in fade-in duration-700">
+                    {/* Video Avatar */}
+                    <div className="relative w-48 h-48 rounded-full overflow-hidden">
+                        <video
+                            src="/researcher.mp4"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover scale-150" // Slight zoom to focus on character
+                        />
+                        {/* Inner shadow for depth */}
+                        <div className="absolute inset-0 rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] pointer-events-none" />
+                    </div>
+
+                    {/* CTA Button */}
+                    <div className="text-center space-y-4">
+                        <h3 className={cn("text-xl font-bold", tokens.text.primary)}>
+                            Ready for your report?
+                        </h3>
+                        <LiquidPressable
+                            onClick={handleStartSession}
+                            variant="pill"
+                            size="lg"
+                            className={cn(
+                                "flex items-center gap-2 px-6 py-3 font-medium text-base transition-all active:scale-95",
+                                // WhatsApp Style: Green Bubble, White Text
+                                "bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-sm",
+                                "rounded-2xl rounded-tr-sm" // Subtle "message bubble" corner
+                            )}
+                        >
+                            <span>Coach, how am I doing today?</span>
+                            <Send className="w-4 h-4 fill-current" />
+                        </LiquidPressable>
+                    </div>
+                </div>
+            );
+        }
+
+        // 2. Loading State
+        if (isLoading) {
+            return (
+                <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-70 text-center">
+                    <Loader2 className={cn("h-8 w-8 animate-spin", tokens.text.primary)} />
+                    <p className={cn("text-sm font-medium animate-pulse", tokens.text.secondary)}>
+                        Coach is analyzing your recent meals and daily activity...
+                    </p>
+                    <p className={cn("text-xs uppercase tracking-widest opacity-60", tokens.text.tertiary)}>
+                        Generating personalized insights
+                    </p>
+                </div>
+            );
+        }
+
+        // 3. Result State
+        if (aiOutput) {
+            return (
+                <div className="space-y-4">
+                    <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
+                        {aiOutput.aiResponse}
+                    </div>
+                    {/* Copy Button */}
+                    <div className="flex justify-end pt-4">
+                        <LiquidPressable
+                            onClick={handleCopy}
+                            size="sm"
+                            variant="pill"
+                            className={cn(
+                                "flex items-center gap-2 text-xs font-medium px-4 py-2 backdrop-blur-md rounded-full transition-colors",
+                                mode === 'dark' ? "bg-white/10 hover:bg-white/20 text-white" : "bg-black/5 hover:bg-black/10 text-black"
+                            )}
+                        >
+                            {isCopied ? (
+                                <>
+                                    <Check className="w-3 h-3 text-green-500" />
+                                    <span className="text-green-500">Copied</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className={cn("w-3 h-3 opacity-60")} />
+                                    <span className="opacity-80">Copy Advice</span>
+                                </>
+                            )}
+                        </LiquidPressable>
+                    </div>
+                </div>
+            );
+        }
+        return null; // Initial state or error fallback
+    };
+
+    return (
+        <div className="flex flex-col gap-4 p-4 pb-32 min-h-screen">
+            <div className="flex-1">
+                {/* Replaced FrostBackplate with Clean Card container */}
+                <div className={cn(
+                    "rounded-[32px] p-8 shadow-none border-0 flex flex-col justify-center",
+                    // Use standard card background logic (Dashboard Style)
+                    mode === 'dark' ? "bg-zinc-900" : "bg-white"
+                )}>
+                    {renderContent()}
+                </div>
+            </div>
+            <div ref={bottomRef} />
+        </div>
+    );
+}
