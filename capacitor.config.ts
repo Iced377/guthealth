@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'GutHealth',
   webDir: 'out',
   server: {
-    url: 'http://192.168.100.188:9002',
-    cleartext: true
+    url: 'https://mygutcheck.app',
+    cleartext: false
   },
   plugins: {
     FirebaseAuthentication: {
