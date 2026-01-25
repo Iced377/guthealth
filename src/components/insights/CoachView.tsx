@@ -167,6 +167,7 @@ export function CoachView() {
                             loop
                             muted
                             playsInline
+                            preload="auto"
                             className="w-full h-full object-cover scale-150" // Slight zoom to focus on character
                         />
                         {/* Inner shadow for depth */}

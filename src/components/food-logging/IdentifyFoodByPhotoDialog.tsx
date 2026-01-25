@@ -309,6 +309,7 @@ export default function IdentifyFoodByPhotoDialog({
                       alt="Preview"
                       fill
                       className="object-contain p-4"
+                      priority
                     />
                   )}
                   <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full">

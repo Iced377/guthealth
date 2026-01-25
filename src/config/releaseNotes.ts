@@ -8,9 +8,23 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.0";
+export const APP_VERSION = "5.1.1";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.1',
+        date: 'January 25, 2026',
+        title: 'Instant Speed Updates',
+        description: 'We\'ve supercharged the app responsiveness. Reusing meals is now instant, and videos/images load without delay.',
+        features: [
+            'Optimistic Meal Reuse: "Reuse Meal" now logs instantly while the analysis refines in the background.',
+            'Instant Media: Coach videos and food photos now load immediately for a snappier feel.',
+        ],
+        improvements: [
+            'General performance polish across the dashboard.',
+        ],
+        fixes: []
+    },
     {
         version: '5.1.0',
         date: 'January 23, 2026',

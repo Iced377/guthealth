@@ -12,13 +12,8 @@ import { Shield, ShieldCheck, Lock, Network, FileLock2, DatabaseZap, Eye, Server
 export function HeroSection() {
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.play().catch(error => {
-                console.log("Hero video autoplay prevented:", error);
-            });
-        }
-    }, []);
+    // Video auto-play handled by props
+
 
     return (
         <ScrollSection className="relative z-10 pt-20">

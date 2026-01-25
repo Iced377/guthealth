@@ -96,9 +96,10 @@ interface ActionContextType {
     // Vitals Dialog State
     initialVitalsWeight?: number | null;
     initialVitalsSteps?: number | null;
-    openAddVitalsDialog: (date: Date, currentWeight?: number | null, currentSteps?: number | null) => void;
+    initialVitalsFatPercent?: number | null;
+    openAddVitalsDialog: (date: Date, currentWeight?: number | null, currentSteps?: number | null, currentFat?: number | null) => void;
     closeAddVitalsDialog: () => void;
-    handleLogVitals: (weight: number | null, steps: number | null, date: Date) => Promise<void>;
+    handleLogVitals: (weight: number | null, steps: number | null, fatPercent: number | null, date: Date) => Promise<void>;
 
     isReleaseNotesOpen: boolean;
     openReleaseNotes: () => void;
@@ -180,6 +181,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [vitalsDialogDate, setVitalsDialogDate] = useState<Date>(new Date());
     const [initialVitalsWeight, setInitialVitalsWeight] = useState<number | null>(null);
     const [initialVitalsSteps, setInitialVitalsSteps] = useState<number | null>(null);
+    const [initialVitalsFatPercent, setInitialVitalsFatPercent] = useState<number | null>(null);
 
     const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
 
@@ -187,10 +189,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [selectedLogTimestampForPreviousMeal, setSelectedLogTimestampForPreviousMeal] = useState<Date | undefined>(undefined);
     const [lastAddedItem, setLastAddedItem] = useState<{ id: string, date: Date } | null>(null);
 
-    const openAddVitalsDialog = useCallback((date: Date, currentWeight?: number | null, currentSteps?: number | null) => {
+    const openAddVitalsDialog = useCallback((date: Date, currentWeight?: number | null, currentSteps?: number | null, currentFat?: number | null) => {
         setVitalsDialogDate(date);
         setInitialVitalsWeight(currentWeight ?? null);
         setInitialVitalsSteps(currentSteps ?? null);
+        setInitialVitalsFatPercent(currentFat ?? null);
         setIsAddVitalsDialogOpenState(true);
     }, []);
     const closeAddVitalsDialog = useCallback(() => setIsAddVitalsDialogOpenState(false), []);
@@ -233,26 +236,44 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const openReleaseNotes = useCallback(() => setIsReleaseNotesOpen(true), []);
     const closeReleaseNotes = useCallback(() => setIsReleaseNotesOpen(false), []);
 
-    const handleLogVitals = async (weight: number | null, steps: number | null, date: Date) => {
+    const handleLogVitals = async (weight: number | null, steps: number | null, fatPercent: number | null, date: Date) => {
         // Prepare batch updates mainly for steps cleanup
         // Note: Firestore batch is good but for ActionContext we often do single writes.
         // Let's do parallel awaits for simplicity.
 
-        // 1. WEIGHT
-        if (weight !== null) {
-            const weightLogId = `fitbit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // 1. WEIGHT & FAT
+        if (weight !== null || fatPercent !== null) {
+            // Check for existing Fitbit/Weight log for this day to preserve fatPercent or other data
+            const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+
+            const existingWeightLog = timelineEntries.find(log =>
+                log.entryType === 'fitbit_data' &&
+                log.timestamp >= startOfDay &&
+                log.timestamp <= endOfDay
+            ) as FitbitLog | undefined;
+
+            const weightLogId = existingWeightLog ? existingWeightLog.id : `fitbit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            // Merge with existing data if available (preserving fatPercent)
             const weightEntry: FitbitLog = {
                 id: weightLogId,
-                timestamp: date, // Using the passed date (noon usually or whatever selected)
+                timestamp: date, // Update timestamp to now (or kept date)
                 entryType: 'fitbit_data',
-                weight: weight,
-                // We leave others undefined or 0
+                weight: weight ?? existingWeightLog?.weight, // If weight not provided (null), keep existing? Actually dialog forces weight if entering fat? No, let's handle partials.
+                fatPercent: fatPercent ?? existingWeightLog?.fatPercent, // Update fat if provided, else keep existing
+                steps: existingWeightLog?.steps ?? undefined, // Preserve existing steps in this doc if any (rare)
+                caloriesBurned: existingWeightLog?.caloriesBurned ?? undefined
             };
 
             if (authUser) {
                 await submitToFirebase(weightEntry, weightLogId);
             } else {
-                setTimelineEntries(prev => [weightEntry, ...prev]);
+                if (existingWeightLog) {
+                    setTimelineEntries(prev => prev.map(e => e.id === weightLogId ? weightEntry : e));
+                } else {
+                    setTimelineEntries(prev => [weightEntry, ...prev]);
+                }
             }
         }
 
@@ -445,18 +466,50 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const handleRepeatMeal = async (itemToRepeat: LoggedFoodItem) => {
         const newItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newTimestamp = new Date();
-        setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
 
-        const baseData = {
+        // 1. Create Optimistic Item immediately
+        const optimisticItem: LoggedFoodItem = {
             id: newItemId,
             timestamp: newTimestamp,
-            isSimilarToSafe: false,
-            userFodmapProfile: null,
-            entryType: 'food' as const,
+            entryType: 'food',
+
+            // Use existing data as "placeholder" but clear analysis-specifics if we plan to re-analyze
+            // Actually, for "Repeat", the user expects the SAME data. 
+            // If we re-analyze, it's to refresh it, but we can show the old data as the "optimistic" state!
+            // This is even better than "Processing...".
+            name: itemToRepeat.name,
+            originalName: itemToRepeat.originalName,
+            ingredients: itemToRepeat.ingredients,
+            portionSize: itemToRepeat.portionSize,
+            portionUnit: itemToRepeat.portionUnit,
+            sourceDescription: itemToRepeat.sourceDescription,
+
+            // Re-use current macros/fodmaps as placeholder? 
+            // If we are re-analyzing, they might change.
+            // But showing them fading/loading is nice.
+            // Let's assume we want to "Copy" initially.
+            calories: itemToRepeat.calories,
+            protein: itemToRepeat.protein,
+            carbs: itemToRepeat.carbs,
+            fat: itemToRepeat.fat,
+
+            fodmapData: itemToRepeat.fodmapData,
+            isSimilarToSafe: itemToRepeat.isSimilarToSafe,
+            userFodmapProfile: itemToRepeat.userFodmapProfile,
+
             userFeedback: null,
             macrosOverridden: itemToRepeat.macrosOverridden ?? false,
             isFavorite: itemToRepeat.isFavorite ?? false,
         };
+
+        // 2. Commit Optimistic State
+        setTimelineEntries(prev => [optimisticItem, ...prev].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+        if (authUser) await submitToFirebase(optimisticItem, newItemId);
+
+        toast({ title: "Meal Added", description: "Analyzing for updates..." }); // Immediate feedback
+
+        // 3. Trigger Re-analysis (Background)
+        setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
 
         try {
             let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
@@ -482,40 +535,43 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 }
 
                 processedFoodItem = {
-                    ...baseData,
+                    ...optimisticItem, // Keep ID/Timestamp/Common fields
                     name: mealDescriptionOutput.wittyName,
                     originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
                     ingredients: mealDescriptionOutput.consolidatedIngredients,
                     portionSize: mealDescriptionOutput.estimatedPortionSize,
                     portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-                    sourceDescription: itemToRepeat.sourceDescription,
+                    // Updates
                     fodmapData: fodmapAnalysis ?? null,
                     isSimilarToSafe: similarityOutput?.isSimilar ?? false,
                     userFodmapProfile: itemFodmapProfile ?? null,
+                    // Only update macros if NOT overridden by user previously?
+                    // If user copied a meal with custom macros, maybe they want to keep them?
+                    // Code says: "macrosOverridden: itemToRepeat.macrosOverridden"
+                    // So we respect that logic below:
                     calories: (itemToRepeat.macrosOverridden ? itemToRepeat.calories : fodmapAnalysis?.calories) ?? null,
                     protein: (itemToRepeat.macrosOverridden ? itemToRepeat.protein : fodmapAnalysis?.protein) ?? null,
                     carbs: (itemToRepeat.macrosOverridden ? itemToRepeat.carbs : fodmapAnalysis?.carbs) ?? null,
                     fat: (itemToRepeat.macrosOverridden ? itemToRepeat.fat : fodmapAnalysis?.fat) ?? null,
                 };
             } else {
-                // Simplified repeat for manual/other
-                processedFoodItem = {
-                    ...baseData,
-                    ...itemToRepeat,
-                    id: newItemId,
-                    timestamp: newTimestamp,
-                };
-                // Ideally we re-analyze manual too but keeping it simple as "Copy"
+                // Manual/Photo reused -> As is (no new analysis for now to keep it simple or maybe we should re-analyze? Keeping consistent with old logic)
+                processedFoodItem = optimisticItem;
             }
 
+            // 4. Commit Final State
             if (authUser) await submitToFirebase(processedFoodItem, newItemId);
-            else setTimelineEntries(prev => [processedFoodItem as any, ...prev]);
+            // Update local again to ensure consistency (e.g. if name changed)
+            setTimelineEntries(prev => prev.map(e => e.id === newItemId ? processedFoodItem : e));
 
-            toast({ title: "Meal Repeated", description: `"${processedFoodItem.name}" added.` });
+            if (processedFoodItem !== optimisticItem) {
+                toast({ title: "Analysis Complete", description: "Meal details updated." });
+            }
 
         } catch (e) {
             console.error(e);
-            toast({ title: 'Error Repeating Meal', variant: 'destructive' });
+            toast({ title: 'Re-analysis Failed', description: "Kept original data.", variant: 'destructive' });
+            // We don't remove the item, we just keep the optimistic (original) version which is fine!
         } finally {
             setIsLoadingAi(prev => ({ ...prev, [newItemId]: false }));
         }
