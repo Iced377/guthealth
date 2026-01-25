@@ -166,7 +166,7 @@ export default function SetupWizard() {
     const isResults = mode === 'results';
     const isOutro = mode === 'outro';
 
-    const blueGradient = "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20";
+    const blueGradient = "bg-gradient-to-br from-blue-50 to-sky-50 dark:from-blue-950/20 dark:to-sky-950/20";
     const pinkGradient = "bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20";
 
     return (
