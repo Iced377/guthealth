@@ -219,8 +219,8 @@ export default function WalkthroughOverlay() {
         const FROST_STEPS = ['tour-meal-card-intro', 'tour-meal-card-macros', 'tour-meal-card-indicators', 'tour-meal-card-actions', 'tour-navbar-options', 'welcome-4'];
         const isFrost = FROST_STEPS.includes(currentStep?.id || '');
 
-        // Special case: "Actions" step should have "clear" frosting (no blur/bg) but keep lock
-        if (currentStep?.id === 'tour-meal-card-actions') {
+        // Special case: "Actions" step AND "Navbar" step should have "clear" frosting (no blur/bg) but keep lock
+        if (currentStep?.id === 'tour-meal-card-actions' || currentStep?.id === 'tour-navbar-options') {
             return "bg-transparent backdrop-blur-none";
         }
 
