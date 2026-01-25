@@ -270,6 +270,22 @@ export default function LiquidNavigation({
 
     // Handle Log action (Instant on Release)
     const handleLogAction = (actionId: string) => {
+        // Lock Logic for Log Actions
+        // Note: Log actions don't have unique IDs in the same way, but we can target them if needed.
+        // Usually the tour won't ask to click a specific secondary log action, but if it does, we can support it.
+        // For now, if we are in a tour, generally block extraneous clicks unless specifically targeted?
+        // Or if the tour step is about "Log", we might allow opening the menu but lock the items?
+        // Let's assume strict locking: if tour is active, block unless targeted.
+        // Since we don't have 'nav-item-write' target IDs generated yet, we should probably SKIP locking for Log Action children *unless* we update the map loop to add IDs.
+        // Let's add IDs to the map loop first, then lock here.
+        /* 
+           Actually, the safer bet is: if tour is active, BLOCK ALL log actions unless we identify a specific target.
+           The user's issue is likely the menus *opening* or items being clickable when they shouldn't.
+        */
+
+        const isTargeted = currentStep?.targetId === `nav-item-${actionId}`;
+        if (isWalkthroughActive && !isTargeted) return;
+
         triggerHaptic();
         setActivePanel(null);
 
@@ -291,6 +307,10 @@ export default function LiquidNavigation({
 
     // Handle sub-menu item (Instant on Release)
     const handleSubMenuItem = (item: SubMenuItem) => {
+        // Lock Logic for Sub-Menus
+        const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
+        if (isWalkthroughActive && !isTargeted) return;
+
         triggerHaptic();
         setActivePanel(null);
 
@@ -360,58 +380,67 @@ export default function LiquidNavigation({
                             contain: 'layout paint style'
                         }}
                     >
-                        {LOG_ACTIONS.map((action, index) => (
-                            <motion.button
-                                key={action.id}
-                                // Removed layoutId to prevent morphing conflict
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                    transition: { delay: index * 0.05 }
-                                }}
-                                exit={{ opacity: 0, y: 20 }}
-                                onPointerDown={() => setPressedItem(action.id)}
-                                onPointerUp={() => setPressedItem(null)}
-                                onPointerLeave={() => setPressedItem(null)}
-                                onClick={() => handleLogAction(action.id)}
-                                className={cn(
-                                    "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
-                                    // Liquid Glass material
-                                    "bg-white/15 dark:bg-black/40",
-                                    "backdrop-blur-2xl saturate-150",
-                                    "border-0",
-                                    "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
-                                    "select-none"
-                                )}
-                                aria-label={action.accessibilityLabel}
-                                style={{
-                                    // Make sure it stays above during morph
-                                    zIndex: action.id === 'reuse' ? 60 : undefined
-                                }}
-                            >
-                                {pressedItem === action.id && (
-                                    <BubbleIndicator
-                                        isPressed={true}
-                                        layoutId="actionIndicator"
-                                        className="inset-0 rounded-2xl z-0"
-                                        activeColor={NAV_COLORS.log}
-                                    />
-                                )}
-                                <div className={cn(
-                                    "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
-                                    pressedItem === action.id ? "opacity-0" : "opacity-100",
-                                    action.id === 'write' && "bg-gradient-to-br from-violet-500 to-purple-600",
-                                    action.id === 'scan' && "bg-gradient-to-br from-blue-500 to-cyan-600",
-                                    action.id === 'symptoms' && "bg-gradient-to-br from-red-400 to-orange-500", // Warm/Alert/Feelings color
-                                    action.id === 'reuse' && "bg-gradient-to-br from-pink-500 to-rose-600",
-                                    "shadow-lg"
-                                )}>
-                                    <action.icon className="w-6 h-6 text-white" />
-                                </div>
-                                <span className="text-[10px] font-medium text-foreground/80 relative z-10">{action.label}</span>
-                            </motion.button>
-                        ))}
+                        {LOG_ACTIONS.map((action, index) => {
+                            const isTargeted = currentStep?.targetId === `nav-item-${action.id}`;
+                            const isLocked = isWalkthroughActive && !isTargeted;
+                            return (
+                                <motion.button
+                                    key={action.id}
+                                    id={`nav-item-${action.id}`}
+                                    // Removed layoutId to prevent morphing conflict
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: { delay: index * 0.05 }
+                                    }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    onPointerDown={() => {
+                                        if (isLocked) return;
+                                        setPressedItem(action.id);
+                                    }}
+                                    onPointerUp={() => setPressedItem(null)}
+                                    onPointerLeave={() => setPressedItem(null)}
+                                    onClick={() => handleLogAction(action.id)}
+                                    className={cn(
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
+                                        // Liquid Glass material
+                                        "bg-white/15 dark:bg-black/40",
+                                        "backdrop-blur-2xl saturate-150",
+                                        "border-0",
+                                        "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
+                                        "select-none",
+                                        isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
+                                    )}
+                                    aria-label={action.accessibilityLabel}
+                                    style={{
+                                        // Make sure it stays above during morph
+                                        zIndex: action.id === 'reuse' ? 60 : undefined
+                                    }}
+                                >
+                                    {pressedItem === action.id && (
+                                        <BubbleIndicator
+                                            isPressed={true}
+                                            layoutId="actionIndicator"
+                                            className="inset-0 rounded-2xl z-0"
+                                            activeColor={NAV_COLORS.log}
+                                        />
+                                    )}
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
+                                        pressedItem === action.id ? "opacity-0" : "opacity-100",
+                                        action.id === 'write' && "bg-gradient-to-br from-violet-500 to-purple-600",
+                                        action.id === 'scan' && "bg-gradient-to-br from-blue-500 to-cyan-600",
+                                        action.id === 'symptoms' && "bg-gradient-to-br from-red-400 to-orange-500", // Warm/Alert/Feelings color
+                                        action.id === 'reuse' && "bg-gradient-to-br from-pink-500 to-rose-600",
+                                        "shadow-lg"
+                                    )}>
+                                        <action.icon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="text-[10px] font-medium text-foreground/80 relative z-10">{action.label}</span>
+                                </motion.button>
+                            );
+                        })}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -431,55 +460,63 @@ export default function LiquidNavigation({
                             contain: 'layout paint style'
                         }}
                     >
-                        {filteredExploreItems.map((item, index) => (
-                            <motion.button
-                                key={item.id}
-                                id={`nav-item-${item.id}`} // Keeping the ID for walkthrough targeting
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                    transition: { delay: index * 0.05 }
-                                }}
-                                exit={{ opacity: 0, y: 20 }}
-                                onPointerDown={() => setPressedItem(item.id)}
-                                onPointerUp={() => setPressedItem(null)}
-                                onPointerLeave={() => setPressedItem(null)}
-                                onClick={() => handleSubMenuItem(item)}
-                                className={cn(
-                                    "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
-                                    // Liquid Glass material
-                                    "bg-white/15 dark:bg-black/40",
-                                    "backdrop-blur-2xl saturate-150",
-                                    "border-0",
-                                    "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
-                                    "select-none"
-                                )}
-                                aria-label={item.accessibilityLabel}
-                            >
-                                {pressedItem === item.id && (
-                                    <BubbleIndicator
-                                        isPressed={true}
-                                        className="inset-0 rounded-2xl z-0"
-                                        layoutId="exploreIndicator"
-                                        activeColor={NAV_COLORS.explore}
-                                    />
-                                )}
-                                <div className={cn(
-                                    "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
-                                    pressedItem === item.id ? "opacity-0" : "opacity-100",
-                                    item.id === 'app-tour' && "bg-gradient-to-br from-indigo-500 to-blue-600",
-                                    item.id === 'about' && "bg-gradient-to-br from-gray-500 to-slate-600",
-                                    item.id === 'feedback' && "bg-gradient-to-br from-orange-500 to-amber-600",
-                                    item.id === 'admin' && "bg-gradient-to-br from-red-500 to-rose-600",
-                                    item.id === 'version' && "bg-gradient-to-br from-purple-500 to-violet-600",
-                                    "shadow-lg"
-                                )}>
-                                    <item.icon className="w-6 h-6 text-white" />
-                                </div>
-                                <span className="text-[10px] font-medium text-foreground/80 text-center max-w-[60px] leading-tight relative z-10">{item.label}</span>
-                            </motion.button>
-                        ))}
+                        {filteredExploreItems.map((item, index) => {
+                            const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
+                            const isLocked = isWalkthroughActive && !isTargeted;
+                            return (
+                                <motion.button
+                                    key={item.id}
+                                    id={`nav-item-${item.id}`} // Keeping the ID for walkthrough targeting
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: { delay: index * 0.05 }
+                                    }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    onPointerDown={() => {
+                                        if (isLocked) return;
+                                        setPressedItem(item.id);
+                                    }}
+                                    onPointerUp={() => setPressedItem(null)}
+                                    onPointerLeave={() => setPressedItem(null)}
+                                    onClick={() => handleSubMenuItem(item)}
+                                    className={cn(
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
+                                        // Liquid Glass material
+                                        "bg-white/15 dark:bg-black/40",
+                                        "backdrop-blur-2xl saturate-150",
+                                        "border-0",
+                                        "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
+                                        "select-none",
+                                        isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
+                                    )}
+                                    aria-label={item.accessibilityLabel}
+                                >
+                                    {pressedItem === item.id && (
+                                        <BubbleIndicator
+                                            isPressed={true}
+                                            className="inset-0 rounded-2xl z-0"
+                                            layoutId="exploreIndicator"
+                                            activeColor={NAV_COLORS.explore}
+                                        />
+                                    )}
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
+                                        pressedItem === item.id ? "opacity-0" : "opacity-100",
+                                        item.id === 'app-tour' && "bg-gradient-to-br from-indigo-500 to-blue-600",
+                                        item.id === 'about' && "bg-gradient-to-br from-gray-500 to-slate-600",
+                                        item.id === 'feedback' && "bg-gradient-to-br from-orange-500 to-amber-600",
+                                        item.id === 'admin' && "bg-gradient-to-br from-red-500 to-rose-600",
+                                        item.id === 'version' && "bg-gradient-to-br from-purple-500 to-violet-600",
+                                        "shadow-lg"
+                                    )}>
+                                        <item.icon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="text-[10px] font-medium text-foreground/80 text-center max-w-[60px] leading-tight relative z-10">{item.label}</span>
+                                </motion.button>
+                            );
+                        })}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -499,52 +536,61 @@ export default function LiquidNavigation({
                             contain: 'layout paint style'
                         }}
                     >
-                        {INSIGHTS_ITEMS.map((item, index) => (
-                            <motion.button
-                                key={item.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                    transition: { delay: index * 0.05 }
-                                }}
-                                exit={{ opacity: 0, y: 20 }}
-                                onPointerDown={() => setPressedItem(item.id)}
-                                onPointerUp={() => setPressedItem(null)}
-                                onPointerLeave={() => setPressedItem(null)}
-                                onClick={() => handleSubMenuItem(item)}
-                                className={cn(
-                                    "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
-                                    // Liquid Glass material (same as Log menu)
-                                    "bg-white/15 dark:bg-black/40",
-                                    "backdrop-blur-2xl saturate-150",
-                                    "border-0",
-                                    "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
-                                    "select-none"
-                                )}
-                                aria-label={item.accessibilityLabel}
-                            >
-                                {pressedItem === item.id && (
-                                    <BubbleIndicator
-                                        isPressed={true}
-                                        className="inset-0 rounded-2xl z-0"
-                                        layoutId="insightsIndicator"
-                                        activeColor={NAV_COLORS.insights}
-                                    />
-                                )}
-                                <div className={cn(
-                                    "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
-                                    pressedItem === item.id ? "opacity-0" : "opacity-100",
-                                    item.id === 'insights' && "bg-gradient-to-br from-amber-400 to-orange-500",
-                                    item.id === 'trends' && "bg-gradient-to-br from-emerald-400 to-teal-500",
+                        {INSIGHTS_ITEMS.map((item, index) => {
+                            const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
+                            const isLocked = isWalkthroughActive && !isTargeted;
+                            return (
+                                <motion.button
+                                    key={item.id}
+                                    id={`nav-item-${item.id}`}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: { delay: index * 0.05 }
+                                    }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    onPointerDown={() => {
+                                        if (isLocked) return;
+                                        setPressedItem(item.id);
+                                    }}
+                                    onPointerUp={() => setPressedItem(null)}
+                                    onPointerLeave={() => setPressedItem(null)}
+                                    onClick={() => handleSubMenuItem(item)}
+                                    className={cn(
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
+                                        // Liquid Glass material (same as Log menu)
+                                        "bg-white/15 dark:bg-black/40",
+                                        "backdrop-blur-2xl saturate-150",
+                                        "border-0",
+                                        "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
+                                        "select-none",
+                                        isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
+                                    )}
+                                    aria-label={item.accessibilityLabel}
+                                >
+                                    {pressedItem === item.id && (
+                                        <BubbleIndicator
+                                            isPressed={true}
+                                            className="inset-0 rounded-2xl z-0"
+                                            layoutId="insightsIndicator"
+                                            activeColor={NAV_COLORS.insights}
+                                        />
+                                    )}
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
+                                        pressedItem === item.id ? "opacity-0" : "opacity-100",
+                                        item.id === 'insights' && "bg-gradient-to-br from-amber-400 to-orange-500",
+                                        item.id === 'trends' && "bg-gradient-to-br from-emerald-400 to-teal-500",
 
-                                    "shadow-lg"
-                                )}>
-                                    <item.icon className="w-6 h-6 text-white" />
-                                </div>
-                                <span className="text-[10px] font-medium text-foreground/80 relative z-10">{item.label}</span>
-                            </motion.button>
-                        ))}
+                                        "shadow-lg"
+                                    )}>
+                                        <item.icon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="text-[10px] font-medium text-foreground/80 relative z-10">{item.label}</span>
+                                </motion.button>
+                            );
+                        })}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -566,9 +612,12 @@ export default function LiquidNavigation({
                     >
                         {filteredProfileItems.map((item, index) => {
                             const Icon = item.id === 'theme' && isDarkMode ? Moon : item.icon;
+                            const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
+                            const isLocked = isWalkthroughActive && !isTargeted;
                             return (
                                 <motion.button
                                     key={item.id}
+                                    id={`nav-item-${item.id}`}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{
                                         opacity: 1,
@@ -576,7 +625,10 @@ export default function LiquidNavigation({
                                         transition: { delay: index * 0.05 }
                                     }}
                                     exit={{ opacity: 0, y: 20 }}
-                                    onPointerDown={() => setPressedItem(item.id)}
+                                    onPointerDown={() => {
+                                        if (isLocked) return;
+                                        setPressedItem(item.id);
+                                    }}
                                     onPointerUp={() => setPressedItem(null)}
                                     onPointerLeave={() => setPressedItem(null)}
                                     onClick={() => handleSubMenuItem(item)}
@@ -587,7 +639,8 @@ export default function LiquidNavigation({
                                         "backdrop-blur-2xl saturate-150",
                                         "border-0",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
-                                        "select-none"
+                                        "select-none",
+                                        isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
                                     )}
                                     aria-label={item.accessibilityLabel}
                                 >

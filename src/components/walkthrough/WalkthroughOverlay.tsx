@@ -212,7 +212,7 @@ export default function WalkthroughOverlay() {
             {/* We want to BLOCK interaction with the app (backdrop), but allow interaction with the Sheet/Card (z-[60]). 
                 So we set pointer-events-auto on the backdrop layer. 
             */}
-            <div className="fixed inset-0 z-50 pointer-events-auto">
+            <div className="fixed inset-0 z-[120] pointer-events-auto">
                 {/* Global SVG Definitions for Masks */}
                 <svg className="absolute w-0 h-0">
                     <defs>

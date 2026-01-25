@@ -8,9 +8,21 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.2";
+export const APP_VERSION = "5.1.3";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.3',
+        date: 'January 25, 2026',
+        title: 'App Tour Polish',
+        description: 'Fixed an issue where menu items were still clickable during the App Tour.',
+        features: [],
+        improvements: [],
+        fixes: [
+            'App Tour: The logic to lock menu items during the tour has been hardened.',
+            'Z-Index: Adjusted overlay layers to ensure the tour highlights are always on top.'
+        ]
+    },
     {
         version: '5.1.2',
         date: 'January 25, 2026',
