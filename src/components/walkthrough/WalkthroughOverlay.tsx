@@ -230,7 +230,7 @@ export default function WalkthroughOverlay() {
             {/* We want to BLOCK interaction with the app (backdrop), but allow interaction with the Sheet/Card. 
                 So we set pointer-events-auto on the backdrop layer. 
             */}
-            <div className={`fixed inset-0 ${Z_LAYERS.BACKDROP} pointer-events-auto`}>
+            <div className={`fixed inset-0 ${Z_LAYERS.BACKDROP} pointer-events-none`}>
 
                 <AnimatePresence>
                     {(currentStep?.id === 'welcome-1' || currentStep?.id === 'welcome-2') ? (
@@ -258,61 +258,54 @@ export default function WalkthroughOverlay() {
                         >
                             {targetRect ? (
                                 /* 
-                                   ROBUST FROST HOLE: 
-                                   We construct a mask using 4 linear gradients that cover the "outside" areas, 
-                                   leaving the center transparent. This makes the backdrop-filter apply key "outside" 
-                                   and creates a true interactive hole "inside".
+                                   GEOMETRIC 4-DIV STRATEGY (PHYSICAL HOLE):
+                                   We render 4 explicit divs (Top, Bottom, Left, Right) around the target.
+                                   The center is physically empty (no DOM element), guaranteeing the "hole" is:
+                                   1. Visually transparent (no backdrop-filter)
+                                   2. Interactive (clicks pass through because pointer-events-none is on container)
                                 */
-                                <div
-                                    className={cn("absolute inset-0", getBackdropStyle())}
-                                    style={{
-                                        maskImage: `
-                                            linear-gradient(to bottom, black ${targetRect.top}px, transparent ${targetRect.top}px),
-                                            linear-gradient(to top, black ${window.innerHeight - targetRect.bottom}px, transparent ${window.innerHeight - targetRect.bottom}px),
-                                            linear-gradient(to right, black ${targetRect.left}px, transparent ${targetRect.left}px),
-                                            linear-gradient(to left, black ${window.innerWidth - targetRect.right}px, transparent ${window.innerWidth - targetRect.right}px)
-                                        `,
-                                        WebkitMaskImage: `
-                                            linear-gradient(to bottom, black ${targetRect.top}px, transparent ${targetRect.top}px),
-                                            linear-gradient(to top, black ${window.innerHeight - targetRect.bottom}px, transparent ${window.innerHeight - targetRect.bottom}px),
-                                            linear-gradient(to right, black ${targetRect.left}px, transparent ${targetRect.left}px),
-                                            linear-gradient(to left, black ${window.innerWidth - targetRect.right}px, transparent ${window.innerWidth - targetRect.right}px)
-                                        `,
-                                        maskComposite: 'add',
-                                        WebkitMaskComposite: 'source-over', // additive by default for multiple images in standard CSS? No, actually standard is 'add' for mask-image? 
-                                        // Wait, multiple background images stack. Mask images? 
-                                        // Actually easier: One single polygon clip-path is safer if gradients are tricky to add.
-                                        // But gradients are standard. We need them to NOT overlap destructively. 
+                                <>
+                                    {/* Top Block */}
+                                    <div
+                                        className={cn("absolute left-0 right-0 top-0 pointer-events-auto", getBackdropStyle())}
+                                        style={{ height: targetRect.top }}
+                                    />
+                                    {/* Bottom Block */}
+                                    <div
+                                        className={cn("absolute left-0 right-0 bottom-0 pointer-events-auto", getBackdropStyle())}
+                                        style={{ height: window.innerHeight - targetRect.bottom }}
+                                    />
+                                    {/* Left Block (Between top/bottom) */}
+                                    <div
+                                        className={cn("absolute left-0 pointer-events-auto", getBackdropStyle())}
+                                        style={{ 
+                                            top: targetRect.top, 
+                                            height: targetRect.height, 
+                                            width: targetRect.left 
+                                        }}
+                                    />
+                                    {/* Right Block (Between top/bottom) */}
+                                    <div
+                                        className={cn("absolute right-0 pointer-events-auto", getBackdropStyle())}
+                                        style={{ 
+                                            top: targetRect.top, 
+                                            height: targetRect.height, 
+                                            left: targetRect.right // explicit left prevents width calc issues
+                                        }}
+                                    />
 
-                                        // ALTERNATIVE: Simpler "Hole" using radial-gradient with sharp stop? 
-                                        // Rectangular hole is hard with radial.
-
-                                        // Let's use the Polygon Clip Path! It's 100% reliable for "Hole in Div".
-                                        // "Outer Rect" (CW) + "Inner Rect" (CCW) = Hole.
-                                        // clip-path: polygon(0% 0%, 0% 100%, 25% 100%, ... )
-                                        // Actually, simple exclusion is:
-                                        // polygon(0% 0%, 0% 100%, 100% 100%, 100% 0%, 0% 0%,   <-- Outer Loop
-                                        //         ${left}px ${top}px, ${right}px ${top}px, ${right}px ${bottom}px, ${left}px ${bottom}px, ${left}px ${top}px) <-- Inner Loop
-
-                                        clipPath: `polygon(
-                                            0% 0%, 
-                                            0% 100%, 
-                                            100% 100%, 
-                                            100% 0%, 
-                                            0% 0%,
-                                            ${targetRect.left}px ${targetRect.top}px,
-                                            ${targetRect.left}px ${targetRect.bottom}px,
-                                            ${targetRect.right}px ${targetRect.bottom}px,
-                                            ${targetRect.right}px ${targetRect.top}px,
-                                            ${targetRect.left}px ${targetRect.top}px
-                                        )`
-                                    }}
-                                >
-                                    {/* Pulsing Border (Visual decoration - needs to be separate or it gets clipped?) 
-                                        Actually if we clip the parent, the border INSIDE the hole will be clipped out!
-                                        So the border needs to be a sibling, not a child.
-                                    */}
-                                </div>
+                                    {/* Visual Border Sibling (Visible on top of the 'hole') */}
+                                    <div
+                                        className="absolute border-2 border-primary rounded-lg box-content animate-pulse pointer-events-none"
+                                        style={{
+                                            top: targetRect.top - 4,
+                                            left: targetRect.left - 4,
+                                            width: targetRect.width + 8,
+                                            height: targetRect.height + 8,
+                                            zIndex: 125 
+                                        }}
+                                    />
+                                </>
                             ) : (
                                 /* No Target - Full Overlay */
                                 <div className={cn("absolute inset-0", getBackdropStyle())} />
