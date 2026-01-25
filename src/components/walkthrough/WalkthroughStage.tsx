@@ -76,7 +76,7 @@ export default function WalkthroughStage() {
     return (
         <AnimatePresence>
             {showMockCard && (
-                <div className="fixed inset-0 z-[51] pointer-events-none flex items-center justify-center bg-transparent">
+                <div className="fixed inset-0 z-[125] pointer-events-none flex items-center justify-center bg-transparent">
                     {/* 
                         Use pointer-events-auto on the card wrapper if we want it to be interactive.
                         We place it in the center for clear visibility.
@@ -110,7 +110,7 @@ export default function WalkthroughStage() {
                     exit={{ opacity: 0, scale: 0.8, y: 20, x: "-50%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className={cn(
-                        "fixed z-[52] pointer-events-none [&_*]:pointer-events-none", // Slightly above the card (z-51) but below Tooltip (z-60)
+                        "fixed z-[126] pointer-events-none [&_*]:pointer-events-none", // Slightly above the card (z-125) but below Tooltip (z-130)
                         "left-1/2",
                         "bottom-[15vh]",
                         "w-[90vw] max-w-sm",
@@ -154,10 +154,10 @@ export default function WalkthroughStage() {
             )}
 
             {isWalkthroughActive && (['tour-navbar-options', 'welcome-4'].includes(currentStep?.id || '')) && (
-                <div className="fixed inset-0 z-[52] pointer-events-none [&_*]:pointer-events-none">
+                <div className="fixed inset-0 z-[126] pointer-events-none [&_*]:pointer-events-none">
                     {/* 
                         Render a non-interactive clone of the actual Nav bar.
-                        It will sit on top of the frost layer (z-50/51) to appear "highlighted".
+                        It will sit on top of the frost layer (z-120) to appear "highlighted".
                         We use pointer-events-none so users can't actually click it during the tour (unless we want them to).
                       */}
                     <LiquidNavigation />
