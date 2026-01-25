@@ -98,7 +98,16 @@ const PROFILE_ITEMS: SubMenuItem[] = [
     { id: 'user-centre', icon: UserCircle, label: 'User Centre', path: '/profile', accessibilityLabel: 'User Centre, account settings' },
     { id: 'favorites', icon: Heart, label: 'Favorites', path: '/favorites', accessibilityLabel: 'Favorites, view saved entries' },
     { id: 'theme', icon: Sun, label: 'Theme', accessibilityLabel: 'Toggle light or dark mode' },
-    { id: 'admin', icon: Users, label: 'Admin', path: '/admin/feedback', accessibilityLabel: 'Admin Dashboard, manage app', adminOnly: true },
+    {
+        id: 'admin',
+        icon: Users,
+        label: 'Admin',
+        path: '/admin',
+        accessibilityLabel: 'Admin Dashboard, manage app',
+        adminOnly: true,
+        // Mock indicator for now, or passed via props. 
+        // Real implementation would use the new prop: showDot 
+    },
 ];
 
 // iOS 26 "Liquid Glass" Physics - Cartoonish, mass-aware, spring-loaded
@@ -191,6 +200,28 @@ export default function LiquidNavigation({
     // Panel states
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
     const [pressedItem, setPressedItem] = useState<string | null>(null);
+    const [showAdminDot, setShowAdminDot] = useState(false);
+
+    // Poll for new joiners if admin
+    useEffect(() => {
+        if (!isAdmin) return;
+        const check = async () => {
+            // Dynamic import to avoid server action issues during build if incorrectly bundled? 
+            // Or just call it. Next.js handles server actions in client components.
+            try {
+                const { checkNewJoinersSince } = await import('@/actions/admin');
+                const hasNew = await checkNewJoinersSince(Date.now());
+                setShowAdminDot(hasNew);
+            } catch (e) {
+                // ignore
+            }
+        };
+        // Check once on mount
+        check();
+        // Optional: Poll every 5 mins?
+        // const interval = setInterval(check, 300000);
+        // return () => clearInterval(interval);
+    }, [isAdmin]);
 
     // Auto-open Explore panel during Walkthrough Feedback step
     useEffect(() => {
@@ -578,6 +609,9 @@ export default function LiquidNavigation({
                                         "shadow-lg"
                                     )}>
                                         <Icon className="w-6 h-6 text-white" />
+                                        {item.id === 'admin' && showAdminDot && (
+                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white/20" />
+                                        )}
                                     </div>
                                     <span className="text-[10px] font-medium text-foreground/80 text-center max-w-[60px] leading-tight relative z-10">{item.label}</span>
                                 </motion.button>
@@ -657,10 +691,16 @@ export default function LiquidNavigation({
                         const Icon = item.icon;
                         const isPressed = pressedItem === item.id;
 
+                        const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
+                        // Lock logic: If walkthrough active, only allow interaction if this specific item is the target
+                        const isLocked = isWalkthroughActive && !isTargeted;
+
                         return (
                             <motion.button
                                 key={item.id}
+                                id={`nav-item-${item.id}`} // Ensure ID exists for tour targeting
                                 onPointerDown={() => {
+                                    if (isLocked) return;
                                     handleNavPress(item);
                                     setPressedItem(item.id);
                                 }}
@@ -672,7 +712,8 @@ export default function LiquidNavigation({
                                     "flex-1 h-full",
                                     "rounded-[24px]",
                                     isPressed && "z-20",
-                                    "select-none cursor-pointer"
+                                    "select-none cursor-pointer",
+                                    isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none" // Visual feedback for lock
                                 )}
                                 style={{
                                     WebkitTapHighlightColor: "transparent"

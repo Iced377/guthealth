@@ -11,9 +11,10 @@ const MotionLink = motion(Link);
 
 export default function AboutPage() {
     const { user } = useAuth();
+    const scrollRef = React.useRef<HTMLDivElement>(null);
 
     return (
-        <div className="min-h-screen scroll-smooth bg-background text-foreground block overflow-x-clip selection:bg-primary/30 font-body antialiased safe-area-pt">
+        <div ref={scrollRef} className="fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45]">
             {/* Minimalistic Back Button */}
             <MotionLink
                 href="/"
@@ -28,7 +29,7 @@ export default function AboutPage() {
 
             <main>
                 <HeroSection />
-                <ProblemSection />
+                <ProblemSection scrollContainerRef={scrollRef} />
                 <StorySection />
                 <FeatureGrid />
                 <SecuritySection />

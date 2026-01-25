@@ -247,10 +247,11 @@ const NavigationAndDialogs = () => {
             <AddVitalsDialog
                 isOpen={isAddVitalsDialogOpen}
                 onOpenChange={(open) => !open && closeAddVitalsDialog()}
-                onSubmit={(w, s) => handleLogVitals(w, s, vitalsDialogDate)}
+                onSubmit={(w, s, f) => handleLogVitals(w, s, f, vitalsDialogDate)}
                 currentDate={vitalsDialogDate}
                 initialWeight={initialVitalsWeight}
                 initialSteps={initialVitalsSteps}
+                initialFatPercent={useActionContext().initialVitalsFatPercent}
             />
 
             <ReleaseNotesSheet

@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, PanInfo, useDragControls } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ArrowUp, Scale, Footprints, X } from 'lucide-react';
+import { ArrowUp, Scale, Footprints, X, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // --- Visual Viewport Hook (Copied from ComposeOverlay) ---
@@ -64,10 +64,11 @@ function useVisualViewportMetrics() {
 interface AddVitalsDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (weight: number | null, steps: number | null) => Promise<void>;
+    onSubmit: (weight: number | null, steps: number | null, fatPercent: number | null) => Promise<void>;
     currentDate: Date;
     initialWeight?: number | null;
     initialSteps?: number | null;
+    initialFatPercent?: number | null;
 }
 
 export default function AddVitalsDialog({
@@ -77,6 +78,7 @@ export default function AddVitalsDialog({
     currentDate,
     initialWeight,
     initialSteps,
+    initialFatPercent,
 }: AddVitalsDialogProps) {
     const [mounted, setMounted] = useState(false);
     const { isDarkMode } = useTheme();
@@ -86,6 +88,7 @@ export default function AddVitalsDialog({
     // Form State
     const [weight, setWeight] = useState('');
     const [steps, setSteps] = useState('');
+    const [fatPercent, setFatPercent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Refs
@@ -291,6 +294,31 @@ export default function AddVitalsDialog({
                                             </div>
                                         </div>
 
+                                    </div>
+
+                                    {/* Body Fat Row */}
+                                    <div className="flex items-center px-5 py-4 gap-4">
+                                        <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0">
+                                            <Percent className="w-5 h-5 text-yellow-500" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label htmlFor="fat-input" className="sr-only">Body Fat %</label>
+                                            <input
+                                                id="fat-input"
+                                                type="number"
+                                                step="0.1"
+                                                value={fatPercent}
+                                                onChange={(e) => setFatPercent(e.target.value)}
+                                                placeholder="Body Fat %"
+                                                className={cn(
+                                                    "w-full bg-transparent outline-none border-0 p-0 text-[18px] font-medium placeholder:font-normal",
+                                                    isDarkMode ? "text-white/90 placeholder:text-white/30" : "text-black/90 placeholder:text-black/30"
+                                                )}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleSubmit();
+                                                }}
+                                            />
+                                        </div>
                                     </div>
 
                                 </div>

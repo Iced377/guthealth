@@ -133,58 +133,79 @@ export default function RootPage() {
 
   if (!authUser && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background text-foreground">
-        {/* Navbar removed as requested - GuestHomePage handles its own header if needed */}
-
-        <GuestHomePage
-          onLogFoodClick={openSimplifiedAddFoodDialog}
-          lastLoggedItem={(timelineEntries.length > 0 && timelineEntries[0].entryType === 'food') ? (timelineEntries[0] as any) : null}
-          isSheetOpen={isGuestSheetOpen}
-          onSheetOpenChange={setIsGuestSheetOpen}
-          // Mapping handlers for Guest (ActionContext handles local state update, so these updates work)
-          onSetFeedback={handleSetFoodFeedback}
-          onRemoveItem={handleRemoveTimelineEntry}
-          isLoadingAiForItem={timelineEntries.length > 0 ? !!isLoadingAi[timelineEntries[0].id] : false}
-        />
-      </div>
+      <LandingPageStructure />
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {authUser ? (
-        <LiquidHeader title={format(currentDate, 'EEEE, MMM d')} />
-      ) : null}
+      <LiquidHeader title={format(currentDate, 'EEEE, MMM d')} />
 
       <div id="dashboard-container" className="flex-grow flex flex-col items-center justify-start pb-24">
-        {authUser ? (
-          <DashboardContent
-            userProfile={userProfile!}
-            isLoading={isDataLoading}
-            timelineEntries={timelineEntries}
-            dailyNutritionSummary={dailyNutritionSummary}
-            isLoadingAi={isLoadingAi}
-            onSetFeedback={handleSetFoodFeedback}
-            onRemoveTimelineEntry={handleRemoveTimelineEntry}
-            onLogSymptomsForFood={(foodItemId) => openSymptomLogDialog({ type: 'meal', mealId: foodItemId })}
-            onEditIngredients={handleEditTimelineEntry}
-            onRepeatMeal={handleRepeatMeal}
-            onToggleFavorite={handleToggleFavoriteFoodItem}
-            onLogFoodAIClick={openSimplifiedAddFoodDialog}
-            onIdentifyByPhotoClick={openIdentifyByPhotoDialog}
-            onLogSymptomsClick={openSymptomLogDialog}
-            onLogPreviousMealClick={openLogPreviousMealDialog}
-            groupedTimelineEntries={groupedTimelineEntries}
-            currentDate={currentDate}
-            onDateChange={setCurrentDate}
-          />
-        ) : (
-          <LandingPageClientContent
-            showHeroCTAButton={false}
-            betaUserMessage={betaUserMessageContent}
-          />
-        )}
+        <DashboardContent
+          userProfile={userProfile!}
+          isLoading={isDataLoading}
+          timelineEntries={timelineEntries}
+          dailyNutritionSummary={dailyNutritionSummary}
+          isLoadingAi={isLoadingAi}
+          onSetFeedback={handleSetFoodFeedback}
+          onRemoveTimelineEntry={handleRemoveTimelineEntry}
+          onLogSymptomsForFood={(foodItemId) => openSymptomLogDialog({ type: 'meal', mealId: foodItemId })}
+          onEditIngredients={handleEditTimelineEntry}
+          onRepeatMeal={handleRepeatMeal}
+          onToggleFavorite={handleToggleFavoriteFoodItem}
+          onLogFoodAIClick={openSimplifiedAddFoodDialog}
+          onIdentifyByPhotoClick={openIdentifyByPhotoDialog}
+          onLogSymptomsClick={openSymptomLogDialog}
+          onLogPreviousMealClick={openLogPreviousMealDialog}
+          groupedTimelineEntries={groupedTimelineEntries}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+        />
       </div>
+    </div>
+  );
+}
+
+// --- LANDING PAGE REFRACTOR ---
+import { HeroSection, ProblemSection, StorySection, FeatureGrid, SecuritySection, FinalCTA } from '@/components/about/AboutSections';
+import { useRef } from 'react';
+import { motion } from 'framer-motion';
+import { LogIn } from 'lucide-react';
+import { version } from '../../package.json'; // Ensure this path is correct based on project structure
+
+const MotionLink = motion(Link);
+
+function LandingPageStructure() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={scrollRef} className="fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45]">
+      {/* Version Display (Top Left) */}
+      <div className="fixed top-14 left-6 z-50 pointer-events-none opacity-50 text-xs font-mono text-muted-foreground">
+        v{version}
+      </div>
+
+      {/* Login Button (Top Right) */}
+      <MotionLink
+        href="/login"
+        className="fixed top-14 right-6 z-50 px-4 py-2 rounded-full bg-background/50 backdrop-blur-md border border-white/10 text-sm font-medium text-foreground hover:bg-background/80 shadow-sm flex items-center gap-2"
+        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+      >
+        Start / Login
+        <LogIn className="w-4 h-4" />
+      </MotionLink>
+
+      <main>
+        <HeroSection />
+        <ProblemSection scrollContainerRef={scrollRef} />
+        <StorySection />
+        <FeatureGrid />
+        <SecuritySection />
+        <FinalCTA isLoggedIn={false} />
+      </main>
     </div>
   );
 }

@@ -69,7 +69,7 @@ export default function SignUpPage() {
             </>
           ) : (
             <div className="flex flex-col space-y-4">
-              <GoogleAuthButton text="Sign In / Sign Up with Google (Native v5.0.6)" />
+              <GoogleAuthButton text="Sign In / Sign Up with Google" />
               <div className="text-center">
                 <Button
                   variant="link"
