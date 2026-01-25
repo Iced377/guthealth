@@ -256,97 +256,80 @@ export default function WalkthroughOverlay() {
                             exit={{ opacity: 0 }}
                             className={cn("absolute inset-0", getBackdropStyle())}
                         >
-                            {targetRect && (
-                                <svg className="absolute inset-0 w-full h-full">
-                                    <defs>
-                                        <mask id="highlight-mask">
-                                            <rect className="w-full h-full fill-white" />
-                                            <rect
-                                                x={targetRect.left - 4}
-                                                y={targetRect.top - 4}
-                                                width={targetRect.width + 8}
-                                                height={targetRect.height + 8}
-                                                rx="8"
-                                                className="fill-black"
-                                            />
-                                        </mask>
-                                    </defs>
-                                    {/* The Masked Overlay */}
-                                    {/* 
-                                      CRITICAL FIX: 
-                                      We apply the mask to this overlay div/rect so a "Hole" is cut out 
-                                      Wait, we can't apply SVG mask to a parent HTML div easily without webkit-mask-image complexity 
-                                      for dynamic rects. 
-                                      
-                                      Easier approach: Render the SVG *as* the overlay.
-                                      For "Dark" (bg-black/60), we use <rect fill="black/60" mask="url(#highlight-mask)" />.
-                                      
-                                      For "Frost" (backdrop-blur), SVG cannot do backdrop-filter on a regular <rect>.
-                                      
-                                      Solution for Frost Hole:
-                                      Use `mask-image` on the HTML Div. 
-                                      We can construct a dynamic `mask-image` using CSS gradients or `element()` (not supported).
-                                      OR assume standard SVG mask usage on the container? 
-                                      
-                                      Actually, simplest robust "Hole" for Frost:
-                                      Clip-path: polygon(...) -- Hard for rounded rects and outside.
-                                      Mask-Image with radial-gradient -- Hard for rects.
-                                      
-                                      Let's stick to the "Dark" style logic using SVG.
-                                      If the User wants "Frost", we can try `foreignObject` or `mask-image: url(#svg-mask)`.
-                                      
-                                      Let's try referencing the SVG ID in CSS `mask-image`.
-                                      style={{ maskImage: 'url(#highlight-mask)', WebkitMaskImage: 'url(#highlight-mask)' }}
-                                    */}
-                                    {/* Define the mask in the SVG defs above, then apply it to the parent div? */}
-                                </svg>
-                            )}
-
-                            {/* 
-                                IMPLEMENTATION STRATEGY FOR FROST HOLE:
-                                We use the SVG to define the mask.
-                                We apply `mask: url(#highlight-mask)` to this div.
-                            */}
                             {targetRect ? (
-                                <>
-                                    <svg className="absolute w-0 h-0">
-                                        <defs>
-                                            <mask id="highlight-mask-definition">
-                                                <rect className="w-full h-full fill-white" />
-                                                <rect
-                                                    x={targetRect.left - 4}
-                                                    y={targetRect.top - 4}
-                                                    width={targetRect.width + 8}
-                                                    height={targetRect.height + 8}
-                                                    rx="8"
-                                                    className="fill-black"
-                                                />
-                                            </mask>
-                                        </defs>
-                                    </svg>
-                                    <div
-                                        className={cn("absolute inset-0", getBackdropStyle())}
-                                        style={{
-                                            // The mask makes the "black" part of mask transparent (hole), and "white" part opaque (frost).
-                                            mask: 'url(#highlight-mask-definition)',
-                                            WebkitMask: 'url(#highlight-mask-definition)'
-                                        }}
-                                    />
+                                /* 
+                                   ROBUST FROST HOLE: 
+                                   We construct a mask using 4 linear gradients that cover the "outside" areas, 
+                                   leaving the center transparent. This makes the backdrop-filter apply key "outside" 
+                                   and creates a true interactive hole "inside".
+                                */
+                                <div
+                                    className={cn("absolute inset-0", getBackdropStyle())}
+                                    style={{
+                                        maskImage: `
+                                            linear-gradient(to bottom, black ${targetRect.top}px, transparent ${targetRect.top}px),
+                                            linear-gradient(to top, black ${window.innerHeight - targetRect.bottom}px, transparent ${window.innerHeight - targetRect.bottom}px),
+                                            linear-gradient(to right, black ${targetRect.left}px, transparent ${targetRect.left}px),
+                                            linear-gradient(to left, black ${window.innerWidth - targetRect.right}px, transparent ${window.innerWidth - targetRect.right}px)
+                                        `,
+                                        WebkitMaskImage: `
+                                            linear-gradient(to bottom, black ${targetRect.top}px, transparent ${targetRect.top}px),
+                                            linear-gradient(to top, black ${window.innerHeight - targetRect.bottom}px, transparent ${window.innerHeight - targetRect.bottom}px),
+                                            linear-gradient(to right, black ${targetRect.left}px, transparent ${targetRect.left}px),
+                                            linear-gradient(to left, black ${window.innerWidth - targetRect.right}px, transparent ${window.innerWidth - targetRect.right}px)
+                                        `,
+                                        maskComposite: 'add',
+                                        WebkitMaskComposite: 'source-over', // additive by default for multiple images in standard CSS? No, actually standard is 'add' for mask-image? 
+                                        // Wait, multiple background images stack. Mask images? 
+                                        // Actually easier: One single polygon clip-path is safer if gradients are tricky to add.
+                                        // But gradients are standard. We need them to NOT overlap destructively. 
 
-                                    {/* Pulsing Border (Visual decoration) */}
-                                    <div
-                                        className="absolute border-2 border-primary rounded-lg box-content animate-pulse pointer-events-none"
-                                        style={{
-                                            top: targetRect.top - 4,
-                                            left: targetRect.left - 4,
-                                            width: targetRect.width + 8,
-                                            height: targetRect.height + 8,
-                                        }}
-                                    />
-                                </>
+                                        // ALTERNATIVE: Simpler "Hole" using radial-gradient with sharp stop? 
+                                        // Rectangular hole is hard with radial.
+
+                                        // Let's use the Polygon Clip Path! It's 100% reliable for "Hole in Div".
+                                        // "Outer Rect" (CW) + "Inner Rect" (CCW) = Hole.
+                                        // clip-path: polygon(0% 0%, 0% 100%, 25% 100%, ... )
+                                        // Actually, simple exclusion is:
+                                        // polygon(0% 0%, 0% 100%, 100% 100%, 100% 0%, 0% 0%,   <-- Outer Loop
+                                        //         ${left}px ${top}px, ${right}px ${top}px, ${right}px ${bottom}px, ${left}px ${bottom}px, ${left}px ${top}px) <-- Inner Loop
+
+                                        clipPath: `polygon(
+                                            0% 0%, 
+                                            0% 100%, 
+                                            100% 100%, 
+                                            100% 0%, 
+                                            0% 0%,
+                                            ${targetRect.left}px ${targetRect.top}px,
+                                            ${targetRect.left}px ${targetRect.bottom}px,
+                                            ${targetRect.right}px ${targetRect.bottom}px,
+                                            ${targetRect.right}px ${targetRect.top}px,
+                                            ${targetRect.left}px ${targetRect.top}px
+                                        )`
+                                    }}
+                                >
+                                    {/* Pulsing Border (Visual decoration - needs to be separate or it gets clipped?) 
+                                        Actually if we clip the parent, the border INSIDE the hole will be clipped out!
+                                        So the border needs to be a sibling, not a child.
+                                    */}
+                                </div>
                             ) : (
                                 /* No Target - Full Overlay */
                                 <div className={cn("absolute inset-0", getBackdropStyle())} />
+                            )}
+
+                            {/* Visual Border Sibling (Visible on top of the 'hole') */}
+                            {targetRect && (
+                                <div
+                                    className="absolute border-2 border-primary rounded-lg box-content animate-pulse pointer-events-none"
+                                    style={{
+                                        top: targetRect.top - 4,
+                                        left: targetRect.left - 4,
+                                        width: targetRect.width + 8,
+                                        height: targetRect.height + 8,
+                                        zIndex: 125
+                                    }}
+                                />
                             )}
                         </motion.div>
                     )}
