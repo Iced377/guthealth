@@ -8,9 +8,26 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.1";
+export const APP_VERSION = "5.1.2";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.2',
+        date: 'January 25, 2026',
+        title: 'Acquisition & Admin Update',
+        description: 'Complete rollout of the Acquisition Dashboard, Admin Portal navigation fixes, and improved Apple Health historical syncing.',
+        features: [
+            'Admin Portal: Direct links to the new Acquisition Dashboard.',
+            'Apple Health: Enhanced permission requests and historical data sync.',
+            'App Tour: Fixed menu locking during the tour.'
+        ],
+        improvements: [
+            'Performance: Faster video loading on the About page.',
+        ],
+        fixes: [
+            'Fixed critical deployment issue where features were missing from v5.1.1.'
+        ]
+    },
     {
         version: '5.1.1',
         date: 'January 25, 2026',
