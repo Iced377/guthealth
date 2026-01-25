@@ -60,7 +60,8 @@ export default function WalkthroughStage() {
     const { isWalkthroughActive, currentStep } = useWalkthrough();
 
     // specific steps that require the mock card
-    const showMockCard = isWalkthroughActive && currentStep?.id.startsWith('tour-meal-card');
+    // Hide card during "actions" step as requested
+    const showMockCard = isWalkthroughActive && currentStep?.id.startsWith('tour-meal-card') && currentStep?.id !== 'tour-meal-card-actions';
 
     const showActionMenu = isWalkthroughActive && currentStep?.id === 'tour-meal-card-actions';
 
