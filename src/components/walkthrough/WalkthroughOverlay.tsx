@@ -206,23 +206,35 @@ export default function WalkthroughOverlay() {
         </div>
     );
 
+    // --- Z-INDEX STRUCTURE ---
+    const Z_LAYERS = {
+        BACKDROP: 'z-[120]',
+        CONTENT: 'z-[130]', // Must be above BACKDROP
+    };
+
+    // Helper: Determine backdrop style
+    const getBackdropStyle = () => {
+        // Special case: Meal Card Tour & Welcome 4 (Feedback) used the "Frost" look
+        // We preserve this aesthetic but NOW we will apply the mask.
+        const FROST_STEPS = ['tour-meal-card-intro', 'tour-meal-card-macros', 'tour-meal-card-indicators', 'tour-meal-card-actions', 'tour-navbar-options', 'welcome-4'];
+        const isFrost = FROST_STEPS.includes(currentStep?.id || '');
+
+        return isFrost
+            ? "bg-white/30 backdrop-blur-xl"
+            : "bg-black/60";
+    };
+
     return (
         <>
-            {/* 1. SPOTLIGHT LAYER (Fixed z-50) */}
-            {/* We want to BLOCK interaction with the app (backdrop), but allow interaction with the Sheet/Card (z-[60]). 
+            {/* 1. SPOTLIGHT LAYER */}
+            {/* We want to BLOCK interaction with the app (backdrop), but allow interaction with the Sheet/Card. 
                 So we set pointer-events-auto on the backdrop layer. 
             */}
-            <div className="fixed inset-0 z-[120] pointer-events-auto">
-                {/* Global SVG Definitions for Masks */}
-                <svg className="absolute w-0 h-0">
-                    <defs>
-                        {/* Removed expading-frost-mask */}
-                    </defs>
-                </svg>
+            <div className={`fixed inset-0 ${Z_LAYERS.BACKDROP} pointer-events-auto`}>
 
                 <AnimatePresence>
                     {(currentStep?.id === 'welcome-1' || currentStep?.id === 'welcome-2') ? (
-                        /* 1. Dashboard Frozen Reveal (Circle) */
+                        /* 1. Dashboard Frozen Reveal (Circle) - Unchanged Special Logic */
                         <motion.div
                             key="reveal-layer"
                             initial={{ opacity: 0 }}
@@ -234,68 +246,115 @@ export default function WalkthroughOverlay() {
                                 WebkitMaskImage: maskImage
                             }}
                         />
-                    ) : (['tour-meal-card-intro', 'tour-meal-card-macros', 'tour-meal-card-indicators', 'tour-meal-card-actions', 'tour-navbar-options', 'welcome-4'].includes(currentStep?.id || '')) ? (
-                        /* 2. Mock Card Frost (Simple Backdrop) */
-                        <motion.div
-                            key="card-frost-layer"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-white/30 backdrop-blur-xl"
-                        // No mask needed, just a simple layer. The card is z-51.
-                        />
-                    ) : targetRect ? (
-                        /* 3. Standard Dark Spotlight */
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0"
-                        >
-                            <svg className="absolute inset-0 w-full h-full">
-                                <defs>
-                                    <mask id="highlight-mask">
-                                        <rect className="w-full h-full fill-white" />
-                                        <rect
-                                            x={targetRect.left - 4}
-                                            y={targetRect.top - 4}
-                                            width={targetRect.width + 8}
-                                            height={targetRect.height + 8}
-                                            rx="8"
-                                            className="fill-black"
-                                        />
-                                    </mask>
-                                </defs>
-                                {/* This element effectively blocks clicks because of the container's pointer-events-auto */}
-                                <rect className="w-full h-full fill-black/60" mask="url(#highlight-mask)" />
-                            </svg>
-                            {/* Pulsing Border */}
-                            <div
-                                className="absolute border-2 border-primary rounded-lg box-content animate-pulse"
-                                style={{
-                                    top: targetRect.top - 4,
-                                    left: targetRect.left - 4,
-                                    width: targetRect.width + 8,
-                                    height: targetRect.height + 8,
-                                }}
-                            />
-                        </motion.div>
                     ) : (
+                        /* Standard Spotlight (Grid, Meal Cards, etc.) */
+                        /* Whether "Dark" or "Frost", we use the SAME masking logic now. */
                         <motion.div
-                            key="standard-backdrop"
+                            key="spotlight-backdrop"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="absolute inset-0 bg-black/60"
-                        />
+                            exit={{ opacity: 0 }}
+                            className={cn("absolute inset-0", getBackdropStyle())}
+                        >
+                            {targetRect && (
+                                <svg className="absolute inset-0 w-full h-full">
+                                    <defs>
+                                        <mask id="highlight-mask">
+                                            <rect className="w-full h-full fill-white" />
+                                            <rect
+                                                x={targetRect.left - 4}
+                                                y={targetRect.top - 4}
+                                                width={targetRect.width + 8}
+                                                height={targetRect.height + 8}
+                                                rx="8"
+                                                className="fill-black"
+                                            />
+                                        </mask>
+                                    </defs>
+                                    {/* The Masked Overlay */}
+                                    {/* 
+                                      CRITICAL FIX: 
+                                      We apply the mask to this overlay div/rect so a "Hole" is cut out 
+                                      Wait, we can't apply SVG mask to a parent HTML div easily without webkit-mask-image complexity 
+                                      for dynamic rects. 
+                                      
+                                      Easier approach: Render the SVG *as* the overlay.
+                                      For "Dark" (bg-black/60), we use <rect fill="black/60" mask="url(#highlight-mask)" />.
+                                      
+                                      For "Frost" (backdrop-blur), SVG cannot do backdrop-filter on a regular <rect>.
+                                      
+                                      Solution for Frost Hole:
+                                      Use `mask-image` on the HTML Div. 
+                                      We can construct a dynamic `mask-image` using CSS gradients or `element()` (not supported).
+                                      OR assume standard SVG mask usage on the container? 
+                                      
+                                      Actually, simplest robust "Hole" for Frost:
+                                      Clip-path: polygon(...) -- Hard for rounded rects and outside.
+                                      Mask-Image with radial-gradient -- Hard for rects.
+                                      
+                                      Let's stick to the "Dark" style logic using SVG.
+                                      If the User wants "Frost", we can try `foreignObject` or `mask-image: url(#svg-mask)`.
+                                      
+                                      Let's try referencing the SVG ID in CSS `mask-image`.
+                                      style={{ maskImage: 'url(#highlight-mask)', WebkitMaskImage: 'url(#highlight-mask)' }}
+                                    */}
+                                    {/* Define the mask in the SVG defs above, then apply it to the parent div? */}
+                                </svg>
+                            )}
+
+                            {/* 
+                                IMPLEMENTATION STRATEGY FOR FROST HOLE:
+                                We use the SVG to define the mask.
+                                We apply `mask: url(#highlight-mask)` to this div.
+                            */}
+                            {targetRect ? (
+                                <>
+                                    <svg className="absolute w-0 h-0">
+                                        <defs>
+                                            <mask id="highlight-mask-definition">
+                                                <rect className="w-full h-full fill-white" />
+                                                <rect
+                                                    x={targetRect.left - 4}
+                                                    y={targetRect.top - 4}
+                                                    width={targetRect.width + 8}
+                                                    height={targetRect.height + 8}
+                                                    rx="8"
+                                                    className="fill-black"
+                                                />
+                                            </mask>
+                                        </defs>
+                                    </svg>
+                                    <div
+                                        className={cn("absolute inset-0", getBackdropStyle())}
+                                        style={{
+                                            // The mask makes the "black" part of mask transparent (hole), and "white" part opaque (frost).
+                                            mask: 'url(#highlight-mask-definition)',
+                                            WebkitMask: 'url(#highlight-mask-definition)'
+                                        }}
+                                    />
+
+                                    {/* Pulsing Border (Visual decoration) */}
+                                    <div
+                                        className="absolute border-2 border-primary rounded-lg box-content animate-pulse pointer-events-none"
+                                        style={{
+                                            top: targetRect.top - 4,
+                                            left: targetRect.left - 4,
+                                            width: targetRect.width + 8,
+                                            height: targetRect.height + 8,
+                                        }}
+                                    />
+                                </>
+                            ) : (
+                                /* No Target - Full Overlay */
+                                <div className={cn("absolute inset-0", getBackdropStyle())} />
+                            )}
+                        </motion.div>
                     )}
                 </AnimatePresence>
-
-
             </div>
 
-            {/* 1.5. POINTER LAYER (Fixed z-[55]) */}
-            {/* Must be OUTSIDE the z-50 container to sit above the Card (z-51) but below Tooltip (z-60) */}
-            <div className="fixed inset-0 z-[55] pointer-events-none overflow-hidden">
+            {/* 1.5. POINTER LAYER (Z-125) */}
+            <div className={`fixed inset-0 z-[125] pointer-events-none overflow-hidden`} >
                 {/* Animated Arrow Pointer for Macros/Indicators */}
                 <AnimatePresence>
                     {targetRect && (['tour-meal-card-macros', 'tour-meal-card-indicators'].includes(currentStep?.id || '')) && (
@@ -327,7 +386,7 @@ export default function WalkthroughOverlay() {
             {/* 2. CONTENT LAYER (Z-130, Interactive - Must be above Backdrop z-120) */}
             {currentStep.customType === 'avatar-modal' ? (
                 // --- SPECIAL AVATAR MODAL ---
-                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+                <div className={`fixed inset-0 ${Z_LAYERS.CONTENT} flex items-center justify-center p-4`}>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -373,7 +432,7 @@ export default function WalkthroughOverlay() {
                     <SheetContent
                         side={currentStep.position === 'top' ? "top" : "bottom"}
                         className={cn(
-                            "z-[130] pb-8 pt-4",
+                            Z_LAYERS.CONTENT, "pb-8 pt-4",
                             // Hide default Shadcn Close button (it's usually the last child, absolute positioned)
                             "[&>button]:hidden",
                             // Add extra top padding if top-sheet to avoid status bar/notch overlap issues if needed
@@ -407,7 +466,7 @@ export default function WalkthroughOverlay() {
             ) : (
                 // --- DESKTOP: Fixed Card with Dynamic Position ---
                 <div className={cn(
-                    "fixed z-[130] w-96 max-w-[calc(100vw-4rem)] transition-all duration-500 ease-in-out",
+                    "fixed", Z_LAYERS.CONTENT, "w-96 max-w-[calc(100vw-4rem)] transition-all duration-500 ease-in-out",
                     // Dynamic Positioning Logic
                     currentStep.position === 'center' && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
                     currentStep.position === 'top' && "top-24 right-8", // Below navbar
