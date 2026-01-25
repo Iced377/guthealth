@@ -8,9 +8,20 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.5";
+export const APP_VERSION = "5.1.6";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.6',
+        date: 'January 25, 2026',
+        title: 'Vitals Logging Fix',
+        description: 'Fixed a crash when saving weight or body fat percentage.',
+        features: [],
+        improvements: [],
+        fixes: [
+            'Fixed an issue where saving only one vital (e.g. just Body Fat %) would fail.'
+        ]
+    },
     {
         version: '5.1.5',
         date: 'January 25, 2026',

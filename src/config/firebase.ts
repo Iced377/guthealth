@@ -23,6 +23,7 @@ if (typeof window !== 'undefined') {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache(),
     experimentalForceLongPolling: true, // Fix for iOS WebView transport errors
+    ignoreUndefinedProperties: true, // Prevent crashes when saving optional fields (e.g. vitals)
   });
 } else {
   // Use default settings for server-side rendering
