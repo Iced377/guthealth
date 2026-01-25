@@ -8,9 +8,20 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.3";
+export const APP_VERSION = "5.1.4";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.4',
+        date: 'January 25, 2026',
+        title: 'Connection Stability',
+        description: 'Fixed a critical connectivity issue affecting the iOS app in Testflight.',
+        features: [],
+        improvements: [],
+        fixes: [
+            'Connectivity: Resolved "transport errored" issues by enforcing long-polling for database connections.',
+        ]
+    },
     {
         version: '5.1.3',
         date: 'January 25, 2026',

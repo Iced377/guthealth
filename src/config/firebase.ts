@@ -21,7 +21,8 @@ const auth = getAuth(app);
 let db: Firestore;
 if (typeof window !== 'undefined') {
   db = initializeFirestore(app, {
-    localCache: persistentLocalCache()
+    localCache: persistentLocalCache(),
+    experimentalForceLongPolling: true, // Fix for iOS WebView transport errors
   });
 } else {
   // Use default settings for server-side rendering
