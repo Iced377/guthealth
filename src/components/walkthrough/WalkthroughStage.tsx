@@ -161,7 +161,7 @@ export default function WalkthroughStage() {
                         It will sit on top of the frost layer (z-120) to appear "highlighted".
                         We use pointer-events-none so users can't actually click it during the tour (unless we want them to).
                       */}
-                    <LiquidNavigation />
+                    <LiquidNavigation forceActiveTab="insights" />
                 </div>
             )}
         </AnimatePresence>

@@ -163,7 +163,7 @@ const SPRING_REVEAL = {
 };
 
 // ============================================================================
-// MAIN COMPONENT
+// COMPONENT
 // ============================================================================
 
 interface LiquidNavigationProps {
@@ -171,12 +171,16 @@ interface LiquidNavigationProps {
     onScanClick?: () => void;
     onReuseClick?: () => void;
     onSymptomsClick?: () => void;
-    onFeedbackClick?: () => void;
     onAppTourClick?: () => void;
     onVersionClick?: () => void;
+
+    // Admin/Debug
     isAdmin?: boolean;
-    hasCompletedTour?: boolean;
     isReleaseNotesOpen?: boolean;
+
+    // Tour Override
+    forceActiveTab?: string;
+    hasCompletedTour?: boolean;
 }
 
 export default function LiquidNavigation({
@@ -184,12 +188,12 @@ export default function LiquidNavigation({
     onScanClick,
     onReuseClick,
     onSymptomsClick,
-    onFeedbackClick,
     onAppTourClick,
     onVersionClick,
     isAdmin = false,
-    hasCompletedTour = false,
     isReleaseNotesOpen = false,
+    forceActiveTab,
+    hasCompletedTour = false,
 }: LiquidNavigationProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -261,13 +265,14 @@ export default function LiquidNavigation({
 
     // Determine active tab
     const getActiveTab = useCallback(() => {
+        if (forceActiveTab) return forceActiveTab;
         if (isReleaseNotesOpen) return 'explore';
         if (pathname === '/') return 'home';
         if (pathname.startsWith('/favorites')) return 'explore';
         if (pathname.startsWith('/insights') || pathname.startsWith('/trends')) return 'insights';
         if (pathname.startsWith('/profile')) return 'profile';
         return 'home';
-    }, [pathname, isReleaseNotesOpen]);
+    }, [pathname, isReleaseNotesOpen, forceActiveTab]);
 
     const activeTab = getActiveTab();
 
