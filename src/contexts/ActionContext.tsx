@@ -17,7 +17,7 @@ import {
     getDoc,
     deleteDoc
 } from 'firebase/firestore';
-import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, LoggedSymptom } from '@/types';
+import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, LoggedSymptom, PedometerLog, FitbitLog } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';

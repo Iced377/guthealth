@@ -8,9 +8,22 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.4";
+export const APP_VERSION = "5.1.5";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.5',
+        date: 'January 25, 2026',
+        title: 'Native Performance',
+        description: 'Significant core updates to make the app search and feel instant.',
+        features: [],
+        improvements: [
+            'Instant Page Loads: Added intelligent prefetching to make navigation feel instantaneous.',
+            'Native Transitions: Smooth, native-like animations when switching tabs.',
+            'Liquid Loading: New non-flickering loading state for a polished feel.'
+        ],
+        fixes: []
+    },
     {
         version: '5.1.4',
         date: 'January 25, 2026',

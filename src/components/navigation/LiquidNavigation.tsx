@@ -231,6 +231,34 @@ export default function LiquidNavigation({
         }
     }, [isWalkthroughActive, currentStep]);
 
+    // INTELLIGENT PREFETCHING
+    // 1. Prefetch Primary Nav on Mount (Home, Explore, Insights, Profile)
+    useEffect(() => {
+        // Simple timeout to potentiall unblock main thread init
+        const timer = setTimeout(() => {
+            PRIMARY_NAV.forEach(item => {
+                if (item.path) router.prefetch(item.path);
+            });
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [router]);
+
+    // 2. Prefetch Sub-Menus on Interaction (When panel opens)
+    useEffect(() => {
+        if (activePanel === 'explore') {
+            EXPLORE_ITEMS.forEach(item => {
+                if (item.path) router.prefetch(item.path);
+            });
+        } else if (activePanel === 'insights') {
+            INSIGHTS_ITEMS.forEach(item => {
+                if (item.path) router.prefetch(item.path);
+            });
+        }
+        // No heavy routes for profile/log really, mostly actions or modal triggers, 
+        // but if Profile had sub-pages, we'd do it here.
+    }, [activePanel, router]);
+
+
     // Determine active tab
     const getActiveTab = useCallback(() => {
         if (isReleaseNotesOpen) return 'explore';
