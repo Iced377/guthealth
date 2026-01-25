@@ -220,7 +220,7 @@ export default function WalkthroughOverlay() {
         const isFrost = FROST_STEPS.includes(currentStep?.id || '');
 
         return isFrost
-            ? "bg-white/30 backdrop-blur-xl"
+            ? "bg-white/10 backdrop-blur-md"
             : "bg-black/60";
     };
 
@@ -278,18 +278,18 @@ export default function WalkthroughOverlay() {
                                     {/* Left Block (Between top/bottom) */}
                                     <div
                                         className={cn("absolute left-0 pointer-events-auto", getBackdropStyle())}
-                                        style={{ 
-                                            top: targetRect.top, 
-                                            height: targetRect.height, 
-                                            width: targetRect.left 
+                                        style={{
+                                            top: targetRect.top,
+                                            height: targetRect.height,
+                                            width: targetRect.left
                                         }}
                                     />
                                     {/* Right Block (Between top/bottom) */}
                                     <div
                                         className={cn("absolute right-0 pointer-events-auto", getBackdropStyle())}
-                                        style={{ 
-                                            top: targetRect.top, 
-                                            height: targetRect.height, 
+                                        style={{
+                                            top: targetRect.top,
+                                            height: targetRect.height,
                                             left: targetRect.right // explicit left prevents width calc issues
                                         }}
                                     />
@@ -302,7 +302,7 @@ export default function WalkthroughOverlay() {
                                             left: targetRect.left - 4,
                                             width: targetRect.width + 8,
                                             height: targetRect.height + 8,
-                                            zIndex: 125 
+                                            zIndex: 125
                                         }}
                                     />
                                 </>
