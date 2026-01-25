@@ -136,7 +136,8 @@ export default function AddVitalsDialog({
         try {
             const weightVal = weight ? parseFloat(weight) : null;
             const stepsVal = steps ? parseInt(steps, 10) : null;
-            await onSubmit(isNaN(weightVal!) ? null : weightVal, isNaN(stepsVal!) ? null : stepsVal);
+            const fatVal = fatPercent ? parseFloat(fatPercent) : null;
+            await onSubmit(isNaN(weightVal!) ? null : weightVal, isNaN(stepsVal!) ? null : stepsVal, isNaN(fatVal!) ? null : fatVal);
             onOpenChange(false);
         } catch (error) {
             console.error(error);
