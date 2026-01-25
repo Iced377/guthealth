@@ -324,10 +324,10 @@ export default function WalkthroughOverlay() {
                 </AnimatePresence>
             </div>
 
-            {/* 2. CONTENT LAYER (Z-51, Interactive) */}
+            {/* 2. CONTENT LAYER (Z-130, Interactive - Must be above Backdrop z-120) */}
             {currentStep.customType === 'avatar-modal' ? (
                 // --- SPECIAL AVATAR MODAL ---
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -373,7 +373,7 @@ export default function WalkthroughOverlay() {
                     <SheetContent
                         side={currentStep.position === 'top' ? "top" : "bottom"}
                         className={cn(
-                            "z-[60] pb-8 pt-4",
+                            "z-[130] pb-8 pt-4",
                             // Hide default Shadcn Close button (it's usually the last child, absolute positioned)
                             "[&>button]:hidden",
                             // Add extra top padding if top-sheet to avoid status bar/notch overlap issues if needed
@@ -407,7 +407,7 @@ export default function WalkthroughOverlay() {
             ) : (
                 // --- DESKTOP: Fixed Card with Dynamic Position ---
                 <div className={cn(
-                    "fixed z-[60] w-96 max-w-[calc(100vw-4rem)] transition-all duration-500 ease-in-out",
+                    "fixed z-[130] w-96 max-w-[calc(100vw-4rem)] transition-all duration-500 ease-in-out",
                     // Dynamic Positioning Logic
                     currentStep.position === 'center' && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
                     currentStep.position === 'top' && "top-24 right-8", // Below navbar

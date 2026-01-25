@@ -8,9 +8,23 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.6";
+export const APP_VERSION = "5.1.7";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.7',
+        date: 'January 25, 2026',
+        title: 'Tour & Setup Polish',
+        description: 'Fixed issues with the App Tour overlay and restored the correct background themes in onboarding.',
+        features: [],
+        improvements: [
+            'Onboarding: Added a proper "Welcome" video step before entering the dashboard.',
+            'Visuals: Restored gender-matching background themes throughout the entire setup flow.'
+        ],
+        fixes: [
+            'App Tour: Fixed an issue where the "frosting" overlay prevented clicking Next/Back buttons.'
+        ]
+    },
     {
         version: '5.1.6',
         date: 'January 25, 2026',

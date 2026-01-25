@@ -16,6 +16,7 @@ import ActivityLevelStep from './steps/ActivityLevelStep';
 import SymptomsStep from './steps/SymptomsStep';
 import DietStep from './steps/DietStep';
 import ResultsStep from './steps/ResultsStep';
+import OutroVideo from './steps/OutroVideo';
 import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -126,13 +127,8 @@ export default function SetupWizard() {
                 profile: profileData
             });
 
-            toast({
-                title: "Profile Setup Complete!",
-                description: "Your nutrition plan has been personalized.",
-            });
-
-            router.refresh();
-            router.push('/');
+            // Show Outro Video instead of jumping directly
+            setMode('outro');
 
         } catch (error) {
             console.error("Error saving profile:", error);
@@ -144,6 +140,15 @@ export default function SetupWizard() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleOutroComplete = () => {
+        toast({
+            title: "Profile Setup Complete!",
+            description: "Your nutrition plan has been personalized.",
+        });
+        router.refresh();
+        router.push('/');
     };
 
     // Ripple Effect Logic
@@ -159,6 +164,7 @@ export default function SetupWizard() {
     // Background State Logic
     const isIntro = mode === 'intro';
     const isResults = mode === 'results';
+    const isOutro = mode === 'outro';
 
     const blueGradient = "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20";
     const pinkGradient = "bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20";
@@ -174,32 +180,26 @@ export default function SetupWizard() {
                 isIntro ? "opacity-100" : "opacity-0"
             )} />
 
-            {/* Results Layer */}
-            <div className={cn(
-                "absolute inset-0 transition-opacity duration-1000 ease-in-out bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/20 dark:to-fuchsia-950/20",
-                isResults ? "opacity-100" : "opacity-0",
-                "z-20"
-            )} />
-
-            {/* Wizard Gender Layers */}
-            {!isIntro && !isResults && (
+            {/* Wizard/Results/Outro Gender Layers (Unified) */}
+            {/* We want the Gender Gradient to persist through Results and Outro now, instead of forcing purple */}
+            {!isIntro && (
                 <>
-                    {/* Base Layer (Previous Gender or Current if no ripple) */}
+                    {/* Base Layer */}
                     <div className={cn(
                         "absolute inset-0 z-0",
                         prevGender === 'male' ? blueGradient : pinkGradient
                     )} />
 
-                    {/* Ripple Layer (Animate In) */}
+                    {/* Ripple Layer */}
                     <motion.div
-                        key={formData.gender} // Remounts on gender change to trigger new animation
+                        key={formData.gender}
                         className={cn(
                             "absolute inset-0 z-10",
                             formData.gender === 'male' ? blueGradient : pinkGradient
                         )}
                         initial={{ clipPath: ripple ? `circle(0% at ${ripple.x}px ${ripple.y}px)` : "circle(150% at 50% 50%)" }}
-                        animate={{ clipPath: `circle(150% at ${ripple ? ripple.x : 0}px ${ripple ? ripple.y : 0}px)` }} // Using % is safer usually but px ensures origin accuracy. 
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} // smooth easeOut
+                        animate={{ clipPath: `circle(150% at ${ripple ? ripple.x : 0}px ${ripple ? ripple.y : 0}px)` }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     />
                 </>
             )}
@@ -279,6 +279,7 @@ export default function SetupWizard() {
                             key="results"
                             initial={{ opacity: 0, y: 50 }}
                             animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -50 }}
                             className="w-full h-full flex items-center justify-center p-0"
                         >
                             <ResultsStep
@@ -289,8 +290,19 @@ export default function SetupWizard() {
                             />
                         </motion.div>
                     )}
+
+                    {mode === 'outro' && (
+                        <OutroVideo key="outro" onComplete={handleOutroComplete} />
+                    )}
                 </AnimatePresence>
             </div>
         </div>
     );
 }
+
+// Import at top (Wait, I need to add the import separately or rely on user to do it? 
+// The specialized tool does replacements. I need to make sure I add the import line.)
+// I'll assume I need to do a separate edit for the import if it's far away.
+// Actually, I can replace the whole functional body or use multi-edit. 
+// Given the complexity, I'm replacing the bottom half. I need to add the import.
+
