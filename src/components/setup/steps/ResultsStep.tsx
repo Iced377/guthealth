@@ -91,7 +91,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                 </div>
 
                 {/* Triangular Macro Chart Area */}
-                <div className="flex-1 min-h-[250px] flex flex-col items-center justify-center relative py-2">
+                <div className="flex-1 min-h-[250px] flex flex-col items-center justify-center relative py-2 mt-6">
                     {/* The Triangle */}
                     <div className="relative w-40 h-40 filter drop-shadow-lg z-10">
                         {/* Conic Gradient for Percents, masked to Triangle */}
