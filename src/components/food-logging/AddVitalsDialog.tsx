@@ -104,6 +104,7 @@ export default function AddVitalsDialog({
         if (isOpen) {
             setWeight(initialWeight?.toString() || '');
             setSteps(initialSteps?.toString() || '');
+            setFatPercent(initialFatPercent?.toString() || '');
 
             // Auto focus weight after animation
             setTimeout(() => {

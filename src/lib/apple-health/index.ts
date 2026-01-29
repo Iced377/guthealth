@@ -102,14 +102,74 @@ export const AppleHealthService = {
                 dataType: 'steps',
                 startDate: startDate.toISOString(),
                 endDate: now.toISOString(),
-                limit: 1000,
-                ascending: false
+                limit: 10000, // Increase limit for 30 days
+                ascending: true
             });
 
             return result.samples;
         } catch (error) {
             console.error('Error fetching raw samples:', error);
             throw error;
+        }
+    },
+
+    // Optimized to query day-by-day to avoid hitting sample limits on large ranges
+    getDailyStepsHistory: async (days: number = 30): Promise<Record<string, number>> => {
+        if (Capacitor.getPlatform() !== 'ios') return {};
+        try {
+            const dailyTotals: Record<string, number> = {};
+            const now = new Date();
+
+            const processDay = async (offset: number) => {
+                const date = new Date(now);
+                date.setDate(now.getDate() - offset);
+
+                // Set to MIDNIGHT local time for start/end query
+                const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+
+                // Use existing logic for specific day
+                const result = await Health.readSamples({
+                    dataType: 'steps',
+                    startDate: startOfDay.toISOString(),
+                    endDate: endOfDay.toISOString(),
+                    limit: 3000,
+                });
+
+                const samples = result.samples;
+                if (!samples.length) return;
+
+                const hasWatchData = samples.some(s => (s.sourceName || '').toLowerCase().includes('watch'));
+                let total = 0;
+
+                if (hasWatchData) {
+                    total = samples
+                        .filter(s => (s.sourceName || '').toLowerCase().includes('watch'))
+                        .reduce((acc, curr) => acc + curr.value, 0);
+                } else {
+                    total = samples
+                        .reduce((acc, curr) => acc + curr.value, 0);
+                }
+
+                // Key: YYYY-MM-DD (Local)
+                const year = startOfDay.getFullYear();
+                const month = String(startOfDay.getMonth() + 1).padStart(2, '0');
+                const day = String(startOfDay.getDate()).padStart(2, '0');
+                const key = `${year}-${month}-${day}`;
+
+                dailyTotals[key] = Math.round(total);
+            };
+
+            // Sequential execution for stability
+            for (let i = 0; i < days; i++) {
+                await processDay(i);
+            }
+
+            return dailyTotals;
+
+        } catch (error) {
+            console.error('Error fetching history:', error);
+            return {};
         }
     }
 };

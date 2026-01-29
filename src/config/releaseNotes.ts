@@ -8,9 +8,27 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.7";
+export const APP_VERSION = "5.1.8";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.1.8',
+        date: 'January 29, 2026',
+        title: 'Compliance & Precision',
+        description: 'Enhancing AI accuracy for food scanning, improving graph consistency, and ensuring full data transparency.',
+        features: [
+            'Smarter Food Scan: The AI now properly prioritizes your manual context notes (e.g. "egg whites") and estimates ingredient quantities for better accuracy.',
+            'Legal & Privacy: Updated Terms regarding "Independent Application" status and clarified AI/Data disclaimers.'
+        ],
+        improvements: [
+            'Visuals: Added indicators (+) to Dashboard Vitals cards to show they are editable.'
+        ],
+        fixes: [
+            'Scan Context: Fixed a bug where "Additional Context" in food scans was being ignored.',
+            'Trends Graph: Resolved data continuity issues where missing weight logs caused gaps.',
+            'Apple Health: Improved sync logic to reliably catch up on missing historical steps.'
+        ]
+    },
     {
         version: '5.1.7',
         date: 'January 25, 2026',

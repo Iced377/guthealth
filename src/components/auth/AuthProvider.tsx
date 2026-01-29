@@ -96,25 +96,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (data.profile?.appleHealthEnabled) {
               try {
                 const { AppleHealthService } = await import('@/lib/apple-health');
-                const steps = await AppleHealthService.getTodaySteps();
 
-                const now = new Date();
-                const todayStr = now.toISOString().split('T')[0];
-                const syncDocId = `apple_health_${todayStr}`;
+                // Fetch last 30 days history in one go
+                // This ensures we catch up any missing days
+                const history = await AppleHealthService.getDailyStepsHistory(30);
 
-                await setDoc(doc(db, 'users', targetUser.uid, 'timelineEntries', syncDocId), {
-                  id: syncDocId,
-                  timestamp: Timestamp.fromDate(now),
-                  entryType: 'pedometer_data',
-                  steps: steps,
-                  distance: 0,
-                  floorsAscended: 0,
-                  activeEnergy: 0,
-                  source: 'apple_health',
-                  syncedAt: Timestamp.now()
-                }, { merge: true });
+                const batchPromises = Object.entries(history).map(async ([dateKey, steps]) => {
+                  const syncDocId = `apple_health_${dateKey}`;
+                  const entryDate = new Date(dateKey); // Local YYYY-MM-DD to date object (will be 00:00 local usually, or UTC 00:00 depending on browser? verifying...)
+                  // Actually new Date('2023-01-01') is UTC. 
+                  // But we want to store it effectively. Firestore timestamps are UTC.
+                  // If we constructed dateKey as local YYYY-MM-DD, new Date(dateKey) might shift.
+                  // Safest to parse manual:
+                  const [y, m, d] = dateKey.split('-').map(Number);
+                  const localDate = new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid timezone edge cases
 
-                console.log(`Health sync: saved ${steps} steps`);
+                  return setDoc(doc(db, 'users', targetUser.uid, 'timelineEntries', syncDocId), {
+                    id: syncDocId,
+                    timestamp: Timestamp.fromDate(localDate),
+                    entryType: 'pedometer_data',
+                    steps: steps,
+                    distance: 0,
+                    floorsAscended: 0,
+                    activeEnergy: 0,
+                    source: 'apple_health',
+                    syncedAt: Timestamp.now()
+                  }, { merge: true });
+                });
+
+                await Promise.all(batchPromises);
+                console.log(`Health sync: synced ${Object.keys(history).length} days`);
               } catch (healthError) {
                 console.error("Apple Health sync internal error:", healthError);
               }

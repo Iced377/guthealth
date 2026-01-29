@@ -242,11 +242,16 @@ export default function TrendsPage() {
     weights.forEach(e => {
       const entry = e as any; // Safe cast
       const key = formatISO(entry.timestamp, { representation: 'date' });
-      map.set(key, {
-        date: key,
-        weight: entry.weight!,
-        fatMass: entry.fatPercent ? (entry.weight! * entry.fatPercent / 100) : undefined
-      });
+      // useMemo receives filteredEntries which is timelineEntries (sorted DESC by default).
+      // So the FIRST entry we see for a date is the LATEST one. 
+      // We must NOT overwrite it with subsequent (older) entries for the same day.
+      if (!map.has(key)) {
+        map.set(key, {
+          date: key,
+          weight: entry.weight!,
+          fatMass: entry.fatPercent ? (entry.weight! * entry.fatPercent / 100) : undefined
+        });
+      }
     });
     return Array.from(map.values())
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

@@ -9,6 +9,7 @@ import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 import VideoAvatar from '@/components/auth/VideoAvatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -81,6 +82,17 @@ export default function LoginPage() {
                   Continue with email
                 </Button>
               </div>
+              <p className="text-center text-xs text-muted-foreground pt-4 px-4">
+                By continuing, you agree to our{' '}
+                <Link href="/terms" className="underline hover:text-primary">
+                  Terms of Use
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="underline hover:text-primary">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
             </div>
           )}        </div>
       </div>

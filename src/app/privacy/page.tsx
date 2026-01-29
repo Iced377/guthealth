@@ -29,6 +29,7 @@ const PrivacyPage = () => {
         <ul className="list-disc list-inside ml-4">
           <li>Information you provide directly (e.g., when you create an account, log meals, report symptoms).</li>
           <li>Data collected automatically (e.g., usage data, device information, IP address).</li>
+          <li><strong>Wearable Device Data:</strong> Information synced from third-party services you authorize (e.g., Apple Health, Fitbit) such as steps, activity energy, weight, and body fat percentage.</li>
           <li>Information from third-party sources (e.g., if you log in via a third-party service).</li>
         </ul>
         <p className="mt-2">
@@ -48,6 +49,21 @@ const PrivacyPage = () => {
           <li>Conduct research and analysis to better understand our users and improve our application.</li>
           <li>Ensure the security of our platform.</li>
           <li>Comply with legal obligations.</li>
+        </ul>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="text-2xl font-semibold mb-2">Health & Fitness Integrations</h2>
+        <p>
+          To provide a holistic view of your health, our application integrates with third-party health platforms. Data is only accessed with your explicit permission.
+        </p>
+        <ul className="list-disc list-inside ml-4 mt-2 space-y-2">
+          <li>
+            <strong>Apple Health (iOS Only):</strong> If you enable this integration, we read step count data from the Apple Health repository on your device. This data is used solely to display activity trends within the GutCheck dashboard. You can manage or revoke these permissions at any time in your iOS Settings &gt; Health &gt; Data Access &gt; GutCheck.
+          </li>
+          <li>
+            <strong>Fitbit:</strong> If you choose to connect your Fitbit account, we use the official Fitbit Web API to securely fetch your activity (steps, calories) and body composition (weight, fat percentage) data. We store OAuth tokens securely and strictly for the purpose of maintaining this connection. You can revoke access via your Fitbit account settings or within the GutCheck app.
+          </li>
         </ul>
       </section>
 
@@ -160,7 +176,7 @@ const PrivacyPage = () => {
       </section>
 
       <div className="mt-8 text-sm text-gray-500">
-        <p>Last updated: January 09, 2026</p>
+        <p>Last updated: January 29, 2026</p>
       </div>
 
     </div>

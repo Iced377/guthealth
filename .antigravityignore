@@ -1,0 +1,24 @@
+# System Directories
+.DS_Store
+.git/
+.next/
+node_modules/
+
+# Build/Dist
+dist/
+build/
+out/
+
+# Mobile Platforms (Heavy generated code)
+ios/
+android/
+
+# Large Assets
+public/videos/
+public/images/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tunnel.log

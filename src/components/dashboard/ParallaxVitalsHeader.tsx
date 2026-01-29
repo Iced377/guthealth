@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PedometerLog, UserProfile, DailyNutritionSummary, FitbitLog } from '@/types';
-import { Footprints, Sprout, Scale } from 'lucide-react';
+import { Footprints, Sprout, Scale, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NutritionOverview from './NutritionOverview';
 import { useActionContext } from '@/contexts/ActionContext';
+
 
 
 interface ParallaxVitalsHeaderProps {
@@ -65,7 +66,8 @@ export default function ParallaxVitalsHeader({
         openAddVitalsDialog(
             currentDate,
             weightData?.weight,
-            stepsData?.steps
+            stepsData?.steps,
+            weightData?.fatPercent
         );
     };
 
@@ -118,7 +120,9 @@ export default function ParallaxVitalsHeader({
                                             <span className="text-xl font-bold font-headline text-foreground leading-none">
                                                 {stepsData?.steps ? stepsData.steps.toLocaleString() : '0'}
                                             </span>
-                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Steps</span>
+                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                                Steps <Plus className="w-3 h-3 opacity-50" />
+                                            </span>
                                         </div>
                                     </div>
 
@@ -176,7 +180,9 @@ export default function ParallaxVitalsHeader({
                                             <span className="text-xl font-bold font-headline text-foreground leading-none">
                                                 {weightData?.weight ? weightData.weight : '--'}
                                             </span>
-                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">kg</span>
+                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                                Weight <Plus className="w-3 h-3 opacity-50" />
+                                            </span>
                                         </div>
                                     </div>
 

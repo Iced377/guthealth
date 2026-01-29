@@ -243,9 +243,15 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // 1. WEIGHT & FAT
         if (weight !== null || fatPercent !== null) {
+            console.log('--- Handle Log Vitals Debug ---');
+            console.log('Input Date:', date);
+            console.log('Input Weight:', weight);
+            console.log('Input Fat:', fatPercent);
+
             // Check for existing Fitbit/Weight log for this day to preserve fatPercent or other data
             const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
             const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+            console.log('Query Window:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
 
             const existingWeightLog = timelineEntries.find(log =>
                 log.entryType === 'fitbit_data' &&
@@ -255,12 +261,46 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             const weightLogId = existingWeightLog ? existingWeightLog.id : `fitbit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+            // MERGE & BACKFILL WEIGHT LOGIC
+            // If user did NOT provide weight (null), we must try to keep existing or find previous to ensure graph continuity.
+            let weightToSave = weight;
+
+            if (weightToSave === null) {
+                // Case 1: Use existing log for this day
+                if (existingWeightLog?.weight) {
+                    weightToSave = existingWeightLog.weight;
+                } else {
+                    // Case 2: Backfill from most recent previous log
+                    // Sort by time desc
+                    const sorted = [...timelineEntries]
+                        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+                    const previousWeightLog = sorted.find(e =>
+                        e.entryType === 'fitbit_data' &&
+                        ('weight' in e) &&
+                        (e as any).weight > 0 &&
+                        e.timestamp < startOfDay // Strictly before today
+                    ) as FitbitLog | undefined;
+
+                    if (previousWeightLog) {
+                        console.log('Found Previous Weight for Backfill:', previousWeightLog.weight);
+                        weightToSave = previousWeightLog.weight;
+                    } else {
+                        console.log('No Previous Weight Found for Backfill');
+                    }
+                    // Case 3: No history? Leave null (will be valid entry but no dots on weight graph, avoiding 0 dip)
+                }
+            }
+            console.log('Final Weight To Save:', weightToSave);
+            console.log('Final Fat To Save:', fatPercent ?? existingWeightLog?.fatPercent);
+
+
             // Merge with existing data if available (preserving fatPercent)
             const weightEntry: FitbitLog = {
                 id: weightLogId,
                 timestamp: date, // Update timestamp to now (or kept date)
                 entryType: 'fitbit_data',
-                weight: weight ?? existingWeightLog?.weight, // If weight not provided (null), keep existing? Actually dialog forces weight if entering fat? No, let's handle partials.
+                weight: weightToSave ?? existingWeightLog?.weight,
                 fatPercent: fatPercent ?? existingWeightLog?.fatPercent, // Update fat if provided, else keep existing
                 steps: existingWeightLog?.steps ?? undefined, // Preserve existing steps in this doc if any (rare)
                 caloriesBurned: existingWeightLog?.caloriesBurned ?? undefined
@@ -391,6 +431,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         setUserProfile(profileData);
                     }
 
+                    console.log('SetupData: Auth User UID:', authUser.uid);
+                    console.log('SetupData: Is Premium:', currentIsPremium);
+
                     const timelineEntriesColRef = collection(db, 'users', authUser.uid, 'timelineEntries');
                     let q;
                     if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
@@ -398,6 +441,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     } else {
                         const twoDaysAgo = new Date();
                         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                        console.log('SetupData: Querying last 2 days');
                         q = query(timelineEntriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
                     }
 

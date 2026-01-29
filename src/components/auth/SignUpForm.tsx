@@ -54,10 +54,10 @@ export default function SignUpForm() {
     }
     setLoading(false);
   };
-  
+
   return (
     // Removed w-full max-w-md space-y-6 from here, page will control max-width
-    <div className="space-y-6"> 
+    <div className="space-y-6">
       <form onSubmit={form.handleSubmit(handleEmailSignUp)} className="space-y-4">
         <div>
           <Label htmlFor="email">Email</Label>
@@ -109,6 +109,18 @@ export default function SignUpForm() {
         <Link href="/login" className="font-medium text-primary hover:underline">
           Login
         </Link>
+      </p>
+
+      <p className="text-center text-xs text-muted-foreground mt-4 px-4">
+        By creating an account, you agree to our{' '}
+        <Link href="/terms" className="underline hover:text-primary">
+          Terms of Use
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" className="underline hover:text-primary">
+          Privacy Policy
+        </Link>
+        .
       </p>
     </div>
   );

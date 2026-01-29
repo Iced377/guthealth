@@ -42,7 +42,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
-  
+
   const { toast } = useToast();
   const router = useRouter();
 
@@ -102,7 +102,7 @@ export default function LoginForm() {
 
   return (
     // Removed w-full max-w-md space-y-6 from here, page will control max-width
-    <div className="space-y-6"> 
+    <div className="space-y-6">
       <form onSubmit={loginForm.handleSubmit(handleEmailLogin)} className="space-y-4">
         <div>
           <Label htmlFor="email">Email</Label>
@@ -186,6 +186,18 @@ export default function LoginForm() {
         <Link href="/signup" className="font-medium text-primary hover:underline">
           Sign up
         </Link>
+      </p>
+
+      <p className="text-center text-xs text-muted-foreground mt-4 px-4">
+        By continuing, you agree to our{' '}
+        <Link href="/terms" className="underline hover:text-primary">
+          Terms of Use
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" className="underline hover:text-primary">
+          Privacy Policy
+        </Link>
+        .
       </p>
     </div>
   );
