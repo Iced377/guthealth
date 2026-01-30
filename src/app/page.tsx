@@ -174,7 +174,7 @@ import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import { version } from '../../package.json'; // Ensure this path is correct based on project structure
 
-const MotionLink = motion(Link);
+const MotionLink = motion.create(Link);
 
 function LandingPageStructure() {
   const scrollRef = useRef<HTMLDivElement>(null);

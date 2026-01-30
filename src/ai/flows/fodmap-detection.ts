@@ -162,6 +162,13 @@ User Safe Foods (Reference):
 None
 {{/if}}
 
+{{#if feedbackContext}}
+IMPORTANT CORRECTION INSTRUCTION:
+The previous analysis for this item was flagged as incorrect.
+Critique: "{{feedbackContext}}"
+You MUST fix this error in your new analysis.
+{{/if}}
+
 Output a JSON object strictly adhering to 'AnalyzeFoodItemOutputSchema'.
 
 Key tasks:

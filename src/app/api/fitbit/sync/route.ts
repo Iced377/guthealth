@@ -259,6 +259,13 @@ export async function POST(req: NextRequest) {
                 ...data
             };
 
+            // Remove undefined keys manually to be safe
+            Object.keys(newEntry).forEach(key => {
+                if ((newEntry as any)[key] === undefined) {
+                    delete (newEntry as any)[key];
+                }
+            });
+
             batch.set(docRef, newEntry, { merge: true });
             operationCount++;
         });

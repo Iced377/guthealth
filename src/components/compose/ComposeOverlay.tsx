@@ -65,59 +65,9 @@ const combineDateAndTime = (date: Date, time: string): Date => {
     return newDate;
 };
 
-// Hook to track visual viewport metrics for robust keyboard avoidance.
-function useVisualViewportMetrics() {
-    const [metrics, setMetrics] = useState({
-        vvHeight: typeof window !== 'undefined' ? window.innerHeight : 0,
-        vvOffsetTop: 0,
-        keyboardHeight: 0,
-        isKeyboardOpen: false,
-    });
+import { useMobileViewport } from '@/hooks/useMobileViewport';
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const updateMetrics = () => {
-            const vv = window.visualViewport;
-            const vvHeight = vv?.height ?? window.innerHeight;
-            const vvOffsetTop = vv?.offsetTop ?? 0;
-            const keyboardHeight = Math.max(0, window.innerHeight - vvHeight - vvOffsetTop);
-            const isKeyboardOpen = keyboardHeight > 40; // Threshold for keyboard detection
-
-            setMetrics({
-                vvHeight,
-                vvOffsetTop,
-                keyboardHeight,
-                isKeyboardOpen,
-            });
-        };
-
-        let rafId: number;
-        const handleResize = () => {
-            rafId = requestAnimationFrame(updateMetrics);
-        };
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', handleResize);
-            window.visualViewport.addEventListener('scroll', handleResize);
-        }
-        window.addEventListener('resize', handleResize);
-
-        // Initial check
-        updateMetrics();
-
-        return () => {
-            if (rafId) cancelAnimationFrame(rafId);
-            if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', handleResize);
-                window.visualViewport.removeEventListener('scroll', handleResize);
-            }
-            window.removeEventListener('resize', handleResize);
-        };
-    }, []);
-
-    return metrics;
-}
+// ... (imports remain)
 
 export default function ComposeOverlay({
     isOpen,
@@ -133,7 +83,7 @@ export default function ComposeOverlay({
     const [mounted, setMounted] = useState(false);
     const { isDarkMode } = useTheme();
     const { toast } = useToast();
-    const { keyboardHeight } = useVisualViewportMetrics();
+    const { keyboardHeight } = useMobileViewport();
 
     // Time Mode State
     const [timeMode, setTimeMode] = useState<'NOW' | 'EARLIER'>('NOW');

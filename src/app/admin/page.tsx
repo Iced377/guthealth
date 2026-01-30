@@ -1,105 +1,572 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Navbar from '@/components/shared/Navbar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, MessageSquare, ArrowRight, ShieldCheck, BarChart3 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { useRouter } from 'next/navigation';
+import { db } from '@/config/firebase'; // Client SDK for viewing
+import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where } from 'firebase/firestore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone } from 'lucide-react';
+import { format } from 'date-fns';
+import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import type { FeedbackSubmission } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-export default function AdminPage() {
-    const { user, loading } = useAuth();
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [checkLoading, setCheckLoading] = useState(true);
+// ... (rest of imports)
 
+// ... inside component ...
+
+
+
+interface AdminEvent {
+    id: string;
+    type: string;
+    foodName: string;
+    flags: string[];
+    timestamp: any;
+    meta: any;
+    resolved: boolean;
+    dismissed?: boolean;
+    suggestedPromptImprovement?: string;
+}
+
+export default function AdminDashboardPage() {
+    const { userProfile, loading: authLoading } = useAuth();
+    const router = useRouter();
+    const [events, setEvents] = useState<AdminEvent[]>([]);
+    const [feedback, setFeedback] = useState<FeedbackSubmission[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [acquisitionData, setAcquisitionData] = useState<{ daily: number[], cumulative: number[], labels: string[] }>({ daily: [], cumulative: [], labels: [] });
+    const [allUserData, setAllUserData] = useState<{ created: Date; lastSignIn: Date | null }[]>([]);
+    const [timeRange, setTimeRange] = useState<'7D' | '30D' | '90D' | 'ALL'>('7D');
+    const [error, setError] = useState<string | null>(null);
+    const [activeUserCount, setActiveUserCount] = useState(0);
+
+    // ... (useEffect for redirect remains same)
+
+
+    // Data Subscription
     useEffect(() => {
-        if (loading) return;
-        if (!user) {
-            setCheckLoading(false);
-            return;
-        }
+        if (!userProfile?.isAdmin) return;
 
-        const checkKey = async () => {
+        // 1. Hallucination Events
+        const eventsQuery = query(
+            collection(db, 'admin_events'),
+            orderBy('timestamp', 'desc'),
+            limit(50)
+        );
+        const unsubEvents = onSnapshot(eventsQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AdminEvent[];
+            setEvents(data.filter(e => !e.dismissed && !e.resolved));
+        });
+
+        // 2. Feedback Submissions
+        const feedbackQuery = query(
+            collection(db, 'feedbackSubmissions'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        const unsubFeedback = onSnapshot(feedbackQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as FeedbackSubmission[];
+            setFeedback(data);
+        });
+
+        // 3. User Acquisition (Real Data from Auth)
+        const fetchAcquisition = async () => {
+            setError(null);
             try {
-                const snap = await getDoc(doc(db, 'users', user.uid));
-                if (snap.exists() && snap.data().isAdmin) {
-                    setIsAdmin(true);
+                const { getAuthUsersAction } = await import('@/app/actions/admin');
+                const result = await getAuthUsersAction();
+
+                if (!result.success) {
+                    console.error("Acquisition Fetch Failed:", result.error);
+                    setError(`${result.error} (Debug: Project=${result.debug?.projectId || 'N/A'}, Key=${result.debug?.hasServiceKey})`);
+                    return;
                 }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setCheckLoading(false);
+
+                if (result.users) {
+                    console.log("[Admin] Server returned users:", result.users.length);
+                    // Debug info if 0 users
+                    if (result.users.length === 0) {
+                        setError(`Fetched 0 users. (Debug: Project=${result.debug?.projectId || 'N/A'}, Key=${result.debug?.hasServiceKey}). Verify project ID matches production.`);
+                    }
+
+                    const parsedUsers = result.users
+                        .map(u => {
+                            if (!u.creationTime) return null;
+                            const created = new Date(u.creationTime);
+                            if (isNaN(created.getTime())) return null;
+
+                            let lastSignIn: Date | null = null;
+                            if (u.lastSignInTime) {
+                                const d = new Date(u.lastSignInTime);
+                                if (!isNaN(d.getTime())) lastSignIn = d;
+                            }
+                            return { created, lastSignIn };
+                        })
+                        .filter((u): u is { created: Date; lastSignIn: Date | null } => u !== null)
+                        .sort((a, b) => a.created.getTime() - b.created.getTime());
+
+                    console.log("[Admin] Valid users parsed:", parsedUsers.length);
+
+                    if (parsedUsers.length > 0) {
+                        setAllUserData(parsedUsers);
+                    } else {
+                        if (result.users.length > 0) {
+                            setError(`Failed to parse dates for ${result.users.length} users.`);
+                        }
+                        setAllUserData([]);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch acquisition data:", err);
+                setError(String(err));
             }
         };
-        checkKey();
-    }, [user, loading]);
 
-    if (loading || checkLoading) return null;
+        fetchAcquisition();
+        setLoading(false);
 
-    if (!user || !isAdmin) {
-        return (
-            <div className="min-h-screen bg-background flex flex-col">
-                <Navbar />
-                <div className="flex-grow flex flex-col items-center justify-center p-4 text-center">
-                    <ShieldCheck className="w-16 h-16 text-muted-foreground mb-4" />
-                    <h1 className="text-2xl font-bold mb-2">Admin Access Required</h1>
-                    <p className="text-muted-foreground mb-4">Please log in with an administrator account.</p>
-                    <Button asChild><Link href="/login">Login</Link></Button>
-                </div>
-            </div>
-        );
+        return () => {
+            unsubEvents();
+            unsubFeedback();
+        };
+    }, [userProfile]);
+
+    // RESTORED: Recalculate Chart Data when TimeRange or Data changes
+    useEffect(() => {
+        if (allUserData.length === 0) return;
+
+        console.log(`[Admin] Aggregating ${allUserData.length} users for ${timeRange}`);
+
+        const now = new Date();
+        let daysToLookBack = 7;
+        let dateFormat = 'EEE'; // Mon, Tue
+
+        switch (timeRange) {
+            case '7D': daysToLookBack = 7; dateFormat = 'EEE'; break;
+            case '30D': daysToLookBack = 30; dateFormat = 'd MMM'; break;
+            case '90D': daysToLookBack = 90; dateFormat = 'd MMM'; break;
+            case 'ALL':
+                const first = allUserData[0].created;
+                const diffTime = Math.abs(now.getTime() - first.getTime());
+                daysToLookBack = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                dateFormat = 'MMM yyyy';
+                break;
+        }
+
+        // Calculate Active Users (users who signed in within the window)
+        // If they signed in AT ALL in the window.
+        const cutoffDate = new Date(now);
+        cutoffDate.setDate(cutoffDate.getDate() - daysToLookBack);
+
+        const activeCount = allUserData.filter(u => u.lastSignIn && u.lastSignIn >= cutoffDate).length;
+        setActiveUserCount(activeCount);
+
+
+        const labels: string[] = [];
+        const dailyCounts: number[] = [];
+
+        const isWeekly = daysToLookBack > 45;
+        const bucketCount = isWeekly ? Math.ceil(daysToLookBack / 7) : daysToLookBack;
+
+        const buckets = Array.from({ length: bucketCount }, (_, i) => {
+            const d = new Date(now);
+            if (isWeekly) {
+                d.setDate(d.getDate() - ((bucketCount - 1 - i) * 7));
+            } else {
+                d.setDate(d.getDate() - (bucketCount - 1 - i));
+            }
+            d.setHours(0, 0, 0, 0);
+            return d;
+        });
+
+        buckets.forEach(bucketDate => {
+            const nextBucket = new Date(bucketDate);
+            if (isWeekly) nextBucket.setDate(bucketDate.getDate() + 7);
+            else nextBucket.setDate(bucketDate.getDate() + 1);
+
+            const count = allUserData.filter(u => u.created >= bucketDate && u.created < nextBucket).length;
+            dailyCounts.push(count);
+            labels.push(format(bucketDate, dateFormat));
+        });
+
+        // Cumulative
+        let runningTotal = 0;
+        const startOfWindow = buckets[0];
+        if (startOfWindow) {
+            runningTotal = allUserData.filter(u => u.created < startOfWindow).length;
+        }
+
+        const cumulativeCounts = dailyCounts.map(count => {
+            runningTotal += count;
+            return runningTotal;
+        });
+
+        setAcquisitionData({ daily: dailyCounts, cumulative: cumulativeCounts, labels });
+
+    }, [allUserData, timeRange]);
+
+    const handleResolve = async (id: string, currentStatus: boolean) => {
+        await updateDoc(doc(db, 'admin_events', id), {
+            resolved: true // One way transition usually? Or toggle. Let's make it strict Resolve.
+        });
+    };
+
+    const handleDismiss = async (id: string) => {
+        if (confirm("Dismiss this event? It will be hidden from the feed.")) {
+            await updateDoc(doc(db, 'admin_events', id), {
+                dismissed: true
+            });
+        }
+    };
+
+    if (authLoading || !userProfile?.isAdmin) {
+        return <div className="h-screen w-full flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
     }
 
+    // Helper for rendering charts
+    const maxDaily = Math.max(...acquisitionData.daily, 5); // Avoid div by zero
+    const maxCumulative = Math.max(...acquisitionData.cumulative, 10);
+
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            <Navbar />
-            <div className="container mx-auto py-12 px-4 space-y-8">
+        <div className="min-h-screen bg-black/95 text-white p-8 font-sans">
+            <header className="mb-8 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-headline mb-2">Admin Dashboard</h1>
-                    <p className="text-muted-foreground">Manage your app, users, and feedback.</p>
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                        Admin Hub
+                    </h1>
+                    <p className="text-white/50">Mission Control</p>
                 </div>
+            </header>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                    {/* Acquisition Card (Refactored from CRM) */}
-                    <Link href="/admin/acquisition" className="block group">
-                        <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
-                            <CardHeader>
-                                <div className="mb-2 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    <BarChart3 className="w-5 h-5" />
-                                </div>
-                                <CardTitle>Acquisition</CardTitle>
-                                <CardDescription>View user growth and onboarding trends.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <span className="text-sm font-medium text-primary flex items-center">
-                                    View Dashboard <ArrowRight className="ml-2 w-4 h-4" />
-                                </span>
-                            </CardContent>
-                        </Card>
-                    </Link>
+            <Tabs defaultValue="ai" className="w-full space-y-6">
+                <TabsList className="bg-white/5 border-white/10 p-1 h-auto w-full justify-start rounded-xl gap-2">
+                    <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-6 h-auto gap-2">
+                        <BrainCircuit className="w-4 h-4" />
+                        AI Performance
+                        <Badge variant="secondary" className="ml-2 bg-purple-500/20 text-purple-300 border-0">{events.filter(e => !e.resolved).length}</Badge>
+                    </TabsTrigger>
 
-                    {/* Feedback Card */}
-                    <Link href="/admin/feedback" className="block group">
-                        <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
-                            <CardHeader>
-                                <div className="mb-2 w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                                    <MessageSquare className="w-5 h-5" />
-                                </div>
-                                <CardTitle>Feedback</CardTitle>
-                                <CardDescription>Review bug reports, feature requests, and user ratings.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <span className="text-sm font-medium text-orange-600 flex items-center">
-                                    View Submissions <ArrowRight className="ml-2 w-4 h-4" />
-                                </span>
-                            </CardContent>
+                    <TabsTrigger value="feedback" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 py-3 px-6 h-auto gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Feedback
+                        <Badge variant="secondary" className="ml-2 bg-blue-500/20 text-blue-300 border-0">{feedback.length}</Badge>
+                    </TabsTrigger>
+
+                    <TabsTrigger value="acquisition" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 py-3 px-6 h-auto gap-2">
+                        <Users className="w-4 h-4" />
+                        Acquisition
+                    </TabsTrigger>
+                </TabsList>
+
+                {/* AI Performance Tab (God View) */}
+                <TabsContent value="ai" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-purple-300 flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5" /> Hallucination Feed
+                        </h2>
+                    </div>
+
+                    <div className="grid gap-4">
+                        {events.length === 0 && <div className="text-white/30 italic p-8 text-center border border-white/5 rounded-xl">No hallucinations recorded yet.</div>}
+                        {events.map(event => (
+                            <Card key={event.id} className={`bg-white/5 border-white/10 ${event.resolved || event.dismissed ? 'opacity-50 hidden' : ''}`}>
+                                {/* Hide resolved/dismissed to keep feed clean? Or just dim? Let's dim + filter in query properly later. For now, client filter. */}
+
+                                <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <AlertTriangle className="text-yellow-500 w-5 h-5" />
+                                        <CardTitle className="text-lg font-mono text-white">
+                                            {event.foodName}
+                                        </CardTitle>
+                                    </div>
+                                    <span className="text-xs text-white/40 font-mono">
+                                        {event.timestamp?.toDate ? format(event.timestamp.toDate(), 'PP p') : 'Just now'}
+                                    </span>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="text-xs uppercase tracking-wider text-white/40 mb-2">Critic Flags</h3>
+                                                <div className="flex flex-col gap-1">
+                                                    {event.flags?.map((flag, i) => (
+                                                        <Badge key={i} variant="destructive" className="w-fit">
+                                                            {flag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* AI Coaching / Suggestion */}
+                                            {event.suggestedPromptImprovement && (
+                                                <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-100">
+                                                    <h3 className="text-xs uppercase tracking-wider text-purple-300 mb-2 flex items-center gap-1">
+                                                        <BrainCircuit className="w-3 h-3" /> Suggested Fix
+                                                    </h3>
+                                                    <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-lg text-sm text-purple-200">
+                                                        "{event.suggestedPromptImprovement}"
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h3 className="text-xs uppercase tracking-wider text-white/40">Context</h3>
+                                            <div className="text-sm text-white/70 font-mono bg-black/30 p-3 rounded-lg border border-white/5 h-full">
+                                                <p><span className="text-white/30">Claim:</span> {event.meta?.claimedRisk}</p>
+                                                <p><span className="text-white/30">Ingredients:</span> {event.meta?.ingredients}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 flex justify-end gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-white/40 hover:text-white hover:bg-white/10"
+                                            onClick={() => handleDismiss(event.id)}
+                                        >
+                                            Dismiss
+                                        </Button>
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => handleResolve(event.id, event.resolved)}
+                                        >
+                                            <CheckCircle className="w-4 h-4 mr-2" /> Mark Resolved
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+
+                {/* Feedback Tab */}
+                <TabsContent value="feedback" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-blue-300 flex items-center gap-2">
+                            <MessageSquare className="w-5 h-5" /> User Feedback
+                        </h2>
+                        <Badge variant="outline" className="text-blue-200 border-blue-500/30">
+                            {feedback.length} Submissions
+                        </Badge>
+                    </div>
+
+                    {/* Feedback Analysis Chart & Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <Card className="bg-white/5 border-white/10 p-4 flex flex-col items-center justify-center relative overflow-hidden h-[340px]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-50" />
+                            <h3 className="text-sm font-bold text-white/50 mb-4 uppercase tracking-widest w-full text-center">Quality Metrics (Avg)</h3>
+
+                            <div className="h-full w-full">
+                                {feedback.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="90%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
+                                            { subject: 'Speed', A: feedback.reduce((acc, f) => acc + (f.ratings.speed || 0), 0) / (feedback.filter(f => f.ratings.speed).length || 1), fullMark: 5 },
+                                            { subject: 'Convenience', A: feedback.reduce((acc, f) => acc + (f.ratings.convenience || 0), 0) / (feedback.filter(f => f.ratings.convenience).length || 1), fullMark: 5 },
+                                            { subject: 'Accuracy', A: feedback.reduce((acc, f) => acc + (f.ratings.accuracy || 0), 0) / (feedback.filter(f => f.ratings.accuracy).length || 1), fullMark: 5 },
+                                            { subject: 'Usability', A: feedback.reduce((acc, f) => acc + (f.ratings.usability || 0), 0) / (feedback.filter(f => f.ratings.usability).length || 1), fullMark: 5 },
+                                            { subject: 'Performance', A: feedback.reduce((acc, f) => acc + (f.ratings.performance || 0), 0) / (feedback.filter(f => f.ratings.performance).length || 1), fullMark: 5 },
+                                        ]}>
+                                            <PolarGrid stroke="#ffffff30" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#ffffff80', fontSize: 10 }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                            <Radar
+                                                name="Average"
+                                                dataKey="A"
+                                                stroke="#3b82f6"
+                                                strokeWidth={2}
+                                                fill="#3b82f6"
+                                                fillOpacity={0.4}
+                                            />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex h-full items-center justify-center text-white/20 text-sm">No ratings yet</div>
+                                )}
+                            </div>
                         </Card>
-                    </Link>
-                </div>
-            </div>
+
+                        <div className="grid grid-cols-2 gap-4 h-[340px]">
+                            {/* Stats Cards (Mini) */}
+                            {['Speed', 'Convenience', 'Accuracy', 'Usability'].map(metric => {
+                                const key = metric.toLowerCase() as keyof typeof feedback[0]['ratings'];
+                                const valid = feedback.filter(f => f.ratings[key] !== null);
+                                const avg = valid.length ? (valid.reduce((a, b) => a + (b.ratings[key] as number), 0) / valid.length).toFixed(1) : '-';
+                                return (
+                                    <Card key={metric} className="bg-white/5 border-white/10 p-4 flex flex-col justify-center items-center">
+                                        <span className="text-white/40 text-xs uppercase mb-1">{metric}</span>
+                                        <div className="text-2xl font-bold text-white flex items-center gap-1">
+                                            {avg} <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                        </div>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4">
+                        {feedback.length === 0 && <div className="text-white/30 italic p-8 text-center border border-white/5 rounded-xl">No feedback received.</div>}
+                        {feedback.map(item => (
+                            <Card key={item.id} className="bg-white/5 border-white/10">
+                                <CardHeader className="pb-2">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={item.type === 'bug' ? 'destructive' : item.type === 'feature' ? 'default' : 'secondary'}>
+                                                {item.type}
+                                            </Badge>
+                                            <span className="text-xs text-white/50">
+                                                v{item.appVersion} • {item.deviceContext.platform}
+                                            </span>
+                                        </div>
+                                        <span className="text-xs text-white/40">
+                                            {item.createdAt?.toDate ? format(item.createdAt.toDate(), 'PP p') : 'Just now'}
+                                        </span>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {item.freeform && (
+                                        <div className="p-3 bg-white/5 rounded-lg border border-white/5 text-sm italic text-white/90">
+                                            "{item.freeform}"
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                        {Object.entries(item.ratings).map(([key, val]) => (
+                                            val !== null && (
+                                                <div key={key} className="flex flex-col items-center bg-black/20 p-2 rounded">
+                                                    <span className="text-[10px] uppercase text-white/40">{key}</span>
+                                                    <div className="flex items-center gap-1 text-yellow-400 font-bold">
+                                                        {val} <Star className="w-3 h-3 fill-yellow-400" />
+                                                    </div>
+                                                </div>
+                                            )
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+
+                {/* Acquisition Tab */}
+                <TabsContent value="acquisition" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-green-300 flex items-center gap-2">
+                            <Users className="w-5 h-5" /> Growth & Stats
+                        </h2>
+
+                        <div className="bg-white/5 p-1 rounded-lg flex items-center gap-1 border border-white/10">
+                            {(['7D', '30D', '90D', 'ALL'] as const).map((range) => (
+                                <button
+                                    key={range}
+                                    onClick={() => setTimeRange(range)}
+                                    className={`px-3 py-1 text-xs font-mono rounded-md transition-all ${timeRange === range
+                                        ? 'bg-green-500/20 text-green-300 shadow-sm border border-green-500/10'
+                                        : 'text-white/40 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {range}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-200 text-sm mb-4 flex items-center gap-2">
+                            <XCircle className="w-4 h-4" />
+                            <span>Error loading records: {error}</span>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+                            <CardHeader>
+                                <CardTitle className="text-4xl font-bold text-green-400">
+                                    {allUserData.length}
+                                </CardTitle>
+                                <CardDescription className="text-green-200/50">Total Users</CardDescription>
+                            </CardHeader>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
+                            <CardHeader>
+                                <CardTitle className="text-4xl font-bold text-blue-400">
+                                    +{acquisitionData.daily.reduce((a, b) => a + b, 0)}
+                                </CardTitle>
+                                <CardDescription className="text-blue-200/50">New ({timeRange})</CardDescription>
+                            </CardHeader>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20">
+                            <CardHeader>
+                                <CardTitle className="text-4xl font-bold text-purple-400">{activeUserCount}</CardTitle>
+                                <CardDescription className="text-purple-200/50">Active Users ({timeRange})</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 h-64">
+                        <Card className="bg-white/5 border-white/10 p-4">
+                            <h3 className="text-sm text-white/50 mb-4">New Users ({timeRange === 'ALL' || timeRange === '90D' ? 'Weekly' : 'Daily'})</h3>
+                            {/* Daily Bar Chart */}
+                            <div className="flex items-end justify-between h-40 gap-1 pt-4">
+                                {acquisitionData.daily.length > 0 ? acquisitionData.daily.map((count, i) => (
+                                    <div key={i} className="w-full bg-green-500/10 hover:bg-green-500/20 rounded-t transition-all relative group h-full flex items-end">
+                                        <div
+                                            style={{ height: `${Math.max(5, (count / (Math.max(...acquisitionData.daily, 1))) * 100)}%` }}
+                                            className="w-full bg-green-500 rounded-t opacity-60 group-hover:opacity-100 transition-opacity relative"
+                                        >
+                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-[10px] text-white/90 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded border border-white/10 whitespace-nowrap z-50 pointer-events-none">
+                                                {count} users<br />
+                                                <span className="text-white/50">{acquisitionData.labels[i]}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">No data in range</div>
+                                )}
+                            </div>
+                        </Card>
+                        <Card className="bg-white/5 border-white/10 p-4">
+                            <h3 className="text-sm text-white/50 mb-4">Cumulative Growth</h3>
+                            {/* Cumulative Line Chart (SVG) */}
+                            <div className="relative h-40 w-full overflow-hidden flex items-end">
+                                {acquisitionData.cumulative.length > 0 ? (
+                                    <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" style={{ stopColor: '#a855f7', stopOpacity: 0.5 }} />
+                                                <stop offset="100%" style={{ stopColor: '#a855f7', stopOpacity: 0 }} />
+                                            </linearGradient>
+                                        </defs>
+                                        {/* Generate path d */}
+                                        {(() => {
+                                            const points = acquisitionData.cumulative.map((val, i) => {
+                                                const x = (i / (acquisitionData.cumulative.length - 1)) * 100;
+                                                const y = 100 - ((val / maxCumulative) * 100);
+                                                return `${x} ${y}`;
+                                            });
+                                            const linePath = `M ${points.join(' L ')}`;
+                                            const areaPath = `${linePath} L 100 100 L 0 100 Z`; // Close the loop
+                                            return (
+                                                <>
+                                                    <path d={areaPath} fill="url(#grad)" />
+                                                    <path d={linePath} stroke="#a855f7" strokeWidth="2" fill="none" vectorEffect="non-scaling-stroke" />
+                                                </>
+                                            );
+                                        })()}
+                                    </svg>
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">Loading data...</div>
+                                )}
+                            </div>
+                        </Card>
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

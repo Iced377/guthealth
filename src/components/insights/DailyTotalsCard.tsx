@@ -5,7 +5,7 @@ import type { DailyNutritionSummary } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
-import { LiquidPressable } from '@/components/ui/LiquidPressable';
+
 import { Flame, Beef, Wheat, Droplet, TrendingUp, Edit3 } from 'lucide-react';
 
 interface DailyTotalsCardProps {

@@ -76,7 +76,7 @@ export default function LoginPage() {
               <div className="text-center">
                 <Button
                   variant="link"
-                  className="text-sm text-muted-foreground font-normal"
+                  className="text-sm text-muted-foreground font-normal hidden"
                   onClick={() => setShowEmailAuth(true)}
                 >
                   Continue with email

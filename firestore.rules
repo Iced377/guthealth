@@ -25,9 +25,22 @@ service cloud.firestore {
     // --- Users Collection ---
     // Contains user profiles, settings, and safe foods.
     match /users/{userId} {
-      // Allow users to read and write only their own document.
-      // Strict privacy: No listing allowed.
-      allow read, write: if isOwner(userId);
+      // Allow users to read (get) their own document. Admins can get any.
+      allow get: if isOwner(userId) || isAdmin();
+      
+      // Allow ONLY Admins to list all users (for acquisition stats).
+      // 'isOwner' cannot be used for list() as it requires checking every doc against the UID, which fails query validation without a where clause.
+      allow list: if isAdmin();
+      
+      // SECURITY FIX: Prevent Privilege Escalation
+      // Users cannot set 'isAdmin' or 'premium' to true on creation.
+      allow create: if isOwner(userId) && 
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false) &&
+        (!('premium' in request.resource.data) || request.resource.data.premium == false);
+
+      // Users cannot modify 'isAdmin' or 'premium' on update.
+      allow update: if isOwner(userId) && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'premium']));
 
       // --- Subcollections ---
       // --- Subcollections ---
@@ -53,6 +66,11 @@ service cloud.firestore {
       
       // Allow admins to update status (e.g. mark as viewed)
       allow update: if isAdmin();
+    }
+
+    // --- Admin Events (Hallucinations) ---
+    match /admin_events/{eventId} {
+      allow read, write: if isAdmin();
     }
 
     // --- Default Deny ---

@@ -1,9 +1,21 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
-import ParallaxVitalsHeader from './ParallaxVitalsHeader';
-import LiquidCardCarousel from './LiquidCardCarousel';
+import { verifyFoodAnalysisFlow } from '@/ai/flows/verify-food-analysis';
+import { Button } from '@/components/ui/button';
+import { Bug } from 'lucide-react';
+
+
+// Lazy load heavy interactive components
+const ParallaxVitalsHeader = dynamic(() => import('./ParallaxVitalsHeader'), {
+    loading: () => <div className="w-full h-32 rounded-2xl bg-white/5 animate-pulse" />,
+    ssr: false // Optimization: No need to SSR the complex motion header
+});
+const LiquidCardCarousel = dynamic(() => import('./LiquidCardCarousel'), {
+    ssr: false // Carousel is heavily client-side interactive
+});
 import { useActionContext } from '@/contexts/ActionContext';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { format, isSameDay, addDays } from 'date-fns';
@@ -16,14 +28,13 @@ import {
 } from '@/types';
 import {
     calculateDaySummary,
-
     calculateDailyPedometerStats
 } from '@/lib/utils';
 import { useHealthKit } from '@/lib/apple-health/hooks';
 
 // Define props to make it a controlled component for date
 interface DashboardContentProps {
-    userProfile: any; // Using explicit type locally vs import for brevity in replacement? No, let's just use existing usage.
+    userProfile: any;
     timelineEntries: TimelineEntry[];
     dailyNutritionSummary: DailyNutritionSummary;
     isLoadingAi: Record<string, boolean>;
@@ -189,6 +200,7 @@ export default function DashboardContent({
     return (
         <div id="dashboard-container" className="flex flex-col h-full w-full relative overflow-hidden bg-background">
 
+
             {/* Background Gradient Mesh */}
             <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
@@ -232,9 +244,9 @@ export default function DashboardContent({
                             className="pt-2" // Reduced padding as there's no sticky date anymore
                         />
                     )}
+                    isAdmin={userProfile?.isAdmin}
                 />
             )}
-
         </div>
     );
 }

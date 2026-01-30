@@ -47,6 +47,7 @@ const PrivacyPage = () => {
           <li>Personalize your experience and offer tailored recommendations.</li>
           <li>Communicate with you about your account or our services.</li>
           <li>Conduct research and analysis to better understand our users and improve our application.</li>
+          <li>Monitor AI performance and safety by reviewing flagged interactions to correct inaccuracies (hallucinations) and improve response quality.</li>
           <li>Ensure the security of our platform.</li>
           <li>Comply with legal obligations.</li>
         </ul>

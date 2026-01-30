@@ -493,7 +493,7 @@ export default function FavoritesPage() {
         onOpenChange={setIsSymptomLogDialogOpen}
         onLogSymptoms={(symptoms, notes, severity) => handleLogSymptoms(symptoms, notes, severity, contextualFoodItemIdForSymptomLog ? [contextualFoodItemIdForSymptomLog] : undefined)}
         allSymptoms={COMMON_SYMPTOMS}
-        context={contextualFoodItemIdForSymptomLog ? { foodItemIds: [contextualFoodItemIdForSymptomLog] } : undefined}
+        context={contextualFoodItemIdForSymptomLog ? { type: 'meal', mealId: contextualFoodItemIdForSymptomLog, mealName: "Favorite Item" } : undefined}
       />
 
       {Object.values(isLoadingAi).some(loading => loading) && (

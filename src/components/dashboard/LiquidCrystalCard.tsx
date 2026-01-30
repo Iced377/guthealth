@@ -51,7 +51,9 @@ export default function LiquidCrystalCard({
     isGuestView = false,
     onToggleFavorite,
     className,
-}: LiquidCrystalCardProps) {
+    isAdminView = false, // New prop to control visibility of builder tools
+}: LiquidCrystalCardProps & { isAdminView?: boolean }) { // Quick type extension or should update interface? Updating interface is better.
+
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
@@ -109,6 +111,27 @@ export default function LiquidCrystalCard({
                                         {exactTime}
                                     </span>
                                     {item.isFavorite && <Heart className="h-3 w-3 text-red-500 fill-red-500" />}
+
+                                    {/* Hallucination Checker Badge (Builder Only) */}
+                                    {isAdminView && item.verificationResult && (
+                                        item.verificationResult.verified ? (
+                                            <div title="Verified by AI Claims Audit" className="flex items-center justify-center h-4 w-4 bg-green-500/10 rounded-full border border-green-500/20">
+                                                <CheckCheck className="h-2.5 w-2.5 text-green-500" />
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="flex items-center gap-1 cursor-help"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    alert(item.verificationResult?.flags.join('\n')); // Simple alert for now as non-blocking
+                                                }}
+                                            >
+                                                <div className="flex items-center justify-center h-4 w-4 bg-yellow-500/10 rounded-full border border-yellow-500/20 animate-pulse">
+                                                    <Info className="h-2.5 w-2.5 text-yellow-500" />
+                                                </div>
+                                            </div>
+                                        )
+                                    )}
                                 </div>
 
                                 <div className="text-left text-xl font-bold font-headline leading-tight text-foreground/90 line-clamp-2 transition-colors">

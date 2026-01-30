@@ -54,7 +54,6 @@ export default function FeedbackWidget() {
       }
 
       const feedbackData: FeedbackSubmissionCreate = {
-        userId: user?.uid || 'anonymous',
         timestamp: Timestamp.now(),
         feedbackText: data.feedbackText,
         category: data.category || 'Not specified',

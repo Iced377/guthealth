@@ -219,6 +219,12 @@ export function CoachView() {
                 <div className="space-y-4">
                     <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
                         {aiOutput.aiResponse}
+
+                        <div className={cn("mt-6 py-3 px-4 border-t border-dashed flex items-center justify-center gap-2", mode === 'dark' ? "border-white/10" : "border-black/10")}>
+                            <span className={cn("text-xs font-medium opacity-60 text-center", tokens.text.tertiary)}>
+                                Gutcheck Coach is an AI and not a doctor, Consult a professional for medical advice
+                            </span>
+                        </div>
                     </div>
                     {/* Copy Button */}
                     <div className="flex justify-end pt-4">

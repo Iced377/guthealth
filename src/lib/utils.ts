@@ -20,23 +20,21 @@ export const calculateDaySummary = (logs: LoggedFoodItem[]): DailyNutritionSumma
 
 export const calculateDailyPedometerStats = (logs: PedometerLog[]) => {
   if (!logs.length) return null;
-  // Assuming logs might be cumulative or singular updates? 
-  // Usually pedometer logs for a day might be a single entry from a sync, or multiple.
-  // Let's assume we take the max matching entry or sum if they are incremental?
-  // For simplicity, let's sum them if multiple, or just take the latest.
-  // If they are distinct sources, we might default to one.
 
-  // Simple logic: Sum steps
-  const totalSteps = logs.reduce((sum, log) => sum + log.steps, 0);
-  const totalDistance = logs.reduce((sum, log) => sum + (log.distance || 0), 0);
+  // LOGIC UPDATE: Single Source of Truth
+  // Apple Health / Fitbit send "Status Updates" (e.g. "Total is now 500", "Total is now 1000").
+  // Usage of 'reduce' to sum them was incorrect.
+  // We should take the entry with the MAX steps (or latest timestamp) to represent the day.
 
-  // Return a synthetic log object representing the total
+  // Sort by steps descending to find the highest count reported for the day
+  const bestLog = logs.sort((a, b) => b.steps - a.steps)[0];
+
   return {
     id: 'daily-summary',
-    timestamp: new Date(),
+    timestamp: bestLog.timestamp,
     entryType: 'pedometer_data',
-    steps: totalSteps,
-    distance: totalDistance,
-    source: logs[0]?.source || 'apple_health'
+    steps: bestLog.steps,
+    distance: bestLog.distance,
+    source: bestLog.source
   } as PedometerLog;
 };

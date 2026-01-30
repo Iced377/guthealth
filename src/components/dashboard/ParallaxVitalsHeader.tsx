@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PedometerLog, UserProfile, DailyNutritionSummary, FitbitLog } from '@/types';
-import { Footprints, Sprout, Scale, Plus } from 'lucide-react';
+import { Footprints, Sprout, Scale, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NutritionOverview from './NutritionOverview';
 import { useActionContext } from '@/contexts/ActionContext';
@@ -121,7 +121,7 @@ export default function ParallaxVitalsHeader({
                                                 {stepsData?.steps ? stepsData.steps.toLocaleString() : '0'}
                                             </span>
                                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                                Steps <Plus className="w-3 h-3 opacity-50" />
+                                                Steps <Edit2 className="w-3 h-3 opacity-50" />
                                             </span>
                                         </div>
                                     </div>
@@ -181,7 +181,7 @@ export default function ParallaxVitalsHeader({
                                                 {weightData?.weight ? weightData.weight : '--'}
                                             </span>
                                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                                Weight <Plus className="w-3 h-3 opacity-50" />
+                                                Weight <Edit2 className="w-3 h-3 opacity-50" />
                                             </span>
                                         </div>
                                     </div>

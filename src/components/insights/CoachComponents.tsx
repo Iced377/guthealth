@@ -273,6 +273,12 @@ export function CoachSessionSheet() {
                 <div className="space-y-4">
                     <div className={cn("space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 text-sm leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
                         {aiOutput.aiResponse}
+
+                        <div className={cn("mt-4 pt-3 border-t border-dashed flex items-center justify-center", mode === 'dark' ? "border-white/10" : "border-black/5")}>
+                            <p className={cn("text-[10px] font-medium text-center opacity-50 uppercase tracking-wide", tokens.text.tertiary)}>
+                                Gutcheck Coach is an AI and not a doctor, Consult a professional for medical advice
+                            </p>
+                        </div>
                     </div>
                     {/* Copy Button */}
                     <div className="flex justify-end pt-2">

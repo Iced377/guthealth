@@ -72,6 +72,12 @@ export interface LoggedFoodItem {
   userFeedback?: 'safe' | 'unsafe' | null;
   macrosOverridden?: boolean;
   isFavorite?: boolean; // Added for favorite functionality
+
+  // Hallucination Checker Result
+  verificationResult?: {
+    verified: boolean;
+    flags: string[];
+  };
   symptoms?: string[]; // List of symptom IDs
 }
 
@@ -150,6 +156,7 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;
+  createdAt?: Timestamp | Date; // Added for acquisition tracking
   safeFoods: SafeFood[];
   premium?: boolean;
   isAdmin?: boolean;

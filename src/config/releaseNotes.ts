@@ -8,9 +8,25 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.1.8";
+export const APP_VERSION = "5.2.0";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.2.0',
+        date: 'January 30, 2026',
+        title: 'Admin Dashboard & Privacy',
+        description: 'Introducing the Admin Dashboard for better app management, along with critical privacy updates and UI enhancements.',
+        features: [
+            'Admin Hub: Monitor user acquisition and AI performance in real-time.',
+            'Privacy: Added AI Safety Monitoring clause to Privacy Policy.',
+            'UX: Improved Pedometer card with clearer edit controls.',
+            'UX: Streamlined Login (Google SSO Only).'
+        ],
+        improvements: [
+            'Removed debug overlays for a cleaner experience.'
+        ],
+        fixes: []
+    },
     {
         version: '5.1.8',
         date: 'January 29, 2026',

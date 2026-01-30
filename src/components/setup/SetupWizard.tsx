@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import IntroVideo from './steps/IntroVideo';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types';
@@ -32,7 +32,7 @@ export interface SetupData {
     dietaryPreferences?: string[];
 }
 
-type WizardMode = 'intro' | 'wizard' | 'results';
+type WizardMode = 'intro' | 'wizard' | 'results' | 'outro';
 
 export default function SetupWizard() {
     const { user } = useAuth();
@@ -122,10 +122,17 @@ export default function SetupWizard() {
                 macros: results.macros
             };
 
-            await updateDoc(doc(db, 'users', user.uid), {
+            // Use setDoc with merge to ensure document exists and add createdAt if missing
+            await setDoc(doc(db, 'users', user.uid), {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
                 dateOfBirth: formData.dob,
-                profile: profileData
-            });
+                profile: profileData,
+                createdAt: new Date(), // Client timestamp is fine for this beta
+                isAdmin: false, // Explicitly set false to avoid security ambiguity
+                safeFoods: []
+            }, { merge: true });
 
             // Show Outro Video instead of jumping directly
             setMode('outro');

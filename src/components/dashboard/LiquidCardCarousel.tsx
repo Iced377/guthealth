@@ -32,6 +32,7 @@ interface LiquidCardCarouselProps {
     onScroll?: (scrollY: number) => void;
     renderHeader?: (date: Date) => React.ReactNode; // Function to render header for ANY date
     className?: string; // Support extra styling
+    isAdmin?: boolean;
 }
 
 export default function LiquidCardCarousel({
@@ -48,7 +49,8 @@ export default function LiquidCardCarousel({
     isToday,
     onScroll,
     renderHeader,
-    className
+    className,
+    isAdmin = false,
 }: LiquidCardCarouselProps) {
 
     const containerRef = useRef<HTMLDivElement>(null);
@@ -166,6 +168,7 @@ export default function LiquidCardCarousel({
                                 onEditIngredients={onEditIngredients}
                                 onRepeatMeal={onRepeatMeal}
                                 onToggleFavorite={onToggleFavorite}
+                                isAdminView={isAdmin}
                             />
                         )}
                     </div>
