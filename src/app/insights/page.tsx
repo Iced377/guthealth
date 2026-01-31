@@ -93,14 +93,35 @@ function InsightsLayout() {
       }
     }
 
-    // 5. Wins
+    // 5. Wins & Tags
     const calculatedWins: string[] = [];
     const proteinTarget = userProfile?.profile?.macros?.protein || 150;
     const stepGoal = 8000;
 
+    // Add User Diets first (as Tags)
+    const activeDiets = userProfile?.profile?.dietaryPreferences || [];
+    const dietMap: Record<string, string> = {
+      'keto': 'Keto',
+      'low_fodmap': 'Low FODMAP',
+      'intermittent_fasting': 'Intermittent Fasting',
+      'vegan': 'Vegan',
+      'vegetarian': 'Vegetarian',
+      'paleo': 'Paleo',
+      'gluten_free': 'Gluten Free',
+      'dairy_free': 'Dairy Free',
+      'pescatarian': 'Pescatarian'
+    };
+
+    activeDiets.forEach(d => {
+      if (dietMap[d]) calculatedWins.push(dietMap[d]);
+    });
+
     if (totals.prot >= proteinTarget * 0.8) calculatedWins.push("High Protein");
     if (steps && steps >= stepGoal) calculatedWins.push("Step Goal");
-    if (hoursSince && hoursSince > 12) calculatedWins.push("Intermittent Fasting");
+    // Only add IF badge if it's NOT already in diets (to avoid dupe)
+    if (hoursSince && hoursSince > 12 && !activeDiets.includes('intermittent_fasting')) {
+      calculatedWins.push("Fasting Mode");
+    }
     if (streak >= 3) calculatedWins.push(`${streak} Day Streak`);
 
     // 6. Insight Text
@@ -203,7 +224,7 @@ function InsightsLayout() {
         }}
       >
         {/* Page 1: Highlights */}
-        <div className="w-full flex-shrink-0 snap-center snap-always h-full overflow-y-auto pt-48 pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-48 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="w-full max-w-md mx-auto px-4 min-h-full">
             <TodayBrief
               userName={userProfile?.displayName?.split(' ')[0] || "User"}
@@ -220,7 +241,7 @@ function InsightsLayout() {
         </div>
 
         {/* Page 2: Coach */}
-        <div className="w-full flex-shrink-0 snap-center snap-always h-full overflow-y-auto pt-48 pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-48 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="w-full max-w-md mx-auto min-h-full flex items-center justify-center">
             <CoachView />
           </div>

@@ -42,7 +42,9 @@ service cloud.firestore {
       allow update: if isOwner(userId) && 
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'premium']));
 
-      // --- Subcollections ---
+      // Allow users to delete their own account
+      allow delete: if isOwner(userId);
+
       // --- Subcollections ---
       match /timelineEntries/{entryId} {
         allow read, write: if isOwner(userId);
@@ -71,6 +73,25 @@ service cloud.firestore {
     // --- Admin Events (Hallucinations) ---
     match /admin_events/{eventId} {
       allow read, write: if isAdmin();
+    }
+
+    // --- Contact Submissions ---
+    match /contact_submissions/{submissionId} {
+      // Allow anyone (even unauthenticated) to submit a contact form
+      allow create: if true;
+      // Only admins can read/manage these
+      allow read, update, delete: if isAdmin();
+    }
+
+    // --- Audit Deleted Users ---
+    // Critical audit log for account deletions.
+    match /audit_deleted_users/{documentId} {
+      // Allow authenticated users to create a log entry (simplified for reliability)
+      allow create: if isAuthenticated();
+      // Only admins can read these records.
+      allow read: if isAdmin();
+      // NOBODY can update or delete audit logs.
+      allow update, delete: if false;
     }
 
     // --- Default Deny ---

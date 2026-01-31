@@ -88,7 +88,7 @@ const EXPLORE_ITEMS: SubMenuItem[] = [
 
 // Insights sub-items
 const INSIGHTS_ITEMS: SubMenuItem[] = [
-    { id: 'insights', icon: Lightbulb, label: 'Insights', path: '/insights', accessibilityLabel: 'Insights, AI analysis' },
+    { id: 'insights-view', icon: Lightbulb, label: 'Insights', path: '/insights', accessibilityLabel: 'Insights, AI analysis' },
     { id: 'trends', icon: Activity, label: 'Trends', path: '/trends', accessibilityLabel: 'Trends, view patterns' },
 
 ];
@@ -133,26 +133,36 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
     <motion.div
         layoutId={layoutId} // Enables the fluid morphing travel
         className={cn(
-            "absolute inset-0 rounded-[28px] overflow-hidden",
-            // PURE LENS EFFECT:
-            "bg-white/5 dark:bg-white/5", // Very subtle tint
-            "backdrop-blur-md", // Standard blue
-            "border border-white/20 dark:border-white/10",
+            "absolute inset-0 rounded-[24px] overflow-hidden z-0", // Match parent radius
             className
         )}
-        // Removed SVG filter for now as it might be distorting the highlight improperly
         animate={{
-            scale: isPressed ? 0.75 : 1, // Deep press effect (0.75 scale)
+            scale: isPressed ? 0.95 : 1, // Subtle press
         }}
         transition={LIQUID_SPRING}
     >
-        {/* Subtle Gradient Glow (Ambient Light) */}
+        {/* 1. Base Liquid Body */}
+        <div className="absolute inset-0 backdrop-blur-md bg-white/60 dark:bg-white/15" />
+
+        {/* 2. Radial Liquid Highlight (The Glow) - Tinted with Active Color */}
         <div
-            className="absolute inset-0 opacity-20 transition-colors duration-500"
+            className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-60"
             style={{
-                background: `radial-gradient(circle at center, ${activeColor || 'transparent'}, transparent 70%)`
+                background: `radial-gradient(circle at center, ${activeColor || 'rgba(255,255,255,0.8)'}, transparent 60%)`
             }}
         />
+
+        {/* 3. Specular Streak */}
+        <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/20 to-transparent skew-x-[-20deg] opacity-50 translate-x-[20%]" />
+
+        {/* 4. Inset Thickness Highlight */}
+        <div className={cn("absolute inset-0 rounded-[24px]",
+            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),inset_0_-1px_1px_rgba(0,0,0,0.05)]",
+            "dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-1px_1px_rgba(0,0,0,0.1)]"
+        )} />
+
+        {/* 5. Drop Shadow */}
+        <div className="absolute inset-0 rounded-[24px] shadow-[0_4px_12px_rgba(0,0,0,0.15)]" />
     </motion.div>
 );
 
@@ -613,7 +623,7 @@ export default function LiquidNavigation({
                                     <div className={cn(
                                         "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
                                         pressedItem === item.id ? "opacity-0" : "opacity-100",
-                                        item.id === 'insights' && "bg-gradient-to-br from-amber-400 to-orange-500",
+                                        item.id === 'insights-view' && "bg-gradient-to-br from-amber-400 to-orange-500",
                                         item.id === 'trends' && "bg-gradient-to-br from-emerald-400 to-teal-500",
 
                                         "shadow-lg"
@@ -735,32 +745,47 @@ export default function LiquidNavigation({
                     mass: 1
                 }}
             >
-                {/* 2. Backplate: Opacity Guard (Always Visible) */}
+                {/* 0. Hidden SVG Filter Definition */}
+                <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
+                    <defs>
+                        <filter id="liquid-displacement" x="-20%" y="-20%" width="140%" height="140%">
+                            <feImage result="pict" href={liquidDisplacementBase64} x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" />
+                            <feDisplacementMap scale="20" xChannelSelector="R" yChannelSelector="G" in="SourceGraphic" in2="pict" />
+                        </filter>
+                    </defs>
+                </svg>
+
+                {/* 1. Base Liquid Body (Glass) */}
                 <div
                     className={cn(
                         "absolute inset-0 rounded-[32px]",
-                        "bg-white/15 dark:bg-black/40", // HARDENED OPACITY -> 15%
-                        "shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05),0_0_0_1px_rgba(255,255,255,0.1)]",
+                        "bg-white/10 dark:bg-black/20", // Slightly more base opacity for volume
+                        "backdrop-blur-xl backdrop-saturate-[180%]", // Keeping high saturation for color bleed
+                        "shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]", // Softer shadow
                         "pointer-events-none"
                     )}
+                    style={{
+                        filter: "url(#liquid-displacement)"
+                    }}
                 />
 
-                {/* 3. BlurLayer: Frosted Glass (Static) */}
+                {/* 2. Radial Liquid Highlight (The Glow) - Static for Bar */}
                 <div
-                    className={cn(
-                        "absolute inset-0 rounded-[32px]",
-                        "backdrop-blur-xl backdrop-saturate-150",
-                        "-webkit-backdrop-filter-blur-[20px]", // Webkit fallback hint
-                        "pointer-events-none"
-                    )}
+                    className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-40 pointer-events-none"
+                    style={{
+                        background: `radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 60%)`
+                    }}
                 />
 
-                {/* 4. Scrim: Inner Contrast (Prevent gaps) */}
+                {/* 3. Specular Streak (The Gloss) */}
+                <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/10 to-transparent skew-x-[-20deg] opacity-30 translate-x-[20%] pointer-events-none" />
+
+                {/* 4. Inset Thickness Highlight (The Rim) */}
                 <div
                     className={cn(
-                        "absolute inset-0 rounded-[32px]",
-                        "bg-white/10 dark:bg-black/10",
-                        "pointer-events-none"
+                        "absolute inset-0 rounded-[32px] pointer-events-none",
+                        "shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),inset_0_-1px_1px_rgba(0,0,0,0.05)]",
+                        "dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),inset_0_-1px_1px_rgba(0,0,0,0.1)]"
                     )}
                 />
 
@@ -769,7 +794,7 @@ export default function LiquidNavigation({
                     className={cn(
                         "relative flex items-center justify-between w-full h-full",
                         "px-1.5",
-                        "border border-white/50 dark:border-white/10 rounded-[32px]",
+                        // Removed border here as Inset Highlight handles it better
                     )}
                 >
                     {PRIMARY_NAV.map((item) => {

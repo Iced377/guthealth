@@ -21,22 +21,49 @@ export function InsightFeed() {
 
         // 1. Calories Insight
         const netCals = trends.cumulativeNetCaloriesWithGuardrail || trends.cumulativeNetCalories;
+        const userGoal = userProfile?.profile?.goal || 'maintain';
+
+        // Only show deficit/surplus insight if relevant to goal
+        // e.g. If trying to gain muscle, surplus is good. If losing fat, deficit is good.
+        // If maintenance, we want close to 0.
+        // For simplified logic: Show if there's a significant deviation OR if user is focused on weight.
+        const showCaloriesInsight = true; // We always show it but tailor the message
+
+        const isDeficit = netCals > 0;
+        const isSurplus = netCals < 0;
+
+        let title = "Calorie Balance";
+        let preview = `You are ${Math.abs(netCals)}kcal ${isDeficit ? 'under' : 'over'} maintenance.`;
+        let analysis = "Your intake is balanced.";
+
+        if (userGoal === 'lose_fat') {
+            if (isDeficit) {
+                title = "Calorie Deficit";
+                analysis = "You're hitting your deficit goals. This is the primary driver for fat loss.";
+            } else {
+                title = "Calorie Surplus";
+                analysis = "You're in a surplus, which may hinder fat loss. Watch portion sizes.";
+            }
+        } else if (userGoal === 'gain_muscle') {
+            if (isSurplus) {
+                title = "Calorie Surplus";
+                analysis = "Good job hitting a surplus for muscle growth. Ensure protein is high.";
+            } else {
+                title = "Calorie Deficit";
+                analysis = "You're in a deficit. You may need to eat more to support muscle gain.";
+            }
+        }
+
         insights.push({
             id: 'calories-insight',
             category: 'Calories',
-            title: netCals > 0 ? 'Calorie Deficit' : 'Calorie Surplus',
-            preview: netCals > 0
-                ? `You are ${Math.abs(netCals)}kcal under your maintenance target over the last ${trends.totalDaysAnalyzed} days.`
-                : `You are ${Math.abs(netCals)}kcal over your maintenance target over the last ${trends.totalDaysAnalyzed} days.`,
+            title: title,
+            preview: `You are ${Math.abs(netCals)}kcal ${isDeficit ? 'under' : 'over'} your maintenance target over the last ${trends.totalDaysAnalyzed} days.`,
             detail: (
                 <div className="space-y-4">
                     <FrostBackplate>
                         <p className="mb-2 font-bold text-white">Analysis</p>
-                        <p>
-                            {netCals > 0
-                                ? "You're consistently hitting your deficit goals. This is the primary driver for fat loss."
-                                : "You're currently in a surplus. Ensure this aligns with your goal (e.g. muscle gain) or adjust portion sizes."}
-                        </p>
+                        <p>{analysis}</p>
                     </FrostBackplate>
                     <FrostBackplate>
                         <p className="mb-2 font-bold text-white">Adherence</p>
@@ -115,6 +142,7 @@ export function InsightFeed() {
                         category={insight.category}
                         title={insight.title}
                         preview={insight.preview}
+                        timeAgo="Today"
                     >
                         {insight.detail}
                     </InsightScene>

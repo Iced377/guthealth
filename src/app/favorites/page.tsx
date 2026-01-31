@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import type { LoggedFoodItem, UserProfile, TimelineEntry, Symptom } from '@/types';
 import { COMMON_SYMPTOMS } from '@/types';
@@ -35,7 +36,7 @@ import SymptomLoggingDialog from '@/components/food-logging/SymptomLoggingDialog
 import AddManualMacroEntryDialog, { type ManualMacroFormValues } from '@/components/food-logging/AddManualMacroEntryDialog';
 import IdentifyFoodByPhotoDialog, { type IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
 // import Navbar from '@/components/shared/Navbar';
-// import TimelineFoodCard from '@/components/food-logging/TimelineFoodCard'; // Replaced by LiquidCrystalCard
+import { GlassCard } from '@/components/ui/GlassCard';
 import LiquidCrystalCard from '@/components/dashboard/LiquidCrystalCard';
 import LiquidHeader from '@/components/navigation/LiquidHeader';
 // import { ScrollArea } from '@/components/ui/scroll-area'; // Replaced by native scroll with padding
@@ -419,17 +420,29 @@ export default function FavoritesPage() {
 
       <main className="flex-grow container mx-auto px-4 py-4 sm:py-6 relative z-10 pb-32 overflow-y-auto no-scrollbar scroll-smooth">
         {favoriteItems.length === 0 ? (
-          <div className="text-center py-20 flex flex-col items-center justify-center min-h-[50vh]">
-            <Heart className="h-16 w-16 text-muted-foreground/30 mb-4" />
-            <h2 className="text-xl font-semibold mb-2 text-foreground/80 font-headline">No Favorites Yet</h2>
-            <p className="text-muted-foreground max-w-sm mx-auto">
-              Mark meals as favorites from your dashboard to see them here.
-            </p>
-            <Button asChild variant="outline" className="mt-6 rounded-full glass-crystal border-white/20">
-              <Link href="/?openDashboard=true">
-                <Home className="mr-2 h-4 w-4" /> Back to Dashboard
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <GlassCard variant="heavy" intensity="high" className="w-full max-w-sm p-8 flex flex-col items-center text-center">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-50 to-pink-100 dark:from-red-900/20 dark:to-pink-900/10 flex items-center justify-center mb-6 shadow-sm border border-white/20">
+                <Heart className="h-10 w-10 text-red-400 fill-current" />
+              </div>
+              <h2 className="text-2xl font-bold mb-3 text-foreground font-headline">No Favorites Yet</h2>
+              <p className="text-muted-foreground leading-relaxed mb-8">
+                Save your best meals to easily log them again later. Tap the heart icon on any meal in your dashboard.
+              </p>
+              <Link href="/?openDashboard=true" className="w-full">
+                <motion.button
+                  className="rounded-full w-full bg-primary text-primary-foreground font-bold px-6 py-4 shadow-md shadow-primary/20 hover:bg-primary/90 flex items-center justify-center gap-2"
+                  whileTap={{ scale: 1.25 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 8 }}
+                >
+                  <Home className="h-4 w-4" /> Go to Dashboard
+                </motion.button>
               </Link>
-            </Button>
+            </GlassCard>
+
+            {/* Ambient background glow for the empty state */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 blur-[100px] pointer-events-none z-[-1]" />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

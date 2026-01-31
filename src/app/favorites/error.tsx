@@ -1,9 +1,9 @@
 
-'use client'; 
+'use client';
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import Navbar from '@/components/shared/Navbar';
+
 import { Heart } from 'lucide-react'; // Changed icon
 
 export default function FavoritesErrorPage({ // Renamed component for clarity
@@ -19,7 +19,7 @@ export default function FavoritesErrorPage({ // Renamed component for clarity
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
+
       <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
         <Heart className="h-16 w-16 text-destructive mb-6" /> {/* Changed icon */}
         <h2 className="text-3xl font-semibold mb-4 text-foreground">Oops! Something went wrong.</h2>

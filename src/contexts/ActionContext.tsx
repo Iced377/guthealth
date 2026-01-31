@@ -397,6 +397,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     useEffect(() => {
         let unsubscribeTimeline: () => void;
+        let isCancelled = false;
 
         const setupData = async () => {
             setIsDataLoading(true);
@@ -406,6 +407,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 const userDocRef = doc(db, 'users', authUser.uid);
                 try {
                     const userDocSnap = await getDoc(userDocRef);
+
+                    if (isCancelled) return; // Prevent proceeding if effect cleaned up
+
                     let currentIsPremium = false;
                     let profileData = initialGuestProfile;
 
@@ -447,6 +451,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         q = query(timelineEntriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
                     }
 
+                    if (isCancelled) return;
+
                     unsubscribeTimeline = onSnapshot(q, (snapshot) => {
                         const fetchedEntries: TimelineEntry[] = snapshot.docs.map(docSnap => {
                             const data = docSnap.data();
@@ -459,7 +465,12 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         setTimelineEntries(fetchedEntries);
                         setIsDataLoading(false);
                     }, (error) => {
-                        console.error("Timeline snapshot error:", error);
+                        // Ignore permission errors that happen during logout
+                        if (error.code === 'permission-denied') {
+                            console.log("Timeline snapshot permission denied (likely logout).");
+                        } else {
+                            console.error("Timeline snapshot error:", error);
+                        }
                         setIsDataLoading(false);
                     });
 
@@ -477,6 +488,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setupData();
 
         return () => {
+            isCancelled = true;
             if (unsubscribeTimeline) unsubscribeTimeline();
         };
     }, [authUser, authLoading]);

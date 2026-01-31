@@ -7,6 +7,7 @@ import { Footprints, Sprout, Scale, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NutritionOverview from './NutritionOverview';
 import { useActionContext } from '@/contexts/ActionContext';
+import { getDietaryMetrics } from '@/lib/dietaryMetrics';
 
 
 
@@ -39,11 +40,16 @@ export default function ParallaxVitalsHeader({
     const parallaxOffset = scrollY * 0.4;
     const [activeStatIndex, setActiveStatIndex] = useState(0);
 
+    const { timelineEntries } = useActionContext();
+    const metrics = getDietaryMetrics(userProfile, summary, timelineEntries, stepsData, weightData);
+    const activeMetric = metrics[activeStatIndex] || metrics[0];
+
+    // Helper: Determine Swipe Direction Logic
     const handleStatDragEnd = (event: any, info: any) => {
         const SWIPE_THRESHOLD = 20;
         if (info.offset.x < -SWIPE_THRESHOLD) {
             // Swipe Left (Next)
-            if (activeStatIndex < 2) setActiveStatIndex(prev => prev + 1);
+            if (activeStatIndex < metrics.length - 1) setActiveStatIndex(prev => prev + 1);
         } else if (info.offset.x > SWIPE_THRESHOLD) {
             // Swipe Right (Prev)
             if (activeStatIndex > 0) setActiveStatIndex(prev => prev - 1);
@@ -60,9 +66,6 @@ export default function ParallaxVitalsHeader({
     const { openAddVitalsDialog } = useActionContext();
 
     const handleCardClick = () => {
-        // Open dialog with current values
-        // Note: stepsData might be null, defaults to 0 if so? Or just pass undefined.
-        // We pass what we see on screen approximately
         openAddVitalsDialog(
             currentDate,
             weightData?.weight,
@@ -88,10 +91,11 @@ export default function ParallaxVitalsHeader({
                             carbs: userProfile.profile.macros.carbs,
                             fat: userProfile.profile.macros.fats,
                         } : undefined}
+                        dietaryPreferences={userProfile?.profile?.dietaryPreferences}
                     />
                 </div>
 
-                {/* SECTION 2: Swiper Card (Steps / Fiber / Weight) - MIDDLE */}
+                {/* SECTION 2: Swiper Card (Dynamic Metrics) - MIDDLE */}
                 <motion.div
                     className="w-full h-16 cursor-grab active:cursor-grabbing relative"
                     drag="x"
@@ -100,100 +104,87 @@ export default function ParallaxVitalsHeader({
                     onDragEnd={handleStatDragEnd}
                     onClick={handleCardClick}
                 >
-                    <GlassCard className="h-full flex flex-col justify-center items-center px-4 py-0 border-0 shadow-sm bg-white/5 dark:bg-black/20 backdrop-blur-md rounded-2xl cursor-pointer hover:bg-white/10 transition-colors">
+                    <GlassCard className="h-full flex flex-col justify-center items-center px-4 py-0 border border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.1)] bg-white/20 dark:bg-black/30 backdrop-blur-xl rounded-2xl cursor-pointer hover:bg-white/30 transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_8px_32px_rgba(0,0,0,0.15)] group relative overflow-hidden">
+
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shimmer pointer-events-none" />
+
                         <AnimatePresence mode="wait" initial={false}>
-                            {activeStatIndex === 0 ? (
-                                <motion.div
-                                    key="steps"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="w-full h-full flex items-center justify-between"
-                                >
-                                    {/* Left: Icon + Label */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-full bg-red-500/10 flex items-center justify-center">
-                                            <Footprints className="w-5 h-5 text-red-500" />
-                                        </div>
-                                        <div className="flex flex-row items-baseline gap-2">
-                                            <span className="text-xl font-bold font-headline text-foreground leading-none">
-                                                {stepsData?.steps ? stepsData.steps.toLocaleString() : '0'}
-                                            </span>
-                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                                Steps <Edit2 className="w-3 h-3 opacity-50" />
-                                            </span>
-                                        </div>
+                            <motion.div
+                                key={activeMetric.id}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                                className="w-full h-full flex items-center justify-between relative z-10"
+                            >
+                                {/* Left: Liquid Bubble Icon + Label */}
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "h-10 w-10 rounded-full flex items-center justify-center relative overflow-hidden shadow-inner",
+                                        "bg-gradient-to-br from-white/40 to-white/10 dark:from-white/10 dark:to-transparent border border-white/20",
+                                        activeMetric.color === 'red' && "shadow-[0_0_15px_rgba(239,68,68,0.3)]",
+                                        activeMetric.color === 'green' && "shadow-[0_0_15px_rgba(34,197,94,0.3)]",
+                                        activeMetric.color === 'blue' && "shadow-[0_0_15px_rgba(59,130,246,0.3)]",
+                                        activeMetric.color === 'orange' && "shadow-[0_0_15px_rgba(249,115,22,0.3)]",
+                                        activeMetric.color === 'yellow' && "shadow-[0_0_15px_rgba(234,179,8,0.3)]",
+                                        activeMetric.color === 'purple' && "shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                                    )}>
+                                        {/* Icon Glow */}
+                                        <div className={cn("absolute inset-0 opacity-20",
+                                            activeMetric.color === 'red' && "bg-red-500",
+                                            activeMetric.color === 'green' && "bg-green-500",
+                                            activeMetric.color === 'blue' && "bg-blue-500",
+                                            activeMetric.color === 'orange' && "bg-orange-500",
+                                            activeMetric.color === 'yellow' && "bg-yellow-500",
+                                            activeMetric.color === 'purple' && "bg-purple-500"
+                                        )} />
+
+                                        <activeMetric.icon className={cn("w-5 h-5 relative z-10 drop-shadow-sm",
+                                            activeMetric.color === 'red' && "text-red-500 dark:text-red-400",
+                                            activeMetric.color === 'green' && "text-green-500 dark:text-green-400",
+                                            activeMetric.color === 'blue' && "text-blue-500 dark:text-blue-400",
+                                            activeMetric.color === 'orange' && "text-orange-500 dark:text-orange-400",
+                                            activeMetric.color === 'yellow' && "text-yellow-500 dark:text-yellow-400",
+                                            activeMetric.color === 'purple' && "text-purple-500 dark:text-purple-400"
+                                        )} />
                                     </div>
 
-                                    {/* Right: Dots (0 active) */}
-                                    <div className="flex gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/80" />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
-                                    </div>
-                                </motion.div>
-                            ) : activeStatIndex === 1 ? (
-                                <motion.div
-                                    key="fiber"
-                                    initial={{ opacity: 0, x: 10 }} // Direction depends on prev, simplifies to slide in
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="w-full h-full flex items-center justify-between"
-                                >
-                                    {/* Left: Icon + Label */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-full bg-green-500/10 flex items-center justify-center">
-                                            <Sprout className="w-5 h-5 text-green-500" />
-                                        </div>
-                                        <div className="flex flex-row items-baseline gap-2">
-                                            <span className="text-xl font-bold font-headline text-foreground leading-none">
-                                                {Math.round(summary.fiber || 0)}g
+                                    <div className="flex flex-row items-baseline gap-2">
+                                        <span className="text-2xl font-black font-headline text-foreground leading-none tracking-tight drop-shadow-sm">
+                                            {activeMetric.value}
+                                        </span>
+                                        <div className="flex flex-col items-start leading-none gap-0.5">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1 opacity-80">
+                                                {activeMetric.label}
+                                                {(activeMetric.id === 'weight' || activeMetric.id === 'steps') && (
+                                                    <Edit2 className="w-2.5 h-2.5 opacity-40 hover:opacity-100 transition-opacity" />
+                                                )}
                                             </span>
-                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Fiber</span>
+                                            {activeMetric.subtext && (
+                                                <span className="text-[9px] text-muted-foreground/60 font-semibold uppercase tracking-wide">
+                                                    {activeMetric.subtext}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Right: Dots (1 active) */}
-                                    <div className="flex gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/80" />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="weight"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="w-full h-full flex items-center justify-between"
-                                >
-                                    {/* Left: Icon + Label */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-full bg-blue-500/10 flex items-center justify-center">
-                                            <Scale className="w-5 h-5 text-blue-500" />
-                                        </div>
-                                        <div className="flex flex-row items-baseline gap-2">
-                                            <span className="text-xl font-bold font-headline text-foreground leading-none">
-                                                {weightData?.weight ? weightData.weight : '--'}
-                                            </span>
-                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                                Weight <Edit2 className="w-3 h-3 opacity-50" />
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Right: Dots (2 active) */}
-                                    <div className="flex gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
-                                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/80" />
-                                    </div>
-                                </motion.div>
-                            )}
+                                {/* Right: Glass Dots Indicator */}
+                                <div className="flex gap-1.5 p-1 rounded-full bg-black/5 dark:bg-white/5 backdrop-blur-sm border border-white/5">
+                                    {metrics.map((_, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={cn(
+                                                "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                                                idx === activeStatIndex
+                                                    ? "bg-foreground shadow-[0_0_8px_rgba(0,0,0,0.2)] scale-110"
+                                                    : "bg-foreground/20 hover:bg-foreground/40"
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
                         </AnimatePresence>
                     </GlassCard>
                 </motion.div>

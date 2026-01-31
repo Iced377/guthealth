@@ -68,7 +68,7 @@ export function TodayBrief({
                                     </span>
                                 </div>
                             )}
-                            {wins.slice(0, 2).map((win, i) => (
+                            {wins.map((win, i) => (
                                 <div key={i} className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20">
                                     <span className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wide">
                                         {win}

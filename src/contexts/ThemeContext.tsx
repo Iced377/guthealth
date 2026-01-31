@@ -12,44 +12,58 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // Default to light mode
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('system');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
+  // Initialize from LocalStorage
   useEffect(() => {
-    const storedDarkMode = localStorage.getItem('app-dark-mode');
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (storedDarkMode !== null) {
-      setIsDarkMode(storedDarkMode === 'true');
-    } else {
-      // If no stored preference, use system preference.
-      // Default to light if system preference cannot be determined.
-      setIsDarkMode(prefersDark); 
-      localStorage.setItem('app-dark-mode', String(prefersDark));
+    const stored = localStorage.getItem('app-theme-preference');
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      setThemeMode(stored as 'light' | 'dark' | 'system');
     }
+    // If no stored preference, we default to 'system' (state init), which is correct.
   }, []);
 
+  // Effect to determine actual Dark Mode based on mode & system
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      let shouldBeDark = false;
+      if (themeMode === 'system') {
+        shouldBeDark = mediaQuery.matches;
+      } else {
+        shouldBeDark = themeMode === 'dark';
+      }
+      setIsDarkMode(shouldBeDark);
+
+      const root = document.documentElement;
+      if (shouldBeDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+
+    if (themeMode === 'system') {
+      mediaQuery.addEventListener('change', applyTheme);
+      return () => mediaQuery.removeEventListener('change', applyTheme);
+    }
+  }, [themeMode]);
+
   const toggleDarkMode = () => {
-    setIsDarkMode(prevMode => {
-      const newMode = !prevMode;
-      localStorage.setItem('app-dark-mode', String(newMode));
-      return newMode;
+    setThemeMode(prev => {
+      // Logic: If current EFFECTIVE state is dark, switch to forced light. 
+      // If current EFFECTIVE state is light, switch to forced dark.
+      // This breaks out of 'system' mode into manual override.
+      const next = isDarkMode ? 'light' : 'dark';
+      localStorage.setItem('app-theme-preference', next);
+      return next;
     });
   };
 
-  useEffect(() => {
-    const root = document.documentElement;
-    // Remove any explicit theme classes like 'theme-black', 'theme-orange', etc.
-    // The FODMAPSafe theme is now defined by default :root and html.dark in globals.css.
-    const themesToRemove = ['theme-black', 'theme-orange', 'theme-green', 'theme-red'];
-    themesToRemove.forEach(t => root.classList.remove(t));
-
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-  
   const value = useMemo(() => ({ isDarkMode, toggleDarkMode }), [isDarkMode]);
 
   return (

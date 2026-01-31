@@ -16,6 +16,7 @@ import ActivityLevelStep from './steps/ActivityLevelStep';
 import SymptomsStep from './steps/SymptomsStep';
 import DietStep from './steps/DietStep';
 import ResultsStep from './steps/ResultsStep';
+import IntegrationsStep from './steps/IntegrationsStep';
 import OutroVideo from './steps/OutroVideo';
 import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -30,6 +31,7 @@ export interface SetupData {
     goal: keyof typeof GOAL_ADJUSTMENTS;
     symptoms: string[];
     dietaryPreferences?: string[];
+    appleHealthEnabled?: boolean;
 }
 
 type WizardMode = 'intro' | 'wizard' | 'results' | 'outro';
@@ -45,7 +47,7 @@ export default function SetupWizard() {
 
     const [formData, setFormData] = useState<SetupData>({
         gender: 'female',
-        dob: '',
+        dob: '2000-01-01', // Default to avoid empty string causing white screen if user doesn't touch picker
         height: 170,
         weight: 70,
         activityLevel: 'sedentary',
@@ -62,7 +64,12 @@ export default function SetupWizard() {
     };
 
     const calculateResults = () => {
-        if (!formData.dob || !formData.height || !formData.weight) return;
+        // Fallback checks to prevent white screen (crash)
+        const safeDob = formData.dob || '2000-01-01';
+        const safeHeight = formData.height || 170;
+        const safeWeight = formData.weight || 70;
+
+        // if (!formData.dob || !formData.height || !formData.weight) return; // Removed strict return causing white screen
 
         const age = new Date().getFullYear() - new Date(formData.dob).getFullYear();
         const bmr = calculateBMR(formData.weight, formData.height, age, formData.gender);
@@ -87,8 +94,8 @@ export default function SetupWizard() {
 
     // Navigation Handlers
     const handleNext = () => {
-        // 0: BasicInfo, 1: GoalSelection, 2: ActivityLevel, 3: Diet, 4: Symptoms
-        if (carouselIndex < 4) {
+        // 0: BasicInfo, 1: GoalSelection, 2: ActivityLevel, 3: Diet, 4: Symptoms, 5: Integrations
+        if (carouselIndex < 5) {
             setCarouselIndex(prev => prev + 1);
         } else {
             // Finished wizard steps
@@ -119,7 +126,9 @@ export default function SetupWizard() {
                 dietaryPreferences: formData.dietaryPreferences,
                 bmr: results.bmr,
                 tdee: results.tdee,
-                macros: results.macros
+                tdee: results.tdee,
+                macros: results.macros,
+                appleHealthEnabled: formData.appleHealthEnabled || false
             };
 
             // Use setDoc with merge to ensure document exists and add createdAt if missing
@@ -130,7 +139,7 @@ export default function SetupWizard() {
                 dateOfBirth: formData.dob,
                 profile: profileData,
                 createdAt: new Date(), // Client timestamp is fine for this beta
-                isAdmin: false, // Explicitly set false to avoid security ambiguity
+                // isAdmin removed to prevent permission-denied on 'update' (setDoc merge) checks
                 safeFoods: []
             }, { merge: true });
 
@@ -214,24 +223,7 @@ export default function SetupWizard() {
             {/* Content Container (z-30 to sit above backgrounds) */}
             <div className="relative z-30 w-full h-full flex flex-col items-center justify-center">
 
-                {/* Minimal Header Nav */}
-                <AnimatePresence>
-                    {mode === 'wizard' && carouselIndex > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="fixed top-12 left-6 z-50"
-                        >
-                            <button
-                                onClick={handleBack}
-                                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-foreground hover:bg-white/20 transition-colors"
-                            >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 -ml-0.5"><path d="m15 18-6-6 6-6" /></svg>
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+
 
                 <AnimatePresence mode="wait">
                     {mode === 'intro' && (
@@ -275,6 +267,14 @@ export default function SetupWizard() {
                                     <div className="h-full w-full flex items-center justify-center">
                                         <SymptomsStep data={formData} updateData={updateFormData} onNext={handleNext} />
                                     </div>
+                                    <div className="h-full w-full flex items-center justify-center">
+                                        <IntegrationsStep
+                                            onNext={handleNext}
+                                            user={user}
+                                            data={formData}
+                                            updateData={updateFormData}
+                                        />
+                                    </div>
                                 </LiquidChartCarousel>
                             </div>
                         </motion.div>
@@ -291,7 +291,7 @@ export default function SetupWizard() {
                         >
                             <ResultsStep
                                 results={results}
-                                onBack={() => { setMode('wizard'); setCarouselIndex(4); }}
+                                onBack={() => { setMode('wizard'); setCarouselIndex(5); }}
                                 onFinish={handleFinish}
                                 isSaving={isSaving}
                             />

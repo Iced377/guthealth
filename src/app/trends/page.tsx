@@ -59,6 +59,34 @@ const NavRevealZone = () => {
   );
 };
 
+// --- LOCKED STATE COMPONENT ---
+const LockedChartCard = ({ title, description, actionText, icon }: { title: string, description: string, actionText: string, icon?: React.ReactNode }) => (
+  <div className="w-full h-screen shrink-0 snap-center flex flex-col items-center justify-center p-8 relative overflow-hidden">
+    {/* Visual Background */}
+    <div className="absolute inset-0 opacity-5 pointer-events-none">
+      <div className="absolute top-[30%] left-[20%] w-32 h-32 bg-primary blur-[80px] rounded-full" />
+      <div className="absolute bottom-[30%] right-[20%] w-40 h-40 bg-blue-500 blur-[80px] rounded-full" />
+    </div>
+
+    <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
+      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-white/10 dark:to-white/5 border border-white/20 shadow-xl flex items-center justify-center mb-8 rotate-3">
+        <div className="w-8 h-8 text-muted-foreground">
+          {icon || <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>}
+        </div>
+      </div>
+
+      <h3 className="text-2xl font-bold text-foreground mb-3 font-headline">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed mb-8">
+        {description}
+      </p>
+
+      <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-xs font-bold tracking-wide uppercase border border-primary/20">
+        {actionText}
+      </div>
+    </div>
+  </div>
+);
+
 
 export default function TrendsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -402,13 +430,18 @@ export default function TrendsPage() {
           {/* Empty State */}
           {filteredEntries.length === 0 && (
             <div className="h-screen w-full flex flex-col items-center justify-center snap-center p-8 text-center bg-background">
-              <p className="text-muted-foreground text-lg mb-2">No data found for this period.</p>
-              <p className="text-sm text-muted-foreground/50">Try selecting a different time range or logging some meals.</p>
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <AlertTriangle className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">No Data Yet</h3>
+              <p className="text-muted-foreground text-base max-w-[280px] leading-relaxed">
+                Start logging your meals and activity. Keep going for a few days to unlock powerful trends and insights!
+              </p>
             </div>
           )}
 
           {/* SCENE 1: Calories */}
-          {calorieData.length > 0 && (
+          {(calorieData.length > 0) ? (
             <div
               className="w-full h-screen shrink-0 snap-center flex flex-col items-center justify-center p-0 relative"
               onPointerDown={(e) => calorieDragControls.start(e)}
@@ -435,10 +468,16 @@ export default function TrendsPage() {
                 className="mt-4"
               />
             </div>
-          )}
+          ) : (filteredEntries.length > 0 && (
+            <LockedChartCard
+              title="Calorie Trends"
+              description="Visualize your daily intake and cumulative balance over time."
+              actionText="Log a meal to unlock"
+            />
+          ))}
 
           {/* SCENE 2: Weight */}
-          {weightData.length > 0 && (
+          {(weightData.length > 0) ? (
             <div className="w-full h-screen shrink-0 snap-center flex flex-col items-center justify-center p-0">
               <LiquidGraphScene id="weight"
                 contextLabel={weightContext.label}
@@ -459,10 +498,16 @@ export default function TrendsPage() {
                 className="mt-4"
               />
             </div>
-          )}
+          ) : (filteredEntries.length > 0 && (
+            <LockedChartCard
+              title="Weight & Composition"
+              description="Track body weight and estimated fat mass trends."
+              actionText="Log weight to unlock"
+            />
+          ))}
 
           {/* SCENE 3: Activity (Steps) */}
-          {activityData.length > 0 && (
+          {(activityData.length > 0) ? (
             <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
               <LiquidGraphScene id="activity"
                 contextLabel="Movement & Activity"
@@ -475,10 +520,16 @@ export default function TrendsPage() {
                 />
               </LiquidGraphScene>
             </div>
-          )}
+          ) : (filteredEntries.length > 0 && (
+            <LockedChartCard
+              title="Activity Trends"
+              description="Sync steps or log activity to see how you move."
+              actionText="Log steps to unlock"
+            />
+          ))}
 
-          {/* SCENE 4: Burn vs Steps Correlation */}
-          {correlationData.length > 5 && (
+          {/* SCENE 4: Burn vs Steps Correlation OR Locked State */}
+          {(correlationData.length > 5) ? (
             <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
               <LiquidGraphScene id="correlation"
                 contextLabel="Metabolic Flux"
@@ -491,10 +542,19 @@ export default function TrendsPage() {
                 />
               </LiquidGraphScene>
             </div>
-          )}
+          ) : (filteredEntries.length > 0 && (
+            <LockedChartCard
+              title="Metabolic Flux Insight"
+              description="Unlock deep correlation analysis between your movement and calorie intake."
+              actionText={`Log ${Math.max(0, 6 - correlationData.length)} more days`}
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              }
+            />
+          ))}
 
-          {/* SCENE 4: Macros */}
-          {macroData.length > 0 && (
+          {/* SCENE 5: Macros */}
+          {(macroData.length > 0) ? (
             <div className="w-full h-screen shrink-0 snap-center flex items-center justify-center p-0">
               <LiquidGraphScene id="macros"
                 contextLabel="Macronutrient Balance"
@@ -514,7 +574,13 @@ export default function TrendsPage() {
                 />
               </LiquidGraphScene>
             </div>
-          )}
+          ) : (filteredEntries.length > 0 && (
+            <LockedChartCard
+              title="Macronutrient Balance"
+              description="See your Protein, Carb, and Fat distribution over time."
+              actionText="Log a meal to unlock"
+            />
+          ))}
 
           {/* Footer Padding/Spacer if needed, but with h-screen sections it might not be. 
               Maybe a small spacer to allow overscroll on bottom. */}

@@ -16,19 +16,23 @@ interface NutritionGoals {
 interface NutritionOverviewProps {
     summary: DailyNutritionSummary;
     goals?: NutritionGoals;
+    dietaryPreferences?: string[];
 }
 
-// Helper component for the Engraved Progress Bar
-const EngravedProgress = ({ value, colorClass, indicatorClass }: { value: number, colorClass: string, indicatorClass: string }) => (
-    <div className={cn("h-2.5 w-full rounded-full overflow-hidden relative shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)] bg-black/10 dark:bg-black/40 border-b border-white/10")}>
+// Helper component for the Liquid Progress Bar (Mercury Tube)
+const LiquidProgress = ({ value, colorClass, indicatorClass }: { value: number, colorClass: string, indicatorClass: string }) => (
+    <div className={cn("h-3 w-full rounded-full overflow-hidden relative shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] bg-black/5 dark:bg-black/40 border-b border-white/20")}>
         <div
-            className={cn("h-full rounded-md shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition-all duration-500 ease-out", indicatorClass)}
+            className={cn("h-full rounded-r-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.1)] transition-all duration-700 cubic-bezier(0.34,1.56,0.64,1)", indicatorClass)}
             style={{ width: `${value}%` }}
-        />
+        >
+            {/* Liquid Shine */}
+            <div className="absolute top-[10%] left-0 right-0 h-[30%] bg-gradient-to-b from-white/60 to-transparent opacity-80" />
+        </div>
     </div>
 );
 
-// Reusable Macro Card Component to enforce the 3-Layer Design
+// Reusable Liquid Macro Card Component
 const MacroCard = ({
     title,
     value,
@@ -40,7 +44,7 @@ const MacroCard = ({
     title: string,
     value: number | string,
     subtext: string,
-    percent?: number, // Optional for Calories
+    percent?: number,
     icon: React.ElementType,
     colorTheme: 'orange' | 'red' | 'yellow' | 'blue'
 }) => {
@@ -48,44 +52,44 @@ const MacroCard = ({
     // Theme configurations
     const themes = {
         orange: {
-            border: "border-0",
+            border: "border-orange-200/20 dark:border-orange-800/30",
             bg: "bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent",
             iconColor: "text-orange-500",
             textColor: "text-orange-950 dark:text-orange-100",
-            subTextColor: "text-orange-800/60 dark:text-orange-200/60",
-            progressTrack: "bg-orange-950/10",
-            progressIndicator: "bg-orange-500",
-            shadow: "shadow-none"
+            subTextColor: "text-orange-900/60 dark:text-orange-200/60",
+            progressTrack: "bg-orange-950/5",
+            progressIndicator: "bg-gradient-to-r from-orange-400 to-orange-500",
+            shadow: "shadow-[0_8px_16px_-6px_rgba(249,115,22,0.2)]"
         },
         red: {
-            border: "border-0",
+            border: "border-red-200/20 dark:border-red-800/30",
             bg: "bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent",
             iconColor: "text-red-500",
             textColor: "text-red-950 dark:text-red-100",
-            subTextColor: "text-red-800/60 dark:text-red-200/60",
-            progressTrack: "bg-red-950/10",
-            progressIndicator: "bg-red-500",
-            shadow: "shadow-none"
+            subTextColor: "text-red-900/60 dark:text-red-200/60",
+            progressTrack: "bg-red-950/5",
+            progressIndicator: "bg-gradient-to-r from-red-400 to-red-500",
+            shadow: "shadow-[0_8px_16px_-6px_rgba(239,68,68,0.2)]"
         },
         yellow: {
-            border: "border-0",
+            border: "border-yellow-200/20 dark:border-yellow-800/30",
             bg: "bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent",
             iconColor: "text-yellow-500",
             textColor: "text-yellow-950 dark:text-yellow-100",
-            subTextColor: "text-yellow-800/60 dark:text-yellow-200/60",
-            progressTrack: "bg-yellow-950/10",
-            progressIndicator: "bg-yellow-500",
-            shadow: "shadow-none"
+            subTextColor: "text-yellow-900/60 dark:text-yellow-200/60",
+            progressTrack: "bg-yellow-950/5",
+            progressIndicator: "bg-gradient-to-r from-yellow-400 to-yellow-500",
+            shadow: "shadow-[0_8px_16px_-6px_rgba(234,179,8,0.2)]"
         },
         blue: {
-            border: "border-0",
+            border: "border-blue-200/20 dark:border-blue-800/30",
             bg: "bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent",
             iconColor: "text-blue-500",
             textColor: "text-blue-950 dark:text-blue-100",
-            subTextColor: "text-blue-800/60 dark:text-blue-200/60",
-            progressTrack: "bg-blue-950/10",
-            progressIndicator: "bg-blue-500",
-            shadow: "shadow-none"
+            subTextColor: "text-blue-900/60 dark:text-blue-200/60",
+            progressTrack: "bg-blue-950/5",
+            progressIndicator: "bg-gradient-to-r from-blue-400 to-blue-500",
+            shadow: "shadow-[0_8px_16px_-6px_rgba(59,130,246,0.2)]"
         }
     };
 
@@ -93,46 +97,41 @@ const MacroCard = ({
 
     return (
         <Card className={cn(
-            "relative overflow-hidden group select-none backdrop-blur-3xl border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg",
+            "relative overflow-hidden group select-none backdrop-blur-md border transition-all duration-500 hover:scale-[1.02]",
             theme.border,
             theme.bg,
             theme.shadow
         )}>
 
             {/* LAYER 3 (Back): Subtle Gloss/Reflection overlay inside the card background */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-70 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent opacity-50 pointer-events-none mix-blend-overlay" />
 
             {/* LAYER 2 (Middle): Floating 3D Icon - Blurred & Angled for Depth */}
-            <div className="absolute right-[-15%] top-[-15%] h-[70%] w-[70%] z-0 pointer-events-none transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                <Icon className={cn("h-full w-full opacity-[0.15] blur-[1px]", theme.iconColor)} />
-            </div>
-            {/* Secondary Icon Layer for extra depth */}
-            <div className="absolute right-[-5%] bottom-[-20%] h-[50%] w-[50%] z-0 pointer-events-none opacity-[0.05]">
+            <div className="absolute right-[-15%] top-[-15%] h-[80%] w-[80%] z-0 pointer-events-none transition-transform duration-700 ease-out group-hover:scale-110 group-hover:rotate-12 opacity-[0.12] blur-sm">
                 <Icon className={cn("h-full w-full", theme.iconColor)} />
             </div>
 
-
             {/* LAYER 1 (Front): Content & Data - Sharp & Higher Z-Index */}
-            <div className="relative z-10 flex flex-col h-full justify-between p-4">
-                <CardHeader className="p-0 pb-1.5 space-y-0">
-                    <CardTitle className={cn("text-xs font-semibold uppercase tracking-wider opacity-90", theme.textColor)}>
+            <div className="relative z-10 flex flex-col h-full justify-between p-4 mix-blend-hard-light">
+                <CardHeader className="p-0 pb-2 space-y-0">
+                    <CardTitle className={cn("text-[10px] font-bold uppercase tracking-widest opacity-80", theme.textColor)}>
                         {title}
                     </CardTitle>
                 </CardHeader>
 
                 <CardContent className="p-0">
                     <div className="flex flex-col gap-0.5 mb-3">
-                        <span className={cn("text-2xl font-bold font-headline leading-none", theme.textColor)}>
+                        <span className={cn("text-3xl font-black font-headline leading-none tracking-tight", theme.textColor)}>
                             {value}
                         </span>
-                        <span className={cn("text-xs font-medium", theme.subTextColor)}>
+                        <span className={cn("text-[10px] font-semibold uppercase tracking-wide opacity-80", theme.subTextColor)}>
                             {subtext}
                         </span>
                     </div>
 
-                    {/* Engraved Progress Bar */}
+                    {/* Liquid Mercury Progress Bar */}
                     {percent !== undefined && (
-                        <EngravedProgress
+                        <LiquidProgress
                             value={Math.min(100, percent)}
                             colorClass={theme.progressTrack}
                             indicatorClass={theme.progressIndicator}
@@ -144,7 +143,7 @@ const MacroCard = ({
     );
 };
 
-export default function NutritionOverview({ summary, goals }: NutritionOverviewProps) {
+export default function NutritionOverview({ summary, goals, dietaryPreferences }: NutritionOverviewProps) {
     // defaults if not provided
     const targets = goals || {
         calories: 2168,
@@ -157,6 +156,16 @@ export default function NutritionOverview({ summary, goals }: NutritionOverviewP
         if (!target || target === 0) return 0;
         return (current / target) * 100;
     };
+
+    // Logic: If Keto, show Net Carbs
+    const isKeto = dietaryPreferences?.includes('keto');
+    const netCarbs = Math.max(0, summary.carbs - (summary.fiber || 0));
+
+    // Determine Carbs Display
+    const carbsTitle = isKeto ? "Net Carbs" : "Carbs";
+    const carbsValue = isKeto ? Math.round(netCarbs) : Math.round(summary.carbs);
+    const carbsPercent = getPercent(carbsValue, targets.carbs);
+    const carbsSubtext = `${Math.round(carbsPercent)}% of target`;
 
     return (
         <div className="w-full">
@@ -182,12 +191,12 @@ export default function NutritionOverview({ summary, goals }: NutritionOverviewP
                     colorTheme="red"
                 />
 
-                {/* Carbs */}
+                {/* Carbs (Dynamic) */}
                 <MacroCard
-                    title="Carbs"
-                    value={`${Math.round(summary.carbs)}g`}
-                    subtext={`${Math.round(getPercent(summary.carbs, targets.carbs))}% of target`}
-                    percent={getPercent(summary.carbs, targets.carbs)}
+                    title={carbsTitle}
+                    value={`${carbsValue}g`}
+                    subtext={carbsSubtext}
+                    percent={carbsPercent}
                     icon={Wheat}
                     colorTheme="yellow"
                 />

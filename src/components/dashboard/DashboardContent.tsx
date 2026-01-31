@@ -208,12 +208,44 @@ export default function DashboardContent({
             </div>
 
             {isLoading ? (
-                <div className="flex flex-col h-full w-full animate-pulse p-4 gap-4 mt-20">
-                    {/* Header Skeleton */}
-                    <div className="w-full h-32 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5" />
+                <div className="flex flex-col h-full w-full p-4 gap-6 mt-4 relative z-10">
+                    {/* Header Skeleton (Macros) */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-24 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer" />
+                            </div>
+                        ))}
+                    </div>
 
-                    {/* Cards Skeleton */}
-                    <div className="flex-1 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5" />
+                    {/* Vitals Skeleton (Steps) */}
+                    <div className="w-full h-16 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse flex items-center justify-center">
+                        <div className="h-2 w-32 bg-white/10 rounded-full" />
+                    </div>
+
+                    {/* Feed Skeleton */}
+                    <div className="flex-1 flex flex-col gap-4">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="w-full h-40 rounded-3xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse p-4 space-y-4 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
+                                <div className="flex justify-between items-start">
+                                    <div className="h-6 w-48 bg-white/10 rounded-lg" />
+                                    <div className="h-8 w-8 rounded-full bg-white/10" />
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                    <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                    <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                </div>
+                            </div>
+                        ))}
+
+                        <div className="flex items-center justify-center py-4">
+                            <p className="text-xs font-medium text-muted-foreground animate-pulse">
+                                Syncing your health data...
+                            </p>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 /* 3-Panel Carousel with Fluid Header */

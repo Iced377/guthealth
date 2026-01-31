@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/config/firebase'; // Client SDK for viewing
 import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import type { FeedbackSubmission } from '@/types';
@@ -20,16 +20,15 @@ import { Button } from '@/components/ui/button';
 
 
 
-interface AdminEvent {
+
+interface ContactSubmission {
     id: string;
-    type: string;
-    foodName: string;
-    flags: string[];
-    timestamp: any;
-    meta: any;
-    resolved: boolean;
-    dismissed?: boolean;
-    suggestedPromptImprovement?: string;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    status: string;
+    createdAt: any;
 }
 
 export default function AdminDashboardPage() {
@@ -37,6 +36,7 @@ export default function AdminDashboardPage() {
     const router = useRouter();
     const [events, setEvents] = useState<AdminEvent[]>([]);
     const [feedback, setFeedback] = useState<FeedbackSubmission[]>([]);
+    const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
     const [loading, setLoading] = useState(true);
     const [acquisitionData, setAcquisitionData] = useState<{ daily: number[], cumulative: number[], labels: string[] }>({ daily: [], cumulative: [], labels: [] });
     const [allUserData, setAllUserData] = useState<{ created: Date; lastSignIn: Date | null }[]>([]);
@@ -73,7 +73,18 @@ export default function AdminDashboardPage() {
             setFeedback(data);
         });
 
-        // 3. User Acquisition (Real Data from Auth)
+        // 3. Contact Submissions
+        const contactQuery = query(
+            collection(db, 'contact_submissions'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        const unsubContact = onSnapshot(contactQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ContactSubmission[];
+            setContactSubmissions(data);
+        });
+
+        // 4. User Acquisition (Real Data from Auth)
         const fetchAcquisition = async () => {
             setError(null);
             try {
@@ -132,6 +143,7 @@ export default function AdminDashboardPage() {
         return () => {
             unsubEvents();
             unsubFeedback();
+            unsubContact();
         };
     }, [userProfile]);
 
@@ -223,6 +235,14 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const handleArchiveContact = async (id: string) => {
+        if (confirm("Archive this message?")) {
+            await updateDoc(doc(db, 'contact_submissions', id), {
+                status: 'archived'
+            });
+        }
+    };
+
     if (authLoading || !userProfile?.isAdmin) {
         return <div className="h-screen w-full flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
     }
@@ -232,7 +252,7 @@ export default function AdminDashboardPage() {
     const maxCumulative = Math.max(...acquisitionData.cumulative, 10);
 
     return (
-        <div className="min-h-screen bg-black/95 text-white p-8 font-sans">
+        <div className="min-h-screen bg-black/95 text-white p-4 md:p-8 font-sans">
             <header className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
@@ -243,7 +263,7 @@ export default function AdminDashboardPage() {
             </header>
 
             <Tabs defaultValue="ai" className="w-full space-y-6">
-                <TabsList className="bg-white/5 border-white/10 p-1 h-auto w-full justify-start rounded-xl gap-2">
+                <TabsList className="bg-white/5 border-white/10 p-1 h-auto w-full justify-start rounded-xl gap-2 flex-wrap">
                     <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-6 h-auto gap-2">
                         <BrainCircuit className="w-4 h-4" />
                         AI Performance
@@ -254,6 +274,12 @@ export default function AdminDashboardPage() {
                         <MessageSquare className="w-4 h-4" />
                         Feedback
                         <Badge variant="secondary" className="ml-2 bg-blue-500/20 text-blue-300 border-0">{feedback.length}</Badge>
+                    </TabsTrigger>
+
+                    <TabsTrigger value="contact" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 py-3 px-6 h-auto gap-2">
+                        <Mail className="w-4 h-4" />
+                        Contact
+                        <Badge variant="secondary" className="ml-2 bg-orange-500/20 text-orange-300 border-0">{contactSubmissions.length}</Badge>
                     </TabsTrigger>
 
                     <TabsTrigger value="acquisition" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 py-3 px-6 h-auto gap-2">
@@ -453,9 +479,67 @@ export default function AdminDashboardPage() {
                     </div>
                 </TabsContent>
 
+                {/* Contact Messages Tab */}
+                <TabsContent value="contact" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-orange-300 flex items-center gap-2">
+                            <Mail className="w-5 h-5" /> Contact Submissions
+                        </h2>
+                        <Badge variant="outline" className="text-orange-200 border-orange-500/30">
+                            {contactSubmissions.length} Messages
+                        </Badge>
+                    </div>
+
+                    <div className="grid gap-4">
+                        {contactSubmissions.length === 0 && <div className="text-white/30 italic p-8 text-center border border-white/5 rounded-xl">No messages yet.</div>}
+                        {contactSubmissions.map(msg => (
+                            <Card key={msg.id} className={`bg-white/5 border-white/10 ${msg.status === 'archived' ? 'opacity-50' : ''}`}>
+                                <CardHeader className="pb-2">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle className="text-lg font-semibold text-white">{msg.subject}</CardTitle>
+                                            <CardDescription className="text-white/60 flex items-center gap-2 mt-1">
+                                                <span className="font-mono text-orange-200">{msg.name}</span>
+                                                <span className="text-white/30">•</span>
+                                                <span className="text-white/40">{msg.email}</span>
+                                            </CardDescription>
+                                        </div>
+                                        <span className="text-xs text-white/40 font-mono">
+                                            {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'PP p') : 'Just now'}
+                                        </span>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="p-4 bg-black/20 rounded-lg border border-white/5 text-sm text-white/90 whitespace-pre-wrap">
+                                        {msg.message}
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-white/40 hover:text-white hover:bg-white/10"
+                                            onClick={() => handleArchiveContact(msg.id)}
+                                            disabled={msg.status === 'archived'}
+                                        >
+                                            {msg.status === 'archived' ? 'Archived' : 'Archive'}
+                                        </Button>
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => window.open(`mailto:${msg.email}?subject=Re: ${msg.subject}`)}
+                                        >
+                                            <Mail className="w-4 h-4 mr-2" /> Reply
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+
                 {/* Acquisition Tab */}
                 <TabsContent value="acquisition" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <h2 className="text-xl font-bold text-green-300 flex items-center gap-2">
                             <Users className="w-5 h-5" /> Growth & Stats
                         </h2>
@@ -570,3 +654,4 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+

@@ -20,10 +20,8 @@ const DIET_OPTIONS = [
     { id: 'vegan', name: 'Vegan' },
     { id: 'vegetarian', name: 'Vegetarian' },
     { id: 'intermittent_fasting', name: 'Intermittent Fasting' },
-    { id: 'paleo', name: 'Paleo' },
     { id: 'gluten_free', name: 'Gluten Free' },
     { id: 'dairy_free', name: 'Dairy Free' },
-    { id: 'pescatarian', name: 'Pescatarian' },
     { id: 'low_fodmap', name: 'Low FODMAP' },
 ];
 
@@ -45,7 +43,7 @@ export default function DietStep({ data, updateData }: DietStepProps) {
         <LiquidWizardCard
             title="Dietary Prefs"
             description="Select any specific diets you follow."
-        // icon prop removed as requested
+            showSwipeHint={false}
         >
             <div className="w-full flex-1 min-h-0 flex flex-col justify-center pb-8 px-1">
                 <div className="flex flex-wrap gap-3 justify-center content-center">

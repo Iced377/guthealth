@@ -83,3 +83,57 @@ export const sendPasswordReset = async (email: string): Promise<void | AuthError
     return error as AuthError;
   }
 };
+
+// Delete User Account & Data
+import { deleteUser } from 'firebase/auth';
+import { doc, deleteDoc, collection, getDocs, writeBatch, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/config/firebase';
+
+export const deleteUserAccount = async (uid: string): Promise<void> => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No authenticated user found");
+
+    // 0. Audit Log (Pre-Deletion)
+    try {
+      if (user.email) {
+        await addDoc(collection(db, 'audit_deleted_users'), {
+          uid: uid,
+          email: user.email,
+          deletedAt: serverTimestamp(),
+          reason: 'user_requested'
+        });
+      }
+    } catch (auditError) {
+      console.error("Failed to write audit log:", auditError);
+      // Continue with deletion even if audit fails? 
+      // safer to continue so user is not blocked from deleting.
+    }
+
+    // 1. Delete Firestore User Data
+    // Note: This does NOT automatically delete subcollections (like timelineEntries).
+    // For a production app with large data, use Cloud Functions.
+    // Here we try to clean up 'timelineEntries' reasonably.
+    const timelineRef = collection(db, 'users', uid, 'timelineEntries');
+    const timelineSnapshot = await getDocs(timelineRef);
+
+    // Batch delete subcollection (up to 500)
+    if (!timelineSnapshot.empty) {
+      const batch = writeBatch(db);
+      timelineSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    }
+
+    // Delete Main User Doc
+    await deleteDoc(doc(db, 'users', uid));
+
+    // 2. Delete Auth User
+    await deleteUser(user);
+
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    throw error;
+  }
+};

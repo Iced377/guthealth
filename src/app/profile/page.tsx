@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import Navbar from '@/components/shared/Navbar';
+
 import {
     Calendar as CalendarIcon, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target,
     Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil, Download,
@@ -106,6 +106,34 @@ export default function ProfilePage() {
 
     const [isAppleHealthConnected, setIsAppleHealthConnected] = useState(false);
     const [isTogglingAppleHealth, setIsTogglingAppleHealth] = useState(false);
+
+    // Account Deletion State
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+
+    const handleDeleteAccount = async () => {
+        if (!user) return;
+        setIsSavingProfile(true);
+        try {
+            const { deleteUserAccount } = await import('@/lib/firebase/auth');
+            await deleteUserAccount(user.uid);
+            toast({ title: "Account Deleted", description: "Your account has been permanently deleted." });
+            router.push('/');
+        } catch (error: any) {
+            console.error("Delete account error:", error);
+            if (error.code === 'auth/requires-recent-login') {
+                toast({
+                    title: "Security Check",
+                    description: "Please sign out and sign back in to verify your identity before deleting your account.",
+                    variant: "destructive"
+                });
+            } else {
+                toast({ title: "Error", description: "Could not delete account. Please try again.", variant: "destructive" });
+            }
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
 
     // Initial Data Fetch
     useEffect(() => {
@@ -714,17 +742,101 @@ export default function ProfilePage() {
                     </GlassPanel>
                 </div>
 
-                {/* F. Exit & Reset */}
-                <div className="pt-4 pb-8 flex flex-col items-center gap-4">
-                    <Button variant="ghost" onClick={() => router.push('/setup')} className="text-muted-foreground hover:text-foreground hover:bg-white/5">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Redo Setup Wizard
-                    </Button>
+                {/* F. Account Actions */}
+                <div className="pt-8 space-y-3">
+                    <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-widest opacity-70">App Settings</h3>
+                    <GlassPanel className="p-0 overflow-hidden">
+                        {/* Redo Setup */}
+                        <button onClick={() => router.push('/setup')} className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left border-b border-white/5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                                    <Settings className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">Redo Setup Wizard</span>
+                                    <span className="text-xs text-muted-foreground">Recalculate targets</span>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        </button>
 
-                    <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={handleSignOut}>
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign Out
-                    </Button>
+                        {/* Sign Out */}
+                        <button onClick={handleSignOut} className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left group">
+                            <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-white/5 group-hover:bg-red-500/10 flex items-center justify-center text-muted-foreground group-hover:text-red-500 transition-colors">
+                                    <LogOut className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground group-hover:text-red-500 transition-colors">Sign Out</span>
+                                </div>
+                            </div>
+                        </button>
+                    </GlassPanel>
+                </div>
+
+                {/* G. Danger Zone */}
+                <div className="pt-12 pb-8 space-y-3 flex flex-col items-center">
+                    <h3 className="w-full px-4 text-xs font-bold text-red-500/50 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <span className="h-px flex-1 bg-red-500/10"></span>
+                        Danger Zone
+                        <span className="h-px flex-1 bg-red-500/10"></span>
+                    </h3>
+
+                    {/* Delete Account */}
+                    <Dialog open={isDeleteConfirmOpen} onOpenChange={(open) => {
+                        setIsDeleteConfirmOpen(open);
+                        if (!open) setDeleteConfirmationInput(''); // Reset input on close
+                    }}>
+                        <DialogTrigger asChild>
+                            <button className="w-full p-4 rounded-3xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-colors text-red-500 text-sm font-medium flex items-center justify-center gap-2 shadow-lg shadow-red-900/10">
+                                <LogOut className="h-4 w-4 rotate-180" />
+                                Delete My Account
+                            </button>
+                        </DialogTrigger>
+                        <DialogContent className="glass-crystal border-red-500/20 max-w-sm">
+                            <DialogHeader>
+                                <DialogTitle className="text-red-500">Delete Account?</DialogTitle>
+                                <DialogDescription className="text-white/70">
+                                    This action is <span className="font-bold text-white">permanent</span> and cannot be undone.
+                                    All your data (logs, profile, preferences) will be erased immediately.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="py-4 space-y-3">
+                                <Label htmlFor="delete-confirm" className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                                    Type <span className="text-red-400 font-bold select-all">delete</span> to confirm
+                                </Label>
+                                <Input
+                                    id="delete-confirm"
+                                    value={deleteConfirmationInput}
+                                    onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                                    placeholder="Type delete"
+                                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-red-500/50 focus:ring-red-500/20"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            <DialogFooter className="flex-col gap-2 mt-2 sm:flex-col">
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleDeleteAccount}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={isSavingProfile || deleteConfirmationInput.toLowerCase() !== 'delete'}
+                                >
+                                    {isSavingProfile ? "Deleting..." : "Yes, Delete My Account"}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setIsDeleteConfirmOpen(false)}
+                                    className="w-full hover:bg-white/5"
+                                >
+                                    Cancel
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+
 
                     <p
                         onClick={() => setIsReleaseNotesOpen(true)}
@@ -732,6 +844,9 @@ export default function ProfilePage() {
                     >
                         {APP_VERSION}
                     </p>
+
+                    {/* ... Release Notes Dialog ... */}
+
 
                     {/* Release Notes Dialog */}
                     <Dialog open={isReleaseNotesOpen} onOpenChange={setIsReleaseNotesOpen}>
@@ -771,7 +886,6 @@ export default function ProfilePage() {
                 </div>
             </main>
 
-            <Navbar />
         </div>
     );
 }

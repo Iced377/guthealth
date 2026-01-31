@@ -95,7 +95,8 @@ const NavigationAndDialogs = () => {
         pathname === '/about' ||
         pathname?.startsWith('/setup') ||
         pathname?.startsWith('/privacy') ||
-        pathname?.startsWith('/terms');
+        pathname?.startsWith('/terms') ||
+        pathname?.startsWith('/support');
 
     return (
         <>

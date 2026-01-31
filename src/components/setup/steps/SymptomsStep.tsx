@@ -35,7 +35,6 @@ export default function SymptomsStep({ data, updateData, onNext }: SymptomsStepP
         <LiquidWizardCard
             title="Symptoms"
             description="Select any symptoms to manage."
-            // icon removed
             showSwipeHint={false}
         >
             <div className="w-full flex-1 min-h-0 flex flex-col justify-center pb-8 px-1">
@@ -81,14 +80,7 @@ export default function SymptomsStep({ data, updateData, onNext }: SymptomsStepP
                 </div>
             </div>
 
-            <div className="w-full max-w-xs mx-auto mt-4 shrink-0 relative z-20">
-                <Button
-                    className="w-full h-14 rounded-full text-lg font-bold shadow-[0_0_30px_rgba(0,0,0,0.1)] bg-foreground text-background hover:scale-105 active:scale-95 transition-all duration-300"
-                    onClick={onNext}
-                >
-                    Create My Plan <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-            </div>
+
         </LiquidWizardCard>
     );
 }

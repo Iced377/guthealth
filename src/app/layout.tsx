@@ -65,6 +65,25 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         {/* Preload critical hero video for instant playback on iOS */}
         <link rel="preload" as="video" href="/Intro_Video.mp4" type="video/mp4" />
+        <script
+          id="theme-script"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const stored = localStorage.getItem('app-theme-preference');
+                  const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  
+                  if (stored === 'dark' || (!stored && system) || (stored === 'system' && system)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       {/* Removed the inter.variable class name from the body */}
       <body suppressHydrationWarning className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">

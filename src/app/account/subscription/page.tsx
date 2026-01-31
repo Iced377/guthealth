@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
-import Navbar from '@/components/shared/Navbar';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertTriangle, CheckCircle, Star, Gem } from 'lucide-react';
@@ -14,7 +14,7 @@ export default function SubscriptionPage() {
   if (authLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+
         <div className="flex-grow flex items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="ml-4 text-lg text-foreground">Loading user data...</p>
@@ -27,7 +27,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
+
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4 text-foreground">

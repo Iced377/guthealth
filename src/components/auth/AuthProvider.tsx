@@ -10,7 +10,7 @@ import {
   setPersistence,
 } from 'firebase/auth';
 import { auth, db } from '@/config/firebase';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
@@ -167,17 +167,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Trigger Health Sync on Load
           syncHealthData(firebaseUser).catch(err => console.error("Initial load sync failed", err));
 
-          // Fetch User Profile
-          try {
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDoc.exists()) {
-              setUserProfile(userDoc.data() as UserProfile);
-            } else {
-              setUserProfile(null);
-            }
-          } catch (err) {
-            console.error("Error fetching user profile:", err);
-          }
+
+
+          // Cleanup listener on unmount or user change (handled by effect cleanup?)
+          // actually this is inside onAuthStateChanged... complex.
+          // Better approach: store unsubscribe in a ref or manage it properly.
+          // Since onAuthStateChanged can fire multiple times, we need to be careful not to leak listeners.
+          // However, the cleanest way in this specific structure (without refactoring everything) 
+          // might be to relying on the fact that we can't easily return a cleanup from inside the callback.
+
+          // ALTERNATIVE: Move profile listening to a separate useEffect dependent on 'user' state. 
+          // The current structure mixes auth state change (firebase) with profile fetching.
+          // Let's refactor slightly to be safe: 
+          // 1. set user in onAuthStateChanged.
+          // 2. add a useEffect([user]) that sets up the onSnapshot.
+          // This is cleaner and safer.
+
+          // So here we just set user and AuthLoading. ProfileLoading will be handled by the new effect.
+
 
         } catch (error) {
           console.error('Failed to sync session cookie:', error);
@@ -185,11 +192,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         await fetch('/api/auth/logout', { method: 'POST' });
         setUserProfile(null);
+        setProfileLoading(false); // Only stop loading profile if no user
       }
 
       setUser(firebaseUser);
       setAuthLoading(false);
-      setProfileLoading(false);
+      // Do NOT set profileLoading(false) here if user exists.
+      // The second useEffect [user] will handle profile fetching and setting it to false.
     });
 
     return () => {
@@ -198,7 +207,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Handle Setup Redirection
+  // Separate Effect for Realtime Profile Data
+  useEffect(() => {
+    if (!user) {
+      setUserProfile(null);
+      // If auth is done but no user, profile loading is also done (null)
+      if (!authLoading) setProfileLoading(false);
+      return;
+    }
+
+    setProfileLoading(true);
+    const userDocRef = doc(db, 'users', user.uid);
+
+    // Listen to changes (e.g. when SetupWizard completes)
+    const unsubscribe = onSnapshot(userDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setUserProfile(docSnap.data() as UserProfile);
+        } else {
+          setUserProfile(null);
+        }
+        setProfileLoading(false);
+      },
+      (err) => {
+        console.error("Error in profile listener:", err);
+        setProfileLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user, authLoading]);
   useEffect(() => {
     if (authLoading || profileLoading) return;
 

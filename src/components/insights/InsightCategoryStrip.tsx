@@ -1,11 +1,15 @@
-import { motion } from 'framer-motion';
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { HapticsService, ImpactStyle } from '@/lib/haptics';
+import { Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import LiquidSegmentedControl from '@/components/ui/LiquidSegmentedControl';
 import { useInsightsMotionController } from './useInsightsMotionController';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getLiquidTokens, LiquidMode } from '@/lib/liquid-tokens';
-import { LiquidPressable } from '@/components/ui/LiquidPressable';
-import { Sparkles } from 'lucide-react';
-import Image from 'next/image';
 
 export function InsightCategoryStrip() {
     const {
@@ -14,89 +18,119 @@ export function InsightCategoryStrip() {
         chromeHidden
     } = useInsightsMotionController();
 
-    const isVisible = !chromeHidden;
+    const { scrollY } = useScroll();
     const { isDarkMode } = useTheme();
-    const mode: LiquidMode = isDarkMode ? 'dark' : 'light';
+    const mode = isDarkMode ? 'dark' : 'light';
     const tokens = getLiquidTokens(mode);
+
+    // Visibility Logic (Hide when chromeHidden is true, e.g. expanded chart)
+    const isVisible = !chromeHidden;
+
+    // View State: 'expanded' | 'compact' (Auto-collapse on scroll)
+    const [viewState, setViewState] = useState<'expanded' | 'compact'>('expanded');
+    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useMotionValueEvent(scrollY, "change", (latest) => {
+        if (latest < 10) {
+            if (viewState !== 'expanded') setViewState('expanded');
+            return;
+        }
+
+        const diff = latest - (scrollY.getPrevious() || 0);
+        if (Math.abs(diff) > 5) {
+            if (viewState !== 'compact') setViewState('compact');
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+            scrollTimeoutRef.current = setTimeout(() => {
+                setViewState('expanded');
+            }, 600);
+        }
+    });
+
+    useEffect(() => {
+        return () => {
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        };
+    }, []);
+
+    const handleSelect = (id: string) => {
+        HapticsService.impact(ImpactStyle.Light);
+        setCategory(id);
+    };
+
+    // Options for Segmented Control
+    const OPTIONS = [
+        { id: 'Today', label: 'Highlights' },
+        { id: 'Coach', label: 'Coach' }
+    ];
 
     // Avatar Logic
     const avatarSrc = isDarkMode ? '/coach-black.png' : '/coach-white.png';
 
     return (
-        // Fixed Top Bar container
-        <div className={cn(
-            "sticky top-0 z-40 backdrop-blur-xl border-b pt-[calc(env(safe-area-inset-top)+24px)] pb-4 px-4 flex items-end justify-center h-30 transition-colors duration-300",
-            mode === 'dark' ? "bg-black/60 border-white/5" : "bg-white/60 border-black/5"
-        )}>
+        <motion.div
+            className="fixed top-0 left-0 right-0 z-40 flex justify-center pointer-events-none pt-[calc(env(safe-area-inset-top)+1rem)]"
+            initial={{ y: -100, opacity: 0 }}
+            animate={{
+                y: isVisible ? 0 : -100,
+                opacity: isVisible ? 1 : 0
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        >
             <motion.div
-                className="w-full max-w-sm grid grid-cols-2 gap-3"
-                initial={false}
-                animate={{
-                    opacity: isVisible ? 1 : 0,
-                    y: isVisible ? 0 : -20,
-                    pointerEvents: isVisible ? 'auto' : 'none',
+                layoutId="insight-control-pill"
+                className={cn(
+                    "pointer-events-auto backdrop-blur-3xl backdrop-saturate-200 border shadow-lg rounded-full overflow-hidden transition-all duration-500 ease-[0.23,1,0.32,1] relative",
+                    isDarkMode
+                        ? "bg-black/5 border-white/10"
+                        : "bg-white/5 border-black/5",
+                    viewState === 'expanded' ? "p-1.5" : "px-4 py-2"
+                )}
+                onClick={() => {
+                    if (viewState === 'compact') {
+                        HapticsService.selection();
+                        setViewState('expanded');
+                    }
                 }}
-                transition={{ duration: 0.3, type: "spring", damping: 20 }}
             >
-                {/* 1. Highlights Tab */}
-                <LiquidPressable
-                    variant="pill"
-                    onClick={() => setCategory('Today')} // "Today" maps to Highlights view
-                    className={cn(
-                        "h-12 flex items-center justify-center gap-2 rounded-full transition-all duration-300",
-                        selectedCategory === 'Today'
-                            ? (mode === 'dark' ? "bg-white/10" : "bg-white")
-                            : "bg-transparent opacity-60 hover:opacity-100"
+                <AnimatePresence mode="popLayout" initial={false}>
+                    {viewState === 'expanded' ? (
+                        <motion.div
+                            key="expanded-content"
+                            initial={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+                            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                            exit={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+                            className="flex items-center gap-1"
+                        >
+                            <LiquidSegmentedControl
+                                options={OPTIONS}
+                                selected={selectedCategory}
+                                onChange={handleSelect}
+                                layoutIdPrefix="insight-nav"
+                            />
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="compact-content"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="flex items-center gap-2"
+                        >
+                            {selectedCategory === 'Coach' ? (
+                                <div className="h-4 w-4 rounded-full overflow-hidden relative border border-current opacity-80">
+                                    <Image src={avatarSrc} alt="Coach" fill className="object-cover" />
+                                </div>
+                            ) : (
+                                <Sparkles className={cn("w-3.5 h-3.5", tokens.text.secondary)} />
+                            )}
+
+                            <span className={cn("text-sm font-semibold tracking-wide", tokens.text.primary)}>
+                                {selectedCategory === 'Today' ? 'Highlights' : 'Coach'}
+                            </span>
+                        </motion.div>
                     )}
-                >
-                    <Sparkles className={cn("w-4 h-4", selectedCategory === 'Today' ? "text-yellow-400 fill-yellow-400" : tokens.text.secondary)} />
-                    <span className={cn("font-bold text-sm", selectedCategory === 'Today' ? tokens.text.primary : tokens.text.secondary)}>
-                        Highlights
-                    </span>
-                </LiquidPressable>
-
-                {/* 2. Coach Tab */}
-                <LiquidPressable
-                    variant="pill"
-                    onClick={() => setCategory('Coach')}
-                    className={cn(
-                        "h-12 flex items-center justify-center gap-2 rounded-full transition-all duration-300",
-                        selectedCategory === 'Coach'
-                            ? (mode === 'dark' ? "bg-white/10" : "bg-white")
-                            : "bg-transparent opacity-60 hover:opacity-100"
-                    )}
-                >
-                    <div className="h-6 w-6 rounded-full overflow-hidden relative shrink-0 border border-current opacity-80">
-                        <Image
-                            src={avatarSrc}
-                            alt="Coach"
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
-                    <span className={cn("font-bold text-sm", selectedCategory === 'Coach' ? tokens.text.primary : tokens.text.secondary)}>
-                        Coach
-                    </span>
-                </LiquidPressable>
-
+                </AnimatePresence>
             </motion.div>
-
-            {/* Page Dot Indicator (Top) */}
-            <motion.div
-                className="absolute top-[calc(env(safe-area-inset-top)+8px)] w-full flex justify-center gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-            >
-                <div className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                    selectedCategory === 'Today' ? (mode === 'dark' ? "bg-white scale-110" : "bg-black scale-110") : (mode === 'dark' ? "bg-white/20" : "bg-black/20")
-                )} />
-                <div className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                    selectedCategory === 'Coach' ? (mode === 'dark' ? "bg-white scale-110" : "bg-black scale-110") : (mode === 'dark' ? "bg-white/20" : "bg-black/20")
-                )} />
-            </motion.div>
-        </div>
+        </motion.div>
     );
 }

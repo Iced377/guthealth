@@ -77,7 +77,7 @@ export function ProblemSection({ scrollContainerRef }: { scrollContainerRef?: Re
     });
 
     // Reveal timings for 3 cards
-    const opacity1 = useTransform(scrollYProgress, [0.05, 0.2], [0, 1]); // Earlier fade in
+    const opacity1 = useTransform(scrollYProgress, [0.05, 0.2], [0, 1]);
     const y1 = useTransform(scrollYProgress, [0.05, 0.2], [50, 0]);
 
     const opacity2 = useTransform(scrollYProgress, [0.3, 0.45], [0, 1]);
@@ -88,17 +88,20 @@ export function ProblemSection({ scrollContainerRef }: { scrollContainerRef?: Re
 
     return (
         <section ref={containerRef} className="relative h-[300vh] bg-background z-20 snap-start">
-            <div className="sticky top-0 h-screen w-full flex flex-col items-center pt-24 px-4 overflow-hidden z-40">
-                {/* Header (Always Visible) */}
-                <div className="text-center mb-8 space-y-4 max-w-3xl shrink-0 bg-background/95 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl z-30">
-                    <h2 className="text-3xl sm:text-5xl font-bold tracking-tight">The old way is broken.</h2>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <div className="sticky top-0 h-screen w-full flex flex-col items-center pt-16 sm:pt-24 px-4 overflow-hidden z-40">
+                {/* Header (Always Visible) - Compacted */}
+                <div className="text-center mb-4 sm:mb-8 space-y-3 max-w-3xl shrink-0 bg-background/95 backdrop-blur-xl border border-white/10 p-5 sm:p-6 rounded-[2rem] shadow-2xl z-30">
+                    <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white">The old way is broken.</h2>
+                    <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed hidden sm:block">
                         Traditional food logging hasn't changed in years. It's demanding, vaguely accurate, and often demotivating.
+                    </p>
+                    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed sm:hidden">
+                        Traditional food logging is tedious and demotivating.
                     </p>
                 </div>
 
-                {/* Cards Container - Stacked Vertically */}
-                <div className="w-full max-w-md flex flex-col gap-4 relative z-10 pb-20">
+                {/* Cards Container - Compacted Spacing */}
+                <div className="w-full max-w-md flex flex-col gap-3 sm:gap-4 relative z-10 pb-4">
                     <motion.div style={{ opacity: opacity1, y: y1 }} className="shrink-0">
                         <StaticProblemCard
                             icon={FileWarning}
@@ -128,16 +131,16 @@ export function ProblemSection({ scrollContainerRef }: { scrollContainerRef?: Re
     );
 }
 
-// Simplified Card Component for the sticky view (removes internal animations to let parent control)
+// Simplified Card Component - More Compact
 function StaticProblemCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
     return (
-        <div className="p-6 rounded-3xl bg-card border border-border shadow-lg flex items-start gap-4 hover:border-primary/20 transition-colors">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 text-red-500 mt-1">
-                <Icon className="w-6 h-6" />
+        <div className="p-5 sm:p-6 rounded-3xl bg-card border border-border shadow-lg flex items-start gap-4 hover:border-primary/20 transition-colors">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 text-red-500 mt-0.5">
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-                <h3 className="text-xl font-bold mb-2">{title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-sm">
+                <h3 className="text-lg sm:text-xl font-bold mb-1.5">{title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm">
                     {description}
                 </p>
             </div>
@@ -163,7 +166,7 @@ export function StorySection() {
                 {/* Stacking Cards */}
                 <div className="space-y-[80vh] pb-[50vh]">
                     <StoryCard
-                        title="Chatbots don't know you."
+                        title="GenAI doesn't know you."
                         subtitle="LLMs are smart, but they don't know what you ate for breakfast last Tuesday, or that dairy makes you bloated."
                         index={1}
                         stickyTop="top-64"
@@ -176,7 +179,7 @@ export function StorySection() {
                     />
                     <StoryCard
                         title="You need Context."
-                        subtitle="GutCheck combines a seamless food diary with clinical-grade intelligence. It remembers everything, so you don't have to."
+                        subtitle="GutCheck combines a seamless food diary with purposeful intelligence. It remembers everything, so you don't have to."
                         index={3}
                         highlight
                         stickyTop="top-80"

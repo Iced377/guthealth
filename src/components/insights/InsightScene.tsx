@@ -79,114 +79,105 @@ export function InsightScene({
     };
 
     return (
-        <>
+        <motion.div
+            ref={containerRef}
+            layout
+            layoutId={id}
+            onClick={!shouldBeFullscreen ? handleTap : undefined}
+            onLayoutAnimationComplete={onLayoutComplete}
+            className={cn(
+                "relative rounded-3xl overflow-hidden shadow-sm origin-center",
+                !shouldBeFullscreen
+                    ? "bg-card/40 backdrop-blur-md border border-white/5 my-4 mx-2 w-[calc(100%-1rem)] h-auto active:scale-[0.98] cursor-pointer"
+                    : "fixed inset-0 z-[60] bg-background h-[100dvh] w-screen m-0 rounded-none border-none isolate"
+            )}
+            transition={{ type: "spring", stiffness: 400, damping: 35 }}
+        >
+            {/* STABILITY LAYER: Solid opacity guard (Backplate) */}
             {shouldBeFullscreen && (
-                <div className="w-full h-32 opacity-0 pointer-events-none" aria-hidden="true" />
+                <div className="absolute inset-0 bg-background z-0" />
             )}
 
-            <LiquidGlassPanel
-                ref={containerRef}
-                layoutId={id}
-                layout="position"
-                intensity={shouldBeFullscreen ? 'high' : 'medium'}
-                onClick={!shouldBeFullscreen ? handleTap : undefined}
-                onLayoutAnimationComplete={onLayoutComplete}
-                className={cn(
-                    "origin-center transition-[background-color,border-radius] duration-500",
-                    shouldBeFullscreen
-                        ? "fixed inset-0 z-50 rounded-none m-0 w-full h-[100dvh] border-0"
-                        : "relative w-full rounded-3xl my-3 active:scale-[0.98] cursor-pointer",
-                    shouldBeFullscreen ? "p-0 overflow-hidden" : "p-5"
-                )}
-                transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 35
-                }}
+            {/* Background Mesh (Only when collapsed to avoid interfering with backplate) */}
+            {!shouldBeFullscreen && (
+                <div className="absolute inset-0 pointer-events-none opacity-20 bg-gradient-to-br from-white/5 to-transparent" />
+            )}
+
+            <motion.div
+                className="flex flex-col h-full relative z-10"
+                layout="preserve-aspect"
             >
-                <motion.div
-                    className="flex flex-col h-full relative"
-                    layout="preserve-aspect"
-                >
-                    {/* Header Row */}
-                    <motion.div layout="position" className={cn("flex items-center justify-between mb-2", shouldBeFullscreen ? "p-6 pt-14" : "")}>
-                        <div className="flex items-center gap-3">
-                            <div className={cn(
-                                "h-8 w-8 rounded-full flex items-center justify-center backdrop-blur-md transition-colors",
-                                mode === 'dark' ? "bg-white/10" : "bg-black/5"
-                            )}>
-                                {/* Icon placeholder */}
-                                <div className={cn("h-2 w-2 rounded-full", mode === 'dark' ? "bg-primary/80" : "bg-black/40")} />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className={cn("text-[10px] uppercase tracking-widest transition-colors", tokens.text.tertiary)}>
-                                    {category} &bull; {timeAgo}
-                                </span>
-                                <h3 className={cn("text-lg font-semibold leading-none transition-colors", tokens.text.primary)}>
-                                    {title}
-                                </h3>
-                            </div>
+                {/* Header Row */}
+                <motion.div layout="position" className={cn("flex items-center justify-between pointer-events-none", shouldBeFullscreen ? "p-8 pt-24 pb-4" : "p-5")}>
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "h-10 w-10 rounded-full flex items-center justify-center backdrop-blur-md transition-colors",
+                            mode === 'dark' ? "bg-white/10" : "bg-black/5"
+                        )}>
+                            {/* Icon placeholder - Dynamic per category if possible, currently generic dot */}
+                            <div className={cn("h-2.5 w-2.5 rounded-full", mode === 'dark' ? "bg-primary/80" : "bg-black/40")} />
                         </div>
-
-                        {!shouldBeFullscreen && (
-                            <div className={cn(tokens.text.tertiary)}>
-                                {/* Chevron placeholder */}
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* Preview Content (Browse Mode) */}
-                    {!shouldBeFullscreen && preview && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className={cn("text-sm line-clamp-2 pl-11 transition-colors", tokens.text.secondary)}
-                        >
-                            {preview}
-                        </motion.div>
-                    )}
-
-                    {/* Detailed Content (Focus Mode) */}
-                    <AnimatePresence mode="wait">
-                        {shouldBeFullscreen && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                transition={{ delay: 0.2, duration: 0.3 }}
-                                className="flex-1 overflow-y-auto px-6 pb-24 touch-pan-y"
-                            >
-                                <div className={cn("pt-4 transition-colors", tokens.text.secondary)}>
-                                    {children}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                        <div className="flex flex-col">
+                            <span className={cn("text-[10px] uppercase tracking-widest font-bold transition-colors mb-0.5", tokens.text.tertiary)}>
+                                {category} &bull; {timeAgo}
+                            </span>
+                            <h3 className={cn("font-bold leading-tight transition-colors", shouldBeFullscreen ? "text-3xl" : "text-lg", tokens.text.primary)}>
+                                {title}
+                            </h3>
+                        </div>
+                    </div>
                 </motion.div>
 
-                {/* Minimize Button (Floating) */}
-                <AnimatePresence>
+                {/* Preview Content (Browse Mode) */}
+                {!shouldBeFullscreen && preview && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={cn("text-sm line-clamp-2 px-5 pb-5 pl-[4.25rem] -mt-2 transition-colors", tokens.text.secondary)}
+                    >
+                        {preview}
+                    </motion.div>
+                )}
+
+                {/* Detailed Content (Focus Mode) */}
+                <AnimatePresence mode="wait">
                     {shouldBeFullscreen && (
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className="absolute bottom-10 right-6 z-50"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ delay: 0.1, duration: 0.3 }}
+                            className="flex-1 overflow-y-auto px-8 pb-32 touch-pan-y"
                         >
-                            <LiquidPressable
-                                onClick={handleMinimize}
-                                size="md"
-                                variant="fab"
-                                className={mode === 'dark' ? "bg-white/10 border-white/20" : "bg-white/80 border-black/10 shadow-lg"}
-                            >
-                                <Minimize2 className={cn("h-5 w-5", tokens.text.primary)} />
-                            </LiquidPressable>
+                            <div className={cn("pt-4 transition-colors leading-relaxed text-lg", tokens.text.secondary)}>
+                                {children}
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </motion.div>
 
-            </LiquidGlassPanel>
-        </>
+            {/* Minimize Button (Floating) */}
+            <AnimatePresence>
+                {shouldBeFullscreen && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute bottom-12 right-6 z-[100]"
+                    >
+                        <LiquidPressable
+                            onClick={handleMinimize}
+                            size="md"
+                            variant="fab"
+                            className={mode === 'dark' ? "bg-white/10 border-white/20" : "bg-white/80 border-black/10 shadow-lg"}
+                        >
+                            <Minimize2 className={cn("h-5 w-5", tokens.text.primary)} />
+                        </LiquidPressable>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 }

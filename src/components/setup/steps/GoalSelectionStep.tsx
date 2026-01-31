@@ -43,7 +43,7 @@ export default function GoalSelectionStep({ data, updateData, onNext }: GoalSele
         <LiquidWizardCard
             title="Primary Goal"
             description="What do you want to achieve with your nutrition plan?"
-        // icon removed
+            showSwipeHint={false}
         >
             <div className="flex flex-col gap-3 w-full">
                 {goals.map((g) => {

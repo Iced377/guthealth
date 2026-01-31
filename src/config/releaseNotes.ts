@@ -8,9 +8,25 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.2.0";
+export const APP_VERSION = "5.2.1";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.2.1',
+        date: 'February 1, 2026',
+        title: 'Integrations & Onboarding Polish',
+        description: 'A major polish update to the onboarding experience, adding real integrations for Apple Health and Fitbit, and refining the navigation flow.',
+        features: [
+            'Real Integrations: Connect Apple Health (Steps) and Fitbit (Weight) directly during onboarding with real-time syncing.',
+            'Refined Onboarding: Improved navigation with gesture-based flow (Swipe to Continue), removing cluttered buttons.',
+            'Fitbit Support: Added full Fitbit OAuth support for seamless weight syncing across web and native apps.'
+        ],
+        improvements: [
+            'UI: Cleaner "Connect Apps" card with premium glass styling and real connection status.',
+            'UX: Simplified "Swipe" hints to appear only on the first step to reduce visual noise.'
+        ],
+        fixes: []
+    },
     {
         version: '5.2.0',
         date: 'January 30, 2026',

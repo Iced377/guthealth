@@ -29,7 +29,7 @@ export default function ActivityLevelStep({ data, updateData, onNext }: Activity
         <LiquidWizardCard
             title="Activity Level"
             description="How active are you on a daily basis?"
-        // icon removed
+            showSwipeHint={false}
         >
             <div className="grid grid-cols-2 gap-3 w-full h-full content-center">
                 {activities.map((a) => {

@@ -130,7 +130,7 @@ export default function LiquidTabBar({ onAddClick, onPhotoClick, className }: Li
                                         key={tab.id}
                                         onClick={() => handleTabPress(tab)}
                                         className={cn(
-                                            "relative flex flex-col items-center justify-center",
+                                            "relative flex flex-col items-center justify-center isolate", // Added isolate to fix z-index (-10) content visibility
                                             "w-16 h-14 rounded-2xl",
                                             "transition-colors duration-200",
                                             tab.isAction ? "scale-110" : ""
@@ -142,12 +142,30 @@ export default function LiquidTabBar({ onAddClick, onPhotoClick, className }: Li
                                         {isActive && !tab.isAction && (
                                             <motion.div
                                                 layoutId="activeTab"
-                                                className={cn(
-                                                    "absolute inset-0 rounded-2xl",
-                                                    "bg-white/40 dark:bg-white/20"
-                                                )}
+                                                className="absolute inset-0 rounded-2xl overflow-hidden -z-10"
                                                 transition={SPRING_CONFIG}
-                                            />
+                                            >
+                                                {/* 1. Base Liquid Body */}
+                                                <div className="absolute inset-0 backdrop-blur-sm bg-white/60 dark:bg-white/15" />
+
+                                                {/* 2. Radial Liquid Highlight (The Glow) */}
+                                                <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-50
+                                                    bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.8)_0%,transparent_50%)]
+                                                    dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3)_0%,transparent_50%)]"
+                                                />
+
+                                                {/* 3. Specular Streak */}
+                                                <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/10 to-transparent skew-x-[-20deg] opacity-40 translate-x-[20%]" />
+
+                                                {/* 4. Inset Thickness Highlight */}
+                                                <div className="absolute inset-0 rounded-2xl
+                                                    shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),inset_0_-1px_1px_rgba(0,0,0,0.05)]
+                                                    dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-1px_1px_rgba(0,0,0,0.1)]"
+                                                />
+
+                                                {/* 5. Drop Shadow */}
+                                                <div className="absolute inset-0 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.1)]" />
+                                            </motion.div>
                                         )}
 
                                         {/* Add button special styling */}

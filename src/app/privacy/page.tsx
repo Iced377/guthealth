@@ -15,42 +15,33 @@ const PrivacyPage = () => {
       </div>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">Introduction</h2>
+        <h2 className="text-2xl font-semibold mb-2">Introduction & Identity</h2>
         <p>
-          Welcome to GutCheck! We are committed to protecting your privacy and handling your data in an open and transparent manner. This privacy notice explains how we collect, use, share, and protect your personal information when you use our application. Please note that this is a test project that is not currently intended for commercial use.
+          Welcome to GutCheck. We are committed to protecting your privacy and handling your data in an open and transparent manner. This privacy notice explains how we collect, use, share, and protect your personal information when you use our application.
+        </p>
+        <p className="mt-2 text-primary font-medium">
+          The Service Builder is the Data Manager/Controller of your personal data.
         </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">Data Collection</h2>
+        <h2 className="text-2xl font-semibold mb-2">Data Collection & Sensitive Personal Data</h2>
         <p>
-          We collect various types of information in connection with the services we provide, including:
+          We collect various types of information to provide our services. <strong>Important:</strong> Some of this data is classified as <strong>Sensitive Personal Data</strong>.
         </p>
-        <ul className="list-disc list-inside ml-4">
-          <li>Information you provide directly (e.g., when you create an account, log meals, report symptoms).</li>
-          <li>Data collected automatically (e.g., usage data, device information, IP address).</li>
-          <li><strong>Wearable Device Data:</strong> Information synced from third-party services you authorize (e.g., Apple Health, Fitbit) such as steps, activity energy, weight, and body fat percentage.</li>
-          <li>Information from third-party sources (e.g., if you log in via a third-party service).</li>
+        <ul className="list-disc list-inside ml-4 mt-2">
+          <li><strong>Sensitive Personal Data:</strong> Health-related information you provide or sync, including dietary habits, symptoms, food logs, body composition data, and other health metrics.</li>
+          <li><strong>Account Information:</strong> Email and profile details provided during signup.</li>
+          <li><strong>Device & Usage Data:</strong> Automatically collected technical data such as log files, IP address, device type, and app usage patterns.</li>
+          <li><strong>Wearable Device Data:</strong> If authorized, we sync data from third-party services (e.g., Apple Health, Fitbit) like health and activity data.</li>
         </ul>
-        <p className="mt-2">
-          Specifically, this may include health-related information, dietary habits, and other sensitive data that you choose to share with us to enable personalized insights and recommendations.
-        </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">Data Usage</h2>
+        <h2 className="text-2xl font-semibold mb-2">Legal Basis & Consent</h2>
         <p>
-          Your data is used to:
+          We process your personal data based on your explicit consent, which you provide when you register an account and when you enable specific features (such as AI analysis or health integrations). You have the right to withdraw your consent at any time by submitting a request in our contact us page, though this will limit the application's functionality.
         </p>
-        <ul className="list-disc list-inside ml-4">
-          <li>Provide, maintain, and improve our services.</li>
-          <li>Personalize your experience and offer tailored recommendations.</li>
-          <li>Communicate with you about your account or our services.</li>
-          <li>Conduct research and analysis to better understand our users and improve our application.</li>
-          <li>Monitor AI performance and safety by reviewing flagged interactions to correct inaccuracies (hallucinations) and improve response quality.</li>
-          <li>Ensure the security of our platform.</li>
-          <li>Comply with legal obligations.</li>
-        </ul>
       </section>
 
       <section className="mb-6">
@@ -60,124 +51,109 @@ const PrivacyPage = () => {
         </p>
         <ul className="list-disc list-inside ml-4 mt-2 space-y-2">
           <li>
-            <strong>Apple Health (iOS Only):</strong> If you enable this integration, we read step count data from the Apple Health repository on your device. This data is used solely to display activity trends within the GutCheck dashboard. You can manage or revoke these permissions at any time in your iOS Settings &gt; Health &gt; Data Access &gt; GutCheck.
+            <strong>Apple Health (iOS Only):</strong> If enabled, we read generic health and activity data from Apple Health solely to display activity trends. You can manage or revoke permissions in iOS Settings.
           </li>
           <li>
-            <strong>Fitbit:</strong> If you choose to connect your Fitbit account, we use the official Fitbit Web API to securely fetch your activity (steps, calories) and body composition (weight, fat percentage) data. We store OAuth tokens securely and strictly for the purpose of maintaining this connection. You can revoke access via your Fitbit account settings or within the GutCheck app.
+            <strong>Fitbit:</strong> If connected, we use the Fitbit Web API to securely fetch activity and body composition data. We store OAuth tokens securely and strictly for this connection. You can revoke access via Fitbit or GutCheck settings.
           </li>
         </ul>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">AI Features & Third-Party Processing</h2>
+        <h2 className="text-2xl font-semibold mb-2">AI Features & Processing</h2>
         <p>
-          Our application utilizes advanced artificial intelligence (AI) to provide comprehensive food analysis and personalized insights. Specifically, we use <strong>Google Gemini</strong> as our AI provider.
+          We use <strong>Google Gemini</strong> to provide AI-powered food analysis and insights.
         </p>
         <ul className="list-disc list-inside ml-4 mt-2">
           <li>
-            <strong>Data Processing:</strong> When you use features such as "Analyze Meal" or "Personal Dietitian", relevant data (including your meal descriptions, recent food logs, and profile context) is sent to Google's Gemini API for processing.
+            <strong>Data Processing:</strong> When you use AI features (e.g., "Analyze Meal"), relevant data (meal descriptions, context) is sent to Google's API for processing.
           </li>
           <li>
-            <strong>Privacy Assurance:</strong> We use the enterprise/developer standard for the Gemini API. According to Google's API Data Governance terms, data submitted to the API is <strong>not used to train their models</strong>. Your data is processed solely to generate the response for your request.
+            <strong>Training & Liability:</strong> The use of your data for model training is governed entirely by <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google's Terms of Service</a> and <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Generative AI Additional Terms</a>. We are not responsible for Google's data handling practices and disclaim all liability regarding their use of your data.
           </li>
           <li>
-            <strong>Transparency:</strong> We only send data to the AI service when you explicitly interact with AI-powered features.
+            <strong>Consent:</strong> By using these AI features, you consent to sending your data to Google and acknowledge that their terms apply.
           </li>
         </ul>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="text-2xl font-semibold mb-2">International Data Transfers</h2>
+        <p>
+          Your personal data may be transferred to and processed Internationally, specifically where our service providers operate (e.g., Google Cloud/Firebase servers).
+        </p>
+        <p className="mt-2">
+          We ensure such transfers comply with applicable laws by relying on major cloud providers who maintain robust security certifications (such as ISO 27001) to safeguard your rights.
+        </p>
       </section>
 
       <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-2">Data Sharing</h2>
         <p>
-          We do not sell your personal data. We may share your information in the following circumstances:
+          We do not sell your personal data. We may share your information:
         </p>
         <ul className="list-disc list-inside ml-4">
-          <li>With your consent.</li>
-          <li>With service providers who assist us in our operations (e.g., cloud hosting, analytics). These providers are bound by confidentiality obligations.</li>
-          <li>For legal reasons (e.g., to comply with a subpoena or other legal process).</li>
-          <li>In connection with a sale, merger, or acquisition of all or part of our company.</li>
-          <li>Aggregated or anonymized data may be shared for research or statistical purposes.</li>
+          <li>With service providers (cloud hosting, analytics) bound by confidentiality.</li>
+          <li>To comply with legal obligations or valid legal process.</li>
+          <li>In connection with a merger or acquisition.</li>
         </ul>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">Data Security</h2>
-        <p>
-          We are committed to protecting your data and implement robust security measures. These measures include, but are not limited to:
-        </p>
+        <h2 className="text-2xl font-semibold mb-2">Data Security & Retention</h2>
         <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
           <li>
-            <strong>Authentication and Access Control:</strong> We utilize Firebase Authentication for secure user management. Access to your data within our database (Firestore) is strictly controlled by server-side Firestore Security Rules, ensuring users can only access their own information.
+            <strong>Security:</strong> We use encryption in transit (SSL/TLS) and at rest (Google Cloud encryption), along with strict access controls via Firebase Authentication.
           </li>
           <li>
-            <strong>Data Encryption:</strong> Your data is encrypted in transit using industry-standard SSL/TLS protocols. Data stored in Firestore is encrypted at rest by Google Cloud.
-          </li>
-          <li>
-            <strong>Secure Cloud Infrastructure:</strong> Our application is built on Google Cloud Platform (Firebase), which provides a secure and reliable infrastructure with comprehensive security controls and compliance certifications.
-          </li>
-          <li>
-            <strong>Principle of Least Privilege:</strong> Our system architecture adheres to the principle of least privilege, meaning components and services are granted only the minimum access necessary to perform their functions.
-          </li>
-          <li>
-            <strong>Regular Reviews:</strong> We aim to regularly review and update our security practices to adapt to new threats and best practices.
+            <strong>Retention:</strong> We retain your data only for as long as your account is active. If you request account deletion, your personal data will be deleted from our active databases, typically within 30-90 days. <strong>Disclaimer:</strong> We may be required to retain certain data even after an erasure request for a limited period to comply with legal obligations, prevent fraud, or for legitimate business interests (such as resolving disputes or enforcing our terms).
           </li>
         </ul>
         <p className="mt-2">
-          Despite these measures, please remember that no system is completely impenetrable, and we cannot guarantee the absolute security of your information. We continuously strive to enhance our security practices.
+          No system is impenetrable. While we strive for high security, we cannot guarantee absolute security.
         </p>
       </section>
 
       <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-2">User Rights</h2>
         <p>
-          You have certain rights regarding your personal data, including:
+          You have specific rights regarding your data:
         </p>
         <ul className="list-disc list-inside ml-4">
-          <li>The right to access your data.</li>
-          <li>The right to correct inaccuracies in your data.</li>
-          <li>The right to request deletion of your data.</li>
-          <li>The right to object to or restrict certain processing activities.</li>
-          <li>The right to data portability.</li>
+          <li><strong>Right to Access:</strong> You can download a copy of your data via the "Download My Data" feature in the User Center.</li>
+          <li><strong>Right to Rectification:</strong> You can request corrections by contacting us.</li>
+          <li><strong>Right to Erasure:</strong> You can request account deletion by contacting us or via the app settings.</li>
+          <li><strong>Right to Withdraw Consent:</strong> You can stop using specific features or submit a request in our contact us page.</li>
         </ul>
         <p className="mt-2">
-          You can exercise your right to access and portability directly within the app by using the "Download My Data" feature in the User Center. for other rights, please contact us through the support channels provided in the app.
+          We aim to respond to data rights requests within 30 days. We may request proof of identity to verify your request.
         </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">Cookies and Tracking Technologies</h2>
+        <h2 className="text-2xl font-semibold mb-2">Cookies & Local Storage</h2>
         <p>
-          Our application uses essential data storage mechanisms like browser `localStorage` and technologies employed by Firebase Authentication to ensure functionality and enhance your experience. We do not use cookies for third-party advertising or extensive cross-site tracking.
-        </p>
-        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-          <li>
-            <strong>Firebase Authentication:</strong> To manage your login sessions securely and remember your authentication state, Firebase Authentication utilizes browser storage mechanisms (such as `localStorage` or `IndexedDB`). These are essential for the application to function correctly for logged-in users.
-          </li>
-          <li>
-            <strong>User Preferences:</strong> We use `localStorage` to remember your preferences, such as your theme choice (light/dark mode) and your cookie consent status. This helps provide a consistent experience across your visits without tracking you across other sites.
-          </li>
-        </ul>
-        <p className="mt-2">
-          You can typically manage settings related to browser storage and cookies through your browser's privacy settings. Disabling certain essential storage mechanisms may affect the application's functionality, particularly login persistence.
+          Our application uses device/app storage (e.g., `localStorage`, `IndexedDB`) and Firebase Authentication tokens to maintain your login session and preferences (like theme settings). We do not use third-party advertising cookies.
         </p>
       </section>
 
       <section className="mb-6">
-        <h2 className="text-2xl font-semibold mb-2">Changes to This Privacy Notice</h2>
+        <h2 className="text-2xl font-semibold mb-2">Changes to This Notice</h2>
         <p>
-          We may update this privacy notice from time to time. We will notify you of any significant changes by posting the new notice on this page and, where appropriate, through other channels.
+          We may update this privacy notice. Significant changes will be communicated through the app or this page.
         </p>
       </section>
 
       <section>
         <h2 className="text-2xl font-semibold mb-2">Contact Us</h2>
         <p>
-          If you have any questions or concerns about this privacy notice or our data practices, please contact us via the green feedback button.
+          If you have any questions about your privacy rights or this notice, please contact us at:
         </p>
+        <a href="mailto:happygut@mygutcheck.app" className="block mt-2 text-primary text-lg font-medium hover:underline">happygut@mygutcheck.app</a>
       </section>
 
       <div className="mt-8 text-sm text-gray-500">
-        <p>Last updated: January 29, 2026</p>
+        <p>Last updated: January 31, 2026</p>
       </div>
 
     </div>

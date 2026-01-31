@@ -266,14 +266,11 @@ export default function TimelineFoodCard({
         <CardContent className="px-4 pt-2 pb-3 space-y-3 relative z-1">
           {item.isSimilarToSafe && !isManualMacroEntry && (
             <Badge
-              variant="default"
-              className="text-sm mb-0 inline-flex"
+              variant="secondary"
+              className="text-sm mb-1 inline-flex backdrop-blur-md border border-green-500/20 shadow-sm"
               style={{
-                backgroundColor: 'var(--success-indicator-bg, #34C759)',
-                color: 'var(--success-indicator-text, white)',
-                borderColor: 'var(--primary, #27AE60)',
-                borderWidth: '1px',
-                borderStyle: 'solid',
+                backgroundColor: 'rgba(39, 174, 96, 0.1)', // Glassy Green
+                color: '#27AE60',
               }}
             >
               <CheckCheck className="mr-1.5 h-4 w-4" /> Similar to your Safe Foods
@@ -282,19 +279,19 @@ export default function TimelineFoodCard({
 
           {/* Health Indicators - Promoted to main view */}
           {hasHealthIndicators && item.fodmapData && (
-            <div className={cn("text-xs pt-0 flex flex-wrap items-center gap-2")} id={cardId ? `${cardId}-indicators` : undefined}>
+            <div className={cn("text-xs pt-1 flex flex-wrap items-center gap-2")} id={cardId ? `${cardId}-indicators` : undefined}>
 
-              <div className="active-press"><DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} /></div>
-              <div className="active-press"><GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} /></div>
-              <div className="active-press"><KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} /></div>
-              <div className="active-press"><FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} /></div>
-              <div className="active-press"><GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} /></div>
+              <div className="active-press drop-shadow-sm"><DietaryFiberIndicator fiberInfo={item.fodmapData.dietaryFiberInfo} /></div>
+              <div className="active-press drop-shadow-sm"><GlycemicIndexIndicator giInfo={item.fodmapData.glycemicIndexInfo} /></div>
+              <div className="active-press drop-shadow-sm"><KetoFriendlinessIndicator ketoInfo={item.fodmapData.ketoFriendliness} /></div>
+              <div className="active-press drop-shadow-sm"><FodmapIndicator score={item.fodmapData.overallRisk} reason={item.fodmapData.reason} /></div>
+              <div className="active-press drop-shadow-sm"><GutBacteriaIndicator gutImpact={item.fodmapData.gutBacteriaImpact} /></div>
               {detectedAllergens && detectedAllergens.length > 0 &&
                 detectedAllergens.map((allergen: string) => (
                   <TooltipProvider key={allergen}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge variant="destructive" className="text-xs bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30 flex items-center gap-1 cursor-default active-press">
+                        <Badge variant="outline" className="text-xs bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 backdrop-blur-sm shadow-sm flex items-center gap-1 cursor-default active-press hover:bg-red-500/20 transition-colors">
                           <AlertCircle className="h-3.5 w-3.5" /> {allergen}
                         </Badge>
                       </TooltipTrigger>
