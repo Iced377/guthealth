@@ -88,7 +88,9 @@ export interface TrendsAnalysisResult {
     totalDaysAnalyzed: number;
     averageDailyCalories: number;
     dailyCalorieTarget: number;
-    maxFastingWindowHours: number; // Added
+    maxFastingWindowHours: number;
+    ketoAdherenceDays: number; // Days with Net Carbs < 50g
+    fastingAdherenceDays: number; // Days with a > 16h fast
     fluxZones: {
         optimalFluxDays: number;
         grindDays: number;
@@ -105,16 +107,18 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
     const recentEntries = entries.filter(e => e.timestamp >= startDate);
 
     // 1. Group by Date
-    const dailyStats: Record<string, { calories: number; steps: number }> = {};
+    const dailyStats: Record<string, { calories: number; steps: number; carbs: number; fiber: number }> = {};
     const foodTimestamps: number[] = []; // For fasting calc
 
     recentEntries.forEach(e => {
         const dateKey = e.timestamp.toISOString().split('T')[0];
-        if (!dailyStats[dateKey]) dailyStats[dateKey] = { calories: 0, steps: 0 };
+        if (!dailyStats[dateKey]) dailyStats[dateKey] = { calories: 0, steps: 0, carbs: 0, fiber: 0 };
 
         if (e.entryType === 'food') {
             const food = e as LoggedFoodItem;
             dailyStats[dateKey].calories += (food.calories || 0);
+            dailyStats[dateKey].carbs += (food.carbs || 0);
+            dailyStats[dateKey].fiber += (food.fodmapData?.dietaryFiberInfo?.amountGrams || 0);
 
             // IGNORE negligible calories for Fasting Calculation (e.g. black coffee, water, supplements)
             if ((food.calories || 0) > 5) {
@@ -144,6 +148,18 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         // Filter out unrealistic fasts (e.g. missed logging days > 48h) or tiny gaps
         if (diff > 4 && diff < 36) {
             if (diff > maxFast) maxFast = diff;
+        }
+    }
+
+    // Count Fasting Adherence (> 16h)
+    let fastingAdherenceDays = 0;
+    // We need to count *days* that had a 16h+ fast.
+    // Iterating gaps gives us instances. Usually 1 per day max.
+    // Simple enough to count valid gaps > 16h
+    for (let i = 1; i < foodTimestamps.length; i++) {
+        const diff = (foodTimestamps[i] - foodTimestamps[i - 1]) / (1000 * 60 * 60);
+        if (diff >= 16 && diff < 48) {
+            fastingAdherenceDays++;
         }
     }
     // Round to 1 decimal
@@ -223,6 +239,18 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         }
     }
 
+    // Calculate Keto Adherence (Net Carbs < 50g)
+    let ketoAdherenceDays = 0;
+    dailyData.forEach(day => {
+        // Only count if they actually logged something substantial (> 500 kcal) so we don't count "starvation" as Keto
+        if (day.calories > 500) {
+            const netCarbs = Math.max(0, day.carbs - day.fiber);
+            if (netCarbs < 50) {
+                ketoAdherenceDays++;
+            }
+        }
+    });
+
     return {
         cumulativeNetCalories: Math.round(cumulativeNet),
         cumulativeNetCaloriesWithGuardrail: Math.round(cumulativeNetGuardrailed),
@@ -233,6 +261,8 @@ export function calculateTrendsAnalysis(entries: TimelineEntry[], profile: UserP
         averageDailyCalories: Math.round(totalCalsForAverage / daysForAverage),
         dailyCalorieTarget: target,
         maxFastingWindowHours: maxFast || 0,
+        ketoAdherenceDays,
+        fastingAdherenceDays,
         fluxZones: {
             optimalFluxDays: optimal,
             grindDays: grind,

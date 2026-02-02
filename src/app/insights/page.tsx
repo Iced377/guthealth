@@ -5,6 +5,8 @@ import { TodayBrief } from '@/components/insights/TodayBrief';
 import { InsightCategoryStrip } from '@/components/insights/InsightCategoryStrip';
 import { InsightFeed } from '@/components/insights/InsightFeed';
 import { CoachView } from '@/components/insights/CoachView';
+import DashboardHero from '@/components/dashboard/DashboardHero';
+import { calculateDailyPedometerStats } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -26,14 +28,11 @@ function InsightsLayout() {
   const { healthData } = useHealthKit();
 
   // --- LOGIC CORE ---
+
+  // --- LOGIC CORE ---
   const {
-    calories,
-    protein,
-    hoursSinceLastMeal,
-    todaySteps,
-    streakDays,
-    wins,
-    insightText
+    summary,
+    stepsData
   } = useMemo(() => {
     const now = new Date();
     const todayStart = startOfDay(now);
@@ -45,111 +44,32 @@ function InsightsLayout() {
       e.timestamp >= todayStart && e.timestamp <= todayEnd
     );
 
-    const totals = todayLogs.reduce((acc, curr: any) => ({
-      cal: acc.cal + (curr.calories || 0),
-      prot: acc.prot + (curr.protein || 0)
-    }), { cal: 0, prot: 0 });
+    const summary = todayLogs.reduce((acc, curr: any) => ({
+      calories: acc.calories + (curr.calories || 0),
+      protein: acc.protein + (curr.protein || 0),
+      carbs: acc.carbs + (curr.carbs || 0),
+      fat: acc.fat + (curr.fat || 0),
+      fiber: acc.fiber + (curr.fiber || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
-    // 2. Fasting (Last Logged Meal Time)
-    const lastMeal = timelineEntries.find(e =>
-      (e.entryType === 'food' || e.entryType === 'manual_macro') &&
-      (e as any).calories > 10 // Ignore water/coffee
-    );
+    // 2. Steps
+    let stepsData = null;
+    const pedometerLogs = timelineEntries.filter(e =>
+      e.entryType === 'pedometer_data' && isSameDay(new Date(e.timestamp), now)
+    ) as any[];
 
-    let hoursSince = null;
-    if (lastMeal) {
-      const diff = (now.getTime() - new Date(lastMeal.timestamp).getTime()) / 36e5;
-      hoursSince = parseFloat(diff.toFixed(1));
-    }
-
-    // 3. Steps Priority
-    let steps = null;
-    if (healthData?.steps) {
-      steps = healthData.steps;
-    }
-    else {
-      const todaySync = timelineEntries.find(e =>
-        e.entryType === 'pedometer_data' && isSameDay(new Date(e.timestamp), now)
-      ) as any;
-      if (todaySync?.steps) steps = todaySync.steps;
-    }
-
-    // 4. Streaks
-    let streak = 0;
-    let checkDate = subDays(now, 1);
-    if (todayLogs.length > 0) streak = 1;
-
-    for (let i = 0; i < 30; i++) {
-      const hasLog = timelineEntries.some(e =>
-        (e.entryType === 'food' || e.entryType === 'manual_macro') &&
-        isSameDay(new Date(e.timestamp), checkDate)
-      );
-      if (hasLog) {
-        if (streak === 0 && i === 0 && todayLogs.length === 0) streak = 1;
-        else streak++;
-        checkDate = subDays(checkDate, 1);
-      } else {
-        break;
-      }
-    }
-
-    // 5. Wins & Tags
-    const calculatedWins: string[] = [];
-    const proteinTarget = userProfile?.profile?.macros?.protein || 150;
-    const stepGoal = 8000;
-
-    // Add User Diets first (as Tags)
-    const activeDiets = userProfile?.profile?.dietaryPreferences || [];
-    const dietMap: Record<string, string> = {
-      'keto': 'Keto',
-      'low_fodmap': 'Low FODMAP',
-      'intermittent_fasting': 'Intermittent Fasting',
-      'vegan': 'Vegan',
-      'vegetarian': 'Vegetarian',
-      'paleo': 'Paleo',
-      'gluten_free': 'Gluten Free',
-      'dairy_free': 'Dairy Free',
-      'pescatarian': 'Pescatarian'
-    };
-
-    activeDiets.forEach(d => {
-      if (dietMap[d]) calculatedWins.push(dietMap[d]);
-    });
-
-    if (totals.prot >= proteinTarget * 0.8) calculatedWins.push("High Protein");
-    if (steps && steps >= stepGoal) calculatedWins.push("Step Goal");
-    // Only add IF badge if it's NOT already in diets (to avoid dupe)
-    if (hoursSince && hoursSince > 12 && !activeDiets.includes('intermittent_fasting')) {
-      calculatedWins.push("Fasting Mode");
-    }
-    if (streak >= 3) calculatedWins.push(`${streak} Day Streak`);
-
-    // 6. Insight Text
-    let text = "Log your meals to unlock insights.";
-    const firstName = userProfile?.displayName?.split(' ')[0] || "Friend";
-
-    if (todayLogs.length === 0) {
-      text = `Ready to fuel up, ${firstName}? Log your first meal to start the day.`;
-    } else if (totals.prot >= proteinTarget) {
-      text = `Crushing it! You've hit your protein goal. Muscle repair in progress.`;
-    } else if (steps && steps > stepGoal) {
-      text = `Great movement today! You're keeping your metabolism active.`;
-    } else {
-      text = `You're on track. ${todayLogs.length} meals logged. Keep consistent!`;
+    // Use helper if logs exist, else try healthKit or mock
+    if (pedometerLogs.length > 0) {
+      stepsData = calculateDailyPedometerStats(pedometerLogs);
+    } else if (healthData?.steps) {
+      stepsData = { steps: healthData.steps } as any; // Fallback structure
     }
 
     return {
-      calories: totals.cal,
-      protein: totals.prot,
-      hoursSinceLastMeal: hoursSince,
-      todaySteps: steps,
-      streakDays: streak,
-      wins: calculatedWins,
-      insightText: text
+      summary,
+      stepsData
     };
   }, [timelineEntries, healthData, userProfile]);
-
-
 
   // Scroll Sync Refs
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -226,23 +146,19 @@ function InsightsLayout() {
         {/* Page 1: Highlights */}
         <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-48 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="w-full max-w-md mx-auto px-4 min-h-full">
-            <TodayBrief
-              userName={userProfile?.displayName?.split(' ')[0] || "User"}
-              calories={calories}
-              protein={protein}
-              steps={todaySteps}
-              hoursSinceLastMeal={hoursSinceLastMeal}
-              streakDays={streakDays}
-              wins={wins}
-              insightText={insightText}
+            <DashboardHero
+              userProfile={userProfile!}
+              timelineEntries={timelineEntries}
+              summary={summary}
+              stepsData={stepsData}
             />
             <InsightFeed />
           </div>
         </div>
 
         {/* Page 2: Coach */}
-        <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-48 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="w-full max-w-md mx-auto min-h-full flex items-center justify-center">
+        <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-32 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="w-full max-w-md mx-auto min-h-full flex flex-col items-center justify-start relative z-10">
             <CoachView />
           </div>
         </div>

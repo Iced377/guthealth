@@ -128,7 +128,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                             initial={{ opacity: 0, y: 20, scale: 0.8 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             transition={{ delay: 0.6, type: "spring", stiffness: 120 }}
-                            className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center w-32 z-20"
+                            className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center w-32 z-20"
                         >
                             <div className="bg-red-500/10 backdrop-blur-md border border-red-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 mb-2 shadow-lg shadow-red-500/10 hover:scale-105 transition-transform">
                                 <Dumbbell className="w-3.5 h-3.5 text-red-500" />
@@ -140,29 +140,12 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                             </div>
                         </motion.div>
 
-                        {/* Fat (Blue) - Bottom Left */}
+                        {/* Carbs (Amber) - Bottom Left */}
                         <motion.div
                             initial={{ opacity: 0, x: 20, scale: 0.8 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             transition={{ delay: 0.7, type: "spring", stiffness: 120 }}
-                            className="absolute -bottom-8 -left-8 flex flex-col items-center w-28 z-20"
-                        >
-                            <div className="bg-blue-500/10 backdrop-blur-md border border-blue-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 mb-2 shadow-lg shadow-blue-500/10 hover:scale-105 transition-transform">
-                                <Droplet className="w-3.5 h-3.5 text-blue-500" />
-                                <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">Fat</span>
-                            </div>
-                            <div className="flex flex-col items-center -space-y-1">
-                                <span className="text-xl font-black text-foreground">{results.macros.fats}g</span>
-                                <span className="text-xs text-muted-foreground font-bold">{fPct}%</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Carbs (Amber) - Bottom Right */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            transition={{ delay: 0.8, type: "spring", stiffness: 120 }}
-                            className="absolute -bottom-8 -right-8 flex flex-col items-center w-28 z-20"
+                            className="absolute -bottom-10 -left-6 flex flex-col items-center w-28 z-20"
                         >
                             <div className="bg-amber-500/10 backdrop-blur-md border border-amber-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 mb-2 shadow-lg shadow-amber-500/10 hover:scale-105 transition-transform">
                                 <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Carbs</span>
@@ -171,6 +154,23 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                             <div className="flex flex-col items-center -space-y-1">
                                 <span className="text-xl font-black text-foreground">{results.macros.carbs}g</span>
                                 <span className="text-xs text-muted-foreground font-bold">{cPct}%</span>
+                            </div>
+                        </motion.div>
+
+                        {/* Fat (Blue) - Bottom Right */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            transition={{ delay: 0.8, type: "spring", stiffness: 120 }}
+                            className="absolute -bottom-10 -right-6 flex flex-col items-center w-28 z-20"
+                        >
+                            <div className="bg-blue-500/10 backdrop-blur-md border border-blue-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 mb-2 shadow-lg shadow-blue-500/10 hover:scale-105 transition-transform">
+                                <Droplet className="w-3.5 h-3.5 text-blue-500" />
+                                <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">Fat</span>
+                            </div>
+                            <div className="flex flex-col items-center -space-y-1">
+                                <span className="text-xl font-black text-foreground">{results.macros.fats}g</span>
+                                <span className="text-xs text-muted-foreground font-bold">{fPct}%</span>
                             </div>
                         </motion.div>
                     </div>

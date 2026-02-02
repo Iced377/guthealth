@@ -58,6 +58,11 @@ const UserProfileSchemaForAI = z.object({
   bmr: z.number().optional(),
   currentWeight: z.number().optional(),
   maxFastingWindowHours: z.number().optional().describe("The calculated maximum time in hours between two consecutive meals in the provided logs."),
+  macros: z.object({
+    protein: z.number().optional(),
+    carbs: z.number().optional(),
+    fats: z.number().optional(),
+  }).optional().describe("User's daily macro targets in grams."),
 }).optional();
 
 
@@ -70,6 +75,8 @@ const TrendsAnalysisSchema = z.object({
   totalDaysAnalyzed: z.number(),
   averageDailyCalories: z.number(),
   dailyCalorieTarget: z.number(),
+  ketoAdherenceDays: z.number().optional().describe("Number of days where Net Carbs were < 50g (Keto limit)."),
+  fastingAdherenceDays: z.number().optional().describe("Number of days where a fasting window of > 16 hours was completed."),
   fluxZones: z.object({
     optimalFluxDays: z.number(),
     grindDays: z.number(),
@@ -100,7 +107,7 @@ const PersonalizedDietitianInputSchema = z.object({
     durationHours: z.number()
   })).optional().describe("List of fasting window durations calculated from the last 7 days of logs."),
   timeOfDaySegment: z.string().optional().describe("Current time segment: 'Morning', 'Afternoon', 'Evening', 'Late Night'."),
-  trendsAnalysis: TrendsAnalysisSchema.optional().describe("Computed insights from the user's historical trends graphs, providing context on long-term observance of calorie goals."),
+  safetyFloor: z.number().optional().describe("Calculated 25% deficit limit (TDEE * 0.75). Below this is unsafe."),
 });
 export type PersonalizedDietitianInput = z.infer<typeof PersonalizedDietitianInputSchema>;
 
@@ -134,6 +141,8 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **Activity Level:** {{#if userProfile.activityLevel}}{{userProfile.activityLevel}}{{else}}Not specified{{/if}}
 - **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
 - **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
+- **Safety Floor (Min Recommended Intake):** {{#if safetyFloor}}{{safetyFloor}} kcal{{else}}N/A{{/if}} (TDEE * 0.75)
+- **Macro Targets:** {{#if userProfile.macros}}P: {{userProfile.macros.protein}}g, C: {{userProfile.macros.carbs}}g, F: {{userProfile.macros.fats}}g{{else}}Not specified{{/if}}
 - **Max Recorded Fasting Window:** {{#if userProfile.maxFastingWindowHours}}{{userProfile.maxFastingWindowHours}} hours{{else}}N/A{{/if}}
 {{#if recentFastingWindows}}
 - **Recent Fasting Consistency (Last 7 Days):**
@@ -147,6 +156,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
   - Your Max ({{userProfile.maxFastingWindowHours}}h): Ends at **{{projectedFastingEndTimes.targetMax}}**
 {{/if}}
 - **Today's Totals (Calculated):** Calories: {{dailyTotals.calories}}, Protein: {{dailyTotals.protein}}g, Carbs: {{dailyTotals.carbs}}g, Fat: {{dailyTotals.fat}}g
+  (Protein: {{dailyTotals.protein}}g * 4 = ~{{#if dailyTotals.protein}}...{{/if}} kcal. Check % of total.)
 
 {{#if trendsAnalysis}}
 **Analysis from Trends Graphs (Last {{trendsAnalysis.totalDaysAnalyzed}} Days):**
@@ -191,24 +201,56 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
     *   **IF Late Night (22:00 - 04:00):**
         *   **STOP:** Do NOT suggest exercise/walking. The prioritized advice is SLEEP and RECOVERY.
         *   **FASTING:** 
-            *   **IF \`hoursSinceLastMeal\` > 2:** State clearly that their fast **ALREADY STARTED** {{hoursSinceLastMeal}} hours ago. Use the provided "Projected Fast Completion" times strictly.
-            *   **IF \`hoursSinceLastMeal\` <= 2:** Consider them still in their **Fed State** or **Eating Window**. Do NOT say the fast has started yet.
+            *   **IF \`hoursSinceLastMeal\` > 4:** State clearly that their fast **ALREADY STARTED** {{hoursSinceLastMeal}} hours ago. Use the provided "Projected Fast Completion" times strictly.
+            *   **IF \`hoursSinceLastMeal\` <= 4:** Consider them still in their **Fed State** (Digesting). Do NOT say "Fast has started".
             *   Do NOT say "If you stop eating now".
             *   **NO SNACKS:** Unless explicitly requested.
     *   **IF Morning:** Focus on fueling for the day.
     *   **IF Evening:** Focus on winding down and protein targets.
 
 2.  **Analyze User's Progress Towards Their Goal:**
-    *   **Weight Loss (\`lose_fat\`):** Analyze if their caloric intake and food choices align with a deficit. Are they eating nutrient-dense foods that keep them full? Are there hidden calories?
+    *   **Weight Loss (\`lose_fat\`):** Analyze if their caloric intake and food choices align with a deficit.
+        *   **METABOLIC GUARDRAIL (CRITICAL):** Check if 'Average Daily Intake' < 'Safety Floor' ({{safetyFloor}} kcal).
+        *   **IF UNDER FLOOR:** Do NOT praise the large deficit. WARN them that consistently eating below {{safetyFloor}} kcal risks **metabolic slowdown** and cortisol increase. Recommend INCREASING intake slightly to stay above this floor.
+        *   **IF ABOVE FLOOR:** Affirm the sustainable deficit.
     *   **Muscle Gain (\`gain_muscle\`):** Check if protein intake is sufficient and if they are eating enough overall to fuel growth.
+    *   **Macronutrient Analysis (Crucial):**
+        *   **Calculate Protein %:** (Protein_g * 4) / Total_Calories.
+            *   **Guidance:** Ideally, Protein should be a significant portion for satiety and muscle (aiming for >25-30% is often good). Praise high protein or suggest increasing it if low.
+        *   **KETO/LOW CARB Deep Dive (If 'Keto' or 'Low Carb' is preferred):**
+            *   **Adherence Check:** You managed to stay under 50g Net Carbs on **{{trendsAnalysis.ketoAdherenceDays}} out of {{trendsAnalysis.totalDaysAnalyzed}} days**.
+                *   IF > 80%: Praise consistency!
+                *   IF < 50%: Discuss difficulty. "It looks like sticking to strict Keto has been tough ({{trendsAnalysis.ketoAdherenceDays}} days adhered)."
+            *   **Carb Thresholds:**
+                *   **< 20g Net Carbs:** "Strict Keto" (Therapeutic level).
+                *   **20g - 50g Net Carbs:** "Standard Keto" (Management level).
+                *   **> 50g:** "Low Carb" (Likely out of deep ketosis). warn if this was unintentional.
+            *   **Electrolyte Check (The Keto Flu):**
+                *   **Scan Symptoms:** If User reports **Headache, Fatigue, Brain Fog, Muscle Cramps, or Dizziness**...
+                *   **ADVICE:** This is likely "Keto Flu" (Electrolyte Imbalance). Recommend increasing **Sodium** (Salt), **Potassium** (Avocado/Lite Salt), and **Magnesium**. Hydration alone washes out electrolytes on Keto.
+            *   **"Rabbit Starvation" Protocol:**
+                *   **Check:** Is Fat intake low (< 40-50% of calories) AND Carbs low?
+                *   **WARNING:** High Protein + Low Fat + Low Carb is dangerous ("Rabbit Starvation"). Keto requires FAT as the fuel source. Suggest adding healthy fats (Olive Oil, Avocado, Nuts).
+            *   **Protein Sparing:** Protein should be adequate for muscle sparing, but not excessive on strict therapeutic keto (though less of a concern for weight loss). Focus on *Fats* filling the remaining energy need.
     *   **Maintenance (\`maintain\`):** specific patterns that might cause fluctuations.
-    *   *Intermittent Fasting (Structure Advice into TWO parts):*
-        *   **A) Current Status:** Check 'hoursSinceLastMeal'.
-            *   IF > 2 hours: "Fast Started [X] hours ago." (Use projected times).
-            *   IF <= 2 hours: "In Eating Window/Fed State."
+    *   *Intermittent Fasting (State Recognition):*
+        *   **A) Current Status (CRITICAL):** Check 'hoursSinceLastMeal'.
+            *   **IF < 4 hours:** User is in **FED STATE** (Digestion/Anabolic).
+                *   **ADVICE:** "You are currently in your eating window (Fed State) and digesting your last meal (~{{hoursSinceLastMeal}}h ago)."
+                *   **Do NOT** say "You are fasting".
+                *   **Do NOT** project Fast Completion times yet (it's too early).
+            *   **IF > 4 hours:** User is entering **POST-ABSORPTIVE** or **FASTED** state.
+                *   **ADVICE:** "Fast Started [X] hours ago."
+                *   **Display Projections:** Show the "Projected Fast Completion" times.
         *   **B) Weekly Trend:** Analyze **'Recent Fasting Consistency'**.
+            *   **Adherence Check:** You completed a >16h fast on **{{trendsAnalysis.fastingAdherenceDays}} out of {{trendsAnalysis.totalDaysAnalyzed}} days**.
             *   Highlight days with > 14-16h fasts.
-            *   Praise streaks or identify inconsistent patterns.
+
+    *   **Calorie & Safety Floor Context:**
+        *   **Timing Matters:** 
+            *   If **Morning/Afternoon:** And intake < Floor, say "You have plenty of time left. Plan your upcoming meals to reach at least {{safetyFloor}} kcal."
+            *   If **Evening/Late:** And intake < Floor, say "You are ending the day low. Consider a small, protein-rich snack to reach your metabolic safe zone."
+            *   **CONTRADICTION CHECK:** If user is "Fasted" (intentionally) or it is very late (>10pm), prioritize SLEEP over forcing food, unless they feel unwell or are dangerously low (<800kcal).
     *   **Energy Flux Assessment:** Reference the "Flux Zones".
         *   **IMPORTANT:** If the "Flux Zones" indicate Stagnation but recent days (or today) show high activity, **Activity Trumps History.** Praise the recent effort to move!
         *   If truly sedentary, encourage movement *at appropriate times* (not midnight).
@@ -244,8 +286,13 @@ const personalizedDietitianFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+      // Calculate Safety Floor (TDEE * 0.75) if TDEE exists
+      const tdee = input.userProfile?.tdee || 2000; // Default fallback to avoid 0 if unknown
+      const safetyFloor = Math.round(tdee * 0.75);
+
       const transformedInput = {
         ...input,
+        safetyFloor: safetyFloor,
         // No need to transform timestamps as they are already strings (potentially local time strings)
       };
 

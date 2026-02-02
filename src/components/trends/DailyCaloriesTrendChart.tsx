@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, AreaChart, Area } from 'recharts';
+import { Bar, BarChart, CartesianGrid, ReferenceLine, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, AreaChart, Area } from 'recharts';
 import { CaloriePoint } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { HapticsService } from '@/lib/haptics';
@@ -14,6 +14,7 @@ interface DailyCaloriesTrendChartProps {
   data: CaloriePoint[];
   isDarkMode: boolean;
   targetCalories: number;
+  maintenanceCalories?: number; // New Prop for TDEE
   dragControls?: DragControls;
 }
 
@@ -31,6 +32,7 @@ interface ChartSlideProps {
   data: any[];
   isDarkMode: boolean;
   targetCalories: number;
+  maintenanceCalories?: number; // Pass down
   isChartInteractionEnabled: boolean;
   barColor: string;
   targetLineColor: string;
@@ -42,6 +44,7 @@ const DailyCaloriesSlide = ({
   data,
   isDarkMode,
   targetCalories,
+  maintenanceCalories,
   isChartInteractionEnabled,
   barColor,
   targetLineColor,
@@ -49,6 +52,7 @@ const DailyCaloriesSlide = ({
   shouldAnimate
 }: ChartSlideProps) => {
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const safetyFloor = maintenanceCalories ? maintenanceCalories * 0.75 : undefined;
 
   return (
     <div
@@ -73,6 +77,23 @@ const DailyCaloriesSlide = ({
             {isScrubbing && isChartInteractionEnabled && (
               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
             )}
+            <defs>
+              <linearGradient id="barGradientGood" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
+                <stop offset="60%" stopColor="#334155" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#334155" stopOpacity={0.2} />
+              </linearGradient>
+              <linearGradient id="barGradientOver" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#FB7185" stopOpacity={1} />
+                <stop offset="60%" stopColor="#334155" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#334155" stopOpacity={0.2} />
+              </linearGradient>
+              <linearGradient id="barGradientRisk" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity={1} />
+                <stop offset="60%" stopColor="#334155" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#334155" stopOpacity={0.2} />
+              </linearGradient>
+            </defs>
             <XAxis
               dataKey="date"
               tickFormatter={(value) => safeFormatDate(value, 'MMM d')}
@@ -95,6 +116,18 @@ const DailyCaloriesSlide = ({
               className="transition-opacity duration-300"
               mirror={true}
             />
+
+            {/* Goldilocks Zone (Optimal Range) */}
+            {safetyFloor && (
+              <ReferenceArea
+                y1={safetyFloor}
+                y2={targetCalories}
+                fill="#2DD4BF"
+                fillOpacity={0.08}
+              />
+            )}
+
+            {/* Target Line */}
             <ReferenceLine
               y={targetCalories}
               stroke={targetLineColor}
@@ -102,20 +135,36 @@ const DailyCaloriesSlide = ({
               strokeWidth={1}
               label={isScrubbing ? { position: 'right', value: 'Target', fill: targetLineColor, fontSize: 10 } : undefined}
             />
+
+            {/* Safety Floor Line */}
+            {safetyFloor && (
+              <ReferenceLine
+                y={safetyFloor}
+                stroke="#EF4444" // Red warning
+                strokeDasharray="2 2"
+                strokeWidth={1}
+                opacity={0.6}
+                label={isScrubbing ? { position: 'right', value: 'Metabolic Floor', fill: '#EF4444', fontSize: 10 } : undefined}
+              />
+            )}
+
             {isChartInteractionEnabled && (
               <Tooltip
                 cursor={{ fill: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
+                    const val = payload[0].value as number;
+                    const isBelowFloor = safetyFloor && val < safetyFloor && val > 800; // Ignore <800 as likely partial log
                     return (
                       <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl">
                         <p className="font-semibold mb-1">{safeFormatDate(label, 'EEEE, MMM d')}</p>
                         <p className="text-2xl font-bold flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[#2aac6b]" />
-                          {formatGraphNumber(payload[0].value as number)} <span className="text-xs font-normal text-muted-foreground">kcal</span>
+                          <span className={cn("w-2 h-2 rounded-full", isBelowFloor ? "bg-red-500 animate-pulse" : "bg-[#2aac6b]")} />
+                          {formatGraphNumber(val)} <span className="text-xs font-normal text-muted-foreground">kcal</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Target: {targetCalories}
+                          {isBelowFloor && <span className="text-red-500 block font-semibold mt-0.5">⚠️ Below Metabolic Floor</span>}
                         </p>
                       </div>
                     );
@@ -131,13 +180,20 @@ const DailyCaloriesSlide = ({
               animationDuration={1000}
               isAnimationActive={shouldAnimate}
             >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.calories > targetCalories ? '#f43f5e' : barColor}
-                  opacity={0.8}
-                />
-              ))}
+              {data.map((entry, index) => {
+                const isBelowFloor = safetyFloor && entry.calories < safetyFloor && entry.calories > 800;
+                let fillUrl = 'url(#barGradientGood)';
+                if (entry.calories > targetCalories) fillUrl = 'url(#barGradientOver)';
+                if (isBelowFloor) fillUrl = 'url(#barGradientRisk)';
+
+                return (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={fillUrl}
+                    opacity={isBelowFloor ? 0.9 : 1}
+                  />
+                )
+              })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -239,7 +295,7 @@ const CumulativeCaloriesSlide = ({
   );
 };
 
-function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, viewModeIndex = 0, onViewModeChange, dragControls }: DailyCaloriesTrendChartProps & { viewModeIndex?: number; onViewModeChange?: (index: number) => void; }) {
+function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, maintenanceCalories, viewModeIndex = 0, onViewModeChange, dragControls }: DailyCaloriesTrendChartProps & { viewModeIndex?: number; onViewModeChange?: (index: number) => void; }) {
   const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
 
   // Fallback local state if not controlled
@@ -297,6 +353,7 @@ function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, viewModeInd
           data={chartData}
           isDarkMode={isDarkMode}
           targetCalories={targetCalories}
+          maintenanceCalories={maintenanceCalories}
           isChartInteractionEnabled={isChartInteractionEnabled}
           barColor={barColor}
           targetLineColor={targetLineColor}
@@ -307,6 +364,7 @@ function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, viewModeInd
           data={chartData}
           isDarkMode={isDarkMode}
           targetCalories={targetCalories}
+          maintenanceCalories={maintenanceCalories}
           isChartInteractionEnabled={isChartInteractionEnabled}
           barColor={barColor}
           targetLineColor={targetLineColor}

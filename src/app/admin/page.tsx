@@ -252,7 +252,7 @@ export default function AdminDashboardPage() {
     const maxCumulative = Math.max(...acquisitionData.cumulative, 10);
 
     return (
-        <div className="min-h-screen bg-black/95 text-white p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-black/95 text-white font-sans px-4 md:px-8 pb-96 pt-16 md:pt-8">
             <header className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
@@ -263,28 +263,28 @@ export default function AdminDashboardPage() {
             </header>
 
             <Tabs defaultValue="ai" className="w-full space-y-6">
-                <TabsList className="bg-white/5 border-white/10 p-1 h-auto w-full justify-start rounded-xl gap-2 flex-wrap">
-                    <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-6 h-auto gap-2">
-                        <BrainCircuit className="w-4 h-4" />
-                        AI Performance
-                        <Badge variant="secondary" className="ml-2 bg-purple-500/20 text-purple-300 border-0">{events.filter(e => !e.resolved).length}</Badge>
+                <TabsList className="bg-white/5 border-white/10 p-1 h-auto w-full grid grid-cols-2 md:flex md:flex-wrap justify-start rounded-xl gap-2">
+                    <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
+                        <BrainCircuit className="w-5 h-5 md:w-4 md:h-4" />
+                        <span>AI Perf.</span>
+                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-0 text-[10px] px-1.5">{events.filter(e => !e.resolved).length}</Badge>
                     </TabsTrigger>
 
-                    <TabsTrigger value="feedback" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 py-3 px-6 h-auto gap-2">
-                        <MessageSquare className="w-4 h-4" />
-                        Feedback
-                        <Badge variant="secondary" className="ml-2 bg-blue-500/20 text-blue-300 border-0">{feedback.length}</Badge>
+                    <TabsTrigger value="feedback" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
+                        <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
+                        <span>Feedback</span>
+                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-0 text-[10px] px-1.5">{feedback.length}</Badge>
                     </TabsTrigger>
 
-                    <TabsTrigger value="contact" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 py-3 px-6 h-auto gap-2">
-                        <Mail className="w-4 h-4" />
-                        Contact
-                        <Badge variant="secondary" className="ml-2 bg-orange-500/20 text-orange-300 border-0">{contactSubmissions.length}</Badge>
+                    <TabsTrigger value="contact" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
+                        <Mail className="w-5 h-5 md:w-4 md:h-4" />
+                        <span>Contact</span>
+                        <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-0 text-[10px] px-1.5">{contactSubmissions.length}</Badge>
                     </TabsTrigger>
 
-                    <TabsTrigger value="acquisition" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 py-3 px-6 h-auto gap-2">
-                        <Users className="w-4 h-4" />
-                        Acquisition
+                    <TabsTrigger value="acquisition" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
+                        <Users className="w-5 h-5 md:w-4 md:h-4" />
+                        <span>Growth</span>
                     </TabsTrigger>
                 </TabsList>
 

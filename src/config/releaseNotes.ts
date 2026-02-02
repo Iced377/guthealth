@@ -8,9 +8,26 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.2.1";
+export const APP_VERSION = "5.2.2";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.2.2',
+        date: 'February 2, 2026',
+        title: 'Gamification & Adherence',
+        description: 'Introducing new ways to track your diet consistency, along with necessary usage limits to keep the AI sustainable.',
+        features: [
+            'Gamified Insights: New "Header" on the Insights page showing your current Log Streak with animated fire and achievement badges.',
+            'Adherence Badges: Earn dynamic badges for hitting "Keto" (<50g Net Carbs) or "Fasting" (>16h) goals consistently.',
+            'Diet Stats: The AI now explicitly tracks how many days you adhered to your specific diet goals.',
+        ],
+        improvements: [
+            'Visuals: Moved the Gamified Hero stats to the Insights page for a cleaner dashboard experience.'
+        ],
+        fixes: [
+            'Stability: Implemented necessary usage guardrails (5 Coach Requests/day, 12 Meals/day) to ensure service stability.'
+        ]
+    },
     {
         version: '5.2.1',
         date: 'February 1, 2026',

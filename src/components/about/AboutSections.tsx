@@ -91,7 +91,7 @@ export function ProblemSection({ scrollContainerRef }: { scrollContainerRef?: Re
             <div className="sticky top-0 h-screen w-full flex flex-col items-center pt-16 sm:pt-24 px-4 overflow-hidden z-40">
                 {/* Header (Always Visible) - Compacted */}
                 <div className="text-center mb-4 sm:mb-8 space-y-3 max-w-3xl shrink-0 bg-background/95 backdrop-blur-xl border border-white/10 p-5 sm:p-6 rounded-[2rem] shadow-2xl z-30">
-                    <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white">The old way is broken.</h2>
+                    <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">The old way is broken.</h2>
                     <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed hidden sm:block">
                         Traditional food logging hasn't changed in years. It's demanding, vaguely accurate, and often demotivating.
                     </p>

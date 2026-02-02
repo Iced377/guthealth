@@ -456,6 +456,7 @@ export default function TrendsPage() {
                   data={calorieData}
                   isDarkMode={isDarkMode}
                   targetCalories={targetCalories}
+                  maintenanceCalories={userProfile?.profile?.tdee || 2000}
                   viewModeIndex={calorieViewIndex}
                   onViewModeChange={setCalorieViewIndex}
                   dragControls={calorieDragControls}
@@ -571,6 +572,8 @@ export default function TrendsPage() {
                   viewMode={macroViewMode}
                   onViewChange={setMacroViewMode}
                   graphId="macros"
+                  macroTargets={userProfile?.profile?.macros}
+                  targetCalories={targetCalories}
                 />
               </LiquidGraphScene>
             </div>

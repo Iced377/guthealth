@@ -226,7 +226,8 @@ export function CoachSessionSheet() {
                 dietaryPreferences: userProfile?.profile?.dietaryPreferences || [],
                 tdee: userProfile?.profile?.tdee,
                 goal: userProfile?.profile?.goal,
-                currentWeight: userProfile?.profile?.weight
+                currentWeight: userProfile?.profile?.weight,
+                macros: userProfile?.profile?.macros
             },
             currentLocalTime: format(now, 'h:mm a'),
             dailyTotals,

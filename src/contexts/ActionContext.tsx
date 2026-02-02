@@ -27,7 +27,7 @@ import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food
 import { useFitbitSync } from '@/hooks/useFitbitSync';
 import type { SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
 import type { IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
-import { triggerFoodAnalysis } from '@/actions/food-analysis';
+import { triggerFoodAnalysis, logAdminEvent } from '@/actions/food-analysis';
 import { verifyFoodAnalysisFlow } from '@/ai/flows/verify-food-analysis';
 
 
@@ -518,6 +518,12 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 claimedHealthTags: {
                     isKeto: fodmapAnalysis.ketoFriendliness?.score.includes('Keto') ?? false,
                     isGutHealthy: fodmapAnalysis.gutBacteriaImpact?.sentiment === 'Positive'
+                },
+                macros: {
+                    calories: fodmapAnalysis.calories ?? null,
+                    protein: fodmapAnalysis.protein ?? null,
+                    carbs: fodmapAnalysis.carbs ?? null,
+                    fat: fodmapAnalysis.fat ?? null
                 }
             }).then(verification => {
                 if (verification) {
@@ -702,6 +708,23 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const currentItemId = editingItem ? editingItem.id : `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const logTimestamp = newTimestamp || new Date();
 
+        // [GUARDRAIL] Meal Limit: 12 Meals per day
+        if (!editingItem) {
+            const todayMealsCount = timelineEntries.filter(e =>
+                e.entryType === 'food' &&
+                isSameDay(new Date(e.timestamp), logTimestamp)
+            ).length;
+
+            if (todayMealsCount >= 12) {
+                toast({
+                    title: "Daily Limit Reached",
+                    description: "To ensure fair usage and manage AI costs, we limit logging to 12 meals per day. Please try again tomorrow.",
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+
         // CHECK IF RE-ANALYSIS IS NEEDED
         // We skip AI if:
         // 1. We are editing an existing item AND
@@ -769,6 +792,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // IF ANALYZING -> PROCEED AS NORMAL
         setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
+        const startTime = performance.now();
         try {
             const mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
 
@@ -815,6 +839,18 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             if (authUser) await submitToFirebase(finalItem, currentItemId);
 
+            const duration = performance.now() - startTime;
+            if (duration > 10000) {
+                logAdminEvent({
+                    type: 'performance_issue',
+                    trigger: 'text_analysis',
+                    durationMs: Math.round(duration),
+                    foodName: namedItem.name,
+                    severity: 'warning',
+                    user: authUser?.uid
+                });
+            }
+
             // Toast for new analysis completion
             if (!editingItem) toast({ title: "Analysis Complete", description: "Your meal has been analyzed." });
             else toast({ title: "Meal Re-analyzed", description: "New ingredients processed." });
@@ -834,6 +870,12 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     claimedHealthTags: {
                         isKeto: fodmapAnalysis.ketoFriendliness?.score.includes('Keto') ?? false,
                         isGutHealthy: fodmapAnalysis.gutBacteriaImpact?.sentiment === 'Positive'
+                    },
+                    macros: {
+                        calories: fodmapAnalysis.calories ?? null,
+                        protein: fodmapAnalysis.protein ?? null,
+                        carbs: fodmapAnalysis.carbs ?? null,
+                        fat: fodmapAnalysis.fat ?? null
                     }
                 }).then(async (verification) => {
                     if (verification) {
@@ -950,8 +992,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // FIRE AND FORGET - Background Analysis
         if (photoData.imageUri && authUser) {
-            // We call the server action but do NOT await its completion for the UI to unblock.
-            // However, we catch errors to log them.
+            // FIRE AND FORGET - Background Analysis
+            const startTime = performance.now();
+
             triggerFoodAnalysis(
                 currentItemId,
                 authUser.uid,
@@ -959,9 +1002,31 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 photoData.additionalContext
                 // safeFoods fetched by server to keep payload small
             ).then((result) => {
+                const duration = performance.now() - startTime;
+
+                // PERFORMANCE MONITORING
+                if (duration > 15000) {
+                    logAdminEvent({
+                        type: 'performance_issue',
+                        trigger: 'photo_analysis',
+                        durationMs: Math.round(duration),
+                        foodName: photoData.name || "Unknown",
+                        severity: 'warning',
+                        user: authUser.uid
+                    });
+                }
+
                 if (!result.success) {
                     console.error("Background analysis failed:", result.error);
                     toast({ title: 'Analysis Failed', description: "Could not process photo.", variant: 'destructive' });
+                    logAdminEvent({
+                        type: 'analysis_failure',
+                        trigger: 'photo_analysis',
+                        error: result.error,
+                        foodName: photoData.name || "Unknown",
+                        severity: 'error',
+                        user: authUser.uid
+                    });
                 } else {
                     // Success toast is optional since UI updates automatically via snapshot, 
                     // but a subtle one is nice.

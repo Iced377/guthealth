@@ -14,6 +14,8 @@ import { FrostBackplate } from './LiquidPrimitive';
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { Loader2, Copy, Check, Send } from 'lucide-react';
 import { Clipboard } from '@capacitor/clipboard';
+import DashboardHero from '../dashboard/DashboardHero';
+import { calculateDailyPedometerStats } from '@/lib/utils';
 
 // Helper to determine time of day
 const getTimeSegment = (hour: number) => {
@@ -122,14 +124,47 @@ export function CoachView() {
 
     }, [timelineEntries, userProfile]);
 
+    // Usage Limit State
+    const [dailyUsageCount, setDailyUsageCount] = useState(0);
+    const DAILY_LIMIT = 5;
+
+    useEffect(() => {
+        // Init usage from local storage
+        const todayKey = `coach-usage-${format(new Date(), 'yyyy-MM-dd')}`;
+        const stored = localStorage.getItem(todayKey);
+        setDailyUsageCount(stored ? parseInt(stored) : 0);
+    }, []);
+
+    const checkAndIncrementUsage = () => {
+        const todayKey = `coach-usage-${format(new Date(), 'yyyy-MM-dd')}`;
+        const stored = localStorage.getItem(todayKey);
+        const current = stored ? parseInt(stored) : 0;
+
+        if (current >= DAILY_LIMIT) return false;
+
+        const newCount = current + 1;
+        localStorage.setItem(todayKey, newCount.toString());
+        setDailyUsageCount(newCount);
+        return true;
+    };
+
     // Fetch Insights
     useEffect(() => {
         // Only fetch if requested, not already fetched, not loading, and we have input
         if (isAnalysisRequested && !aiOutput && !isLoading && preparedInput) {
+
+            // Limit Check (Double check here just in case)
+            // Note: We check before setting 'isAnalysisRequested' usually, but good to be safe.
+            // But since 'isAnalysisRequested' triggers the UI change, we should check in handleStartSession.
+
             setIsLoading(true);
             getPersonalizedDietitianInsight(preparedInput as any)
                 .then(result => {
                     setAiOutput(result);
+                    // Usage is incremented on *Start*, assuming success isn't guaranteed? 
+                    // Or should we increment only on success? Usually on *request* to prevent abuse.
+                    // But here we'll increment on click for better UX feedback loop handled in click handler?
+                    // Let's defer increment to the click handler to update UI instantly.
                 })
                 .catch(err => {
                     console.error("AI Insight Error:", err);
@@ -151,7 +186,12 @@ export function CoachView() {
     };
 
     const handleStartSession = () => {
-        setIsAnalysisRequested(true);
+        if (checkAndIncrementUsage()) {
+            setIsAnalysisRequested(true);
+        } else {
+            // Toast or Alert for Limit
+            alert("Daily Coach Limit Reached (5/5). Come back tomorrow!");
+        }
     };
 
     const renderContent = () => {
@@ -179,20 +219,29 @@ export function CoachView() {
                         <h3 className={cn("text-xl font-bold", tokens.text.primary)}>
                             Ready for your report?
                         </h3>
-                        <LiquidPressable
-                            onClick={handleStartSession}
-                            variant="pill"
-                            size="lg"
-                            className={cn(
-                                "flex items-center gap-2 px-6 py-3 font-medium text-base transition-all active:scale-95",
-                                // WhatsApp Style: Green Bubble, White Text
-                                "bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-sm",
-                                "rounded-2xl rounded-tr-sm" // Subtle "message bubble" corner
-                            )}
-                        >
-                            <span>Coach, how am I doing today?</span>
-                            <Send className="w-4 h-4 fill-current" />
-                        </LiquidPressable>
+                        <div className="flex flex-col gap-2">
+                            <LiquidPressable
+                                onClick={handleStartSession}
+                                variant="pill"
+                                size="lg"
+                                className={cn(
+                                    "flex items-center gap-2 px-6 py-3 font-medium text-base transition-all active:scale-95",
+                                    // WhatsApp Style: Green Bubble, White Text
+                                    "bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-sm",
+                                    "rounded-2xl rounded-tr-sm", // Subtle "message bubble" corner
+                                    dailyUsageCount >= DAILY_LIMIT && "opacity-50 grayscale cursor-not-allowed"
+                                )}
+                                disabled={dailyUsageCount >= DAILY_LIMIT}
+                            >
+                                <span>Coach, how am I doing today?</span>
+                                <Send className="w-4 h-4 fill-current" />
+                            </LiquidPressable>
+
+                            {/* Minimalistic Usage Counter */}
+                            <p className="text-[10px] uppercase tracking-widest opacity-40 font-mono">
+                                Uses Today: {dailyUsageCount}/{DAILY_LIMIT}
+                            </p>
+                        </div>
                     </div>
                 </div>
             );

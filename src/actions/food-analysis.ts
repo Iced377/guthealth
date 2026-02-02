@@ -150,3 +150,17 @@ export async function triggerFoodAnalysis(
         return { success: false, error: String(error) };
     }
 }
+
+export async function logAdminEvent(eventData: any) {
+    try {
+        await adminDb.collection('admin_events').add({
+            ...eventData,
+            timestamp: new Date(), // Enforce server timestamp logic or allow client pass? New Date() here is safer.
+            loggedAt: new Date()
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to log admin event:", error);
+        return { success: false, error: String(error) };
+    }
+}

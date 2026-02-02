@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { MacroPoint } from '@/types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { ReferenceLine, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { cn } from "@/lib/utils";
+import { format, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { HapticsService } from '@/lib/haptics';
 import { useTrendsMotionController } from './useTrendsMotionController';
@@ -15,6 +16,8 @@ interface DailyMacrosTrendChartProps {
   onViewChange: (mode: 'Protein' | 'Carbs' | 'Fat') => void;
   isExpanded?: boolean;
   graphId?: string; // ID to check against focusedSceneId
+  macroTargets?: { protein: number; carbs: number; fats: number };
+  targetCalories?: number;
 }
 
 const COLORS = {
@@ -25,13 +28,17 @@ const COLORS = {
   text: "hsl(var(--muted-foreground))",
 };
 
-function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExpanded: propExpanded = false, graphId }: DailyMacrosTrendChartProps) {
+// Helper for safe date
+const safeFormatDate = (d: string, fmt: string) => {
+  try { return format(parseISO(d), fmt); } catch { return d; }
+};
+
+function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExpanded: propExpanded = false, graphId, macroTargets, targetCalories }: DailyMacrosTrendChartProps) {
   const { isChartInteractionEnabled, globalInputDisabled, focusedSceneId } = useTrendsMotionController();
 
   // Determine expanded state from prop OR context
   const isExpanded = propExpanded || (graphId && focusedSceneId === graphId);
 
-  const [unit, setUnit] = useState<'grams' | 'calories'>('grams');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
 
@@ -40,27 +47,53 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExp
   useEffect(() => { isFirstRender.current = false; }, []);
   const shouldAnimate = isFirstRender.current;
 
-  // Prepare Data based on Mode
+  // Calculate Target Lines
+  // Assuming stack order: Protein (bottom) -> Fat (middle) -> Carbs (top)
+  const tCals = targetCalories || 2000;
+
+  // Use provided gram targets if available, otherwise default to "Zone" split (30% P, 35% F, 35% C) or Balanced
+  const pTargetPct = macroTargets
+    ? Math.round((macroTargets.protein * 4 / tCals) * 100)
+    : 30; // Default 30% Protein
+
+  const fTargetPct = macroTargets
+    ? Math.round((macroTargets.fats * 9 / tCals) * 100)
+    : 35; // Default 35% Fat
+
+  // Lines: 
+  // 1. Top of Protein = pTargetPct
+  // 2. Top of Fat (Stacked on P) = pTargetPct + fTargetPct
+  const lineProteinTop = pTargetPct;
+  const lineFatTop = pTargetPct + fTargetPct;
+
+  // Data Preparation: Calculate Calories and Percentages for Stacking
   const chartData = useMemo(() => {
     return data.map(point => {
-      let proteinVal = point.protein || 0;
-      let carbsVal = point.carbs || 0;
-      let fatVal = point.fat || 0;
+      const pCals = (point.protein || 0) * 4;
+      const fCals = (point.fat || 0) * 9;
+      const cCals = (point.carbs || 0) * 4;
+      const total = pCals + fCals + cCals;
 
-      if (unit === 'calories') {
-        proteinVal *= 4;
-        carbsVal *= 4;
-        fatVal *= 9;
-      }
+      const safeTotal = total || 1;
+
+      const pPct = Math.round((pCals / safeTotal) * 100);
+      const fPct = Math.round((fCals / safeTotal) * 100);
+      // Force remainder to ensure total is exactly 100% for chart alignment
+      const cPct = 100 - pPct - fPct;
 
       return {
         ...point,
-        protein: proteinVal,
-        carbs: carbsVal,
-        fat: fatVal,
+        dateShort: safeFormatDate(point.date, 'MMM d'), // Helper needed or use slice
+        pCals,
+        fCals,
+        cCals,
+        pPct,
+        fPct,
+        cPct,
+        total
       };
     });
-  }, [data, unit]);
+  }, [data]);
 
   const handleBarClick = (data: any) => {
     if (!isChartInteractionEnabled) return;
@@ -72,16 +105,7 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExp
     }
   };
 
-  const handleViewChange = (mode: 'Protein' | 'Carbs' | 'Fat') => {
-    if (globalInputDisabled) return;
-    if (mode !== viewMode) {
-      // HapticsService.impact('light'); // Optional per spec
-      onViewChange(mode);
-    }
-  }
 
-  // Determine active color for single bar view
-  const activeColor = COLORS[viewMode];
   const pointerEventsStyle = globalInputDisabled ? 'none' : 'auto';
 
   return (
@@ -91,85 +115,46 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExp
       onMouseEnter={() => isChartInteractionEnabled && setIsScrubbing(true)}
       onMouseLeave={() => setIsScrubbing(false)}
     >
-
-      {/* Controls Row - Compact & Liquid */}
-      <div className="absolute top-0 right-0 left-0 z-10 flex justify-between items-start px-4 pointer-events-none">
-        <div className="flex-1" /> {/* Spacer */}
-
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "pointer-events-auto flex items-center gap-2 bg-background/50 backdrop-blur-md p-1 rounded-full border shadow-sm transition-all duration-300",
-            globalInputDisabled && "opacity-50 pointer-events-none"
-          )}
-        >
-          {/* Macro Segmented Control */}
-          <div className="flex relative items-center bg-muted/50 rounded-full p-1 h-8">
-            {(['Protein', 'Carbs', 'Fat'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => handleViewChange(m)}
-                className={cn(
-                  "relative px-3 py-1 text-xs font-semibold rounded-full transition-all z-10",
-                  viewMode === m ? "text-background" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {viewMode === m && (
-                  <motion.div
-                    layoutId="activeMacroTab"
-                    className="absolute inset-0 bg-foreground rounded-full"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">{m}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div className="w-px h-4 bg-border/50" />
-
-          {/* Unit Toggle */}
-          <button
-            onClick={() => setUnit(unit === 'grams' ? 'calories' : 'grams')}
-            className="text-xs font-medium px-2 text-muted-foreground hover:text-foreground transition-colors w-14 text-center"
-          >
-            {unit === 'grams' ? 'g' : '%Kcal'}
-          </button>
-        </div>
+      {/* Simple Legend / Header */}
+      <div className="absolute top-2 left-4 z-10 flex items-center gap-4 text-xs font-medium text-muted-foreground pointer-events-none">
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#EF4444]" /> Protein</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#3B82F6]" /> Fat</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#EAB308]" /> Carbs</div>
       </div>
 
-      {/* Graph Area - Direct ResponsiveContainer with Gate */}
-      <ChartInteractivityGate isEnabled={isChartInteractionEnabled} className="flex-1 w-full mt-12 mb-4">
+      {/* Graph Area */}
+      <ChartInteractivityGate isEnabled={isChartInteractionEnabled} className="flex-1 w-full mt-8 mb-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 20, right: 0, left: 0, bottom: 20 }} // Increased bottom margin for labels
+            margin={{ top: 20, right: 0, left: 0, bottom: 20 }}
+            barSize={12} // Slimmer bars for elegance
           >
             <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" opacity={0.1} />
 
+
+
             <XAxis
               dataKey="date"
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value) => value.slice(5)}
+              tickFormatter={(val) => safeFormatDate(val, 'MMM d')}
               stroke={COLORS.text}
-              fontSize={12}
-              opacity={0.5}
+              fontSize={10}
               tickLine={false}
               axisLine={false}
-              tick={{ fill: isScrubbing ? COLORS.text : 'transparent', fontSize: 12 }}
+              tick={{ fill: isScrubbing ? COLORS.text : 'transparent', fontSize: 10 }}
               mirror={true}
             />
 
             <YAxis
+              hide={false}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => unit === 'calories' ? `${formatGraphNumber(value)} kcal` : `${formatGraphNumber(value)}g`}
+              unit="%"
+              stroke={COLORS.text}
               fontSize={10}
               width={30}
-              opacity={0.0}
-              tick={{ fill: 'transparent', fontSize: 10 }}
+              tick={{ fill: 'transparent', fontSize: 10 }} // Hide ticks unless scrubbing? Or just hide Y axis visual clutter
+              domain={[0, 100]}
               mirror={true}
             />
 
@@ -178,49 +163,44 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExp
                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                 content={({ active, payload, label }) => {
                   if (!active || !payload || !payload.length) return null;
-
-                  const dataPoint = payload[0].payload;
-
-                  // Calculate Percentage
-                  const p = dataPoint.protein || 0;
-                  const c = dataPoint.carbs || 0;
-                  const f = dataPoint.fat || 0;
-
-                  let totalCals = 0;
-                  let activeCals = 0;
-
-                  if (unit === 'grams') {
-                    totalCals = (p * 4) + (c * 4) + (f * 9);
-                    const val = dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint];
-                    if (viewMode === 'Protein') activeCals = val * 4;
-                    else if (viewMode === 'Carbs') activeCals = val * 4;
-                    else if (viewMode === 'Fat') activeCals = val * 9;
-                  } else {
-                    totalCals = p + c + f;
-                    activeCals = dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint];
-                  }
-
-                  const pct = totalCals > 0 ? Math.round((activeCals / totalCals) * 100) : 0;
-
-                  // Matches DailyCaloriesTrendChart structure
+                  const d = payload[0].payload;
                   return (
-                    <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl min-w-[140px] z-50">
-                      <p className="text-xs font-semibold mb-1 text-muted-foreground">{label}</p>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: activeColor }} />
-                            <span className="text-sm font-medium">{viewMode}</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-lg font-bold font-mono leading-none">
-                              {formatGraphNumber(dataPoint[viewMode.toLowerCase() as keyof typeof dataPoint])}
-                              <span className="text-xs text-muted-foreground font-normal ml-1">{unit === 'grams' ? 'g' : 'kcal'}</span>
-                            </span>
-                            <span className="text-[10px] text-muted-foreground mt-0.5">
-                              {formatGraphNumber(pct)}% of daily cals
-                            </span>
-                          </div>
+                    <div className="bg-background/95 backdrop-blur-xl border border-white/10 p-4 rounded-3xl shadow-2xl min-w-[200px] z-50">
+                      {/* Header */}
+                      <div className="flex flex-col items-center text-center">
+                        <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">{safeFormatDate(d.date, 'MMM d, yyyy')}</p>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-bold font-headline text-foreground tracking-tighter">{Math.round(d.total)}</span>
+                          <span className="text-sm font-medium text-muted-foreground">kcal</span>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-3 opacity-50" />
+
+                      {/* 3-Column Macro Grid */}
+                      <div className="grid grid-cols-3 gap-2 w-full">
+                        {/* Protein */}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#EF4444] mb-1" />
+                          <span className="text-sm font-bold font-mono text-[#EF4444]">{d.pPct}%</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">{Number(d.protein).toFixed(1)}g</span>
+                          <span className="text-[9px] uppercase tracking-wider text-[#EF4444]/60 font-bold mt-0.5">Prot</span>
+                        </div>
+
+                        {/* Fat */}
+                        <div className="flex flex-col items-center gap-0.5 border-l border-white/5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] mb-1" />
+                          <span className="text-sm font-bold font-mono text-[#3B82F6]">{d.fPct}%</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">{Number(d.fat).toFixed(1)}g</span>
+                          <span className="text-[9px] uppercase tracking-wider text-[#3B82F6]/60 font-bold mt-0.5">Fat</span>
+                        </div>
+
+                        {/* Carbs */}
+                        <div className="flex flex-col items-center gap-0.5 border-l border-white/5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#EAB308] mb-1" />
+                          <span className="text-sm font-bold font-mono text-[#EAB308]">{d.cPct}%</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">{Number(d.carbs).toFixed(1)}g</span>
+                          <span className="text-[9px] uppercase tracking-wider text-[#EAB308]/60 font-bold mt-0.5">Carb</span>
                         </div>
                       </div>
                     </div>
@@ -228,30 +208,20 @@ function DailyMacrosTrendChart({ data, isDarkMode, viewMode, onViewChange, isExp
                 }}
               />
             )}
-            <Bar
-              dataKey={viewMode.toLowerCase()} // "protein", "carbs", or "fat"
-              fill={activeColor}
-              radius={[4, 4, 4, 4]}
-              onClick={handleBarClick}
-              animationDuration={1000}
-              isAnimationActive={shouldAnimate}
-            >
-              {/* 
-                   We map cells to handle selection opacity.
-                   Note: Recharts <Cell> inside <Bar> is correct usage.
-                */}
-              {chartData.map((entry: any, index: number) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={activeColor}
-                  opacity={selectedDate === entry.date ? 1 : selectedDate ? 0.3 : 1}
-                />
-              ))}
-            </Bar>
+
+            {/* Stacked Bars (Order: Protein bottom, Fat middle, Carbs top usually? No preference, standard is P/F/C) */}
+            {/* Using Percentages (pPct, fPct, cPct) */}
+            <Bar dataKey="pPct" name="Protein" stackId="a" fill={COLORS.Protein} radius={[0, 0, 4, 4]} animationDuration={1000} isAnimationActive={shouldAnimate} />
+            <Bar dataKey="fPct" name="Fat" stackId="a" fill={COLORS.Fat} animationDuration={1000} isAnimationActive={shouldAnimate} />
+            <Bar dataKey="cPct" name="Carbs" stackId="a" fill={COLORS.Carbs} radius={[4, 4, 0, 0]} animationDuration={1000} isAnimationActive={shouldAnimate} />
+
+            {/* Target Reference Lines (Dotted) - Rendered last to be on top */}
+            <ReferenceLine y={lineProteinTop} stroke="white" strokeDasharray="3 3" strokeOpacity={0.7} strokeWidth={2} isFront={true} label={{ position: 'right', value: 'P', fill: 'white', fontSize: 10, opacity: 0.7 }} />
+            <ReferenceLine y={lineFatTop} stroke="white" strokeDasharray="3 3" strokeOpacity={0.7} strokeWidth={2} isFront={true} label={{ position: 'right', value: 'F', fill: 'white', fontSize: 10, opacity: 0.7 }} />
+
           </BarChart>
         </ResponsiveContainer>
       </ChartInteractivityGate>
-
     </div>
   );
 }

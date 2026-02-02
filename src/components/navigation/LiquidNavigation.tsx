@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 const CustomActivityIcon = Activity; // Alias for semantic clarity or future swap
-import { liquidDisplacementBase64 } from '@/config/liquidFilter';
+
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
@@ -142,18 +142,7 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
         transition={LIQUID_SPRING}
     >
         {/* 1. Base Liquid Body */}
-        <div className="absolute inset-0 backdrop-blur-md bg-white/60 dark:bg-white/15" />
-
-        {/* 2. Radial Liquid Highlight (The Glow) - Tinted with Active Color */}
-        <div
-            className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-60"
-            style={{
-                background: `radial-gradient(circle at center, ${activeColor || 'rgba(255,255,255,0.8)'}, transparent 60%)`
-            }}
-        />
-
-        {/* 3. Specular Streak */}
-        <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/20 to-transparent skew-x-[-20deg] opacity-50 translate-x-[20%]" />
+        <div className="absolute inset-0 rounded-[24px] backdrop-blur-md bg-white/60 dark:bg-white/15" />
 
         {/* 4. Inset Thickness Highlight */}
         <div className={cn("absolute inset-0 rounded-[24px]",
@@ -525,7 +514,7 @@ export default function LiquidNavigation({
                                     onPointerLeave={() => setPressedItem(null)}
                                     onClick={() => handleSubMenuItem(item)}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl overflow-hidden",
                                         // Liquid Glass material
                                         "bg-white/15 dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
@@ -676,7 +665,7 @@ export default function LiquidNavigation({
                                     onPointerLeave={() => setPressedItem(null)}
                                     onClick={() => handleSubMenuItem(item)}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl overflow-hidden",
                                         // Liquid Glass material
                                         "bg-white/15 dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
@@ -725,6 +714,7 @@ export default function LiquidNavigation({
                     // Fix: Use bottom calc to handle safe area instead of padding which crushed the height
                     "bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
                     "h-16", // CONSTANT HEIGHT (4rem)
+                    "rounded-[32px] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]", // Clipped & Shadowed Container
                     "pointer-events-auto",
                     "isolate" // Layer isolation
                 )}
@@ -745,40 +735,18 @@ export default function LiquidNavigation({
                     mass: 1
                 }}
             >
-                {/* 0. Hidden SVG Filter Definition */}
-                <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
-                    <defs>
-                        <filter id="liquid-displacement" x="-20%" y="-20%" width="140%" height="140%">
-                            <feImage result="pict" href={liquidDisplacementBase64} x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" />
-                            <feDisplacementMap scale="20" xChannelSelector="R" yChannelSelector="G" in="SourceGraphic" in2="pict" />
-                        </filter>
-                    </defs>
-                </svg>
-
                 {/* 1. Base Liquid Body (Glass) */}
                 <div
                     className={cn(
                         "absolute inset-0 rounded-[32px]",
                         "bg-white/10 dark:bg-black/20", // Slightly more base opacity for volume
                         "backdrop-blur-xl backdrop-saturate-[180%]", // Keeping high saturation for color bleed
-                        "shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]", // Softer shadow
                         "pointer-events-none"
                     )}
-                    style={{
-                        filter: "url(#liquid-displacement)"
-                    }}
                 />
 
-                {/* 2. Radial Liquid Highlight (The Glow) - Static for Bar */}
-                <div
-                    className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-40 pointer-events-none"
-                    style={{
-                        background: `radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 60%)`
-                    }}
-                />
 
-                {/* 3. Specular Streak (The Gloss) */}
-                <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/10 to-transparent skew-x-[-20deg] opacity-30 translate-x-[20%] pointer-events-none" />
+
 
                 {/* 4. Inset Thickness Highlight (The Rim) */}
                 <div
@@ -880,25 +848,7 @@ export default function LiquidNavigation({
                 </div>
             </motion.div >
 
-            {/* Liquid Glass Displacement Filter */}
-            <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
-                <filter id="liquidDisplacement">
-                    <feImage
-                        href={liquidDisplacementBase64}
-                        result="map"
-                        preserveAspectRatio="none"
-                        width="100%"
-                        height="100%"
-                    />
-                    <feDisplacementMap
-                        in="SourceGraphic"
-                        in2="map"
-                        scale="100"
-                        xChannelSelector="R"
-                        yChannelSelector="G"
-                    />
-                </filter>
-            </svg>
+
         </>
     );
 }
