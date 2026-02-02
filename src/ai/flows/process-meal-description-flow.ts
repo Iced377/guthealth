@@ -63,7 +63,11 @@ Tasks:
     *   If description implies a standard single serving (e.g., "Big Mac meal"), use '1' and 'serving' or 'meal', unless explicitly multiple servings are stated.
 
 Adhere strictly to the schema. For 'primaryFoodItemForAnalysis', be factual and preserve user quantities/additions.
-`,
+
+CRITICAL GUARDRAILS:
+*   Ensure the 'wittyName' and all output is appropriate for a general audience (App Store 17+ but avoiding gratuitous vulgarity).
+*   STRICTLY PROHIBITED: Profanity, crude humor, sexual innuendos, or offensive language.
+*   If the input itself is offensive, generate a neutral/polite factual name.`,
 });
 
 

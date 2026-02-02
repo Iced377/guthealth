@@ -81,8 +81,10 @@ Examples:
 - Picture of supplement label:
   identifiedFoodName: "Vitamin Supplement" 
   identifiedIngredients: "Vitamin D3 50,000 IU, Calcium 200mg"
+  identifiedIngredients: "Vitamin D3 50,000 IU, Calcium 200mg"
   recognitionSuccess: true
-`,
+
+SAFETY GUARDRAIL: Output MUST be appropriate for a general audience. Strictly avoid profanity, crude humor, or offensive language in 'identifiedFoodName' or other fields. If the image is offensive, set 'recognitionSuccess' to false and provide a polite 'errorMessage'.`,
 });
 
 const defaultErrorOutput: IdentifyFoodFromImageOutput = {

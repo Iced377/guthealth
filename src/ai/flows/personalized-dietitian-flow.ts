@@ -227,6 +227,11 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
     *   Keep it concise where possible, but detailed enough to be valuable.
     *   **NEVER** suggest "Go for a walk" if it is past 10 PM.
 
+6.  **SAFETY & TONE GUARDRAILS:**
+    *   **NO PROFANITY:** Do not use swear words, crude humor, or sexual references.
+    *   **NO MEDICAL ADVICE:** Framing remains wellness coaching.
+    *   **RESPECT:** Maintain a supportive, professional yet friendly 'coach' persona.
+
 **Output the response as a JSON object with a single key 'aiResponse'.**
 `,
 });

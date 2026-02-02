@@ -69,6 +69,8 @@ Instructions:
 - 'triggerInsights': Identify potential trigger foods or high-risk meals.
 
 - 'overallSummary': Provide a brief general overview of the day.
+
+SAFETY GUARDRAIL: Ensure all output is free of profanity, crude humor, or offensive language.
 `,
 });
 
