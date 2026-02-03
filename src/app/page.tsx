@@ -125,11 +125,9 @@ export default function RootPage() {
 
   // Removed blocking loader to prevent double-loading screen. 
   // AuthProvider handles initial auth load. Data loading will be handled by UI skeletons.
-  if (authLoading) {
-    return null; // Or keep a very minimal spinner if auth takes a split second after hydration, but usually AuthProvider covers this.
-    // Actually AuthProvider blocks children, so this component only renders when authLoading is false.
-    // So we can remove this block entirely.
-  }
+  // Removed blocking loader to prevent double-loading screen. 
+  // AuthProvider handles initial auth load. Data loading will be handled by UI skeletons.
+  // if (authLoading) return null; - REMOVED to prevent white screen. AuthProvider handles protection.
 
   if (!authUser && !authLoading) {
     return (

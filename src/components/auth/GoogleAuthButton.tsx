@@ -7,6 +7,8 @@ import { signInWithGoogle } from '@/lib/firebase/auth';
 import { Chrome, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { motion } from 'framer-motion';
+
 interface GoogleAuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     text?: string;
     variant?: 'default' | 'outline' | 'ghost' | 'secondary';
@@ -67,20 +69,27 @@ export default function GoogleAuthButton({
     };
 
     return (
-        <Button
-            variant={variant}
-            className={cn(fullWidth && "w-full", className)}
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            type="button"
-            {...props}
+        <motion.div
+            className={cn(fullWidth ? "w-full" : "w-auto")}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 8 }}
         >
-            {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-                <Chrome className="mr-2 h-4 w-4" />
-            )}
-            {text}
-        </Button>
+            <Button
+                variant={variant}
+                className={cn("w-full rounded-full h-11", className)} // Added rounded-full and h-11 match tour style
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                type="button"
+                {...props}
+            >
+                {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Chrome className="mr-2 h-4 w-4" />
+                )}
+                {text}
+            </Button>
+        </motion.div>
     );
 }

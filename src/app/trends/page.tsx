@@ -365,24 +365,40 @@ export default function TrendsPage() {
   const macroInsight = useMemo(() => {
     if (macroData.length === 0) return "Log meals to see macro balance.";
 
-    // Calculate average for the active macro
-    const total = macroData.reduce((acc, curr) => {
-      switch (macroViewMode) {
-        case 'Protein': return acc + curr.protein;
-        case 'Carbs': return acc + curr.carbs;
-        case 'Fat': return acc + curr.fat;
-      }
-    }, 0);
-    const avg = Math.round(total / macroData.length);
+    // Calculate totals for ALL macros to get percentage base
+    const totals = macroData.reduce((acc, curr) => ({
+      p: acc.p + curr.protein,
+      c: acc.c + curr.carbs,
+      f: acc.f + curr.fat
+    }), { p: 0, c: 0, f: 0 });
 
-    // Context msg
+    const totalKcal = (totals.p * 4) + (totals.c * 4) + (totals.f * 9);
+
+    // Average grams (existing logic)
+    const days = macroData.length;
+    let avg = 0;
     let label = "";
+    let pct = 0;
+
     switch (macroViewMode) {
-      case 'Protein': label = "Avg Protein"; break;
-      case 'Carbs': label = "Avg Carbs"; break;
-      case 'Fat': label = "Avg Fat"; break;
+      case 'Protein':
+        avg = Math.round(totals.p / days);
+        label = "Avg Protein";
+        pct = totalKcal > 0 ? Math.round((totals.p * 4 / totalKcal) * 100) : 0;
+        break;
+      case 'Carbs':
+        avg = Math.round(totals.c / days);
+        label = "Avg Carbs";
+        pct = totalKcal > 0 ? Math.round((totals.c * 4 / totalKcal) * 100) : 0;
+        break;
+      case 'Fat':
+        avg = Math.round(totals.f / days);
+        label = "Avg Fat";
+        pct = totalKcal > 0 ? Math.round((totals.f * 9 / totalKcal) * 100) : 0;
+        break;
     }
-    return `${label}: ${avg}g`;
+
+    return `${label}: ${avg}g (${pct}%)`;
 
   }, [macroData, macroViewMode]);
 

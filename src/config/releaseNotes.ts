@@ -8,9 +8,24 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.2.2";
+export const APP_VERSION = "5.2.3";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.2.3',
+        date: 'February 3, 2026',
+        title: 'Performance & UI Polish',
+        description: 'A dedicated update focusing on app startup speed, visual consistency in light mode, and richer insights.',
+        features: [
+            'Instant Startup: Optimized app initialization to eliminate the 7-second white screen delay. The app now loads instantly.',
+            'Insight Upgrade: The "Macronutrient Balance" chart now shows the exact percentage of total calories for Protein, Carbs, and Fat.',
+        ],
+        improvements: [
+            'UI Polish: "App Tour" and "About" buttons now have a cleaner look in Light Mode (removed the background rectangle).',
+            'Visuals: Login screen buttons ("X" and "Google") now match the bouncy animations of the App Tour.',
+        ],
+        fixes: []
+    },
     {
         version: '5.2.2',
         date: 'February 2, 2026',

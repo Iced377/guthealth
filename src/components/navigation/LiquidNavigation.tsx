@@ -437,7 +437,7 @@ export default function LiquidNavigation({
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                         // Liquid Glass material
-                                        "bg-white/15 dark:bg-black/40",
+                                        "dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
                                         "border-0",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
@@ -516,7 +516,7 @@ export default function LiquidNavigation({
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl overflow-hidden",
                                         // Liquid Glass material
-                                        "bg-white/15 dark:bg-black/40",
+                                        "dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
                                         "border-0",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
@@ -592,7 +592,7 @@ export default function LiquidNavigation({
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                         // Liquid Glass material (same as Log menu)
-                                        "bg-white/15 dark:bg-black/40",
+                                        "dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
                                         "border-0",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
@@ -667,7 +667,7 @@ export default function LiquidNavigation({
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl overflow-hidden",
                                         // Liquid Glass material
-                                        "bg-white/15 dark:bg-black/40",
+                                        "dark:bg-black/40",
                                         "backdrop-blur-2xl saturate-150",
                                         "border-0",
                                         "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",

@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/config/firebase'; // Client SDK for viewing
 import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import type { FeedbackSubmission } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 // ... (rest of imports)
 
@@ -20,6 +21,21 @@ import { Button } from '@/components/ui/button';
 
 
 
+
+interface AdminEvent {
+    id: string;
+    foodName?: string;
+    timestamp?: any;
+    flags?: string[];
+    suggestedPromptImprovement?: string;
+    resolved?: boolean;
+    dismissed?: boolean;
+    meta?: {
+        claimedRisk?: string;
+        ingredients?: string;
+    };
+    [key: string]: any;
+}
 
 interface ContactSubmission {
     id: string;
@@ -34,6 +50,7 @@ interface ContactSubmission {
 export default function AdminDashboardPage() {
     const { userProfile, loading: authLoading } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
     const [events, setEvents] = useState<AdminEvent[]>([]);
     const [feedback, setFeedback] = useState<FeedbackSubmission[]>([]);
     const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
@@ -330,9 +347,22 @@ export default function AdminDashboardPage() {
                                             {/* AI Coaching / Suggestion */}
                                             {event.suggestedPromptImprovement && (
                                                 <div className="animate-in fade-in slide-in-from-left-2 duration-500 delay-100">
-                                                    <h3 className="text-xs uppercase tracking-wider text-purple-300 mb-2 flex items-center gap-1">
-                                                        <BrainCircuit className="w-3 h-3" /> Suggested Fix
-                                                    </h3>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h3 className="text-xs uppercase tracking-wider text-purple-300 flex items-center gap-1">
+                                                            <BrainCircuit className="w-3 h-3" /> Suggested Fix
+                                                        </h3>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 text-purple-300 hover:text-white hover:bg-purple-500/20"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(event.suggestedPromptImprovement || "");
+                                                                toast({ title: "Copied!", description: "Fix copied to clipboard." });
+                                                            }}
+                                                        >
+                                                            <Copy className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
                                                     <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-lg text-sm text-purple-200">
                                                         "{event.suggestedPromptImprovement}"
                                                     </div>

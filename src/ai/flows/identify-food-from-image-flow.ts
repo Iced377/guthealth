@@ -50,8 +50,9 @@ Image: {{media url=imageDataUri}}
 
 Your tasks:
 1.  **'identifiedFoodName'**: Identify the primary food item.
-    *   **PRIORITIZE CONTEXT**: If the user's "Additional Context" specifies the food (e.g., "Protein pancakes"), USE THAT NAME. Use the image to confirm portion/toppings.
-    *   If no context, identify visual food.
+    *   **NOUN ONLY**: Output the food name ONLY (e.g. "Chocolate Brownie").
+    *   **NO QUANTITIES**: Do NOT include portion sizes here (i.e. NOT "Half a brownie", NOT "2 Eggs").
+    *   **PRIORITIZE CONTEXT**: If the user's "Additional Context" specifies the food (e.g., "Protein pancakes"), USE THAT NAME (but strip quantities).
 
 2.  **'identifiedIngredients'**: Provide a comma-separated list of main ingredients.
     *   **CRITICAL - VISUAL QUANTITY ESTIMATION**: You **MUST** include an estimated quantity in round brackets next to each ingredient where possible. Example: "Rice (200g), Chicken Breast (150g), Broccoli (80g)".

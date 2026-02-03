@@ -102,6 +102,7 @@ export async function triggerFoodAnalysis(
             portionSize: identifiedData.portionSize,
             portionUnit: identifiedData.portionUnit,
             userSafeFoodItems: safeFoodItemsForAnalysis,
+            additionalContext: additionalContext, // Pass context to ensure accuracy
         });
 
         // 3. Update Firestore

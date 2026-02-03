@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 
+import { motion } from 'framer-motion';
+
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -33,16 +35,17 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col justify-center items-center py-12 sm:px-6 lg:px-8 relative">
-      <div className="absolute top-4 right-4 sm:top-8 sm:right-8">
-        <Button
-          variant="ghost"
-          size="icon"
+      <div className="absolute top-14 right-6 sm:top-8 sm:right-8 z-50">
+        <motion.button
+          className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/20 focus:outline-none focus:ring-0"
           onClick={() => router.push('/')}
-          className="text-muted-foreground hover:text-foreground"
           aria-label="Go home"
+          whileTap={{ scale: 1.3 }}
+          whileHover={{ scale: 1.1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <X className="h-5 w-5" />
-        </Button>
+          <X className="h-6 w-6" />
+        </motion.button>
       </div>
       <div className="w-full max-w-md px-4 sm:px-0">
       </div>

@@ -29,7 +29,7 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
 
     // Colors
     const inputClass = cn(
-        "w-full h-9 px-3 rounded-xl text-sm transition-all outline-none border",
+        "w-full h-11 px-2 rounded-xl text-base text-center transition-all outline-none border",
         isDarkMode
             ? "bg-white/5 border-white/10 focus:border-white/20 placeholder:text-white/20"
             : "bg-white/50 border-black/5 focus:border-black/10 placeholder:text-black/30"

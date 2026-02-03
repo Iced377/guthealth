@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [redirectLoading, setRedirectLoading] = useState(true);
+  const [redirectLoading, setRedirectLoading] = useState(false); // Non-blocking now
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -43,37 +43,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   // Handle Redirect Result (Google Sign In)
-  // Handle Redirect Result (Google Sign In)
   const hasCheckedRedirect = useRef(false);
 
   useEffect(() => {
     if (hasCheckedRedirect.current) return;
     hasCheckedRedirect.current = true;
 
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
-        return getRedirectResult(auth);
-      })
+    // We don't block UI on this anymore
+    getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
           console.log("Redirect login successful:", result.user.email);
           toast({ title: 'Welcome back!', description: `Signed in as ${result.user.displayName}` });
-          // setUser(result.user); // Handled by onAuthStateChanged
-        } else {
-          console.log("No redirect result found.");
         }
       })
       .catch((error) => {
-        console.error('Error during redirect result or persistence setting:', error);
-        toast({
-          title: 'Sign-in Error',
-          description: error.message || 'Could not complete sign-in process.',
-          variant: 'destructive',
-        });
-      })
-      .finally(() => {
-        setRedirectLoading(false);
+        console.error('Error during redirect result:', error);
       });
+    // Persistence is handled automatically by Firebase config usually, 
+    // or we can await it if strictly needed, but getting it out of the critical path helps TTI.
   }, [toast]);
 
 
@@ -254,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, userProfile, authLoading, profileLoading, pathname, router]);
 
-  const loading = redirectLoading || authLoading; // || profileLoading; // Profile loading shouldn't block entire app render, but maybe for this check it should?
+  const loading = authLoading; // Redirect check is now background only. Profile check handles itself logic below.
   // Let's keep initial loading blocking to prevent flash of content before redirect
 
   const value = useMemo(() => ({ user, loading, userProfile }), [user, loading, userProfile]);

@@ -45,6 +45,7 @@ const AnalyzeFoodItemInputSchema = z.object({
   ingredients: z.string().describe('A comma-separated list of ingredients in the food item.'),
   portionSize: z.string().describe('The size of the portion, e.g., "100", "0.5", "1". This refers to the overall meal portion if foodItem is complex.'),
   portionUnit: z.string().describe('The unit for the portion, e.g., "g", "cup", "medium apple", "meal". This refers to the overall meal portion unit.'),
+  additionalContext: z.string().optional().describe('User-provided context notes (e.g. "Gluten free", "Half portion"). THIS IS THE SOURCE OF TRUTH.'),
   userSafeFoodItems: z.array(SimpleSafeFoodSchema).optional().describe('Optional list of user safe foods to check for similarity.'),
 });
 export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
@@ -153,6 +154,8 @@ const analyzeFoodItemPrompt = ai.definePrompt({
   prompt: `You are an expert AI for COMPREHENSIVE, PORTION-AWARE food analysis.
 Input: Food: '{{{foodItem}}}', Ingredients: '{{{ingredients}}}', Portion: '{{{portionSize}}} {{{portionUnit}}}'.
 
+USER CONTEXT (SOURCE OF TRUTH): "{{{additionalContext}}}"
+
 User Safe Foods (Reference):
 {{#if userSafeFoodItems.length}}
 {{#each userSafeFoodItems}}
@@ -172,22 +175,24 @@ You MUST fix this error in your new analysis.
 Output a JSON object strictly adhering to 'AnalyzeFoodItemOutputSchema'.
 
 Key tasks:
-1.  **Portion-Specific Analysis:**
-    *   FODMAPs: Assess FODMAP content relative to the *entire* meal/portion. Output 'overallRisk' and 'reason'.
+1.  **CONTEXT IS KING**: 
+    - If 'USER CONTEXT' says "Gluten Free", "Vegan", or overrides ingredients, **TRUST THE CONTEXT**.
+    - If 'USER CONTEXT' specifies a portion (e.g. "Half bowl", "2 bites"), **ADJUST EVERYTHING (Calories, FODMAPs)** to match that portion, overriding the 'Portion' input if they conflict.
 
-2.  **QUANTITY-DRIVEN NUTRITION (CRITICAL):**
-    *   **CHECK INGREDIENTS FOR QUANTITIES**: The 'Ingredients' input may contain quantities in brackets, e.g., "Rice (200g), Chicken (150g)". **YOU MUST USE THESE EXACT QUANTITIES** to calculate calories and macros.
-    *   If '{{{foodItem}}}' has quantities (e.g., "4 eggs"), use them.
-    *   Sum all components for final 'calories', 'protein', 'carbs', 'fat'.
+2.  **QUANTITY-DRIVEN NUTRITION (CRITICAL)**:
+    - **CHECK INGREDIENTS FOR QUANTITIES**: The 'Ingredients' input may contain quantities in brackets, e.g., "Rice (200g), Chicken (150g)". **YOU MUST USE THESE EXACT QUANTITIES** to calculate calories and macros.
+    - If '{{{foodItem}}}' has quantities (e.g., "4 eggs"), use them.
+    - Sum all components for final 'calories', 'protein', 'carbs', 'fat'.
 
+3.  **Portion Sizing**:
+    - If no explicit quantity is known, assume a **STANDARD SERVING** for the identified food (e.g. 1 medium bowl, 1 slice). Do NOT overestimate.
 
+4.  **Other Health Indicators**:
+    - Provide estimates for GI, Fiber, Gut Impact, Keto, Allergens based on the *entire* portion.
 
-4.  **Other Health Indicators:**
-    *   Provide estimates for GI, Fiber, Gut Impact, Keto, Allergens based on the *entire* portion.
-
-5.  **AI Summaries (SPEED OPTIMIZATION):**
-    *   Keep all text fields ('reason', 'aiSummaries.*') **EXTREMELY CONCISE** (max 1 short sentence). Avoid fluff.
-    *   Example: "High in fructans due to garlic." (Not "This item is high in fructans because it contains garlic which is...")
+5.  **AI Summaries (SPEED OPTIMIZATION)**:
+    - Keep all text fields ('reason', 'aiSummaries.*') **EXTREMELY CONCISE** (max 1 short sentence). Avoid fluff.
+    - Example: "High in fructans due to garlic." (Not "This item is high in fructans because it contains garlic which is...")
 
 Strictly follow output schema. Omit optional sub-fields if unknown. Ensure nutrition matches the explicit quantities provided in inputs.
 `,
