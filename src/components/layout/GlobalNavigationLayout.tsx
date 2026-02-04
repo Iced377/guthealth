@@ -18,7 +18,12 @@ import { NavVisibilityProvider } from '@/components/navigation/useNavVisibilityC
 import ReuseMealMenu from '@/components/navigation/ReuseMealMenu';
 import ReleaseNotesSheet from '@/components/shared/ReleaseNotesSheet';
 
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+
 const NavigationAndDialogs = () => {
+    // Initialize Push Notifications
+    usePushNotifications();
+
     const pathname = usePathname();
     const router = useRouter();
     const { startWalkthrough } = useWalkthrough();

@@ -1,16 +1,15 @@
-
-'use client'; // Ensure this is at the top
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import LoginForm from '@/components/auth/LoginForm';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import AppleAuthButton from '@/components/auth/AppleAuthButton';
 import VideoAvatar from '@/components/auth/VideoAvatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
 import Link from 'next/link';
-
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
@@ -75,6 +74,7 @@ export default function LoginPage() {
             </>
           ) : (
             <div className="flex flex-col space-y-4">
+              <AppleAuthButton text="Sign In / Sign Up with Apple" />
               <GoogleAuthButton text="Sign In / Sign Up with Google" />
               <div className="text-center">
                 <Button
@@ -97,7 +97,8 @@ export default function LoginPage() {
                 .
               </p>
             </div>
-          )}        </div>
+          )}
+        </div>
       </div>
     </div>
   );

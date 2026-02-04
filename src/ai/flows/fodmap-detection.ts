@@ -187,8 +187,10 @@ Key tasks:
 3.  **Portion Sizing**:
     - If no explicit quantity is known, assume a **STANDARD SERVING** for the identified food (e.g. 1 medium bowl, 1 slice). Do NOT overestimate.
 
-4.  **Other Health Indicators**:
-    - Provide estimates for GI, Fiber, Gut Impact, Keto, Allergens based on the *entire* portion.
+4.  **Other Health Indicators (STRICT LOGIC)**:
+    - **Keto**: If ingredients contain "Sugar", "Cane Sugar", "Honey", "Maple Syrup", "Flour", "Rice", "Bread", "Pasta", or "Oats" -> 'ketoFriendliness.score' MUST be 'Not Keto-Friendly' (unless Context explicitly says "Keto Version").
+    - **FODMAP**: If ingredients contain "Garlic", "Onion", "Wheat", "Milk" (unless lactose-free) -> Risk is likely 'Red'/'Yellow'.
+    - Provide estimates for GI, Fiber, Gut Impact, and Allergens based on the *entire* portion.
 
 5.  **AI Summaries (SPEED OPTIMIZATION)**:
     - Keep all text fields ('reason', 'aiSummaries.*') **EXTREMELY CONCISE** (max 1 short sentence). Avoid fluff.

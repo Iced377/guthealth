@@ -133,7 +133,7 @@ const BubbleIndicator = ({ isPressed, layoutId, className, activeColor }: { isPr
     <motion.div
         layoutId={layoutId} // Enables the fluid morphing travel
         className={cn(
-            "absolute inset-0 rounded-[24px] overflow-hidden z-0", // Match parent radius
+            "absolute inset-0 rounded-[24px] z-0", // Match parent radius
             className
         )}
         animate={{
@@ -235,15 +235,19 @@ export default function LiquidNavigation({
     }, [isWalkthroughActive, currentStep]);
 
     // INTELLIGENT PREFETCHING
-    // 1. Prefetch Primary Nav on Mount (Home, Explore, Insights, Profile)
+    // 1. Prefetch All Nav on Mount
     useEffect(() => {
-        // Simple timeout to potentiall unblock main thread init
-        const timer = setTimeout(() => {
-            PRIMARY_NAV.forEach(item => {
-                if (item.path) router.prefetch(item.path);
-            });
-        }, 1000);
-        return () => clearTimeout(timer);
+        const prefetchRoutes = () => {
+            // Primary
+            PRIMARY_NAV.forEach(item => item.path && router.prefetch(item.path));
+            // Sub-menus
+            INSIGHTS_ITEMS.forEach(item => item.path && router.prefetch(item.path));
+            EXPLORE_ITEMS.forEach(item => item.path && router.prefetch(item.path));
+            PROFILE_ITEMS.forEach(item => item.path && router.prefetch(item.path));
+        };
+
+        // Immediate prefetch for responsiveness
+        prefetchRoutes();
     }, [router]);
 
     // 2. Prefetch Sub-Menus on Interaction (When panel opens)
@@ -434,13 +438,10 @@ export default function LiquidNavigation({
                                     onPointerUp={() => setPressedItem(null)}
                                     onPointerLeave={() => setPressedItem(null)}
                                     onClick={() => handleLogAction(action.id)}
+                                    whileTap={{ scale: 1.15 }}
+                                    transition={{ type: 'spring', damping: 8, stiffness: 400 }}
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
-                                        // Liquid Glass material
-                                        "dark:bg-black/40",
-                                        "backdrop-blur-2xl saturate-150",
-                                        "border-0",
-                                        "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                         "select-none",
                                         isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
                                     )}
@@ -512,14 +513,12 @@ export default function LiquidNavigation({
                                     }}
                                     onPointerUp={() => setPressedItem(null)}
                                     onPointerLeave={() => setPressedItem(null)}
+                                    onPointerEnter={() => item.path && router.prefetch(item.path)}
                                     onClick={() => handleSubMenuItem(item)}
+                                    whileTap={{ scale: 1.15 }}
+                                    transition={{ type: 'spring', damping: 8, stiffness: 400 }}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl overflow-hidden",
-                                        // Liquid Glass material
-                                        "dark:bg-black/40",
-                                        "backdrop-blur-2xl saturate-150",
-                                        "border-0",
-                                        "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                         "select-none",
                                         isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
                                     )}
@@ -588,14 +587,12 @@ export default function LiquidNavigation({
                                     }}
                                     onPointerUp={() => setPressedItem(null)}
                                     onPointerLeave={() => setPressedItem(null)}
+                                    onPointerEnter={() => item.path && router.prefetch(item.path)}
                                     onClick={() => handleSubMenuItem(item)}
+                                    whileTap={{ scale: 1.15 }}
+                                    transition={{ type: 'spring', damping: 8, stiffness: 400 }}
                                     className={cn(
                                         "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
-                                        // Liquid Glass material (same as Log menu)
-                                        "dark:bg-black/40",
-                                        "backdrop-blur-2xl saturate-150",
-                                        "border-0",
-                                        "shadow-[0_8px_32px_rgba(0,0,0,0.05)]",
                                         "select-none",
                                         isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
                                     )}
@@ -663,14 +660,12 @@ export default function LiquidNavigation({
                                     }}
                                     onPointerUp={() => setPressedItem(null)}
                                     onPointerLeave={() => setPressedItem(null)}
+                                    onPointerEnter={() => item.path && router.prefetch(item.path)}
                                     onClick={() => handleSubMenuItem(item)}
+                                    whileTap={{ scale: 1.15 }}
+                                    transition={{ type: 'spring', damping: 8, stiffness: 400 }}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl overflow-hidden",
-                                        // Liquid Glass material
-                                        "dark:bg-black/40",
-                                        "backdrop-blur-2xl saturate-150",
-                                        "border-0",
-                                        "shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+                                        "relative flex flex-col items-center gap-1.5 p-3 rounded-2xl",
                                         "select-none",
                                         isLocked && "opacity-50 grayscale cursor-not-allowed pointer-events-none"
                                     )}
@@ -785,6 +780,8 @@ export default function LiquidNavigation({
                                 }}
                                 onPointerUp={() => setPressedItem(null)}
                                 onPointerLeave={() => setPressedItem(null)}
+                                // Aggressive Prefetch on Interact
+                                onPointerEnter={() => item.path && router.prefetch(item.path)}
                                 onClick={(e) => e.preventDefault()}
                                 className={cn(
                                     "relative flex flex-col items-center justify-center",

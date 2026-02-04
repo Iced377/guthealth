@@ -63,10 +63,13 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 4: Manual/Recent */}
                         <LiquidPressable
                             variant="ghost"
-                            haptic="light"
+                            haptic="medium"
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onAddManualEntryClick(); }}
                             variants={itemVariants}
+                            whileTap={{ scale: 1.15 }}
+                            transition={{ type: 'spring', damping: 8, stiffness: 400 }}
+                            allowSelectionEffect={true}
                         >
                             <span className="text-sm font-medium mr-3">Manual Entry</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
@@ -77,10 +80,13 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 3: Symptoms */}
                         <LiquidPressable
                             variant="ghost"
-                            haptic="light"
+                            haptic="medium"
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogSymptomsClick(); }}
                             variants={itemVariants}
+                            whileTap={{ scale: 1.15 }}
+                            transition={{ type: 'spring', damping: 8, stiffness: 400 }}
+                            allowSelectionEffect={true}
                         >
                             <span className="text-sm font-medium mr-3">Log Symptoms</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
@@ -91,10 +97,13 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 2.5: Favorites (New) */}
                         <LiquidPressable
                             variant="ghost"
-                            haptic="light"
+                            haptic="medium"
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogFavoriteClick(); }}
                             variants={itemVariants}
+                            whileTap={{ scale: 1.15 }}
+                            transition={{ type: 'spring', damping: 8, stiffness: 400 }}
+                            allowSelectionEffect={true}
                         >
                             <span className="text-sm font-medium mr-3">From Favourites</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
@@ -105,10 +114,13 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 2: Photo/Barcode */}
                         <LiquidPressable
                             variant="ghost"
-                            haptic="light"
+                            haptic="medium"
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onScanBarcodeClick(); }}
                             variants={itemVariants}
+                            whileTap={{ scale: 1.15 }}
+                            transition={{ type: 'spring', damping: 8, stiffness: 400 }}
+                            allowSelectionEffect={true}
                         >
                             <span className="text-sm font-medium mr-3">Scan / Photo</span>
                             <div className="h-12 w-12 rounded-full bg-background/50 flex items-center justify-center shadow-sm group-hover:bg-background/80 transition-colors">
@@ -119,10 +131,13 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({
                         {/* Sub-Item 1: AI Log */}
                         <LiquidPressable
                             variant="ghost"
-                            haptic="light"
+                            haptic="medium"
                             className="flex items-center justify-between w-full p-2 hover:bg-white/10 rounded-xl transition-colors group text-right"
                             onClick={() => { setIsOpen(false); onLogFoodAIClick(); }}
                             variants={itemVariants}
+                            whileTap={{ scale: 1.15 }}
+                            transition={{ type: 'spring', damping: 8, stiffness: 400 }}
+                            allowSelectionEffect={true}
                         >
                             <span className="text-sm font-medium mr-3">Auto Food Log</span>
                             <div className="h-12 w-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:bg-indigo-700 transition-colors">

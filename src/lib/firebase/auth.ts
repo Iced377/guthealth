@@ -42,6 +42,37 @@ export const signInWithGoogle = async () => {
   }
 };
 
+// Sign In with Apple - Platform-Aware Flow
+import { OAuthProvider } from 'firebase/auth';
+
+export const signInWithApple = async () => {
+  console.log("Starting signInWithApple...");
+
+  if (Capacitor.isNativePlatform()) {
+    // Native iOS/Android flow
+    console.log("Native platform detected, using Firebase Authentication plugin for Apple");
+
+    try {
+      const result = await FirebaseAuthentication.signInWithApple();
+      const credential = new OAuthProvider('apple.com').credential({
+        idToken: result.credential?.idToken,
+        accessToken: result.credential?.accessToken, // Some versions might need rawNonce or similar, but typically idToken + nonce is enough. plugin handles it.
+        rawNonce: result.credential?.nonce,
+      });
+
+      return signInWithCredential(auth, credential);
+    } catch (error) {
+      console.error("Native Apple Sign-In error:", error);
+      throw error;
+    }
+  } else {
+    // Web flow
+    console.log("Web platform detected, using signInWithPopup for Apple");
+    const provider = new OAuthProvider('apple.com');
+    return signInWithPopup(auth, provider);
+  }
+};
+
 // Sign Up with Email and Password
 export const signUpWithEmail = async (email: string, password: string): Promise<UserCredential | AuthError> => {
   try {

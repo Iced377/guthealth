@@ -8,9 +8,25 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.2.3";
+export const APP_VERSION = "5.2.4";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.2.4',
+        date: 'February 4, 2026',
+        title: 'Admin Hub & Journey',
+        description: 'A major upgrade to the Admin Dashboard featuring a new "Journey" timeline, unified scrollable navigation, and a dedicated Brand Kit tab.',
+        features: [
+            'Admin Redesign: Completely overhauled the Admin Hub with a sleek, horizontally scrollable tab band for unifying all management tools.',
+            'App Journey: Introduced "The Ascent" — a premium visual timeline tracking our app\'s milestones from inception to the App Store.',
+            'Brand Kit Tab: Moved the Brand Kit into a dedicated tab within the Admin Hub for quicker access.',
+        ],
+        improvements: [
+            'Navigation: Unified AI, Feedback, Contact, and Growth tabs into a single responsive view.',
+            'Compliance: Updated Privacy Policy and legal compliance for App Store submission.',
+        ],
+        fixes: []
+    },
     {
         version: '5.2.3',
         date: 'February 3, 2026',

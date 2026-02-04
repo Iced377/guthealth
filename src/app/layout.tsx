@@ -12,6 +12,7 @@ import { WalkthroughProvider } from '@/contexts/WalkthroughContext';
 import WalkthroughOverlay from '@/components/walkthrough/WalkthroughOverlay';
 import WalkthroughStage from '@/components/walkthrough/WalkthroughStage';
 import { GlobalNavigationLayout } from '@/components/layout/GlobalNavigationLayout';
+import NetworkStatusIndicator from '@/components/ui/NetworkStatusIndicator';
 
 // `inter` variable is no longer needed here
 
@@ -90,6 +91,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <WalkthroughProvider>
+              <NetworkStatusIndicator />
               <GlobalNavigationLayout>
                 <main className="flex-grow w-full">
                   {children}

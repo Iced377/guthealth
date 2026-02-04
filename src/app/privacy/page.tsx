@@ -31,7 +31,7 @@ const PrivacyPage = () => {
         </p>
         <ul className="list-disc list-inside ml-4 mt-2">
           <li><strong>Sensitive Personal Data:</strong> Health-related information you provide or sync, including dietary habits, symptoms, food logs, body composition data, and other health metrics.</li>
-          <li><strong>Account Information:</strong> Email and profile details provided during signup.</li>
+          <li><strong>Account Information:</strong> Email and profile details provided during signup (via Google or Apple Sign-In).</li>
           <li><strong>Device & Usage Data:</strong> Automatically collected technical data such as log files, IP address, device type, and app usage patterns.</li>
           <li><strong>Wearable Device Data:</strong> If authorized, we sync data from third-party services (e.g., Apple Health, Fitbit) like health and activity data.</li>
         </ul>
@@ -133,7 +133,7 @@ const PrivacyPage = () => {
       <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-2">Cookies & Local Storage</h2>
         <p>
-          Our application uses device/app storage (e.g., `localStorage`, `IndexedDB`) and Firebase Authentication tokens to maintain your login session and preferences (like theme settings). We do not use third-party advertising cookies.
+          Our application uses device/app storage (e.g., `localStorage`, `IndexedDB`) and Firebase Authentication tokens to maintain your login session and preferences (like theme settings). We use identifiers (like IDFA on iOS) for analytics purposes only with your explicit consent (via App Tracking Transparency), which may be classified as tracking.
         </p>
       </section>
 

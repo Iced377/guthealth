@@ -61,19 +61,20 @@ export function calculateNutritionTargets(
     const targetCalories = Math.round(tdee + GOAL_ADJUSTMENTS[goal]);
 
     // Protein Setting (High protein is generally better for satiety and muscle)
-    // Lose Fat: 2.2g/kg (protect muscle in deficit)
+    // Lose Fat: 1.8g/kg (High enough to protect muscle, low enough to allow carbs)
     // Gain Muscle: 2.0g/kg
-    // Maintain: 1.8g/kg
-    let proteinPerKg = 1.8;
-    if (goal === 'lose_fat') proteinPerKg = 2.2;
+    // Maintain: 1.6g/kg
+    let proteinPerKg = 1.6;
+    if (goal === 'lose_fat') proteinPerKg = 1.8;
     if (goal === 'gain_muscle') proteinPerKg = 2.0;
 
     let proteinGrams = Math.round(weightKg * proteinPerKg);
     let proteinCals = proteinGrams * 4;
 
-    // Fat Setting (Minimum 0.8g/kg for hormonal health)
-    let fatPerKg = 0.9;
+    // Fat Setting (0.8g/kg minimum for hormonal health, allows more carbs)
+    let fatPerKg = 0.8;
     if (goal === 'gain_muscle') fatPerKg = 1.0;
+    if (goal === 'maintain') fatPerKg = 0.9;
 
     let fatGrams = Math.round(weightKg * fatPerKg);
     let fatCals = fatGrams * 9;

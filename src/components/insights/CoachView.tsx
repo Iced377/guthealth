@@ -112,7 +112,12 @@ export function CoachView() {
                 currentWeight: userProfile?.profile?.weight
             },
             currentLocalTime: format(now, 'h:mm a'),
-            dailyTotals,
+            dailyTotals: {
+                calories: Math.round(dailyTotals.calories),
+                protein: Math.round(dailyTotals.protein),
+                carbs: Math.round(dailyTotals.carbs),
+                fat: Math.round(dailyTotals.fat),
+            },
             hoursSinceLastMeal: parseFloat(hoursSinceLastMeal.toFixed(1)),
             projectedFastingEndTimes: {
                 target16h: format(target16h, 'h:mm a'),

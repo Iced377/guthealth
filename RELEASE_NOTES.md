@@ -1,5 +1,19 @@
 # Release Notes
 
+## v5.2.4 (February 4, 2026) - Admin Hub & Journey
+**A major upgrade to the Admin Dashboard featuring a new "Journey" timeline, unified scrollable navigation, and a dedicated Brand Kit tab.**
+
+### ✨ New Features
+- **Admin Redesign**: Completely overhauled the Admin Hub with a sleek, horizontally scrollable tab band for unifying all management tools.
+- **App Journey**: Introduced "The Ascent" — a premium visual timeline tracking our app's milestones from inception to the App Store.
+- **Brand Kit Tab**: Moved the Brand Kit into a dedicated tab within the Admin Hub for quicker access.
+
+### 🚀 Improvements
+- **Navigation**: Unified AI, Feedback, Contact, and Growth tabs into a single responsive view.
+- **Compliance**: Updated Privacy Policy and legal compliance for App Store submission.
+
+---
+
 ## v5.1.0 (January 23, 2026) - Interactive Health Updates
 **Major enhancements to the Vitals logger, smoother animations, and critical fixes for the app tour.**
 

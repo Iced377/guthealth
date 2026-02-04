@@ -15,6 +15,7 @@ interface LiquidPressableProps extends Omit<HTMLMotionProps<'button'>, 'children
     onClick?: (event?: any) => void;
     className?: string;
     disabled?: boolean;
+    allowSelectionEffect?: boolean; // New prop to force selection effect
 }
 
 export const LiquidPressable = React.forwardRef<HTMLButtonElement, LiquidPressableProps>(({
@@ -25,6 +26,7 @@ export const LiquidPressable = React.forwardRef<HTMLButtonElement, LiquidPressab
     onClick,
     className,
     disabled = false,
+    allowSelectionEffect = false,
     ...props
 }, ref) => {
     const [isPressed, setIsPressed] = useState(false);
@@ -84,11 +86,11 @@ export const LiquidPressable = React.forwardRef<HTMLButtonElement, LiquidPressab
     return (
         <motion.button
             ref={ref}
-            whileTap={{ scale: disabled ? 1 : variant === 'fab' ? 0.9 : 0.94 }}
+            whileTap={{ scale: disabled ? 1 : variant === 'fab' ? 1.2 : 0.94 }}
             transition={{
                 type: 'spring',
                 stiffness: 400,
-                damping: 15, // Quick settle, no wobble
+                damping: variant === 'fab' ? 8 : 15, // Damping 8 for FAB (bouncy), 15 for others
                 mass: 1,
             }}
             onTapStart={() => !disabled && setIsPressed(true)}
@@ -105,7 +107,7 @@ export const LiquidPressable = React.forwardRef<HTMLButtonElement, LiquidPressab
         >
             {/* Specular Sweep Effect (Overlay) */}
             <AnimatePresence>
-                {isPressed && variant !== 'ghost' && (
+                {isPressed && (variant !== 'ghost' || allowSelectionEffect) && (
                     <motion.div
                         initial={{ x: '-100%', opacity: 0 }}
                         animate={{ x: '100%', opacity: 0.3 }}

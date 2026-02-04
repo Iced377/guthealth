@@ -839,6 +839,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             if (authUser) await submitToFirebase(finalItem, currentItemId);
 
+            // [FIX] Update local state immediately to reflect AI results (crucial for Guests and instant UI)
+            setTimelineEntries(prev => prev.map(e => e.id === currentItemId ? finalItem : e));
+
             const duration = performance.now() - startTime;
             if (duration > 10000) {
                 logAdminEvent({

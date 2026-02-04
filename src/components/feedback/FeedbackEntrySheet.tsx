@@ -29,20 +29,8 @@ export default function FeedbackEntrySheet({
     }, []);
 
     // Close on click outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                onClose();
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen, onClose]);
+    // Close on click outside - Handled by Backdrop onClick now to prevent double-fire
+    // useEffect for mousedown removed to fix "jumps to random page" bug.
 
     if (!mounted) return null;
 

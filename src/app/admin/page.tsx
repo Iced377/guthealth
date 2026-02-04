@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/config/firebase'; // Client SDK for viewing
 import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy, Sparkles, Rocket } from 'lucide-react';
 import { format } from 'date-fns';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import type { FeedbackSubmission } from '@/types';
@@ -14,12 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-
-// ... (rest of imports)
-
-// ... inside component ...
-
-
+import { BrandTab } from '@/components/admin/BrandTab';
+import { AppJourneyTab } from '@/components/admin/AppJourneyTab';
 
 
 interface AdminEvent {
@@ -60,9 +56,6 @@ export default function AdminDashboardPage() {
     const [timeRange, setTimeRange] = useState<'7D' | '30D' | '90D' | 'ALL'>('7D');
     const [error, setError] = useState<string | null>(null);
     const [activeUserCount, setActiveUserCount] = useState(0);
-
-    // ... (useEffect for redirect remains same)
-
 
     // Data Subscription
     useEffect(() => {
@@ -279,31 +272,54 @@ export default function AdminDashboardPage() {
                 </div>
             </header>
 
-            <Tabs defaultValue="ai" className="w-full space-y-6">
-                <TabsList className="bg-white/5 border-white/10 p-1 h-auto w-full grid grid-cols-2 md:flex md:flex-wrap justify-start rounded-xl gap-2">
-                    <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
-                        <BrainCircuit className="w-5 h-5 md:w-4 md:h-4" />
-                        <span>AI Perf.</span>
-                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-0 text-[10px] px-1.5">{events.filter(e => !e.resolved).length}</Badge>
-                    </TabsTrigger>
+            <Tabs defaultValue="journey" className="w-full space-y-6">
+                {/* Scrollable Tab Band */}
+                <div className="w-full overflow-x-auto pb-2 scrollbar-none">
+                    <TabsList className="bg-white/5 border-white/10 p-1 h-auto flex justify-start rounded-xl gap-2 w-max min-w-full">
+                        <TabsTrigger value="journey" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <Rocket className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Journey</span>
+                        </TabsTrigger>
 
-                    <TabsTrigger value="feedback" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
-                        <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
-                        <span>Feedback</span>
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-0 text-[10px] px-1.5">{feedback.length}</Badge>
-                    </TabsTrigger>
+                        <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <BrainCircuit className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>AI Perf.</span>
+                            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-0 text-[10px] px-1.5">{events.filter(e => !e.resolved).length}</Badge>
+                        </TabsTrigger>
 
-                    <TabsTrigger value="contact" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
-                        <Mail className="w-5 h-5 md:w-4 md:h-4" />
-                        <span>Contact</span>
-                        <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-0 text-[10px] px-1.5">{contactSubmissions.length}</Badge>
-                    </TabsTrigger>
+                        <TabsTrigger value="feedback" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Feedback</span>
+                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-0 text-[10px] px-1.5">{feedback.length}</Badge>
+                        </TabsTrigger>
 
-                    <TabsTrigger value="acquisition" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 py-3 px-4 h-auto gap-2 flex-col md:flex-row items-center justify-center">
-                        <Users className="w-5 h-5 md:w-4 md:h-4" />
-                        <span>Growth</span>
-                    </TabsTrigger>
-                </TabsList>
+                        <TabsTrigger value="contact" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <Mail className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Contact</span>
+                            <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-0 text-[10px] px-1.5">{contactSubmissions.length}</Badge>
+                        </TabsTrigger>
+
+                        <TabsTrigger value="acquisition" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <Users className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Growth</span>
+                        </TabsTrigger>
+
+                        <TabsTrigger value="brand" className="data-[state=active]:bg-pink-500/20 data-[state=active]:text-pink-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <Sparkles className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Brand Kit</span>
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
+
+                {/* Journey Tab */}
+                <TabsContent value="journey" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <AppJourneyTab />
+                </TabsContent>
+
+                {/* Brand Tab */}
+                <TabsContent value="brand" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <BrandTab />
+                </TabsContent>
 
                 {/* AI Performance Tab (God View) */}
                 <TabsContent value="ai" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -684,4 +700,3 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
-

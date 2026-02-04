@@ -75,6 +75,14 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // --- Admin Settings (App Journey Milestones) ---
+    match /admin_settings/{settingId} {
+      // Allow read for everyone (so the journey can be shown publicly or to guests)
+      allow read: if true;
+      // Allow write only for admins
+      allow write: if isAdmin();
+    }
+
     // --- Contact Submissions ---
     match /contact_submissions/{submissionId} {
       // Allow anyone (even unauthenticated) to submit a contact form

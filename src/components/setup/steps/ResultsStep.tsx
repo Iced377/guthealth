@@ -53,9 +53,9 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
         >
             {/* Custom Inline Header */}
             <div className="w-full flex flex-col items-start px-4 mb-2 shrink-0">
-                <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-10 h-10 text-green-500 drop-shadow-sm" />
-                    <h2 className="text-[3.2rem] font-black font-headline tracking-tighter leading-none drop-shadow-sm">Your Plan</h2>
+                <div className="flex items-center gap-3 w-full">
+                    <CheckCircle2 className="w-10 h-10 text-green-500 drop-shadow-sm shrink-0" />
+                    <h2 className="text-[2.75rem] font-black font-headline tracking-tighter leading-none drop-shadow-sm whitespace-nowrap">Your Plan</h2>
                 </div>
                 <p className="text-base text-muted-foreground leading-snug opacity-80 font-medium pl-1 mt-1">
                     Your personalized daily roadmap.
@@ -65,7 +65,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
             <div className="w-full flex-1 flex flex-col justify-center items-center relative z-10 py-4">
 
                 {/* Liquid Glass Ring Chart Area */}
-                <div className="relative w-full flex items-center justify-center">
+                <div className="relative w-full flex items-center justify-center mt-12 mb-4">
 
                     {/* The Ring Container - Slightly larger for impact */}
                     <div className="relative w-72 h-72 z-10 flex items-center justify-center">
@@ -80,7 +80,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                         {/* 2. The Conic Gradient Ring */}
                         <motion.div
                             initial={{ rotate: -180, scale: 0, opacity: 0 }}
-                            animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                            animate={{ rotate: rotation, scale: 1, opacity: 1 }}
                             transition={{
                                 type: "spring",
                                 stiffness: 60,
@@ -117,7 +117,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                         >
                             <h3 className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold mb-1 opacity-80">Daily Target</h3>
                             <div className="flex flex-col items-center leading-none">
-                                <span className="text-[3.5rem] font-black tracking-tighter text-foreground drop-shadow-md">{results.tdee}</span>
+                                <span className="text-[3.5rem] font-black tracking-tighter text-foreground drop-shadow-md">{totalCal}</span>
                                 <span className="text-sm font-bold text-muted-foreground mt-1">kcal</span>
                             </div>
                         </motion.div>
@@ -140,12 +140,12 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                             </div>
                         </motion.div>
 
-                        {/* Carbs (Amber) - Bottom Left */}
+                        {/* Carbs (Amber) - Bottom Left (roughly 8 o'clock) */}
                         <motion.div
                             initial={{ opacity: 0, x: 20, scale: 0.8 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             transition={{ delay: 0.7, type: "spring", stiffness: 120 }}
-                            className="absolute -bottom-10 -left-6 flex flex-col items-center w-28 z-20"
+                            className="absolute bottom-4 left-0 flex flex-col items-center w-28 z-20"
                         >
                             <div className="bg-amber-500/10 backdrop-blur-md border border-amber-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 mb-2 shadow-lg shadow-amber-500/10 hover:scale-105 transition-transform">
                                 <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Carbs</span>
@@ -157,12 +157,12 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
                             </div>
                         </motion.div>
 
-                        {/* Fat (Blue) - Bottom Right */}
+                        {/* Fat (Blue) - Bottom Right (roughly 4-5 o'clock) */}
                         <motion.div
                             initial={{ opacity: 0, x: -20, scale: 0.8 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             transition={{ delay: 0.8, type: "spring", stiffness: 120 }}
-                            className="absolute -bottom-10 -right-6 flex flex-col items-center w-28 z-20"
+                            className="absolute bottom-4 right-0 flex flex-col items-center w-28 z-20"
                         >
                             <div className="bg-blue-500/10 backdrop-blur-md border border-blue-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 mb-2 shadow-lg shadow-blue-500/10 hover:scale-105 transition-transform">
                                 <Droplet className="w-3.5 h-3.5 text-blue-500" />
@@ -179,7 +179,7 @@ export default function ResultsStep({ results, onFinish, isSaving }: ResultsStep
             </div>
 
             {/* Footer Button - Fixed at bottom */}
-            <div className="pt-2 shrink-0 w-full px-2 mt-4 relative z-30">
+            <div className="pt-2 shrink-0 w-full px-2 mt-4 mb-6 relative z-30">
                 <Button
                     className="w-full h-14 rounded-full text-lg font-bold shadow-xl bg-foreground text-background hover:bg-foreground/90 transition-transform active:scale-95"
                     onClick={onFinish}
