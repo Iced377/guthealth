@@ -8,9 +8,26 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.2.4";
+export const APP_VERSION = "5.3.0";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.3.0',
+        date: 'February 4, 2026',
+        title: 'Admin Journey & Push',
+        description: 'A major update introducing a fully dynamic App Journey, iOS Push Notifications, and critical build fixes.',
+        features: [
+            'App Journey: Fully dynamic milestones with drag-and-drop reordering and inline editing.',
+            'Push Notifications: Native iOS push notifications enabled for real-time updates.',
+        ],
+        improvements: [
+            'Admin Dashboard: Enhanced milestone management with icon picker and status toggling.',
+        ],
+        fixes: [
+            'Meal Editor: Fixed issue where editing a meal didn\'t update macro totals.',
+            'Build Stability: Resolved cloud build dependency conflicts.',
+        ]
+    },
     {
         version: '5.2.4',
         date: 'February 4, 2026',
