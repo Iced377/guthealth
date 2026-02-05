@@ -90,5 +90,8 @@
     "@capgo/capacitor-health": {
       "@capacitor/core": "$@capacitor/core"
     }
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

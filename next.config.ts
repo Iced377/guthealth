@@ -31,7 +31,8 @@ const nextConfig: NextConfig = {
     '@capacitor/browser',
     '@capacitor/haptics',
     '@capacitor/core',
-    '@capacitor/app'
+    '@capacitor/app',
+    'capacitor-plugin-app-tracking-transparency',
   ],
 };
 
