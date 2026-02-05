@@ -45,31 +45,90 @@ export const signInWithGoogle = async () => {
 // Sign In with Apple - Platform-Aware Flow
 import { OAuthProvider } from 'firebase/auth';
 
+let isAppleAuthInFlight = false;
+
+export const signInWithAppleWeb = async () => {
+  console.log("[Auth] Starting signInWithAppleWeb (Redirect flow)...");
+  const provider = new OAuthProvider('apple.com');
+  // Use redirect for mobile web resilience
+  return signInWithRedirect(auth, provider);
+};
+
 export const signInWithApple = async () => {
-  console.log("Starting signInWithApple...");
+  console.log("[Auth] native_start: signInWithApple called");
 
-  if (Capacitor.isNativePlatform()) {
-    // Native iOS/Android flow
-    console.log("Native platform detected, using Firebase Authentication plugin for Apple");
+  if (isAppleAuthInFlight) {
+    console.warn("[Auth] signInWithApple already in flight. Ignoring double-tap.");
+    throw new Error('AUTH_IN_FLIGHT');
+  }
 
-    try {
-      const result = await FirebaseAuthentication.signInWithApple();
-      const credential = new OAuthProvider('apple.com').credential({
-        idToken: result.credential?.idToken,
-        accessToken: result.credential?.accessToken, // Some versions might need rawNonce or similar, but typically idToken + nonce is enough. plugin handles it.
-        rawNonce: result.credential?.nonce,
+  isAppleAuthInFlight = true;
+
+  try {
+    if (Capacitor.isNativePlatform()) {
+      console.log("[Auth] Native platform detected. Using Firebase Authentication plugin.");
+
+      // 10s Timeout Promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000);
       });
 
-      return signInWithCredential(auth, credential);
-    } catch (error) {
-      console.error("Native Apple Sign-In error:", error);
-      throw error;
+      // Native Auth Promise
+      const nativeAuthPromise = async () => {
+        try {
+          const result = await FirebaseAuthentication.signInWithApple();
+          return result;
+        } catch (error: any) {
+          // Check for native cancellation or network error specifically
+          // The plugin might return different error structures, but usually message contains keywords
+          const errMsg = error?.message || JSON.stringify(error);
+          if (errMsg.toLowerCase().includes('canceled') || errMsg.toLowerCase().includes('cancelled')) {
+            throw new Error('CANCELED');
+          }
+          if (errMsg.toLowerCase().includes('network')) {
+            throw new Error('NETWORK_ERROR');
+          }
+          throw error;
+        }
+      };
+
+      try {
+        // Race!
+        const result: any = await Promise.race([nativeAuthPromise(), timeoutPromise]);
+
+        console.log("[Auth] native_success: Plugin returned credentials.");
+        const credential = new OAuthProvider('apple.com').credential({
+          idToken: result.credential?.idToken,
+          accessToken: result.credential?.accessToken,
+          rawNonce: result.credential?.nonce,
+        });
+
+        return await signInWithCredential(auth, credential);
+
+      } catch (error: any) {
+        if (error.message === 'TIMEOUT') {
+          console.error("[Auth] native_timeout: Native sign-in timed out after 10s.");
+          throw error; // UI will handle this by showing "Try web now"
+        } else if (error.message === 'CANCELED') {
+          console.log("[Auth] native_cancel: User canceled native sheet.");
+          throw error; // UI should just stop loading
+        } else if (error.message === 'NETWORK_ERROR') {
+          console.error("[Auth] native_error: Network issue.");
+          throw error;
+        }
+
+        console.error("[Auth] native_error: Generic failure.", error);
+        throw error;
+      }
+
+    } else {
+      // Web flow (Desktop/Dev)
+      console.log("[Auth] Web platform detected. Using popup for desktop/dev.");
+      const provider = new OAuthProvider('apple.com');
+      return signInWithPopup(auth, provider);
     }
-  } else {
-    // Web flow
-    console.log("Web platform detected, using signInWithPopup for Apple");
-    const provider = new OAuthProvider('apple.com');
-    return signInWithPopup(auth, provider);
+  } finally {
+    isAppleAuthInFlight = false;
   }
 };
 

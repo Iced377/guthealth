@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Handle Redirect Result (Google Sign In)
+  // Handle Redirect Result (Google & Apple Sign In)
   const hasCheckedRedirect = useRef(false);
 
   useEffect(() => {
