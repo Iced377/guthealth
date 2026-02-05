@@ -8,9 +8,18 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.3.0";
+export const APP_VERSION = "5.3.1";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.3.1',
+        date: 'February 5, 2026',
+        title: 'Bug Fixes',
+        description: 'General bug fixes and performance improvements.',
+        features: [],
+        improvements: [],
+        fixes: []
+    },
     {
         version: '5.3.0',
         date: 'February 4, 2026',

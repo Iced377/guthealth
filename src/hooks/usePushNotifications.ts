@@ -11,7 +11,11 @@ export const usePushNotifications = () => {
     const { toast } = useToast();
 
     useEffect(() => {
-        if (!user || Capacitor.getPlatform() === 'web') return;
+        console.log("[Push] Hook triggered. User:", !!user, "Platform:", Capacitor.getPlatform());
+        if (!user || Capacitor.getPlatform() === 'web') {
+            console.log("[Push] Skipping initialization. Reasons:", { noUser: !user, isWeb: Capacitor.getPlatform() === 'web' });
+            return;
+        }
 
         const initializePush = async () => {
             try {
