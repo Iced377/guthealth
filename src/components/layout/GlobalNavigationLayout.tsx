@@ -17,6 +17,7 @@ import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { NavVisibilityProvider } from '@/components/navigation/useNavVisibilityController';
 import ReuseMealMenu from '@/components/navigation/ReuseMealMenu';
 import ReleaseNotesSheet from '@/components/shared/ReleaseNotesSheet';
+import LiveDbIndicator from '@/components/shared/LiveDbIndicator';
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
@@ -264,6 +265,7 @@ const NavigationAndDialogs = () => {
                 isOpen={isReleaseNotesOpen}
                 onClose={closeReleaseNotes}
             />
+            <LiveDbIndicator />
         </>
     );
 };
