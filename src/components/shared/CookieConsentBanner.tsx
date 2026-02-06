@@ -14,6 +14,17 @@ export default function CookieConsentBanner() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Don't show cookie banner on native iOS - ATT handles consent there
+    const capacitor = (window as any).Capacitor;
+    const platform = capacitor?.getPlatform?.() || 'web';
+
+    if (platform === 'ios') {
+      // iOS uses App Tracking Transparency instead
+      setIsVisible(false);
+      return;
+    }
+
+    // For web and Android, check localStorage
     const consentStatus = localStorage.getItem(LOCALSTORAGE_KEY);
     if (consentStatus !== 'accepted') {
       setIsVisible(true);
@@ -41,7 +52,7 @@ export default function CookieConsentBanner() {
         <div className="flex-grow">
           <AlertTitle className="font-semibold text-foreground">We Value Your Privacy</AlertTitle>
           <AlertDescription className="text-sm text-muted-foreground">
-            We use cookies to enhance your experience, analyze site traffic, and for basic app functionality. By continuing to use this site, you consent to our use of cookies.
+            We use cookies to enhance your experience and analyze site traffic. By continuing to use this site, you consent to our use of cookies.
             See our <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link> for more details.
           </AlertDescription>
         </div>
@@ -50,7 +61,7 @@ export default function CookieConsentBanner() {
           className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
           size="sm"
         >
-          Accept Cookies
+          Accept
         </Button>
       </Alert>
     </div>

@@ -82,6 +82,8 @@
 	<string>GutCheck uses this permission to sync your activity data.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>GutCheck needs access to your photo library to let you choose food photos for analysis.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>GutCheck uses this data to analyze app usage and improve your experience. Your data is never sold to third parties.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

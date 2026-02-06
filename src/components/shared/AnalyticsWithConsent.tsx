@@ -8,47 +8,53 @@ const EVENT_KEY = 'cookie-consent-updated';
 
 export default function AnalyticsWithConsent() {
     const [consentGiven, setConsentGiven] = useState(false);
+    const [isNative, setIsNative] = useState(false);
+    const [attChecked, setAttChecked] = useState(false);
     const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
     useEffect(() => {
-        // 1. Initial check on mount
-        const savedConsent = localStorage.getItem(LOCALSTORAGE_KEY);
-        if (savedConsent === 'accepted') {
-            setConsentGiven(true);
-        }
+        const checkPlatformAndConsent = async () => {
+            // Detect if running in Capacitor (Native iOS/Android)
+            const capacitor = (window as any).Capacitor;
+            const platform = capacitor?.getPlatform?.() || 'web';
+            const isNativePlatform = platform === 'ios' || platform === 'android';
+            setIsNative(isNativePlatform);
 
-        // Native Check (iOS ATT)
-        const checkNativeTracking = async () => {
-            if (process.env.NEXT_PUBLIC_CAPACITOR_PLATFORM === 'ios' || (window as any).Capacitor?.getPlatform() === 'ios') {
+            if (platform === 'ios') {
+                // iOS: Use App Tracking Transparency
                 try {
                     const { AppTrackingTransparency } = await import('capacitor-plugin-app-tracking-transparency');
                     const status = await AppTrackingTransparency.requestPermission();
+
                     if (status.status === 'authorized') {
-                        console.log("iOS Tracking Authorized");
+                        console.log("[Analytics] iOS Tracking Authorized");
                         setConsentGiven(true);
                     } else {
-                        console.log("iOS Tracking Denied/Restricted");
-                        // If denied, we do NOT set consentGiven(true), so GA doesn't load.
-                        // We might want to respect local storage too? 
-                        // Guideline says: "If the user does not allow tracking, do not collect cookies for tracking purposes."
-                        // So native denial overrides local storage acceptance? 
-                        // Yes, native rule is stricter.
+                        console.log("[Analytics] iOS Tracking Denied/Restricted:", status.status);
                         setConsentGiven(false);
                     }
                 } catch (e) {
-                    console.error("ATT Plugin error:", e);
+                    console.error("[Analytics] ATT Plugin error:", e);
+                    // Fail safe: don't track if ATT fails
+                    setConsentGiven(false);
                 }
+                setAttChecked(true);
+            } else {
+                // Web or Android: Use cookie consent banner
+                const savedConsent = localStorage.getItem(LOCALSTORAGE_KEY);
+                if (savedConsent === 'accepted') {
+                    setConsentGiven(true);
+                }
+                setAttChecked(true);
             }
         };
-        checkNativeTracking();
 
-        // 2. Listen for the custom event (fired by the banner)
+        checkPlatformAndConsent();
+
+        // Listen for cookie consent updates (for web only)
         const handleConsentUpdate = () => {
             const updatedConsent = localStorage.getItem(LOCALSTORAGE_KEY);
             if (updatedConsent === 'accepted') {
-                // For web, this is fine. For iOS, we should technically check ATT again or rely on native check.
-                // But usually cookie banner is hidden on native if we handle it there.
-                // Let's assume this event is mostly for web.
                 setConsentGiven(true);
             }
         };
@@ -60,6 +66,12 @@ export default function AnalyticsWithConsent() {
         };
     }, []);
 
+    // Don't render until ATT check is complete (prevents flash of analytics)
+    if (!attChecked) {
+        return null;
+    }
+
+    // Don't load GA if no consent or no GA ID
     if (!gaId || !consentGiven) {
         return null;
     }
