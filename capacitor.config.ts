@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.iced377.guthealth',
   appName: 'GutHealth',
   webDir: 'out',
+  server: {
+    url: 'https://mygutcheck.app',
+    allowNavigation: ['mygutcheck.app']
+  },
   plugins: {
     FirebaseAuthentication: {
       skipNativeAuth: false,
