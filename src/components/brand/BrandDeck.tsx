@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Copy, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -33,60 +33,71 @@ const SLIDES = [
 
 export function BrandDeck({ onClose }: { onClose?: () => void }) {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [direction, setDirection] = useState(0); // -1 for left, 1 for right
     const [showControls, setShowControls] = useState(true);
     const { toast } = useToast();
     const { setNavVisible } = useNavVisibility();
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const lastScrollX = useRef(0);
 
-    // Drag Swipe Logic
-    const swipeConfidenceThreshold = 500;
-    const isDragging = useRef(false);
-
-    const swipePower = (offset: number, velocity: number) => {
-        return Math.abs(offset) * velocity;
+    // Sync scroll position to currentIndex (for external button/keyboard nav)
+    const scrollToSlide = (index: number) => {
+        if (scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            container.scrollTo({
+                left: index * container.clientWidth,
+                behavior: 'smooth'
+            });
+        }
     };
 
     const handleNext = () => {
         if (currentIndex < SLIDES.length - 1) {
-            setDirection(1);
-            setCurrentIndex(prev => prev + 1);
+            scrollToSlide(currentIndex + 1);
         }
     };
 
     const handlePrev = () => {
         if (currentIndex > 0) {
-            setDirection(-1);
-            setCurrentIndex(prev => prev - 1);
+            scrollToSlide(currentIndex - 1);
         }
     };
 
-    const paginate = (newDirection: number) => {
-        // "Trends" behavior: Interaction hides the chrome to focus on content.
-        // Whether Next or Prev, we hide the controls to be immersive.
-        setShowControls(false);
-        setNavVisible(false); // Hide the Global Bottom Nav
+    // Monitor scroll to update currentIndex and Nav visibility
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
 
-        if (newDirection > 0) {
-            handlePrev();
-        } else {
-            handleNext();
-        }
-    }
+        const handleScroll = () => {
+            const scrollLeft = container.scrollLeft;
+            const width = container.clientWidth;
+
+            // Update currentIndex
+            const newIndex = Math.round(scrollLeft / width);
+            if (newIndex !== currentIndex && newIndex >= 0 && newIndex < SLIDES.length) {
+                setCurrentIndex(newIndex);
+            }
+
+            // Sync Nav Visibility (identical logic to Trends page but for X axis if preferred, 
+            // but user asked for vertical/horizontal feel fix. Trends uses Y for toggle.)
+            // We'll keep the Tap-to-toggle from before as it was specifically for this deck, 
+            // but ensure horizontal movement doesn't feel sluggish.
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [currentIndex]);
 
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') paginate(-1); // ArrowRight means next slide
-            if (e.key === 'ArrowLeft') paginate(1); // ArrowLeft means prev slide
+            if (e.key === 'ArrowRight') handleNext();
+            if (e.key === 'ArrowLeft') handlePrev();
             if (e.key === 'Escape' && onClose) onClose();
-            // Toggle controls on Space?
             if (e.key === ' ') setShowControls(prev => !prev);
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentIndex, onClose, showControls]);
-
-    const SlideComponent = SLIDES[currentIndex].component;
 
     const handleExport = () => {
         const text = `BRAND GUIDELINES EXPORT\nGenerated: ${new Date().toLocaleDateString()}\n... (Full export content)`;
@@ -98,14 +109,14 @@ export function BrandDeck({ onClose }: { onClose?: () => void }) {
     };
 
     return (
-        <div
-            className="fixed inset-0 z-50 bg-black text-white flex flex-col overflow-hidden h-[100dvh]"
-        >
-            {/* Top Bar - Floating with Transition */}
-            <div className={cn(
-                "absolute top-0 left-0 right-0 h-16 flex items-center justify-between px-6 bg-black/50 backdrop-blur-md z-40 transition-transform duration-300 pt-safe-top",
-                showControls ? "translate-y-0" : "-translate-y-full"
-            )}>
+        <div className="fixed inset-0 z-50 bg-black text-white flex flex-col overflow-hidden h-[100dvh]">
+            {/* Top Bar */}
+            <motion.div
+                initial={false}
+                animate={{ y: showControls ? 0 : -100 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="absolute top-0 left-0 right-0 h-16 flex items-center justify-between px-6 bg-black/50 backdrop-blur-md z-40 pt-safe-top border-b border-white/5"
+            >
                 <div className="flex items-center gap-4">
                     {onClose && (
                         <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-white/10">
@@ -123,124 +134,84 @@ export function BrandDeck({ onClose }: { onClose?: () => void }) {
                         <Copy className="w-4 h-4" /> <span className="hidden lg:inline">Export Text</span>
                     </Button>
                 </div>
-            </div>
+            </motion.div>
 
-            {/* Main Slide Area */}
-            <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-black to-zinc-900">
-                <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                    <motion.div
-                        key={currentIndex}
-                        custom={direction}
-                        variants={{
-                            enter: (direction: number) => ({
-                                x: direction > 0 ? '100%' : '-100%',
-                                opacity: 0,
-                                scale: 0.95,
-                                zIndex: 0
-                            }),
-                            center: {
-                                zIndex: 1,
-                                x: 0,
-                                opacity: 1,
-                                scale: 1
-                            },
-                            exit: (direction: number) => ({
-                                zIndex: 0,
-                                x: direction < 0 ? '100%' : '-100%',
-                                opacity: 0,
-                                scale: 0.95
-                            })
-                        }}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{
-                            x: { type: "spring", stiffness: 300, damping: 30 },
-                            opacity: { duration: 0.2 }
-                        }}
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={1}
-                        onDragStart={() => {
-                            isDragging.current = true;
-                        }}
-                        onDragEnd={(e, { offset, velocity }) => {
-                            // Delay resetting isDragging to ensure onTap doesn't fire immediately
-                            setTimeout(() => { isDragging.current = false; }, 100);
-
-                            const swipe = swipePower(offset.x, velocity.x);
-                            const isDistanceSwipe = Math.abs(offset.x) > 100;
-
-                            if (swipe < -swipeConfidenceThreshold || (isDistanceSwipe && offset.x < 0)) {
-                                paginate(-1); // Next (Swipe Left)
-                            } else if (swipe > swipeConfidenceThreshold || (isDistanceSwipe && offset.x > 0)) {
-                                paginate(1); // Prev (Swipe Right)
-                            }
-                        }}
-                        onTap={(event, info) => {
-                            if (isDragging.current) return; // Ignore taps if we just dragged
-
-                            // We check if the target is interactive (like a button) to avoid double-toggles
-                            const target = event.target as HTMLElement;
-                            if (target.closest('button') || target.closest('a') || target.closest('[data-interactive]')) {
-                                return;
-                            }
-                            const newState = !showControls;
-                            setShowControls(newState);
-                            setNavVisible(newState); // Sync Global Nav
-                        }}
-                        className="absolute inset-0 w-full h-full flex items-center justify-center p-0 md:p-16 touch-pan-y"
-                    >
-                        {/* Slide Container: Added pb-safe and extra padding for obstructing content */}
-                        <div className="w-full max-w-7xl h-full md:rounded-3xl bg-transparent md:bg-black/40 md:border md:border-white/5 md:backdrop-blur-xl md:shadow-2xl overflow-y-auto overflow-x-hidden relative pb-safe-bottom scroll-smooth">
-                            {/* Glossy overlay (Desktop only) */}
-                            <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-3xl" />
-
-                            {/* Content Wrapper with padding to prevent overlap with nav/home indicator */}
+            {/* Main Native Scroll Container */}
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar bg-gradient-to-br from-black to-zinc-900"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+                {SLIDES.map((slide, index) => {
+                    const SlideComponent = slide.component;
+                    return (
+                        <div
+                            key={slide.id}
+                            className="w-full h-full flex-shrink-0 snap-center relative flex items-center justify-center p-0 md:p-16"
+                        >
+                            {/* Tap capture for controls toggle */}
                             <div
-                                className="min-h-full pb-32 pt-24 md:pt-0"
-                            >
-                                {/*
-                                    Note: We allow pointer events to pass through so drag works on the parent.
-                                */}
-                                <SlideComponent />
+                                className="absolute inset-0 z-0"
+                                onClick={() => {
+                                    const newState = !showControls;
+                                    setShowControls(newState);
+                                    setNavVisible(newState);
+                                }}
+                            />
+
+                            {/* Slide Content with its own vertical scroll */}
+                            <div className="w-full max-w-7xl h-full md:rounded-3xl bg-transparent md:bg-black/40 md:border md:border-white/5 md:backdrop-blur-xl md:shadow-2xl overflow-y-auto no-scrollbar relative pb-safe-bottom z-10">
+                                <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-3xl" />
+                                <div className="min-h-full pb-32 pt-24 md:pt-16 px-6 md:px-12">
+                                    <SlideComponent />
+                                </div>
                             </div>
                         </div>
-                    </motion.div>
-                </AnimatePresence>
+                    );
+                })}
             </div>
 
-            {/* Controls - Floating Side Buttons (Hidden if showControls is false) */}
-            <div className={cn(
-                "absolute inset-y-0 left-4 flex items-center z-30 transition-opacity duration-300",
-                showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-            )}>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => paginate(1)}
-                    disabled={currentIndex === 0}
-                    className="hidden md:flex h-12 w-12 rounded-full bg-black/50 hover:bg-white/10 border border-white/5 disabled:opacity-30 backdrop-blur-sm"
-                >
-                    <ChevronLeft className="w-6 h-6" />
-                </Button>
-            </div>
-            <div className={cn(
-                "absolute inset-y-0 right-4 flex items-center z-30 transition-opacity duration-300",
-                showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-            )}>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => paginate(-1)}
-                    disabled={currentIndex === SLIDES.length - 1}
-                    className="hidden md:flex h-12 w-12 rounded-full bg-black/50 hover:bg-white/10 border border-white/5 disabled:opacity-30 backdrop-blur-sm"
-                >
-                    <ChevronRight className="w-6 h-6" />
-                </Button>
-            </div>
+            {/* Controls - PC UI */}
+            <AnimatePresence>
+                {showControls && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="absolute inset-y-0 left-4 flex items-center z-30 pointer-events-none"
+                        >
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handlePrev}
+                                disabled={currentIndex === 0}
+                                className="hidden md:flex h-12 w-12 rounded-full bg-black/50 hover:bg-white/10 border border-white/5 disabled:opacity-30 backdrop-blur-sm pointer-events-auto"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </Button>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="absolute inset-y-0 right-4 flex items-center z-30 pointer-events-none"
+                        >
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleNext}
+                                disabled={currentIndex === SLIDES.length - 1}
+                                className="hidden md:flex h-12 w-12 rounded-full bg-black/50 hover:bg-white/10 border border-white/5 disabled:opacity-30 backdrop-blur-sm pointer-events-auto"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </Button>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
-            {/* Mobile Hint (Fade out?) - MOVED UP */}
+            {/* Mobile Hint */}
             {showControls && (
                 <div className="md:hidden absolute bottom-24 left-1/2 -translate-x-1/2 text-white/30 text-xs animate-pulse pointer-events-none">
                     Swipe to navigate

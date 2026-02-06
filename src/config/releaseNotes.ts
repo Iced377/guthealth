@@ -8,14 +8,31 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.3.1";
+export const APP_VERSION = "5.3.2";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.3.2',
+        date: 'February 6, 2026',
+        title: 'UX Refinements & iOS Haptics',
+        description: 'A dedicated polish update improving interaction responsiveness and system feedback.',
+        features: [
+            'Interactive DOB Picker: New iOS-style scroll wheel for Date of Birth selection with haptic feedback.',
+        ],
+        improvements: [
+            'Smart Dialogs: The Delete Account dialog is now keyboard-aware and automatically adjusts its position for better visibility.',
+            'Log Suppression: Cleaned up background system warnings (ResizeObserver) for a smoother developer console experience.',
+        ],
+        fixes: [
+            'Security: Removed redundant sensitive logging from production builds.',
+            'Push Notifications: Fixed critical TypeScript errors in notification permission requests.',
+        ]
+    },
     {
         version: '5.3.1',
         date: 'February 5, 2026',
         title: 'Bug Fixes',
-        description: 'General bug fixes and performance improvements.',
+        description: 'General maintenance and performance improvements.',
         features: [],
         improvements: [],
         fixes: []
@@ -23,15 +40,12 @@ export const releaseNotesData: ReleaseNote[] = [
     {
         version: '5.3.0',
         date: 'February 4, 2026',
-        title: 'Admin Journey & Push',
-        description: 'A major update introducing a fully dynamic App Journey, iOS Push Notifications, and critical build fixes.',
+        title: 'iOS Push Notifications',
+        description: 'Introducing support for real-time updates and critical build stability fixes.',
         features: [
-            'App Journey: Fully dynamic milestones with drag-and-drop reordering and inline editing.',
             'Push Notifications: Native iOS push notifications enabled for real-time updates.',
         ],
-        improvements: [
-            'Admin Dashboard: Enhanced milestone management with icon picker and status toggling.',
-        ],
+        improvements: [],
         fixes: [
             'Meal Editor: Fixed issue where editing a meal didn\'t update macro totals.',
             'Build Stability: Resolved cloud build dependency conflicts.',
@@ -40,15 +54,11 @@ export const releaseNotesData: ReleaseNote[] = [
     {
         version: '5.2.4',
         date: 'February 4, 2026',
-        title: 'Admin Hub & Journey',
-        description: 'A major upgrade to the Admin Dashboard featuring a new "Journey" timeline, unified scrollable navigation, and a dedicated Brand Kit tab.',
-        features: [
-            'Admin Redesign: Completely overhauled the Admin Hub with a sleek, horizontally scrollable tab band for unifying all management tools.',
-            'App Journey: Introduced "The Ascent" — a premium visual timeline tracking our app\'s milestones from inception to the App Store.',
-            'Brand Kit Tab: Moved the Brand Kit into a dedicated tab within the Admin Hub for quicker access.',
-        ],
+        title: 'Navigation & Compliance',
+        description: 'Improvements to app navigation and legal compliance for App Store submission.',
+        features: [],
         improvements: [
-            'Navigation: Unified AI, Feedback, Contact, and Growth tabs into a single responsive view.',
+            'Navigation: Unified AI, Feedback, and Contact tabs into a single responsive view.',
             'Compliance: Updated Privacy Policy and legal compliance for App Store submission.',
         ],
         fixes: []
@@ -104,10 +114,9 @@ export const releaseNotesData: ReleaseNote[] = [
     {
         version: '5.2.0',
         date: 'January 30, 2026',
-        title: 'Admin Dashboard & Privacy',
-        description: 'Introducing the Admin Dashboard for better app management, along with critical privacy updates and UI enhancements.',
+        title: 'Privacy & UX Support',
+        description: 'Critical privacy updates and onboarding UI enhancements.',
         features: [
-            'Admin Hub: Monitor user acquisition and AI performance in real-time.',
             'Privacy: Added AI Safety Monitoring clause to Privacy Policy.',
             'UX: Improved Pedometer card with clearer edit controls.',
             'UX: Streamlined Login (Google SSO Only).'
@@ -199,10 +208,9 @@ export const releaseNotesData: ReleaseNote[] = [
     {
         version: '5.1.2',
         date: 'January 25, 2026',
-        title: 'Acquisition & Admin Update',
-        description: 'Complete rollout of the Acquisition Dashboard, Admin Portal navigation fixes, and improved Apple Health historical syncing.',
+        title: 'Apple Health & Tour Polish',
+        description: 'Rollout of improved Apple Health historical syncing and navigation polish.',
         features: [
-            'Admin Portal: Direct links to the new Acquisition Dashboard.',
             'Apple Health: Enhanced permission requests and historical data sync.',
             'App Tour: Fixed menu locking during the tour.'
         ],
@@ -413,7 +421,7 @@ export const releaseNotesData: ReleaseNote[] = [
         description: [
             "Visualized Macros: The Daily Macros chart is now a stacked bar chart with Gram/% toggles and filters, making it easier to see your nutrient breakdown.",
             "Calorie Intelligence: New Daily Calorie Histogram (with over-limit warnings) and a Cumulative Net Change chart to track your long-term deficit or surplus.",
-            "Smarter Dietitian: Your Personal Dietitian now sees these long-term trends (Adherence, Cumulative Balance) to give you more relevant, big-picture advice."
+            "Smarter Dietitian: Your Personal Dietitian now sees these long-term trends (Adherence, Cumulative Balance) to provide more relevant, big-picture advice."
         ]
     },
     {
@@ -424,7 +432,7 @@ export const releaseNotesData: ReleaseNote[] = [
             "New App Icon: Say hello to our new 'Happy Stomach' mascot! A fresh, modern look for your home screen.",
             "Data Export: You can now download a copy of your personal data (profile, timeline, feedback) directly from the User Center.",
             "Privacy First: Enhanced cookie consent and transparent analytics tracking to fully respect your privacy choices.",
-            "Fixes: Resolved permissions issues with admin notifications and fixed cloud build dependency errors."
+            "Fixes: Resolved permissions issues and fixed cloud build dependency errors."
         ]
     },
     {

@@ -292,6 +292,10 @@ export interface FeedbackSubmission {
     performance: number | null;
   };
   freeform: string | null;
+  category?: string;
+  route?: string;
+  status?: 'new' | 'archived' | 'resolved';
+  aiAnalysis?: any;
   didInteract: boolean;
   gestureMeta?: {
     cardsVisitedCount: number;

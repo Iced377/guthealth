@@ -32,39 +32,73 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideCloseButton?: boolean }
->(({ className, children, hideCloseButton, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed z-50 grid w-full gap-4 border dark:border-white/5 bg-background p-6 shadow-lg duration-300",
-        // Mobile: Bottom Sheet
-        "bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0",
-        "rounded-t-[26px] rounded-b-none border-b-0",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
-        "data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full",
-        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        // Desktop (sm): Centered Modal (Restoring original behavior)
-        "sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]",
-        "sm:max-w-lg sm:rounded-lg sm:border-b",
-        "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
-        "sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%]",
-        "sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      {!hideCloseButton && (
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hidden sm:block">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
+>(({ className, children, hideCloseButton, ...props }, ref) => {
+  const [keyboardHeight, setKeyboardHeight] = React.useState(0);
+
+  React.useEffect(() => {
+    // Listen for visual viewport changes (keyboard appearing/disappearing)
+    const handleResize = () => {
+      if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const keyboard = windowHeight - viewportHeight;
+        setKeyboardHeight(keyboard > 100 ? keyboard : 0);
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      }
+    };
+  }, []);
+
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed z-50 grid w-full gap-4 border dark:border-white/5 bg-background p-6 shadow-lg duration-300",
+          // Mobile: Bottom Sheet
+          "left-0 right-0 top-auto translate-x-0 translate-y-0",
+          "rounded-t-[26px] rounded-b-none border-b-0",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full",
+          "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+          // Desktop (sm): Centered Modal (Restoring original behavior)
+          "sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]",
+          "sm:max-w-lg sm:rounded-lg sm:border-b",
+          "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+          "sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%]",
+          "sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
+          className
+        )}
+        style={{
+          bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px',
+          maxHeight: keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px - 60px)` : undefined,
+          overflowY: keyboardHeight > 0 ? 'auto' : undefined,
+          transition: 'bottom 0.25s ease-out'
+        }}
+        {...props}
+      >
+        {children}
+        {!hideCloseButton && (
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hidden sm:block">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+})
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({

@@ -793,7 +793,7 @@ export default function ProfilePage() {
                                 Delete My Account
                             </button>
                         </DialogTrigger>
-                        <DialogContent className="glass-crystal border-red-500/20 max-w-sm">
+                        <DialogContent className="glass-crystal border-red-500/20 max-w-sm max-h-[85vh] overflow-y-auto">
                             <DialogHeader>
                                 <DialogTitle className="text-red-500">Delete Account?</DialogTitle>
                                 <DialogDescription className="text-white/70">
@@ -802,7 +802,7 @@ export default function ProfilePage() {
                                 </DialogDescription>
                             </DialogHeader>
 
-                            <div className="py-4 space-y-3">
+                            <div className="py-4 space-y-3 mb-[env(safe-area-inset-bottom,0px)]">
                                 <Label htmlFor="delete-confirm" className="text-xs font-semibold text-white/70 uppercase tracking-wide">
                                     Type <span className="text-red-400 font-bold select-all">delete</span> to confirm
                                 </Label>
@@ -813,10 +813,16 @@ export default function ProfilePage() {
                                     placeholder="Type delete"
                                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-red-500/50 focus:ring-red-500/20"
                                     autoComplete="off"
+                                    onFocus={(e) => {
+                                        // Scroll input into view when keyboard appears
+                                        setTimeout(() => {
+                                            e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }, 300);
+                                    }}
                                 />
                             </div>
 
-                            <DialogFooter className="flex-col gap-2 mt-2 sm:flex-col">
+                            <DialogFooter className="flex-col gap-2 mt-2 sm:flex-col pb-4">
                                 <Button
                                     variant="destructive"
                                     onClick={handleDeleteAccount}

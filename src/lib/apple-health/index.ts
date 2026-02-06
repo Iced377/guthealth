@@ -16,13 +16,23 @@ export const AppleHealthService = {
     requestPermissions: async (): Promise<void> => {
         if (Capacitor.getPlatform() !== 'ios') return;
         try {
+            // Check if we already have permissions safely
+            try {
+                const status = await Health.checkAuthorization({ read: ['steps'] });
+                if (status.readAuthorized.includes('steps')) {
+                    console.log("[Health] Permissions already granted");
+                    return;
+                }
+            } catch (e) {
+                console.log("[Health] checkAuthorization failed, proceeding to requestAuthorization");
+            }
+
             await Health.requestAuthorization({
                 read: ['steps'],
                 write: ['steps']
             });
         } catch (error) {
             console.error('Error requesting Apple Health permissions:', error);
-            throw error;
         }
     },
 
@@ -32,7 +42,19 @@ export const AppleHealthService = {
             const now = new Date();
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            // Fetch all step samples for today
+            // 1. Guard against unauthorized access
+            try {
+                const status = await Health.checkAuthorization({ read: ['steps'] });
+                if (!status.readAuthorized.includes('steps')) {
+                    console.warn('[Health] Fetch blocked: Steps not authorized');
+                    return 0;
+                }
+            } catch (e) {
+                console.warn('[Health] checkAuthorization failed in getTodaySteps');
+                return 0;
+            }
+
+            // 2. Fetch all step samples for today
             const result = await Health.readSamples({
                 dataType: 'steps',
                 startDate: startOfDay.toISOString(),
@@ -61,13 +83,8 @@ export const AppleHealthService = {
             return Math.round(totalSteps);
 
         } catch (error: any) {
-            // "Authorization not determined" is expected if the user hasn't granted permissions yet.
-            // We shouldn't error loudly here as it blocks the UI in dev mode.
-            if (error?.message?.includes?.('Authorization') || typeof error === 'string' && error.includes('Authorization')) {
-                console.warn('Apple Health permission not yet granted (silent):', error);
-            } else {
-                console.warn('Error fetching steps:', error);
-            }
+            const errMsg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
+            console.warn('[Health] Today steps fetch suppressed (safely):', errMsg);
             return 0;
         }
     },
@@ -98,6 +115,17 @@ export const AppleHealthService = {
             const startDate = new Date();
             startDate.setDate(now.getDate() - days);
 
+            // 1. Guard
+            try {
+                const status = await Health.checkAuthorization({ read: ['steps'] });
+                if (!status.readAuthorized.includes('steps')) {
+                    return [];
+                }
+            } catch (e) {
+                return [];
+            }
+
+            // 2. Fetch
             const result = await Health.readSamples({
                 dataType: 'steps',
                 startDate: startDate.toISOString(),
@@ -107,9 +135,10 @@ export const AppleHealthService = {
             });
 
             return result.samples;
-        } catch (error) {
-            console.error('Error fetching raw samples:', error);
-            throw error;
+        } catch (error: any) {
+            const errMsg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
+            console.warn('[Health] Raw samples fetch suppressed (safely):', errMsg);
+            return [];
         }
     },
 
@@ -128,7 +157,17 @@ export const AppleHealthService = {
                 const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
                 const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
 
-                // Use existing logic for specific day
+                // 1. Guard check
+                try {
+                    const status = await Health.checkAuthorization({ read: ['steps'] });
+                    if (!status.readAuthorized.includes('steps')) {
+                        return;
+                    }
+                } catch (e) {
+                    return;
+                }
+
+                // 2. Use existing logic for specific day
                 const result = await Health.readSamples({
                     dataType: 'steps',
                     startDate: startOfDay.toISOString(),
@@ -167,8 +206,10 @@ export const AppleHealthService = {
 
             return dailyTotals;
 
-        } catch (error) {
-            console.error('Error fetching history:', error);
+        } catch (error: any) {
+            // Log for debugging but return empty object to prevent app crash
+            const errMsg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
+            console.warn('[Health] Daily history fetch suppressed (safely):', errMsg);
             return {};
         }
     }

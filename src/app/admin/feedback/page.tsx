@@ -194,7 +194,7 @@ export default function AdminFeedbackPage() {
                             {/* Ratings if improve */}
                             {item.type === 'improve' && item.ratings && (
                               <div className="flex flex-wrap gap-1">
-                                {Object.entries(item.ratings).map(([key, val]) => (
+                                {Object.entries(item.ratings || {}).map(([key, val]) => (
                                   val ? (
                                     <Badge key={key} variant="outline" className="text-[10px] px-1 py-0 h-5">
                                       {key.slice(0, 3)}: {val}

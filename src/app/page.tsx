@@ -8,7 +8,6 @@ import GradientText from '@/components/shared/GradientText';
 import Navbar from '@/components/shared/Navbar';
 import GuestHomePage from '@/components/guest/GuestHomePage';
 import DashboardContent from '@/components/dashboard/DashboardContent';
-import LandingPageClientContent from '@/components/landing/LandingPageClientContent';
 import LiquidHeader from '@/components/navigation/LiquidHeader';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useActionContext } from '@/contexts/ActionContext';

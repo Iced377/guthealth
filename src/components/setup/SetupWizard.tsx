@@ -126,7 +126,6 @@ export default function SetupWizard() {
                 dietaryPreferences: formData.dietaryPreferences,
                 bmr: results.bmr,
                 tdee: results.tdee,
-                tdee: results.tdee,
                 macros: results.macros,
                 appleHealthEnabled: formData.appleHealthEnabled || false
             };

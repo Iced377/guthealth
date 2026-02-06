@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithCredential,
+  signInWithCustomToken,
 } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { Capacitor } from '@capacitor/core';
@@ -27,9 +28,32 @@ export const signInWithGoogle = async () => {
 
     try {
       const result = await FirebaseAuthentication.signInWithGoogle();
-      const credential = GoogleAuthProvider.credential(result.credential?.idToken);
 
-      return signInWithCredential(auth, credential);
+      // CRITICAL: After plugin sign-in, get the FIREBASE ID token (not Google token)
+      // The plugin has already exchanged the Google token for a Firebase session
+      const firebaseToken = await FirebaseAuthentication.getIdToken();
+      console.log("[Auth] Firebase idToken obtained after Google sign-in");
+
+      // Exchange the Firebase ID token for a custom token
+      console.log("[Auth] Exchanging Firebase token with JS SDK...");
+
+      const response = await fetch('/api/auth/exchange-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: firebaseToken.token }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Token exchange failed: ${response.statusText}`);
+      }
+
+      const { customToken } = await response.json();
+
+      // Sign in with custom token - this sets auth.currentUser!
+      const userCredential = await signInWithCustomToken(auth, customToken);
+
+      console.log("[Auth] Google Sign-In SUCCESS! Firebase JS SDK synced:", userCredential.user.uid);
+      return userCredential;
     } catch (error) {
       console.error("Native Google Sign-In error:", error);
       throw error;
@@ -68,57 +92,50 @@ export const signInWithApple = async () => {
     if (Capacitor.isNativePlatform()) {
       console.log("[Auth] Native platform detected. Using Firebase Authentication plugin.");
 
-      // 10s Timeout Promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('TIMEOUT')), 10000);
-      });
+      const result = await FirebaseAuthentication.signInWithApple();
+      console.log("[Auth] Plugin result:", JSON.stringify(result, null, 2));
 
-      // Native Auth Promise
-      const nativeAuthPromise = async () => {
-        try {
-          const result = await FirebaseAuthentication.signInWithApple();
-          return result;
-        } catch (error: any) {
-          // Check for native cancellation or network error specifically
-          // The plugin might return different error structures, but usually message contains keywords
-          const errMsg = error?.message || JSON.stringify(error);
-          if (errMsg.toLowerCase().includes('canceled') || errMsg.toLowerCase().includes('cancelled')) {
-            throw new Error('CANCELED');
-          }
-          if (errMsg.toLowerCase().includes('network')) {
-            throw new Error('NETWORK_ERROR');
-          }
-          throw error;
-        }
-      };
+      const { idToken, nonce: rawNonce } = result.credential || {};
 
+      if (!idToken || !rawNonce) {
+        throw new Error('Missing idToken or nonce from plugin');
+      }
+
+      // CRITICAL: After plugin sign-in, get the FIREBASE ID token (not Apple token)
+      // The plugin has already exchanged the Apple token for a Firebase session
+      const firebaseToken = await FirebaseAuthentication.getIdToken();
+      console.log("[Auth] Firebase idToken obtained");
+
+      // Exchange the Firebase ID token for a custom token that the JS SDK can use
       try {
-        // Race!
-        const result: any = await Promise.race([nativeAuthPromise(), timeoutPromise]);
+        console.log("[Auth] Exchanging Firebase token with JS SDK...");
 
-        console.log("[Auth] native_success: Plugin returned credentials.");
-        const credential = new OAuthProvider('apple.com').credential({
-          idToken: result.credential?.idToken,
-          accessToken: result.credential?.accessToken,
-          rawNonce: result.credential?.nonce,
+        const response = await fetch('/api/auth/exchange-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: firebaseToken.token }),
         });
 
-        return await signInWithCredential(auth, credential);
-
-      } catch (error: any) {
-        if (error.message === 'TIMEOUT') {
-          console.error("[Auth] native_timeout: Native sign-in timed out after 10s.");
-          throw error; // UI will handle this by showing "Try web now"
-        } else if (error.message === 'CANCELED') {
-          console.log("[Auth] native_cancel: User canceled native sheet.");
-          throw error; // UI should just stop loading
-        } else if (error.message === 'NETWORK_ERROR') {
-          console.error("[Auth] native_error: Network issue.");
-          throw error;
+        if (!response.ok) {
+          throw new Error(`Token exchange failed: ${response.statusText}`);
         }
 
-        console.error("[Auth] native_error: Generic failure.", error);
-        throw error;
+        const { customToken } = await response.json();
+
+        // Sign in with custom token - this sets auth.currentUser!
+        const userCredential = await signInWithCustomToken(auth, customToken);
+
+        console.log("[Auth] SUCCESS! Firebase JS SDK synced:", userCredential.user.uid);
+        return userCredential;
+      } catch (error: any) {
+        console.error("[Auth] Token exchange failed:", error);
+
+        // Fallback: return plugin user even if exchange fails
+        return {
+          user: result.user,
+          providerId: 'apple.com',
+          operationType: 'signIn',
+        } as any;
       }
 
     } else {
@@ -127,6 +144,23 @@ export const signInWithApple = async () => {
       const provider = new OAuthProvider('apple.com');
       return signInWithPopup(auth, provider);
     }
+  } catch (error: any) {
+    console.error("Apple Sign-In Error:", error);
+    console.error("Error keys:", Object.keys(error));
+    console.error("Error code:", error?.code);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+
+    // Force error object construction for empty errors
+    const errorObj = {
+      code: error?.code || 'unknown',
+      message: error?.message || 'Empty error object',
+      originalError: error,
+      stack: error?.stack,
+    };
+    console.error("Detailed error:", errorObj);
+
+    throw error;
   } finally {
     isAppleAuthInFlight = false;
   }

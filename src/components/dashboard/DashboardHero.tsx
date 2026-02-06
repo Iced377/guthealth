@@ -30,7 +30,7 @@ export default function DashboardHero({
         return "Good Evening";
     }, []);
 
-    const firstName = userProfile?.profile?.displayName?.split(' ')[0] || "GutChecker";
+    const firstName = userProfile?.displayName?.split(' ')[0] || "GutChecker";
 
     // 2. Meals Logged Today
     const todayMeals = useMemo(() => {

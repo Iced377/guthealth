@@ -70,6 +70,9 @@ export default function AdminDashboardPage() {
         const unsubEvents = onSnapshot(eventsQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AdminEvent[];
             setEvents(data.filter(e => !e.dismissed && !e.resolved));
+        }, (err) => {
+            console.error("Hallucination Event Subscription Error:", err);
+            // Don't set main error state - this is a listener-specific issue
         });
 
         // 2. Feedback Submissions
@@ -81,6 +84,8 @@ export default function AdminDashboardPage() {
         const unsubFeedback = onSnapshot(feedbackQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as FeedbackSubmission[];
             setFeedback(data);
+        }, (err) => {
+            console.error("Feedback Subscription Error:", err);
         });
 
         // 3. Contact Submissions
@@ -92,13 +97,15 @@ export default function AdminDashboardPage() {
         const unsubContact = onSnapshot(contactQuery, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ContactSubmission[];
             setContactSubmissions(data);
+        }, (err) => {
+            console.error("Contact Submission Error:", err);
         });
 
         // 4. User Acquisition (Real Data from Auth)
         const fetchAcquisition = async () => {
             setError(null);
             try {
-                const { getAuthUsersAction } = await import('@/app/actions/admin');
+                const { getAuthUsersAction } = await import('@/actions/admin');
                 const result = await getAuthUsersAction();
 
                 if (!result.success) {
@@ -231,7 +238,7 @@ export default function AdminDashboardPage() {
 
     }, [allUserData, timeRange]);
 
-    const handleResolve = async (id: string, currentStatus: boolean) => {
+    const handleResolve = async (id: string) => {
         await updateDoc(doc(db, 'admin_events', id), {
             resolved: true // One way transition usually? Or toggle. Let's make it strict Resolve.
         });
@@ -406,7 +413,7 @@ export default function AdminDashboardPage() {
                                         <Button
                                             variant="default"
                                             size="sm"
-                                            onClick={() => handleResolve(event.id, event.resolved)}
+                                            onClick={() => handleResolve(event.id)}
                                         >
                                             <CheckCircle className="w-4 h-4 mr-2" /> Mark Resolved
                                         </Button>
@@ -438,11 +445,11 @@ export default function AdminDashboardPage() {
                                 {feedback.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="90%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
-                                            { subject: 'Speed', A: feedback.reduce((acc, f) => acc + (f.ratings.speed || 0), 0) / (feedback.filter(f => f.ratings.speed).length || 1), fullMark: 5 },
-                                            { subject: 'Convenience', A: feedback.reduce((acc, f) => acc + (f.ratings.convenience || 0), 0) / (feedback.filter(f => f.ratings.convenience).length || 1), fullMark: 5 },
-                                            { subject: 'Accuracy', A: feedback.reduce((acc, f) => acc + (f.ratings.accuracy || 0), 0) / (feedback.filter(f => f.ratings.accuracy).length || 1), fullMark: 5 },
-                                            { subject: 'Usability', A: feedback.reduce((acc, f) => acc + (f.ratings.usability || 0), 0) / (feedback.filter(f => f.ratings.usability).length || 1), fullMark: 5 },
-                                            { subject: 'Performance', A: feedback.reduce((acc, f) => acc + (f.ratings.performance || 0), 0) / (feedback.filter(f => f.ratings.performance).length || 1), fullMark: 5 },
+                                            { subject: 'Speed', A: feedback.reduce((acc, f) => acc + (f.ratings?.speed || 0), 0) / (feedback.filter(f => f.ratings?.speed).length || 1), fullMark: 5 },
+                                            { subject: 'Convenience', A: feedback.reduce((acc, f) => acc + (f.ratings?.convenience || 0), 0) / (feedback.filter(f => f.ratings?.convenience).length || 1), fullMark: 5 },
+                                            { subject: 'Accuracy', A: feedback.reduce((acc, f) => acc + (f.ratings?.accuracy || 0), 0) / (feedback.filter(f => f.ratings?.accuracy).length || 1), fullMark: 5 },
+                                            { subject: 'Usability', A: feedback.reduce((acc, f) => acc + (f.ratings?.usability || 0), 0) / (feedback.filter(f => f.ratings?.usability).length || 1), fullMark: 5 },
+                                            { subject: 'Performance', A: feedback.reduce((acc, f) => acc + (f.ratings?.performance || 0), 0) / (feedback.filter(f => f.ratings?.performance).length || 1), fullMark: 5 },
                                         ]}>
                                             <PolarGrid stroke="#ffffff30" />
                                             <PolarAngleAxis dataKey="subject" tick={{ fill: '#ffffff80', fontSize: 10 }} />
@@ -467,8 +474,8 @@ export default function AdminDashboardPage() {
                             {/* Stats Cards (Mini) */}
                             {['Speed', 'Convenience', 'Accuracy', 'Usability'].map(metric => {
                                 const key = metric.toLowerCase() as keyof typeof feedback[0]['ratings'];
-                                const valid = feedback.filter(f => f.ratings[key] !== null);
-                                const avg = valid.length ? (valid.reduce((a, b) => a + (b.ratings[key] as number), 0) / valid.length).toFixed(1) : '-';
+                                const valid = feedback.filter(f => f.ratings?.[key] !== undefined && f.ratings?.[key] !== null);
+                                const avg = valid.length ? (valid.reduce((a, b) => a + (Number(b.ratings?.[key]) || 0), 0) / valid.length).toFixed(1) : '-';
                                 return (
                                     <Card key={metric} className="bg-white/5 border-white/10 p-4 flex flex-col justify-center items-center">
                                         <span className="text-white/40 text-xs uppercase mb-1">{metric}</span>
@@ -508,12 +515,12 @@ export default function AdminDashboardPage() {
                                     )}
 
                                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                                        {Object.entries(item.ratings).map(([key, val]) => (
+                                        {Object.entries(item.ratings || {}).map(([key, val]) => (
                                             val !== null && (
                                                 <div key={key} className="flex flex-col items-center bg-black/20 p-2 rounded">
                                                     <span className="text-[10px] uppercase text-white/40">{key}</span>
                                                     <div className="flex items-center gap-1 text-yellow-400 font-bold">
-                                                        {val} <Star className="w-3 h-3 fill-yellow-400" />
+                                                        {Number(val)} <Star className="w-3 h-3 fill-yellow-400" />
                                                     </div>
                                                 </div>
                                             )

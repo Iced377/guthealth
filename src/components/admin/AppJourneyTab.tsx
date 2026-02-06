@@ -99,21 +99,32 @@ export function AppJourneyTab() {
         title: '', date: 'Soon', description: '', iconName: 'Star', status: 'locked', color: 'text-blue-400'
     });
 
-    // Listen to Firestore
+    const [permissionError, setPermissionError] = useState(false);
+
+    // Use getDoc instead of onSnapshot to prevent SDK state corruption on permission-denied
     useEffect(() => {
-        const unsub = onSnapshot(doc(db, 'admin_settings', 'app_journey'), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.milestones && Array.isArray(data.milestones)) {
-                    setMilestones(data.milestones);
+        const loadMilestones = async () => {
+            try {
+                const docSnap = await getDoc(doc(db, 'admin_settings', 'app_journey'));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.milestones && Array.isArray(data.milestones)) {
+                        setMilestones(data.milestones);
+                    }
+                } else {
+                    // Migration: Seed if empty
+                    await seedData();
                 }
-            } else {
-                // Migration: Seed if empty
-                seedData();
+            } catch (err: any) {
+                console.error("Journey Load Error:", err);
+                if (err.code === 'permission-denied') {
+                    setPermissionError(true);
+                }
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
-        });
-        return () => unsub();
+        };
+        loadMilestones();
     }, []);
 
     const seedData = async () => {
@@ -156,8 +167,8 @@ export function AppJourneyTab() {
         };
 
         const updated = milestones.map(m => {
-            if (m.id === id) {
-                return { ...m, status: nextStatus[m.status]! };
+            if (m && m.id === id) {
+                return { ...m, status: nextStatus[m.status] || m.status };
             }
             return m;
         });
@@ -192,6 +203,15 @@ export function AppJourneyTab() {
     };
 
     if (isLoading && milestones.length === 0) return <div className="p-12 text-center text-white/50">Loading Journey...</div>;
+
+    if (permissionError) {
+        return (
+            <div className="w-full min-h-[400px] p-12 flex flex-col items-center justify-center bg-gradient-to-br from-black via-zinc-900 to-black border border-red-500/20 rounded-2xl text-center">
+                <p className="text-red-400 font-bold text-lg mb-2">Permission Denied</p>
+                <p className="text-white/50 text-sm">Unable to load the Journey tab. Your Firestore security rules may need to allow read access to <code className="bg-white/10 px-1 rounded">admin_settings/app_journey</code>.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full min-h-[600px] p-6 md:p-12 relative overflow-hidden bg-gradient-to-br from-black via-zinc-900 to-black border border-white/5 rounded-2xl">
@@ -234,7 +254,7 @@ export function AppJourneyTab() {
                         <Reorder.Group axis="y" values={milestones} onReorder={(newOrder) => {
                             setMilestones(newOrder); // Optimistic visual update
                         }}>
-                            {milestones.map((milestone, index) => {
+                            {milestones.filter(m => m !== null).map((milestone, index) => {
                                 const isLocked = milestone.status === 'locked';
                                 const isCurrent = milestone.status === 'current';
                                 const isCompleted = milestone.status === 'completed';

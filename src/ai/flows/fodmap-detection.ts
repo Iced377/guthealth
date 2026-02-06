@@ -47,6 +47,7 @@ const AnalyzeFoodItemInputSchema = z.object({
   portionUnit: z.string().describe('The unit for the portion, e.g., "g", "cup", "medium apple", "meal". This refers to the overall meal portion unit.'),
   additionalContext: z.string().optional().describe('User-provided context notes (e.g. "Gluten free", "Half portion"). THIS IS THE SOURCE OF TRUTH.'),
   userSafeFoodItems: z.array(SimpleSafeFoodSchema).optional().describe('Optional list of user safe foods to check for similarity.'),
+  feedbackContext: z.string().optional().describe('Optional context about why a previous analysis was incorrect (from the Reflexion Critic).'),
 });
 export type AnalyzeFoodItemInput = z.infer<typeof AnalyzeFoodItemInputSchema>;
 

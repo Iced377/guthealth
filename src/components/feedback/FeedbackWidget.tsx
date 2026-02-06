@@ -53,13 +53,31 @@ export default function FeedbackWidget() {
         });
       }
 
-      const feedbackData: FeedbackSubmissionCreate = {
-        timestamp: Timestamp.now(),
-        feedbackText: data.feedbackText,
+      const feedbackData: any = {
+        uid: user?.uid || null,
+        isGuest: !user,
+        type: (aiAnalysis?.isBug ? 'bug' : aiAnalysis?.isFeatureRequest ? 'feature' : 'improve') as any,
+        createdAt: Timestamp.now(),
+        freeform: data.feedbackText,
         category: data.category || 'Not specified',
         route: pathname,
         status: 'new',
         aiAnalysis: aiAnalysis || null,
+        appVersion: 'v5.3.1', // Defaulting to current version
+        deviceContext: {
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+          platform: 'web',
+          viewportW: typeof window !== 'undefined' ? window.innerWidth : 0,
+          viewportH: typeof window !== 'undefined' ? window.innerHeight : 0,
+        },
+        ratings: {
+          accuracy: null,
+          convenience: null,
+          usability: null,
+          speed: null,
+          performance: null,
+        },
+        didInteract: true
       };
 
       await addDoc(collection(db, 'feedbackSubmissions'), feedbackData);

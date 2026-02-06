@@ -11,16 +11,19 @@ export function useHealthKit() {
             setIsAvailable(available);
             if (available) {
                 // Request permissions if needed.
-                // We wrap this in a try/catch to avoid blocking the UI if the user cancels or it fails.
                 try {
+                    console.log("[Health] Requesting permissions...");
                     await AppleHealthService.requestPermissions();
+                    console.log("[Health] Permissions resolved");
                 } catch (e) {
-                    console.warn("Permission request info:", e);
+                    console.warn("[Health] Permission request info:", e);
                 }
 
-                // Fetch initial data
+                // Fetch initial data - wait for it
+                console.log("[Health] Fetching initial steps...");
                 const steps = await AppleHealthService.getTodaySteps();
-                setHealthData({ steps, distance: 0 }); // AppleHealthService might need update to return distance
+                setHealthData({ steps, distance: 0 });
+                console.log("[Health] Initial steps set:", steps);
             }
         };
         init();

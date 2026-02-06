@@ -72,6 +72,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  // Theme initialization
                   const stored = localStorage.getItem('app-theme-preference');
                   const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   
@@ -80,6 +81,15 @@ export default function RootLayout({
                   } else {
                     document.documentElement.classList.remove('dark');
                   }
+
+                  // Suppress ResizeObserver loop errors (benign warning from third-party libs)
+                  const origError = window.onerror;
+                  window.onerror = function(msg) {
+                    if (typeof msg === 'string' && msg.includes('ResizeObserver loop')) {
+                      return true;
+                    }
+                    return origError ? origError.apply(this, arguments) : false;
+                  };
                 } catch (e) {}
               })();
             `,

@@ -33,7 +33,7 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
             {
                 id: 'welcome-2',
                 title: 'Your Dashboard',
-                content: "This is your home base. Here you'll see your daily summary, recent meals, and quick actions.",
+                content: "Your daily home base. Swipe to see previous days.",
                 targetId: 'dashboard-container',
                 position: 'bottom',
             },
@@ -62,7 +62,7 @@ export const WALKTHROUGH_TOPICS: Record<string, WalkthroughTopic> = {
             {
                 id: 'tour-meal-card-actions',
                 title: 'Actions Menu',
-                content: "Access actions for your meals. Quickly reuse previous meals, log symptoms, toggle favorites, or edit ingredients in seconds.",
+                content: "Tap the 3 dots on any card to access actions like reuse, log symptoms, favorite, or edit.",
                 targetId: 'walkthrough-mock-card-actions',
                 position: 'top',
             },

@@ -8,11 +8,13 @@ import {
   getRedirectResult,
   browserLocalPersistence,
   setPersistence,
+  signInWithCustomToken,
 } from 'firebase/auth';
 import { auth, db } from '@/config/firebase';
 import { doc, getDoc, setDoc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { UserProfile } from '@/types';
@@ -85,19 +87,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               try {
                 const { AppleHealthService } = await import('@/lib/apple-health');
 
-                // Fetch last 30 days history in one go
-                // This ensures we catch up any missing days
+                // CRITICAL: Check availability first
+                const available = await AppleHealthService.isAvailable();
+                if (!available) {
+                  console.log("[HealthSync] Apple Health not available on this device/platform");
+                  return;
+                }
+
+                // Fetch history - the service itself now catches errors and returns {} safely
+                console.log("[HealthSync] Fetching 30-day history...");
                 const history = await AppleHealthService.getDailyStepsHistory(30);
+
+                if (!history || Object.keys(history).length === 0) {
+                  console.log("[HealthSync] No history returned (might be pending permission).");
+                  return;
+                }
 
                 const batchPromises = Object.entries(history).map(async ([dateKey, steps]) => {
                   const syncDocId = `apple_health_${dateKey}`;
-                  const entryDate = new Date(dateKey); // Local YYYY-MM-DD to date object (will be 00:00 local usually, or UTC 00:00 depending on browser? verifying...)
-                  // Actually new Date('2023-01-01') is UTC. 
-                  // But we want to store it effectively. Firestore timestamps are UTC.
-                  // If we constructed dateKey as local YYYY-MM-DD, new Date(dateKey) might shift.
-                  // Safest to parse manual:
                   const [y, m, d] = dateKey.split('-').map(Number);
-                  const localDate = new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid timezone edge cases
+                  const localDate = new Date(y, m - 1, d, 12, 0, 0);
 
                   return setDoc(doc(db, 'users', targetUser.uid, 'timelineEntries', syncDocId), {
                     id: syncDocId,
@@ -115,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await Promise.all(batchPromises);
                 console.log(`Health sync: synced ${Object.keys(history).length} days`);
               } catch (healthError) {
-                console.error("Apple Health sync internal error:", healthError);
+                console.warn("[HealthSync] Sync suppressed safely:", healthError);
               }
             }
           }
@@ -140,6 +149,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     };
     setupAppListener();
+
+    // CRITICAL: Check Capacitor plugin auth state on mount
+    // The plugin may have authenticated the user natively, but Firebase JS SDK doesn't know
+    const checkPluginAuthState = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          console.log("[AuthProvider] Checking Capacitor plugin auth state...");
+          const { user: pluginUser } = await FirebaseAuthentication.getCurrentUser();
+
+          if (pluginUser && !auth.currentUser) {
+            console.log("[AuthProvider] Found natively authenticated user:", pluginUser.uid);
+            console.log("[AuthProvider] Exchanging token with Firebase JS SDK...");
+
+            // Get ID token from plugin
+            const { token: idToken } = await FirebaseAuthentication.getIdToken();
+
+            try {
+              // Exchange plugin token for custom token
+              const response = await fetch('/api/auth/exchange-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+              });
+
+              if (!response.ok) {
+                throw new Error(`Token exchange failed: ${response.statusText}`);
+              }
+
+              const { customToken } = await response.json();
+
+              // Sign in with custom token - this sets auth.currentUser!
+              await signInWithCustomToken(auth, customToken);
+
+              console.log("[AuthProvider] Successfully signed in with custom token");
+              console.log("[AuthProvider] Firebase JS SDK now recognizes user:", (auth.currentUser as any)?.uid);
+
+              // Sync session cookie for server-side auth
+              await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+              });
+
+              console.log("[AuthProvider] Session cookie synced");
+
+              // onAuthStateChanged will fire automatically and set the user
+            } catch (error) {
+              console.error("[AuthProvider] Failed to exchange token:", error);
+              setAuthLoading(false);
+            }
+          }
+        } catch (error) {
+          console.log("[AuthProvider] No plugin user found or error:", error);
+        }
+      }
+    };
+
+    checkPluginAuthState();
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -229,8 +296,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (authLoading || profileLoading) return;
 
     if (user) {
+      // CRITICAL: Only check setup status if profile has actually loaded
+      // Otherwise we get a race condition where we redirect before profile loads
+      if (!userProfile) {
+        console.log("[AuthProvider] Waiting for profile to load before checking setup...");
+        return; // Don't redirect yet, profile is still loading
+      }
+
       // If user is logged in, check if they have completed setup
       const hasCompletedSetup = userProfile?.profile?.hasCompletedSetup;
+
+      console.log("[AuthProvider] Setup check:", {
+        hasCompletedSetup,
+        userProfile: !!userProfile,
+        profileKeys: userProfile ? Object.keys(userProfile) : [],
+        pathname,
+        uid: user.uid
+      });
 
       // If not completed setup, and not on setup page, redirect
       if (!hasCompletedSetup && pathname !== '/setup') {

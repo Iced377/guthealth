@@ -10,8 +10,8 @@ build/
 out/
 
 # Mobile Platforms (Heavy generated code)
-ios/
-android/
+# ios/
+# android/
 
 # Large Assets
 public/videos/
