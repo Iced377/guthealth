@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
-import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, Timestamp, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { UserProfile, TimelineEntry, LoggedFoodItem, TimeRange, CaloriePoint, WeightPoint, ActivityPoint } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { startOfDay, endOfDay, subDays, subMonths, subYears, formatISO, parseISO, getHours, format } from 'date-fns';
@@ -110,39 +110,57 @@ export default function TrendsPage() {
   const calorieDragControls = useDragControls();
   const weightDragControls = useDragControls();
 
-  // Fetch Data
-  const fetchData = useCallback(async () => {
-    if (!user) return;
-    setIsLoadingData(true);
-    try {
-      // Profile for Goals
-      const userDocSnap = await getDoc(doc(db, 'users', user.uid));
-      if (userDocSnap.exists()) {
-        setUserProfile(userDocSnap.data() as UserProfile);
+  // Fetch Data (Realtime & Offline First)
+  useEffect(() => {
+    if (!user || authLoading) return;
+
+    let unsubscribe = () => { };
+
+    const setupListener = async () => {
+      setIsLoadingData(true);
+      try {
+        // Profile for Goals
+        const userDocSnap = await getDoc(doc(db, 'users', user.uid));
+        if (userDocSnap.exists()) {
+          setUserProfile(userDocSnap.data() as UserProfile);
+        }
+
+        // Timeline Data
+        const entriesColRef = collection(db, 'users', user.uid, 'timelineEntries');
+        // OPTIMIZATION: Fetch only last 90 days initially to speed up load.
+        // TODO: Implement pagination or separate "Load All" action for deep history.
+        const timeRangeStart = subDays(new Date(), 90);
+        const q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(timeRangeStart)));
+
+        // Use onSnapshot for offline-first loading (shows cache instantly)
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetchedEntries = snapshot.docs.map(docSnap => ({
+            ...docSnap.data(),
+            id: docSnap.id,
+            timestamp: (docSnap.data().timestamp as Timestamp).toDate(),
+          })) as TimelineEntry[];
+
+          setTimelineEntries(fetchedEntries);
+          setIsLoadingData(false);
+        }, (err) => {
+          console.error("Trends fetch error:", err);
+          setError("Could not load metrics.");
+          setIsLoadingData(false);
+        });
+
+      } catch (err) {
+        console.error("Trends setup error:", err);
+        setError("Could not initialize metrics.");
+        setIsLoadingData(false);
       }
+    };
 
-      // Timeline Data
-      const entriesColRef = collection(db, 'users', user.uid, 'timelineEntries');
-      // Fetch reasonably far back (1Y+) to support typical ranges. 
-      // For truly "ALL" or "Custom" far back, pagination would be ideal, but for now 1Y or 2Y is safe.
-      const twoYearsAgo = subYears(new Date(), 2);
-      const q = query(entriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoYearsAgo)));
+    setupListener();
 
-      const querySnapshot = await getDocs(q);
-      const fetchedEntries = querySnapshot.docs.map(docSnap => ({
-        ...docSnap.data(),
-        id: docSnap.id,
-        timestamp: (docSnap.data().timestamp as Timestamp).toDate(),
-      })) as TimelineEntry[];
-
-      setTimelineEntries(fetchedEntries);
-    } catch (err) {
-      console.error("Trends fetch error:", err);
-      setError("Could not load metrics.");
-    } finally {
-      setIsLoadingData(false);
-    }
-  }, [user]);
+    return () => {
+      unsubscribe();
+    };
+  }, [user, authLoading]);
 
   // Nav Control
   const { isNavVisible, setNavVisible, navLockReason } = useNavVisibility();
@@ -194,9 +212,6 @@ export default function TrendsPage() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [navLockReason, setNavVisible]);
 
-  useEffect(() => {
-    if (!authLoading && user) fetchData();
-  }, [user, authLoading, fetchData]);
 
   // Filtering
   const filteredEntries = useMemo(() => {

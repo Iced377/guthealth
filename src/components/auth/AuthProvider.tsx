@@ -15,6 +15,7 @@ import { doc, getDoc, setDoc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { UserProfile } from '@/types';
@@ -323,6 +324,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [user, userProfile, authLoading, profileLoading, pathname, router]);
+
+  // HIDE SPLASH SCREEN WHEN READY
+  useEffect(() => {
+    if (!authLoading && !profileLoading) {
+      SplashScreen.hide().catch((err: any) => console.warn("Splash hide error", err));
+    }
+  }, [authLoading, profileLoading]);
 
   const loading = authLoading; // Redirect check is now background only. Profile check handles itself logic below.
   // Let's keep initial loading blocking to prevent flash of content before redirect

@@ -1,6 +1,6 @@
 
 import type { Metadata, Viewport } from 'next';
-// Removed 'Inter' from 'next/font/google' to load it directly
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
@@ -14,7 +14,11 @@ import WalkthroughStage from '@/components/walkthrough/WalkthroughStage';
 import { GlobalNavigationLayout } from '@/components/layout/GlobalNavigationLayout';
 import NetworkStatusIndicator from '@/components/ui/NetworkStatusIndicator';
 
-// `inter` variable is no longer needed here
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -60,12 +64,6 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#27AE60" />
-        {/* Direct link to Google Fonts for Inter */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        {/* Preload critical hero video for instant playback on iOS */}
-        <link rel="preload" as="video" href="/Intro_Video.mp4" type="video/mp4" />
         <script
           id="theme-script"
           dangerouslySetInnerHTML={{
@@ -96,8 +94,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      {/* Removed the inter.variable class name from the body */}
-      <body suppressHydrationWarning className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">
+      <body suppressHydrationWarning className={`${inter.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground`}>
         <AuthProvider>
           <ThemeProvider>
             <WalkthroughProvider>
