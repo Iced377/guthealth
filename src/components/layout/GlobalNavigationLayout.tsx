@@ -1,25 +1,26 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { ActionProvider, useActionContext } from '@/contexts/ActionContext';
 import { useAuth } from '@/components/auth/AuthProvider';
 import LiquidNavigation from '@/components/navigation/LiquidNavigation';
-import ComposeOverlay from '@/components/compose/ComposeOverlay';
-import IdentifyFoodByPhotoDialog from '@/components/food-logging/IdentifyFoodByPhotoDialog';
-import SymptomLoggingDialog from '@/components/food-logging/SymptomLoggingDialog';
-import LogPreviousMealDialog from '@/components/food-logging/LogPreviousMealDialog';
-import AddManualMacroEntryDialog from '@/components/food-logging/AddManualMacroEntryDialog';
-import AddFoodItemDialog from '@/components/food-logging/AddFoodItemDialog';
-import AddVitalsDialog from '@/components/food-logging/AddVitalsDialog';
 import { COMMON_SYMPTOMS, LoggedFoodItem } from '@/types';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { NavVisibilityProvider } from '@/components/navigation/useNavVisibilityController';
-import ReuseMealMenu from '@/components/navigation/ReuseMealMenu';
-import ReleaseNotesSheet from '@/components/shared/ReleaseNotesSheet';
-import LiveDbIndicator from '@/components/shared/LiveDbIndicator';
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+
+const ComposeOverlay = dynamic(() => import('@/components/compose/ComposeOverlay'), { ssr: false });
+const IdentifyFoodByPhotoDialog = dynamic(() => import('@/components/food-logging/IdentifyFoodByPhotoDialog'), { ssr: false });
+const SymptomLoggingDialog = dynamic(() => import('@/components/food-logging/SymptomLoggingDialog'), { ssr: false });
+const LogPreviousMealDialog = dynamic(() => import('@/components/food-logging/LogPreviousMealDialog'), { ssr: false });
+const AddManualMacroEntryDialog = dynamic(() => import('@/components/food-logging/AddManualMacroEntryDialog'), { ssr: false });
+const AddFoodItemDialog = dynamic(() => import('@/components/food-logging/AddFoodItemDialog'), { ssr: false });
+const AddVitalsDialog = dynamic(() => import('@/components/food-logging/AddVitalsDialog'), { ssr: false });
+const ReleaseNotesSheet = dynamic(() => import('@/components/shared/ReleaseNotesSheet'), { ssr: false });
+const ReuseMealMenu = dynamic(() => import('@/components/navigation/ReuseMealMenu'), { ssr: false });
 
 const NavigationAndDialogs = () => {
     // Initialize Push Notifications
@@ -265,7 +266,6 @@ const NavigationAndDialogs = () => {
                 isOpen={isReleaseNotesOpen}
                 onClose={closeReleaseNotes}
             />
-            <LiveDbIndicator />
         </>
     );
 };

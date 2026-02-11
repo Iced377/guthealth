@@ -526,4 +526,23 @@
   .dark .glass-crystal:hover {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   }
+
+  [data-web-bento="true"] .glass-crystal {
+    box-shadow: none;
+  }
+
+  [data-web-bento="true"] .glass-crystal:hover {
+    box-shadow: none;
+    @apply transform-none;
+  }
+
+  @media (min-width: 768px) {
+    [data-web-bento="true"] .glass-crystal {
+      @apply bg-card/20 backdrop-blur-md;
+    }
+
+    [data-web-bento="true"] .glass-crystal:hover {
+      @apply bg-card/30;
+    }
+  }
 }

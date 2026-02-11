@@ -31,6 +31,79 @@ const SLIDES = [
     { id: 'components', component: ComponentsSlide, title: 'UI Components' },
 ];
 
+const BRAND_EXPORT = {
+    title: 'GutHealth Brand Guidelines',
+    version: 'v5.0.0 • 2026',
+    mission: 'To empower millions to master their gut health through AI-driven insights and radical transparency.',
+    vision: 'A world where nutrition is personalized, health is deciphered, and everyone has a “gut check” on their well-being.',
+    principles: [
+        'Glassmorphism 2.0: Depth through layering with “Liquid Glass” materials.',
+        'Radical Speed: Interactions feel instant; no long loading states.',
+        'Tactile Feedback: Press-in/press-out behavior, no hover dependency.',
+        'Premium Aesthetics: Subtle glows and noise textures.',
+        'Frameless Layout: In dark mode, avoid borders; use surfaces for separation.',
+        'Singular Focus: One goal, one gesture. Avoid competing navigation.',
+    ],
+    logo: {
+        clearSpace: 'Maintain 1x padding around the mark, where x is the icon height.',
+        doNot: [
+            'Do not rotate the logo.',
+            'Do not change the colors (use primary green or white).',
+            'Do not add drop shadows directly to the vector.',
+        ],
+        variations: ['Primary full color', 'Black on white', 'White on black'],
+    },
+    colors: [
+        { name: 'Primary Green', var: '--primary', hex: '#27AE60' },
+        { name: 'Secondary Green', var: '--secondary', hex: '#D9F0E5' },
+        { name: 'Background', var: '--background', hex: '#F7F7F7' },
+        { name: 'Destructive', var: '--destructive', hex: '#EB5757' },
+    ],
+    charts: [
+        { name: 'Chart 1', var: '--chart-1' },
+        { name: 'Chart 2', var: '--chart-2' },
+        { name: 'Chart 3', var: '--chart-3' },
+        { name: 'Chart 4', var: '--chart-4' },
+        { name: 'Chart 5', var: '--chart-5' },
+    ],
+    typography: {
+        family: 'Inter',
+        guidance: 'Keep line lengths between 50–75 characters for readability.',
+        scale: [
+            'H1: text-5xl / font-bold',
+            'H2: text-4xl / font-bold',
+            'H3: text-3xl / font-semibold',
+            'H4: text-2xl / font-semibold',
+            'Body: text-base / font-normal',
+            'Small: text-sm / font-medium',
+            'Tiny: text-xs / font-medium',
+        ],
+        mono: 'Use monospace for UI/code accents.',
+    },
+    motion: [
+        'Pulse Glow: Attention-grabbing elements (AI insights).',
+        'Staggered Fade In: Lists and cards to reduce cognitive load.',
+        'Accordion: Smooth height transitions.',
+    ],
+    iconography: {
+        library: 'Lucide React',
+        stroke: 'Consistent stroke weight (2px), rounded.',
+        active: 'Primary color; subtle fill or glow allowed.',
+        inactive: 'Neutral (white/50 or white/70).',
+    },
+    components: [
+        'Buttons: Primary, Secondary, Outline, Ghost, Destructive.',
+        'Meal Card: Liquid crystal surface, semantic color coding, faint watermark, smart badges.',
+        'Macro Header: Mercury liquid bar, blurred depth icon, hard-light mix, strict palette per macro.',
+        'Interaction: Press scale 0.85, low damping (10–15), haptic tick on mobile.',
+    ],
+    dataExperience: [
+        'Full-screen immersion for charts (100dvh).',
+        'Organic fluidity: spring physics, avoid rigid tweens.',
+        'Minimum viable data: hide grid/axes unless scrubbing; show only the key metric.',
+    ],
+};
+
 export function BrandDeck({ onClose }: { onClose?: () => void }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showControls, setShowControls] = useState(true);
@@ -99,13 +172,101 @@ export function BrandDeck({ onClose }: { onClose?: () => void }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentIndex, onClose, showControls]);
 
-    const handleExport = () => {
-        const text = `BRAND GUIDELINES EXPORT\nGenerated: ${new Date().toLocaleDateString()}\n... (Full export content)`;
-        navigator.clipboard.writeText(text);
-        toast({
-            title: "Exported to Clipboard",
-            description: "Brand guidelines text is ready to paste."
-        });
+    const handleExport = async () => {
+        const generated = new Date().toLocaleDateString();
+        const text = [
+            `${BRAND_EXPORT.title}`,
+            `Version: ${BRAND_EXPORT.version}`,
+            `Generated: ${generated}`,
+            '',
+            'Mission',
+            `- ${BRAND_EXPORT.mission}`,
+            '',
+            'Vision',
+            `- ${BRAND_EXPORT.vision}`,
+            '',
+            'Design Principles',
+            ...BRAND_EXPORT.principles.map(p => `- ${p}`),
+            '',
+            'Logo Guidelines',
+            `- Clear space: ${BRAND_EXPORT.logo.clearSpace}`,
+            '- Do not:',
+            ...BRAND_EXPORT.logo.doNot.map(d => `  - ${d}`),
+            `- Variations: ${BRAND_EXPORT.logo.variations.join(', ')}`,
+            '',
+            'Color Palette',
+            ...BRAND_EXPORT.colors.map(c => `- ${c.name} (${c.var}): ${c.hex}`),
+            '',
+            'Data Visualization Colors',
+            ...BRAND_EXPORT.charts.map(c => `- ${c.name} (${c.var})`),
+            '',
+            'Typography',
+            `- Family: ${BRAND_EXPORT.typography.family}`,
+            `- Guidance: ${BRAND_EXPORT.typography.guidance}`,
+            `- Scale:`,
+            ...BRAND_EXPORT.typography.scale.map(s => `  - ${s}`),
+            `- Mono: ${BRAND_EXPORT.typography.mono}`,
+            '',
+            'Motion & Animation',
+            ...BRAND_EXPORT.motion.map(m => `- ${m}`),
+            '',
+            'Iconography',
+            `- Library: ${BRAND_EXPORT.iconography.library}`,
+            `- Stroke: ${BRAND_EXPORT.iconography.stroke}`,
+            `- Active: ${BRAND_EXPORT.iconography.active}`,
+            `- Inactive: ${BRAND_EXPORT.iconography.inactive}`,
+            '',
+            'UI Components',
+            ...BRAND_EXPORT.components.map(c => `- ${c}`),
+            '',
+            'Data Experience',
+            ...BRAND_EXPORT.dataExperience.map(d => `- ${d}`),
+            '',
+        ].join('\n');
+        const copyWithFallback = async () => {
+            // Prefer modern clipboard API when available and secure
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+
+            // Fallback for non-secure contexts / older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            const success = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            return success;
+        };
+
+        try {
+            const copied = await copyWithFallback();
+            if (!copied) throw new Error('copy failed');
+            toast({
+                title: "Exported to Clipboard",
+                description: "Brand guidelines text is ready to paste."
+            });
+        } catch (err) {
+            // As a last resort, trigger a text download so export isn't blocked
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'brand-guidelines.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast({
+                title: "Export Downloaded",
+                description: "Clipboard access was blocked, so a text file was downloaded instead."
+            });
+        }
     };
 
     return (
@@ -130,7 +291,7 @@ export function BrandDeck({ onClose }: { onClose?: () => void }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleExport} className="border-white/20 hover:bg-white/10 text-white/80 gap-2 hidden md:flex">
+                    <Button variant="outline" size="sm" onClick={handleExport} className="border-white/20 hover:bg-white/10 text-white/80 gap-2 flex">
                         <Copy className="w-4 h-4" /> <span className="hidden lg:inline">Export Text</span>
                     </Button>
                 </div>

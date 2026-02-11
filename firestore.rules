@@ -102,6 +102,51 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // --- App Performance Metrics ---
+    // Stores client performance measurements (e.g., time to first render).
+    match /app_performance_metrics/{metricId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'ttfrMs', 'createdAt', 'platform', 'isNative', 'userId', 'sessionId'
+        ]) &&
+        (request.resource.data.ttfrMs is int || request.resource.data.ttfrMs is float) &&
+        request.resource.data.ttfrMs >= 0 &&
+        request.resource.data.ttfrMs < 60000;
+
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // --- AI Performance Metrics ---
+    match /ai_performance_metrics/{metricId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'flow', 'durationMs', 'success', 'userId', 'entryId', 'platform', 'createdAt'
+        ]) &&
+        request.resource.data.flow in ['write', 'scan', 'reuse'] &&
+        (request.resource.data.durationMs is int || request.resource.data.durationMs is float) &&
+        request.resource.data.durationMs >= 0 &&
+        request.resource.data.durationMs < 120000;
+
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // --- AI Telemetry Events ---
+    match /ai_telemetry_events/{eventId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'type', 'userId', 'entryId', 'reason', 'meta', 'timestamp'
+        ]) &&
+        request.resource.data.type in [
+          'recalc_skipped',
+          'override_persisted_after_edit',
+          'missing_macros',
+          'missing_health_tags',
+          'hallucination_flagged'
+        ];
+
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
     // --- Default Deny ---
     // Explicitly deny access to any other potential collections not listed here.
     match /{document=**} {

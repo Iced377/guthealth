@@ -1,17 +1,15 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link'; // Keep if used in Beta Message? No, Beta Message uses HTML tags in previous code.
+import dynamic from 'next/dynamic';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
 import GradientText from '@/components/shared/GradientText';
-import Navbar from '@/components/shared/Navbar';
-import GuestHomePage from '@/components/guest/GuestHomePage';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import LiquidHeader from '@/components/navigation/LiquidHeader';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useActionContext } from '@/contexts/ActionContext';
 import type { TimelineEntry, DailyNutritionSummary } from '@/types';
+import { Capacitor } from '@capacitor/core';
 
 // Helper
 const groupEntriesByDate = (entries: TimelineEntry[]) => {
@@ -26,6 +24,11 @@ const groupEntriesByDate = (entries: TimelineEntry[]) => {
   });
   return grouped;
 };
+
+const LandingPage = dynamic(() => import('@/components/guest/LandingPage'), {
+  ssr: false,
+  loading: () => <div className="min-h-screen bg-background" />
+});
 
 export default function RootPage() {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -50,6 +53,17 @@ export default function RootPage() {
 
   // Dashboard Date State (Hoisted for Header)
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isWideLayout, setIsWideLayout] = useState(false);
+
+  useEffect(() => {
+    const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    return () => window.removeEventListener('resize', updateLayout);
+  }, []);
+
+  const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
+  const enableWebBento = !isIOS && isWideLayout;
 
   // Guest Logic: Open Sheet when a NEW item is added to timeline (length increases)
   const [prevTimelineLength, setPrevTimelineLength] = useState(0);
@@ -130,15 +144,35 @@ export default function RootPage() {
 
   if (!authUser && !authLoading) {
     return (
-      <LandingPageStructure />
+      <LandingPage />
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <LiquidHeader title={format(currentDate, 'EEEE, MMM d')} />
+    <div
+      className={enableWebBento ? "min-h-screen flex flex-col text-foreground bg-[#0b0f14]" : "min-h-screen flex flex-col bg-background text-foreground"}
+      data-web-bento={enableWebBento ? "true" : undefined}
+    >
+      {enableWebBento && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            backgroundColor: '#0b0f14',
+            backgroundImage: [
+              'radial-gradient(600px 600px at 12% 8%, rgba(39,174,96,0.22), transparent 60%)',
+              'radial-gradient(520px 520px at 88% 12%, rgba(217,240,229,0.18), transparent 60%)',
+              'radial-gradient(700px 700px at 20% 85%, rgba(42,157,143,0.20), transparent 60%)',
+              'radial-gradient(640px 640px at 82% 78%, rgba(38,70,83,0.20), transparent 60%)',
+              'radial-gradient(520px 520px at 70% 40%, rgba(233,196,106,0.16), transparent 60%)',
+              'radial-gradient(560px 560px at 35% 55%, rgba(244,162,97,0.14), transparent 60%)',
+              'radial-gradient(500px 500px at 60% 20%, rgba(235,87,87,0.12), transparent 60%)'
+            ].join(',')
+          }}
+        />
+      )}
+      {!enableWebBento && <LiquidHeader title={format(currentDate, 'EEEE, MMM d')} />}
 
-      <div id="dashboard-container" className="flex-grow flex flex-col items-center justify-start pb-24">
+      <div id="dashboard-container" className={enableWebBento ? "relative z-10 flex-grow flex flex-col items-center justify-start pb-24" : "flex-grow flex flex-col items-center justify-start pb-24"}>
         <DashboardContent
           userProfile={userProfile!}
           isLoading={isDataLoading}
@@ -160,96 +194,6 @@ export default function RootPage() {
           onDateChange={setCurrentDate}
         />
       </div>
-    </div>
-  );
-}
-
-// --- LANDING PAGE REFRACTOR ---
-import { HeroSection, ProblemSection, StorySection, FeatureGrid, SecuritySection, FinalCTA } from '@/components/about/AboutSections';
-import { useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LogIn } from 'lucide-react';
-import { version } from '../../package.json'; // Ensure this path is correct based on project structure
-
-const MotionLink = motion.create(Link);
-
-function LandingPageStructure() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(true);
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!scrollRef.current) return;
-
-      const currentScrollY = scrollRef.current.scrollTop;
-      const isScrollingUp = currentScrollY < lastScrollY.current;
-      const isAtTop = currentScrollY < 50; // Always show at very top
-
-      if (isAtTop || isScrollingUp) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-        setIsVisible(false);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-    }
-
-    return () => {
-      if (scrollElement) {
-        scrollElement.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, []);
-
-  return (
-    <div ref={scrollRef} className="fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45]">
-      {/* Version Display (Top Left) */}
-      <div className="fixed top-14 left-6 z-50 pointer-events-none opacity-50 text-xs font-mono text-muted-foreground">
-        v{version}
-      </div>
-
-      {/* Floating Action Buttons (Top Right) */}
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed top-14 right-6 z-50 flex flex-col items-end gap-3"
-          >
-            <Link
-              href="/login"
-              className="px-4 py-2 rounded-full bg-background/50 backdrop-blur-md border border-white/10 text-sm font-medium text-foreground hover:bg-background/80 shadow-sm flex items-center gap-2 transition-transform hover:scale-105 active:scale-95"
-            >
-              Start / Login
-              <LogIn className="w-4 h-4" />
-            </Link>
-
-            <Link
-              href="/support"
-              className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors px-2"
-            >
-              Need Help?
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <main>
-        <HeroSection />
-        <ProblemSection scrollContainerRef={scrollRef} />
-        <StorySection />
-        <FeatureGrid />
-        <SecuritySection />
-        <FinalCTA isLoggedIn={false} />
-      </main>
     </div>
   );
 }

@@ -43,7 +43,7 @@ const processMealDescriptionGenkitPrompt = ai.definePrompt({
   input: { schema: ProcessMealDescriptionInputSchema },
   output: { schema: ProcessMealDescriptionOutputSchema },
   config: {
-    temperature: 0.5,
+    temperature: 0,
   },
   prompt: `You are an expert food analyst and a witty meal namer.
 Analyze the meal description: "{{{mealDescription}}}"
@@ -61,6 +61,13 @@ Tasks:
 3.  'consolidatedIngredients': Comma-separated list of all significant ingredients.
 4.  'estimatedPortionSize' & 'estimatedPortionUnit': Overall estimate for the entire meal.
     *   If description implies a standard single serving (e.g., "Big Mac meal"), use '1' and 'serving' or 'meal', unless explicitly multiple servings are stated.
+
+KNOWN MEAL NORMALIZATION (CONSISTENCY RULES):
+* If the meal is a known branded meal AND the user did NOT specify size/portion or customizations, normalize to a stable standard.
+* Example: "Big Mac meal" -> consolidatedIngredients: "Big Mac, fries, soda"; estimatedPortionSize: "1"; estimatedPortionUnit: "meal".
+* If the user specifies size or customization, DO NOT normalize. Preserve their specifics.
+  - Size keywords: small, medium, large, kids, xl, double, single.
+  - Customizations: "no cheese", "no bun", "diet", "zero", "extra", "add", "substitute", explicit quantities (e.g., "2", "large fries").
 
 Adhere strictly to the schema. For 'primaryFoodItemForAnalysis', be factual and preserve user quantities/additions.
 

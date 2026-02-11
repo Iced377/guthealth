@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
+import { Capacitor } from '@capacitor/core';
 
 const PAGE_TITLES: Record<string, string> = {
     '/': 'Dashboard',
@@ -33,6 +34,17 @@ export default function LiquidHeader({ className, title }: LiquidHeaderProps) {
     const pathname = usePathname();
 
     const pageTitle = title || PAGE_TITLES[pathname] || 'GutCheck';
+    const [isWideLayout, setIsWideLayout] = useState(false);
+
+    useEffect(() => {
+        const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
+        updateLayout();
+        window.addEventListener('resize', updateLayout);
+        return () => window.removeEventListener('resize', updateLayout);
+    }, []);
+
+    const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
+    const enableWebFrame = !isIOS && isWideLayout;
 
     return (
         <motion.header
@@ -53,7 +65,7 @@ export default function LiquidHeader({ className, title }: LiquidHeaderProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
         >
-            <div className="flex h-11 items-center justify-between px-4">
+            <div className={cn("flex h-11 items-center justify-between px-4", enableWebFrame && "mx-auto w-full max-w-5xl px-6")}>
                 {/* Left: Spacer for balance */}
                 <div className="w-8" />
 

@@ -41,11 +41,10 @@ export interface AISummaries {
 }
 
 export type ExtendedAnalyzeFoodItemOutput = OriginalAnalyzeFoodItemOutput & {
-  glycemicIndexInfo?: GlycemicIndexInfo;
-  dietaryFiberInfo?: DietaryFiberInfo;
-
-  gutBacteriaImpact?: GutBacteriaImpactInfo;
-  ketoFriendliness?: KetoFriendlinessInfo; // Added Keto
+  glycemicIndexInfo: GlycemicIndexInfo;
+  dietaryFiberInfo: DietaryFiberInfo;
+  gutBacteriaImpact: GutBacteriaImpactInfo;
+  ketoFriendliness: KetoFriendlinessInfo; // Added Keto
   detectedAllergens?: string[];
   aiSummaries?: AISummaries;
 };
@@ -137,6 +136,7 @@ export interface PedometerLog {
   floorsAscended?: number;
   activeEnergy?: number; // kcal
   source?: 'pedometer_plus_plus' | 'apple_health' | 'manual';
+  syncedAt?: Date;
 }
 
 export type TimelineEntry = LoggedFoodItem | SymptomLog | FitbitLog | PedometerLog;
@@ -316,5 +316,3 @@ export interface AIInsight {
   timestamp: Date;
   read: boolean;
 }
-
-

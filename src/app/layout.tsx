@@ -8,11 +8,11 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 // FeedbackWidget moved to Navbar for unified BottomActionBar
 import CookieConsentBanner from '@/components/shared/CookieConsentBanner';
 import AnalyticsWithConsent from '@/components/shared/AnalyticsWithConsent';
+import AppPerformanceTracker from '@/components/analytics/AppPerformanceTracker';
 import { WalkthroughProvider } from '@/contexts/WalkthroughContext';
-import WalkthroughOverlay from '@/components/walkthrough/WalkthroughOverlay';
-import WalkthroughStage from '@/components/walkthrough/WalkthroughStage';
 import { GlobalNavigationLayout } from '@/components/layout/GlobalNavigationLayout';
 import NetworkStatusIndicator from '@/components/ui/NetworkStatusIndicator';
+import WalkthroughLazyClient from '@/components/walkthrough/WalkthroughLazyClient';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -71,6 +71,7 @@ export default function RootLayout({
               (function() {
                 try {
                   // Theme initialization
+                  window.__APP_START_TS = window.__APP_START_TS || performance.now();
                   const stored = localStorage.getItem('app-theme-preference');
                   const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   
@@ -103,8 +104,7 @@ export default function RootLayout({
                 <main className="flex-grow w-full">
                   {children}
                 </main>
-                <WalkthroughStage />
-                <WalkthroughOverlay />
+                <WalkthroughLazyClient />
                 <Toaster />
 
                 <CookieConsentBanner />
@@ -113,6 +113,7 @@ export default function RootLayout({
           </ThemeProvider>
         </AuthProvider>
         <AnalyticsWithConsent />
+        <AppPerformanceTracker />
         {/* {gaId && <GoogleAnalytics gaId={gaId} />} */}
       </body>
     </html>

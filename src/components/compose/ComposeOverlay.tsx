@@ -24,6 +24,7 @@ const simplifiedFoodLogSchema = z.object({
     protein: z.string().optional(),
     carbs: z.string().optional(),
     fat: z.string().optional(),
+    macrosOverrideEnabled: z.boolean().optional(),
     // New internal fields for chips
     date: z.date().optional(),
     time: z.string().optional(),
@@ -139,6 +140,7 @@ export default function ComposeOverlay({
             protein: '',
             carbs: '',
             fat: '',
+            macrosOverrideEnabled: false,
         }
     });
 
@@ -164,6 +166,7 @@ export default function ComposeOverlay({
                     protein: initialValues.protein?.toString() ?? '',
                     carbs: initialValues.carbs?.toString() ?? '',
                     fat: initialValues.fat?.toString() ?? '',
+                    macrosOverrideEnabled: initialMacrosOverridden,
                     date: initialTimestamp || new Date(),
                     time: initialTimestamp ? formatTimeToHHMM(initialTimestamp) : '',
                 });
@@ -178,6 +181,7 @@ export default function ComposeOverlay({
                     protein: '',
                     carbs: '',
                     fat: '',
+                    macrosOverrideEnabled: false,
                 });
             }
         }
@@ -244,8 +248,7 @@ export default function ComposeOverlay({
                 fat: parseNumber(data.fat),
             };
 
-            const userEnteredMacros = !!(submittedData.calories || submittedData.protein || submittedData.carbs || submittedData.fat);
-            const shouldOverride = userEnteredMacros || initialMacrosOverridden;
+            const shouldOverride = !!data.macrosOverrideEnabled;
 
             await onSubmitLog(submittedData, shouldOverride, finalTimestamp);
             if (!isEditing) reset();

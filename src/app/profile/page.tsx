@@ -676,10 +676,18 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium text-foreground">Apple Health</span>
-                                        <span className="text-xs text-muted-foreground">Sync steps</span>
+                                        <span className="text-xs text-muted-foreground">Sync steps via HealthKit</span>
                                     </div>
                                 </div>
                                 <Switch checked={isAppleHealthConnected} onCheckedChange={handleAppleHealthToggle} disabled={isTogglingAppleHealth} />
+                            </div>
+                        )}
+
+                        {Capacitor.getPlatform() === 'ios' && (
+                            <div className="px-4 pb-3 -mt-2">
+                                <span className="text-[10px] text-muted-foreground/80 leading-relaxed block">
+                                    Apple Health integration uses HealthKit to access your steps data when enabled.
+                                </span>
                             </div>
                         )}
 

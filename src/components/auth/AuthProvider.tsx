@@ -337,7 +337,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ user, loading, userProfile }), [user, loading, userProfile]);
 
-  if (loading || (user && profileLoading)) { // Block until profile is checked
+  if (loading) { // Block until auth is checked
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background">
         {/* Custom Pulse Loader */}

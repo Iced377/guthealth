@@ -36,6 +36,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useNavVisibility } from '@/components/navigation/useNavVisibilityController';
 import { APP_VERSION } from '@/config/releaseNotes';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
+import { Capacitor } from '@capacitor/core';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -199,6 +200,17 @@ export default function LiquidNavigation({
     const { isDarkMode, toggleDarkMode } = useTheme();
     const { isNavVisible } = useNavVisibility();
     const { currentStep, isWalkthroughActive } = useWalkthrough();
+    const [isWideLayout, setIsWideLayout] = useState(false);
+
+    useEffect(() => {
+        const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
+        updateLayout();
+        window.addEventListener('resize', updateLayout);
+        return () => window.removeEventListener('resize', updateLayout);
+    }, []);
+
+    const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
+    const enableWebBento = !isIOS && isWideLayout;
 
     // Panel states
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
@@ -409,7 +421,12 @@ export default function LiquidNavigation({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate" // Bumped Z & added isolation
+                        className={cn(
+                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            enableWebBento
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                        )} // Bumped Z & added isolation
                         style={{
                             transform: 'translateZ(0)',
                             willChange: 'opacity, transform',
@@ -486,7 +503,12 @@ export default function LiquidNavigation({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate"
+                        className={cn(
+                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            enableWebBento
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                        )}
                         style={{
                             transform: 'translateZ(0)',
                             willChange: 'opacity, transform',
@@ -560,7 +582,12 @@ export default function LiquidNavigation({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate"
+                        className={cn(
+                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            enableWebBento
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                        )}
                         style={{
                             transform: 'translateZ(0)',
                             willChange: 'opacity, transform',
@@ -632,7 +659,12 @@ export default function LiquidNavigation({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
-                        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex justify-center gap-3 isolation-isolate"
+                        className={cn(
+                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            enableWebBento
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                        )}
                         style={{
                             transform: 'translateZ(0)',
                             willChange: 'opacity, transform',
@@ -705,16 +737,17 @@ export default function LiquidNavigation({
             {/* 1. NavShell: Static Container (No Animations) - Now Animated for Hide/Show */}
             <motion.div
                 className={cn(
-                    "fixed left-4 right-4 z-50",
-                    // Fix: Use bottom calc to handle safe area instead of padding which crushed the height
-                    "bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
+                    "fixed z-50",
+                    enableWebBento
+                        ? "left-0 right-0 w-[50vw] max-w-[640px] mx-auto bottom-[calc(0.5rem+env(safe-area-inset-bottom))]"
+                        : "left-4 right-4 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
                     "h-16", // CONSTANT HEIGHT (4rem)
                     "rounded-[32px] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)]", // Clipped & Shadowed Container
                     "pointer-events-auto",
-                    "isolate" // Layer isolation
+                    "isolate",
+                    "transform-gpu" // Preserve translate utilities + GPU layer
                 )}
                 style={{
-                    transform: 'translateZ(0)', // Force GPU layer
                     willChange: 'transform, opacity',
                     contain: 'layout paint style'
                 }}

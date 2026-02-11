@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/config/firebase'; // Client SDK for viewing
 import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy, Sparkles, Rocket } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy, Sparkles, Rocket, Timer } from 'lucide-react';
 import { format } from 'date-fns';
-import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ComposedChart, Line, Bar } from 'recharts';
 import type { FeedbackSubmission } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,11 +43,36 @@ interface ContactSubmission {
     createdAt: any;
 }
 
+interface PerformanceSample {
+    id: string;
+    ttfrMs: number;
+    createdAt: Date | null;
+    platform?: string;
+    isNative?: boolean;
+}
+
+interface AiPerformanceMetric {
+    id: string;
+    flow: 'write' | 'scan' | 'reuse';
+    durationMs: number;
+    success: boolean;
+    createdAt: Date | null;
+}
+
+interface AiTelemetryEvent {
+    id: string;
+    type: 'recalc_skipped' | 'override_persisted_after_edit' | 'missing_macros' | 'missing_health_tags' | 'hallucination_flagged';
+    reason?: string;
+    meta?: Record<string, any>;
+    timestamp?: any;
+}
+
 export default function AdminDashboardPage() {
     const { userProfile, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [events, setEvents] = useState<AdminEvent[]>([]);
+    const [activeTab, setActiveTab] = useState('journey');
     const [feedback, setFeedback] = useState<FeedbackSubmission[]>([]);
     const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
     const [loading, setLoading] = useState(true);
@@ -56,6 +81,13 @@ export default function AdminDashboardPage() {
     const [timeRange, setTimeRange] = useState<'7D' | '30D' | '90D' | 'ALL'>('7D');
     const [error, setError] = useState<string | null>(null);
     const [activeUserCount, setActiveUserCount] = useState(0);
+    const [performanceSamples, setPerformanceSamples] = useState<PerformanceSample[]>([]);
+    const [performanceAvgMs, setPerformanceAvgMs] = useState<number | null>(null);
+    const [performanceSeries, setPerformanceSeries] = useState<{ label: string; avgMs: number }[]>([]);
+    const [lastPerformanceSample, setLastPerformanceSample] = useState<PerformanceSample | null>(null);
+    const [aiPerfMetrics, setAiPerfMetrics] = useState<AiPerformanceMetric[]>([]);
+    const [aiTelemetryEvents, setAiTelemetryEvents] = useState<AiTelemetryEvent[]>([]);
+    const [aiPerfFlowFilter, setAiPerfFlowFilter] = useState<'write' | 'scan' | 'both'>('both');
 
     // Data Subscription
     useEffect(() => {
@@ -99,6 +131,69 @@ export default function AdminDashboardPage() {
             setContactSubmissions(data);
         }, (err) => {
             console.error("Contact Submission Error:", err);
+        });
+
+        // 4. App Performance Metrics
+        const perfQuery = query(
+            collection(db, 'app_performance_metrics'),
+            orderBy('createdAt', 'desc'),
+            limit(500)
+        );
+        const unsubPerf = onSnapshot(perfQuery, (snapshot) => {
+            const data = snapshot.docs.map(docSnap => {
+                const raw = docSnap.data() as any;
+                const createdAt = raw.createdAt?.toDate ? raw.createdAt.toDate() : null;
+                const ttfrMs = typeof raw.ttfrMs === 'number' ? raw.ttfrMs : null;
+                if (ttfrMs === null) return null;
+                return {
+                    id: docSnap.id,
+                    ttfrMs,
+                    createdAt,
+                    platform: raw.platform,
+                    isNative: raw.isNative,
+                } as PerformanceSample;
+            }).filter(Boolean) as PerformanceSample[];
+
+            setPerformanceSamples(data);
+        }, (err) => {
+            console.error("Performance Metrics Subscription Error:", err);
+        });
+
+        // 5. AI Performance Metrics
+        const aiPerfQuery = query(
+            collection(db, 'ai_performance_metrics'),
+            orderBy('createdAt', 'desc'),
+            limit(500)
+        );
+        const unsubAiPerf = onSnapshot(aiPerfQuery, (snapshot) => {
+            const data = snapshot.docs.map(docSnap => {
+                const raw = docSnap.data() as any;
+                const createdAt = raw.createdAt?.toDate ? raw.createdAt.toDate() : null;
+                if (typeof raw.durationMs !== 'number' || !raw.flow) return null;
+                return {
+                    id: docSnap.id,
+                    flow: raw.flow,
+                    durationMs: raw.durationMs,
+                    success: !!raw.success,
+                    createdAt,
+                } as AiPerformanceMetric;
+            }).filter(Boolean) as AiPerformanceMetric[];
+            setAiPerfMetrics(data);
+        }, (err) => {
+            console.error("AI Performance Metrics Subscription Error:", err);
+        });
+
+        // 6. AI Telemetry Events
+        const aiTelemetryQuery = query(
+            collection(db, 'ai_telemetry_events'),
+            orderBy('timestamp', 'desc'),
+            limit(200)
+        );
+        const unsubAiTelemetry = onSnapshot(aiTelemetryQuery, (snapshot) => {
+            const data = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as AiTelemetryEvent[];
+            setAiTelemetryEvents(data);
+        }, (err) => {
+            console.error("AI Telemetry Subscription Error:", err);
         });
 
         // 4. User Acquisition (Real Data from Auth)
@@ -161,6 +256,9 @@ export default function AdminDashboardPage() {
             unsubEvents();
             unsubFeedback();
             unsubContact();
+            unsubPerf();
+            unsubAiPerf();
+            unsubAiTelemetry();
         };
     }, [userProfile]);
 
@@ -238,6 +336,99 @@ export default function AdminDashboardPage() {
 
     }, [allUserData, timeRange]);
 
+    const aiPerfSummary = React.useMemo(() => {
+        const flows: Array<'write' | 'scan' | 'reuse'> = ['write', 'scan', 'reuse'];
+        const summary = flows.map(flow => {
+            const items = aiPerfMetrics.filter(m => m.flow === flow);
+            const avgMs = items.length ? Math.round(items.reduce((acc, m) => acc + m.durationMs, 0) / items.length) : null;
+            const successRate = items.length ? Math.round((items.filter(m => m.success).length / items.length) * 100) : null;
+            return { flow, count: items.length, avgMs, successRate };
+        });
+        const recalcSkipped = aiTelemetryEvents.filter(e => e.type === 'recalc_skipped').length;
+        const overridePersisted = aiTelemetryEvents.filter(e => e.type === 'override_persisted_after_edit').length;
+        const missingMacros = aiTelemetryEvents.filter(e => e.type === 'missing_macros').length;
+        const missingHealthTags = aiTelemetryEvents.filter(e => e.type === 'missing_health_tags').length;
+        const hallucinationFlagged = aiTelemetryEvents.filter(e => e.type === 'hallucination_flagged').length;
+        return { summary, recalcSkipped, overridePersisted, missingMacros, missingHealthTags, hallucinationFlagged };
+    }, [aiPerfMetrics, aiTelemetryEvents]);
+
+    const aiLatencySeries = React.useMemo(() => {
+        const filtered = aiPerfMetrics.filter(m => {
+            if (aiPerfFlowFilter === 'both') return m.flow === 'write' || m.flow === 'scan';
+            return m.flow === aiPerfFlowFilter;
+        });
+
+        const buckets: Record<string, { date: string; totalMs: number; count: number }> = {};
+        filtered.forEach(metric => {
+            if (!metric.createdAt) return;
+            const key = format(metric.createdAt, 'yyyy-MM-dd');
+            if (!buckets[key]) {
+                buckets[key] = { date: key, totalMs: 0, count: 0 };
+            }
+            buckets[key].totalMs += metric.durationMs;
+            buckets[key].count += 1;
+        });
+
+        return Object.values(buckets)
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .map(row => ({
+                label: format(new Date(row.date), 'MMM d'),
+                avgMs: row.count ? Math.round(row.totalMs / row.count) : 0,
+                count: row.count
+            }));
+    }, [aiPerfMetrics, aiPerfFlowFilter]);
+
+    useEffect(() => {
+        if (performanceSamples.length === 0) {
+            setPerformanceAvgMs(null);
+            setPerformanceSeries([]);
+            setLastPerformanceSample(null);
+            return;
+        }
+
+        const latest = [...performanceSamples].sort((a, b) => {
+            const at = a.createdAt ? a.createdAt.getTime() : 0;
+            const bt = b.createdAt ? b.createdAt.getTime() : 0;
+            return bt - at;
+        })[0];
+        setLastPerformanceSample(latest || null);
+
+        const sum = performanceSamples.reduce((acc, s) => acc + s.ttfrMs, 0);
+        const avg = Math.round(sum / performanceSamples.length);
+        setPerformanceAvgMs(avg);
+
+        const days = 30;
+        const now = new Date();
+        const start = new Date(now);
+        start.setDate(start.getDate() - (days - 1));
+        start.setHours(0, 0, 0, 0);
+
+        const buckets = new Map<string, { label: string; sum: number; count: number }>();
+        for (let i = 0; i < days; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const key = format(d, 'yyyy-MM-dd');
+            buckets.set(key, { label: format(d, 'MMM d'), sum: 0, count: 0 });
+        }
+
+        performanceSamples.forEach(sample => {
+            if (!sample.createdAt) return;
+            if (sample.createdAt < start) return;
+            const key = format(sample.createdAt, 'yyyy-MM-dd');
+            const bucket = buckets.get(key);
+            if (!bucket) return;
+            bucket.sum += sample.ttfrMs;
+            bucket.count += 1;
+        });
+
+        const series = Array.from(buckets.values()).map(b => ({
+            label: b.label,
+            avgMs: b.count ? Math.round(b.sum / b.count) : 0
+        }));
+
+        setPerformanceSeries(series);
+    }, [performanceSamples]);
+
     const handleResolve = async (id: string) => {
         await updateDoc(doc(db, 'admin_events', id), {
             resolved: true // One way transition usually? Or toggle. Let's make it strict Resolve.
@@ -279,7 +470,7 @@ export default function AdminDashboardPage() {
                 </div>
             </header>
 
-            <Tabs defaultValue="journey" className="w-full space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
                 {/* Scrollable Tab Band */}
                 <div className="w-full overflow-x-auto pb-2 scrollbar-none">
                     <TabsList className="bg-white/5 border-white/10 p-1 h-auto flex justify-start rounded-xl gap-2 w-max min-w-full">
@@ -311,6 +502,11 @@ export default function AdminDashboardPage() {
                             <span>Growth</span>
                         </TabsTrigger>
 
+                        <TabsTrigger value="performance" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <Timer className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>App Perf</span>
+                        </TabsTrigger>
+
                         <TabsTrigger value="brand" className="data-[state=active]:bg-pink-500/20 data-[state=active]:text-pink-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
                             <Sparkles className="w-5 h-5 md:w-4 md:h-4" />
                             <span>Brand Kit</span>
@@ -325,11 +521,174 @@ export default function AdminDashboardPage() {
 
                 {/* Brand Tab */}
                 <TabsContent value="brand" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <BrandTab />
+                    <BrandTab onClose={() => setActiveTab('journey')} />
                 </TabsContent>
 
                 {/* AI Performance Tab (God View) */}
                 <TabsContent value="ai" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <CardTitle className="text-sm uppercase tracking-wider text-purple-200">AI Latency + Volume</CardTitle>
+                                    <CardDescription className="text-white/40">Average latency (line) and prompt count (bars)</CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant={aiPerfFlowFilter === 'write' ? 'default' : 'ghost'}
+                                        className={aiPerfFlowFilter === 'write' ? 'bg-purple-500/30 text-purple-100' : 'text-white/50'}
+                                        onClick={() => setAiPerfFlowFilter('write')}
+                                    >
+                                        Write
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={aiPerfFlowFilter === 'scan' ? 'default' : 'ghost'}
+                                        className={aiPerfFlowFilter === 'scan' ? 'bg-purple-500/30 text-purple-100' : 'text-white/50'}
+                                        onClick={() => setAiPerfFlowFilter('scan')}
+                                    >
+                                        Scan
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={aiPerfFlowFilter === 'both' ? 'default' : 'ghost'}
+                                        className={aiPerfFlowFilter === 'both' ? 'bg-purple-500/30 text-purple-100' : 'text-white/50'}
+                                        onClick={() => setAiPerfFlowFilter('both')}
+                                    >
+                                        Both
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {aiLatencySeries.length === 0 ? (
+                                <div className="text-white/30 italic p-6 text-center border border-white/5 rounded-xl">No AI perf data yet.</div>
+                            ) : (
+                                <div className="h-64">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={aiLatencySeries}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                                            <XAxis dataKey="label" tick={{ fill: '#ffffff80', fontSize: 11 }} />
+                                            <YAxis yAxisId="left" tick={{ fill: '#ffffff80', fontSize: 11 }} />
+                                            <YAxis
+                                                yAxisId="right"
+                                                orientation="right"
+                                                allowDecimals={false}
+                                                tickFormatter={(value) => Math.round(Number(value))}
+                                                tick={{ fill: '#ffffff80', fontSize: 11 }}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{ background: '#111', border: '1px solid #ffffff20', borderRadius: 8 }}
+                                                labelStyle={{ color: '#fff' }}
+                                            />
+                                            <Bar yAxisId="right" dataKey="count" fill="#7c3aed55" radius={[6, 6, 0, 0]} />
+                                            <Line yAxisId="left" type="monotone" dataKey="avgMs" stroke="#a855f7" strokeWidth={2} dot={false} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {aiPerfSummary.summary.map((row) => (
+                            <Card key={row.flow} className="bg-white/5 border-white/10">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm uppercase tracking-wider text-purple-200">{row.flow} flow</CardTitle>
+                                    <CardDescription className="text-white/40">AI latency + reliability</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <div className="text-2xl font-semibold text-white">
+                                        {row.avgMs !== null ? `${row.avgMs} ms` : '—'}
+                                    </div>
+                                    <div className="text-xs text-white/50">Samples: {row.count}</div>
+                                    <div className="text-xs text-white/50">Success: {row.successRate !== null ? `${row.successRate}%` : '—'}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="bg-white/5 border-white/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm uppercase tracking-wider text-purple-200">Recalc Skips</CardTitle>
+                                <CardDescription className="text-white/40">Edits that skipped re-analysis</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-semibold text-white">{aiPerfSummary.recalcSkipped}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-white/5 border-white/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm uppercase tracking-wider text-purple-200">Override Persist</CardTitle>
+                                <CardDescription className="text-white/40">Overrides kept after edits</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-semibold text-white">{aiPerfSummary.overridePersisted}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-white/5 border-white/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm uppercase tracking-wider text-purple-200">Missing Macros</CardTitle>
+                                <CardDescription className="text-white/40">AI returned null macros</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-semibold text-white">{aiPerfSummary.missingMacros}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className="bg-white/5 border-white/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm uppercase tracking-wider text-purple-200">Missing Health Tags</CardTitle>
+                                <CardDescription className="text-white/40">Fiber/Gut/Keto tags missing</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-semibold text-white">{aiPerfSummary.missingHealthTags}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-white/5 border-white/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm uppercase tracking-wider text-purple-200">Hallucinations</CardTitle>
+                                <CardDescription className="text-white/40">Critic flagged issues</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-semibold text-white">{aiPerfSummary.hallucinationFlagged}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-lg font-semibold text-purple-200">AI Telemetry Feed</h2>
+                    </div>
+                    <div className="grid gap-3">
+                        {aiTelemetryEvents.length === 0 && (
+                            <div className="text-white/30 italic p-6 text-center border border-white/5 rounded-xl">No telemetry events recorded yet.</div>
+                        )}
+                        {aiTelemetryEvents.slice(0, 10).map(event => (
+                            <Card key={event.id} className="bg-white/5 border-white/10">
+                                <CardHeader className="pb-2">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-sm text-white">{event.type}</CardTitle>
+                                        <span className="text-xs text-white/40 font-mono">
+                                            {event.timestamp?.toDate ? format(event.timestamp.toDate(), 'PP p') : 'Just now'}
+                                        </span>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {event.reason && <div className="text-xs text-white/60">Reason: {event.reason}</div>}
+                                    {event.meta && (
+                                        <div className="text-xs text-white/40 font-mono mt-2">
+                                            {JSON.stringify(event.meta)}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-bold text-purple-300 flex items-center gap-2">
                             <ShieldCheck className="w-5 h-5" /> Hallucination Feed
@@ -702,6 +1061,116 @@ export default function AdminDashboardPage() {
                             </div>
                         </Card>
                     </div>
+                </TabsContent>
+
+                {/* App Performance Tab */}
+                <TabsContent value="performance" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold text-cyan-300 flex items-center gap-2">
+                                <Timer className="w-5 h-5" /> App Performance Metrics
+                            </h2>
+                            <p className="text-white/50 text-sm">Tracking time to first render across all sessions.</p>
+                        </div>
+                        <div className="text-xs text-white/40">
+                            Samples: {performanceSamples.length}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card className="bg-white/5 border-white/10 overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-white/80 text-sm uppercase tracking-wide">Avg Time To First Render</CardTitle>
+                                <CardDescription className="text-white/40">All users & sessions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-4xl font-bold text-white">
+                                    {performanceAvgMs !== null ? `${performanceAvgMs} ms` : '—'}
+                                </div>
+                                <div className="text-white/50 text-xs mt-2">
+                                    {performanceAvgMs !== null ? `${(performanceAvgMs / 1000).toFixed(2)}s` : 'No data yet'}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/5 border-white/10 overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-white/80 text-sm uppercase tracking-wide">Native vs Web</CardTitle>
+                                <CardDescription className="text-white/40">Sample distribution</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-white/60">Native</span>
+                                    <span className="text-white font-semibold">
+                                        {performanceSamples.filter(s => s.isNative).length}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm mt-2">
+                                    <span className="text-white/60">Web</span>
+                                    <span className="text-white font-semibold">
+                                        {performanceSamples.filter(s => !s.isNative).length}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/5 border-white/10 overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-white/80 text-sm uppercase tracking-wide">30D Trend</CardTitle>
+                                <CardDescription className="text-white/40">Daily avg (ms)</CardDescription>
+                            </CardHeader>
+                            <CardContent className="text-white/60 text-sm">
+                                {performanceSeries.length > 0 ? 'Live chart below' : 'No recent data'}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/5 border-white/10 overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-white/80 text-sm uppercase tracking-wide">Last Reading</CardTitle>
+                                <CardDescription className="text-white/40">Most recent TTFR sample</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-white">
+                                    {lastPerformanceSample ? `${lastPerformanceSample.ttfrMs} ms` : '—'}
+                                </div>
+                                <div className="text-white/50 text-xs mt-2">
+                                    {lastPerformanceSample?.createdAt ? format(lastPerformanceSample.createdAt, 'PP p') : 'No data yet'}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-white">Average Time To First Render</CardTitle>
+                            <CardDescription className="text-white/50">Rolling 30 days</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[320px]">
+                            {performanceSeries.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={performanceSeries}>
+                                        <defs>
+                                            <linearGradient id="ttfrGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.7} />
+                                                <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" opacity={0.12} vertical={false} />
+                                        <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={8} />
+                                        <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#0b0b0f', border: '1px solid #1f2937', borderRadius: '8px' }}
+                                            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                                            formatter={(value: any) => [`${value} ms`, 'Avg TTF Render']}
+                                        />
+                                        <Area type="monotone" dataKey="avgMs" stroke="#22d3ee" fillOpacity={1} fill="url(#ttfrGradient)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-white/40">No data available.</div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>

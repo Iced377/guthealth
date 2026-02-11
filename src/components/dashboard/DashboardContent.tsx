@@ -2,10 +2,10 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { verifyFoodAnalysisFlow } from '@/ai/flows/verify-food-analysis';
-import { Button } from '@/components/ui/button';
-import { Bug } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import DashboardWebBento from './DashboardWebBento';
 
 
 // Lazy load heavy interactive components
@@ -77,6 +77,19 @@ export default function DashboardContent({
 
     const { startWalkthrough } = useWalkthrough();
     const { healthData } = useHealthKit();
+    const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
+    const [isWideLayout, setIsWideLayout] = useState(false);
+
+    React.useEffect(() => {
+        const updateLayout = () => {
+            setIsWideLayout(window.innerWidth >= 1024);
+        };
+        updateLayout();
+        window.addEventListener('resize', updateLayout);
+        return () => window.removeEventListener('resize', updateLayout);
+    }, []);
+
+    const enableWebBento = !isIOS && isWideLayout;
 
     // Scroll to New Item Logic
     React.useEffect(() => {
@@ -195,20 +208,64 @@ export default function DashboardContent({
         return null;
     }, [sortedEntries]);
 
-    if (!userProfile) return null;
+    if (!userProfile || isLoading) {
+        return (
+            <div className="w-full flex flex-col gap-6 px-4 md:px-8">
+                {/* Header Skeleton */}
+                <div className="w-full h-24 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse" />
+
+                {/* Vitals Skeleton (Steps) */}
+                <div className="w-full h-16 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse flex items-center justify-center">
+                    <div className="h-2 w-32 bg-white/10 rounded-full" />
+                </div>
+
+                {/* Feed Skeleton */}
+                <div className="flex-1 flex flex-col gap-4">
+                    {[1, 2].map((i) => (
+                        <div key={i} className="w-full h-40 rounded-3xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse p-4 space-y-4 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
+                            <div className="flex justify-between items-start">
+                                <div className="h-6 w-48 bg-white/10 rounded-lg" />
+                                <div className="h-8 w-8 rounded-full bg-white/10" />
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                <div className="h-4 w-12 bg-white/10 rounded-full" />
+                            </div>
+                        </div>
+                    ))}
+
+                    <div className="flex items-center justify-center py-4">
+                        <p className="text-xs font-medium text-muted-foreground animate-pulse">
+                            {(isIOS && userProfile?.profile?.appleHealthEnabled) ? 'Syncing your health data...' : 'Loading your dashboard...'}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div id="dashboard-container" className="flex flex-col h-full w-full relative overflow-hidden bg-background">
+        <div
+            id="dashboard-container"
+            className={cn(
+                "flex flex-col w-full relative",
+                enableWebBento ? "min-h-screen overflow-visible bg-transparent" : "h-full overflow-hidden bg-background"
+            )}
+        >
 
 
-            {/* Background Gradient Mesh */}
-            <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
-            </div>
+            {/* Background Gradient Mesh (skip on web bento; global background handles it) */}
+            {!enableWebBento && (
+                <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
+                </div>
+            )}
 
             {isLoading ? (
-                <div className="flex flex-col h-full w-full p-4 gap-6 mt-4 relative z-10">
+                <div className={cn("flex flex-col h-full w-full p-4 gap-6 mt-4 relative z-10", enableWebBento && "max-w-6xl mx-auto px-8")}>
                     {/* Header Skeleton (Macros) */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
                         {[1, 2, 3, 4].map((i) => (
@@ -242,11 +299,30 @@ export default function DashboardContent({
 
                         <div className="flex items-center justify-center py-4">
                             <p className="text-xs font-medium text-muted-foreground animate-pulse">
-                                Syncing your health data...
+                                {(isIOS && userProfile?.profile?.appleHealthEnabled) ? 'Syncing your health data...' : 'Loading your dashboard...'}
                             </p>
                         </div>
                     </div>
                 </div>
+            ) : enableWebBento ? (
+                <DashboardWebBento
+                    currentDate={currentDate}
+                    onDateChange={onDateChange}
+                    summary={getSummaryForDate(currentDate)}
+                    timelineEntries={sortedEntries}
+                    stepsData={getStepsForDate(currentDate)}
+                    weightData={getWeightForDate(currentDate)}
+                    isToday={isSameDay(currentDate, new Date())}
+                    isLoadingAi={isLoadingAi}
+                    onSetFeedback={onSetFeedback}
+                    onRemoveTimelineEntry={onRemoveTimelineEntry}
+                    onLogSymptomsForFood={onLogSymptomsForFood}
+                    onEditIngredients={onEditIngredients}
+                    onRepeatMeal={onRepeatMeal}
+                    onToggleFavorite={onToggleFavorite}
+                    userProfile={userProfile}
+                    isAdmin={userProfile?.isAdmin}
+                />
             ) : (
                 /* 3-Panel Carousel with Fluid Header */
                 <LiquidCardCarousel
@@ -271,7 +347,6 @@ export default function DashboardContent({
                             userProfile={userProfile}
                             stepsData={getStepsForDate(date)}
                             weightData={getWeightForDate(date)}
-
                             scrollY={scrollY}
                             className="pt-2" // Reduced padding as there's no sticky date anymore
                         />

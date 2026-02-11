@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Info } from 'lucide-react';
@@ -11,7 +11,7 @@ interface OverrideMacrosPanelProps {
 
 export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideMacrosPanelProps) {
     const { isDarkMode } = useTheme();
-    const { register, watch, setValue } = useFormContext();
+    const { register, setValue } = useFormContext();
 
     // We can use a form field for the toggle state or local state. 
     // Since it affects submission logic (override vs auto), it's good to track.
@@ -27,6 +27,12 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
 
     const [isOpen, setIsOpen] = useState(initialIsOpen);
 
+    // Keep form state in sync with the panel state so "override" is explicit.
+    // This prevents accidental overrides during edit when macros are prefilled.
+    useEffect(() => {
+        setValue('macrosOverrideEnabled', isOpen, { shouldDirty: false });
+    }, [isOpen, setValue]);
+
     // Colors
     const inputClass = cn(
         "w-full h-11 px-2 rounded-xl text-base text-center transition-all outline-none border",
@@ -39,10 +45,15 @@ export default function OverrideMacrosPanel({ initialIsOpen = false }: OverrideM
 
     return (
         <div className="w-full px-6 py-2 overflow-hidden">
+            <input type="hidden" {...register('macrosOverrideEnabled')} />
             {/* Toggle Row */}
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    const next = !isOpen;
+                    setIsOpen(next);
+                    setValue('macrosOverrideEnabled', next, { shouldDirty: true });
+                }}
                 className={cn(
                     "flex items-center gap-2 text-xs font-medium transition-colors mb-2",
                     isOpen ? (isDarkMode ? "text-white" : "text-black") : "opacity-50 hover:opacity-100"

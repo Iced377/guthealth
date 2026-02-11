@@ -114,7 +114,15 @@ export default function LiquidCrystalCard({
 
                                     {/* Hallucination Checker Badge (Builder Only) */}
                                     {isAdminView && item.verificationResult && (
-                                        item.verificationResult.verified ? (
+                                        (() => {
+                                            const ketoScore = item.fodmapData?.ketoFriendliness?.score;
+                                            const ketoClaimed = ketoScore === 'Strict Keto' || ketoScore === 'Moderate Keto';
+                                            const filteredFlags = ketoClaimed
+                                                ? item.verificationResult.flags
+                                                : item.verificationResult.flags.filter(flag => !/keto claim/i.test(flag));
+                                            const displayVerified = item.verificationResult.verified || filteredFlags.length === 0;
+
+                                            return displayVerified ? (
                                             <div title="Verified by AI Claims Audit" className="flex items-center justify-center h-4 w-4 bg-green-500/10 rounded-full border border-green-500/20">
                                                 <CheckCheck className="h-2.5 w-2.5 text-green-500" />
                                             </div>
@@ -123,14 +131,15 @@ export default function LiquidCrystalCard({
                                                 className="flex items-center gap-1 cursor-help"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    alert(item.verificationResult?.flags.join('\n')); // Simple alert for now as non-blocking
+                                                    alert(filteredFlags.join('\n')); // Simple alert for now as non-blocking
                                                 }}
                                             >
                                                 <div className="flex items-center justify-center h-4 w-4 bg-yellow-500/10 rounded-full border border-yellow-500/20 animate-pulse">
                                                     <Info className="h-2.5 w-2.5 text-yellow-500" />
                                                 </div>
                                             </div>
-                                        )
+                                        );
+                                        })()
                                     )}
                                 </div>
 

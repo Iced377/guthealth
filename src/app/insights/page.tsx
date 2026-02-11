@@ -136,7 +136,7 @@ function InsightsLayout() {
       {/* Main Horizontal Scroll Container - "Heavy" Native Snap */}
       <div
         ref={scrollContainerRef}
-        className="w-full h-[100dvh] overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory no-scrollbar"
+        className="relative z-10 w-full h-[100dvh] overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory no-scrollbar"
         onScroll={handleScrollRaw}
         style={{
           scrollBehavior: 'smooth', // Optional, but 'smooth' in logic handles tab clicks

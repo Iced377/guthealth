@@ -20,15 +20,12 @@ import {
 import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, LoggedSymptom, PedometerLog, FitbitLog } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { format, isSameDay } from 'date-fns';
-import { analyzeFoodItem, type AnalyzeFoodItemOutput, type FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
-import { identifyFoodFromImage } from '@/ai/flows/identify-food-from-image-flow';
-import { processMealDescription } from '@/ai/flows/process-meal-description-flow';
+import type { AnalyzeFoodItemOutput, FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
 import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
 import { useFitbitSync } from '@/hooks/useFitbitSync';
 import type { SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
 import type { IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
-import { triggerFoodAnalysis, logAdminEvent } from '@/actions/food-analysis';
-import { verifyFoodAnalysisFlow } from '@/ai/flows/verify-food-analysis';
+import { triggerFoodAnalysis, triggerTextFoodAnalysis, logAdminEvent, logAiPerformanceMetric, logAiTelemetryEvent } from '@/actions/food-analysis';
 
 
 const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => {
@@ -150,6 +147,7 @@ const initialGuestProfile: UserProfile = {
 };
 
 const TEMPORARILY_UNLOCK_ALL_FEATURES = true;
+const PREMIUM_INITIAL_DAYS = 3;
 
 export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user: authUser, loading: authLoading } = useAuth();
@@ -162,7 +160,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // We give it a small delay to not block critical initial rendering
             const timer = setTimeout(() => {
                 syncFitbit();
-            }, 2000);
+            }, 10000);
             return () => clearTimeout(timer);
         }
     }, [authUser, authLoading, syncFitbit]);
@@ -331,9 +329,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 log.timestamp <= endOfDay
             ) as PedometerLog[];
 
-            const autoSteps = dayPedometerLogs
-                .filter(l => l.source !== 'manual')
-                .reduce((sum, l) => sum + l.steps, 0);
+            const autoLogs = dayPedometerLogs.filter(l => l.source !== 'manual');
+            const autoSteps = autoLogs.length ? Math.max(...autoLogs.map(l => l.steps)) : 0;
 
             // Our target is 'steps'. Manual adjustment needed = Target - Auto.
             // If Target < Auto, we technically need negative manual steps to correct it? 
@@ -356,14 +353,23 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             // Create new manual entry
             const stepsLogId = `pedometer-manual-${Date.now()}`;
+            const manualTimestamp = new Date(date);
+            const now = new Date();
+            manualTimestamp.setHours(
+                now.getHours(),
+                now.getMinutes(),
+                now.getSeconds(),
+                now.getMilliseconds()
+            );
             const stepsEntry: PedometerLog = {
                 id: stepsLogId,
-                timestamp: date,
+                timestamp: manualTimestamp,
                 entryType: 'pedometer_data',
                 steps: manualStepsNeeded, // Can be negative effectively
                 source: 'manual',
                 distance: 0, // Ignore distance for manual override
-                activeEnergy: 0
+                activeEnergy: 0,
+                syncedAt: now
             };
 
             // Add new
@@ -443,12 +449,23 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     const timelineEntriesColRef = collection(db, 'users', authUser.uid, 'timelineEntries');
                     let q;
                     if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
-                        q = query(timelineEntriesColRef, orderBy('timestamp', 'desc'));
+                        const initialWindowStart = new Date();
+                        initialWindowStart.setDate(initialWindowStart.getDate() - PREMIUM_INITIAL_DAYS);
+                        console.log(`SetupData: Premium initial window ${PREMIUM_INITIAL_DAYS} days`);
+                        q = query(
+                            timelineEntriesColRef,
+                            orderBy('timestamp', 'desc'),
+                            where('timestamp', '>=', Timestamp.fromDate(initialWindowStart))
+                        );
                     } else {
                         const twoDaysAgo = new Date();
                         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
                         console.log('SetupData: Querying last 2 days');
-                        q = query(timelineEntriesColRef, orderBy('timestamp', 'desc'), where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo)));
+                        q = query(
+                            timelineEntriesColRef,
+                            orderBy('timestamp', 'desc'),
+                            where('timestamp', '>=', Timestamp.fromDate(twoDaysAgo))
+                        );
                     }
 
                     if (isCancelled) return;
@@ -460,6 +477,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 ...data,
                                 id: docSnap.id,
                                 timestamp: (data.timestamp as Timestamp).toDate(),
+                                ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
                             } as TimelineEntry;
                         });
                         setTimelineEntries(fetchedEntries);
@@ -473,6 +491,45 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         }
                         setIsDataLoading(false);
                     });
+
+                    if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
+                        const hydrateFullHistory = () => {
+                            if (isCancelled) return;
+                            if (unsubscribeTimeline) unsubscribeTimeline();
+
+                            console.log('SetupData: Hydrating full premium history');
+                            const fullQuery = query(timelineEntriesColRef, orderBy('timestamp', 'desc'));
+                            unsubscribeTimeline = onSnapshot(fullQuery, (snapshot) => {
+                                const fetchedEntries: TimelineEntry[] = snapshot.docs.map(docSnap => {
+                                    const data = docSnap.data();
+                                    return {
+                                        ...data,
+                                        id: docSnap.id,
+                                        timestamp: (data.timestamp as Timestamp).toDate(),
+                                        ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
+                                    } as TimelineEntry;
+                                });
+                                setTimelineEntries(fetchedEntries);
+                                setIsDataLoading(false);
+                            }, (error) => {
+                                if (error.code === 'permission-denied') {
+                                    console.log("Timeline snapshot permission denied (likely logout).");
+                                } else {
+                                    console.error("Timeline snapshot error:", error);
+                                }
+                                setIsDataLoading(false);
+                            });
+                        };
+
+                        const delayMs = 10000;
+                        setTimeout(() => {
+                            if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                                (window as any).requestIdleCallback(hydrateFullHistory, { timeout: 2500 });
+                            } else {
+                                hydrateFullHistory();
+                            }
+                        }, delayMs);
+                    }
 
                 } catch (error) {
                     console.error("Error setting up user data:", error);
@@ -507,30 +564,34 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         unverifiedItems.forEach(item => {
             // Rate limit? Just do one at a time or all? 
             // Let's do it safely.
-            const fodmapAnalysis = item.fodmapData!;
-            verifyFoodAnalysisFlow({
-                foodItemName: item.name,
-                ingredients: item.ingredients,
-                portionSize: item.portionSize,
-                portionUnit: item.portionUnit,
-                claimedFodmapRisk: fodmapAnalysis.overallRisk,
-                claimedReason: fodmapAnalysis.reason,
-                claimedHealthTags: {
-                    isKeto: fodmapAnalysis.ketoFriendliness?.score.includes('Keto') ?? false,
-                    isGutHealthy: fodmapAnalysis.gutBacteriaImpact?.sentiment === 'Positive'
-                },
-                macros: {
-                    calories: fodmapAnalysis.calories ?? null,
-                    protein: fodmapAnalysis.protein ?? null,
-                    carbs: fodmapAnalysis.carbs ?? null,
-                    fat: fodmapAnalysis.fat ?? null
-                }
-            }).then(verification => {
+            (async () => {
+                const { verifyFoodAnalysisFlow } = await import('@/ai/flows/verify-food-analysis');
+                const fodmapAnalysis = item.fodmapData!;
+                const verification = await verifyFoodAnalysisFlow({
+                    foodItemName: item.name,
+                    ingredients: item.ingredients,
+                    portionSize: item.portionSize,
+                    portionUnit: item.portionUnit,
+                    claimedFodmapRisk: fodmapAnalysis.overallRisk,
+                    claimedReason: fodmapAnalysis.reason,
+                    claimedKetoScore: fodmapAnalysis.ketoFriendliness?.score ?? 'Unknown',
+                    userId: authUser.uid,
+                    entryId: item.id,
+                    claimedHealthTags: {
+                        isGutHealthy: fodmapAnalysis.gutBacteriaImpact?.sentiment === 'Positive'
+                    },
+                    macros: {
+                        calories: fodmapAnalysis.calories ?? null,
+                        protein: fodmapAnalysis.protein ?? null,
+                        carbs: fodmapAnalysis.carbs ?? null,
+                        fat: fodmapAnalysis.fat ?? null
+                    }
+                });
                 if (verification) {
                     const docRef = doc(db, 'users', authUser.uid, 'timelineEntries', item.id);
                     setDoc(docRef, { verificationResult: verification }, { merge: true });
                 }
-            }).catch(e => console.error("Backfill verification failed", e));
+            })().catch(e => console.error("Backfill verification failed", e));
         });
     }, [timelineEntries, authUser, isDataLoading]);
 
@@ -540,7 +601,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const { id: _, ...itemToSave } = item;
             await setDoc(docRefPath, {
                 ...itemToSave,
-                timestamp: Timestamp.fromDate(item.timestamp)
+                timestamp: Timestamp.fromDate(item.timestamp),
+                ...(item.syncedAt ? { syncedAt: Timestamp.fromDate(item.syncedAt) } : {})
             }, { merge });
         }
     };
@@ -610,6 +672,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // 3. Trigger Re-analysis (Background)
         setIsLoadingAi(prev => ({ ...prev, [newItemId]: true }));
 
+        const repeatStartTime = performance.now();
+        let didAnalyzeRepeat = false;
+        let repeatSuccess = true;
         try {
             let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
             let similarityOutput: FoodSimilarityOutput | undefined;
@@ -617,6 +682,10 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             let processedFoodItem;
 
             if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo") && itemToRepeat.sourceDescription !== "Manually logged") {
+                didAnalyzeRepeat = true;
+                const { processMealDescription } = await import('@/ai/flows/process-meal-description-flow');
+                const { analyzeFoodItem } = await import('@/ai/flows/fodmap-detection');
+
                 mealDescriptionOutput = await processMealDescription({ mealDescription: itemToRepeat.sourceDescription });
                 fodmapAnalysis = await analyzeFoodItem({
                     foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
@@ -671,8 +740,19 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             console.error(e);
             toast({ title: 'Re-analysis Failed', description: "Kept original data.", variant: 'destructive' });
             // We don't remove the item, we just keep the optimistic (original) version which is fine!
+            repeatSuccess = false;
         } finally {
             setIsLoadingAi(prev => ({ ...prev, [newItemId]: false }));
+            if (didAnalyzeRepeat && authUser?.uid) {
+                const duration = performance.now() - repeatStartTime;
+                logAiPerformanceMetric({
+                    flow: 'reuse',
+                    durationMs: Math.round(duration),
+                    success: repeatSuccess,
+                    userId: authUser.uid,
+                    entryId: newItemId,
+                }).catch(() => { /* non-blocking */ });
+            }
         }
     };
 
@@ -709,7 +789,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const logTimestamp = newTimestamp || new Date();
 
         // [GUARDRAIL] Meal Limit: 12 Meals per day
-        if (!editingItem) {
+        if (!editingItem && !userProfile?.isAdmin) {
             const todayMealsCount = timelineEntries.filter(e =>
                 e.entryType === 'food' &&
                 isSameDay(new Date(e.timestamp), logTimestamp)
@@ -730,8 +810,35 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // 1. We are editing an existing item AND
         // 2. The description/ingredients (source of truth) hasn't changed
         // This allows changing Time, Name, or Manual Macros without waiting for AI.
-        const descriptionHasChanged = editingItem ? (formData.mealDescription.trim() !== (editingItem.sourceDescription || "").trim()) : true;
+        const getEditBaselineDescription = (item: LoggedFoodItem | null): string => {
+            if (!item) return "";
+            if (item.sourceDescription?.startsWith("Identified by photo")) {
+                return `${item.name}${item.ingredients ? `. ${item.ingredients}` : ''}`.trim();
+            }
+            if (item.sourceDescription?.startsWith("Manually logged")) {
+                return `${item.name}${item.ingredients ? `. ${item.ingredients}` : ''}`.trim();
+            }
+            return (item.sourceDescription || "").trim();
+        };
+
+        const baselineDescription = getEditBaselineDescription(editingItem || null);
+        const descriptionHasChanged = editingItem
+            ? (formData.mealDescription.trim() !== baselineDescription)
+            : true;
         const shouldSkipAnalysis = editingItem && !descriptionHasChanged;
+
+        if (editingItem && shouldSkipAnalysis && authUser?.uid) {
+            logAiTelemetryEvent({
+                type: 'recalc_skipped',
+                userId: authUser.uid,
+                entryId: editingItem.id,
+                reason: 'description_unchanged',
+                meta: {
+                    macrosOverridden: editingItem.macrosOverridden ?? false,
+                    sourceDescription: editingItem.sourceDescription || null,
+                }
+            }).catch(() => { /* non-blocking */ });
+        }
 
         const optimisticItem: LoggedFoodItem = {
             id: currentItemId,
@@ -753,10 +860,26 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // If NOT overriding -> 
             //    If Skipping Analysis -> Use original AI data (stored in fodmapData) or current values if fallback
             //    If Analyzing -> null (waiting for AI)
-            calories: userDidOverrideMacros ? formData.calories : (shouldSkipAnalysis ? (editingItem.fodmapData?.calories ?? editingItem.calories) : null),
-            protein: userDidOverrideMacros ? formData.protein : (shouldSkipAnalysis ? (editingItem.fodmapData?.protein ?? editingItem.protein) : null),
-            carbs: userDidOverrideMacros ? formData.carbs : (shouldSkipAnalysis ? (editingItem.fodmapData?.carbs ?? editingItem.carbs) : null),
-            fat: userDidOverrideMacros ? formData.fat : (shouldSkipAnalysis ? (editingItem.fodmapData?.fat ?? editingItem.fat) : null),
+            calories: userDidOverrideMacros
+                ? formData.calories
+                : (shouldSkipAnalysis
+                    ? (editingItem.fodmapData?.calories ?? editingItem.calories)
+                    : (editingItem?.calories ?? null)),
+            protein: userDidOverrideMacros
+                ? formData.protein
+                : (shouldSkipAnalysis
+                    ? (editingItem.fodmapData?.protein ?? editingItem.protein)
+                    : (editingItem?.protein ?? null)),
+            carbs: userDidOverrideMacros
+                ? formData.carbs
+                : (shouldSkipAnalysis
+                    ? (editingItem.fodmapData?.carbs ?? editingItem.carbs)
+                    : (editingItem?.carbs ?? null)),
+            fat: userDidOverrideMacros
+                ? formData.fat
+                : (shouldSkipAnalysis
+                    ? (editingItem.fodmapData?.fat ?? editingItem.fat)
+                    : (editingItem?.fat ?? null)),
 
             entryType: 'food',
             userFeedback: editingItem ? editingItem.userFeedback : null,
@@ -792,170 +915,95 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // IF ANALYZING -> PROCEED AS NORMAL
         setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
-        const startTime = performance.now();
-        try {
-            const mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
+        const shouldLogOverridePersisted = !!(editingItem && descriptionHasChanged && editingItem.macrosOverridden && userDidOverrideMacros);
+        if (authUser && authUser.uid !== 'guest-user') {
+            // Fire-and-forget server-side analysis for resilience.
+            triggerTextFoodAnalysis(
+                currentItemId,
+                authUser.uid,
+                formData.mealDescription,
+                userDidOverrideMacros,
+                {
+                    calories: formData.calories,
+                    protein: formData.protein,
+                    carbs: formData.carbs,
+                    fat: formData.fat,
+                },
+                formData.name
+            ).then((result) => {
+                if (!result.success) {
+                    toast({ title: 'Analysis Failed', variant: 'destructive' });
+                } else if (!editingItem) {
+                    toast({ title: "Analysis Complete", description: "Your meal has been analyzed." });
+                } else {
+                    toast({ title: "Meal Re-analyzed", description: "New ingredients processed." });
+                }
 
-            const namedItem = {
-                ...optimisticItem,
-                name: formData.name || mealDescriptionOutput.wittyName,
-                originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
-                ingredients: mealDescriptionOutput.consolidatedIngredients,
-                portionSize: mealDescriptionOutput.estimatedPortionSize,
-                portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-            };
-
-            if (authUser) await submitToFirebase(namedItem, currentItemId);
-
-            const safeFoodItemsForAnalysis = (userProfile?.safeFoods?.length > 0)
-                ? userProfile.safeFoods.map(sf => ({
-                    name: sf.name,
-                    portionSize: sf.portionSize,
-                    portionUnit: sf.portionUnit,
-                    fodmapProfile: sf.fodmapProfile,
-                }))
-                : undefined;
-
-            const fodmapAnalysis = await analyzeFoodItem({
-                foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
-                ingredients: mealDescriptionOutput.consolidatedIngredients,
-                portionSize: mealDescriptionOutput.estimatedPortionSize,
-                portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-                userSafeFoodItems: safeFoodItemsForAnalysis,
+                if (shouldLogOverridePersisted && authUser?.uid) {
+                    logAiTelemetryEvent({
+                        type: 'override_persisted_after_edit',
+                        userId: authUser.uid,
+                        entryId: currentItemId,
+                        meta: {
+                            macrosOverridden: true,
+                            descriptionChanged: true,
+                        }
+                    }).catch(() => { /* non-blocking */ });
+                }
+                setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
+            }).catch(e => {
+                console.error("Text Analysis Error:", e);
+                toast({ title: 'Analysis Failed', variant: 'destructive' });
+                setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
             });
 
-            const itemFodmapProfile = fodmapAnalysis?.detailedFodmapProfile ?? _generateFallbackFodmapProfile(namedItem.name);
+            toast({ title: "Analyzing in background", description: "You can exit the app — we'll finish processing." });
+        } else {
+            // Guest fallback: keep local blocking flow
+            try {
+                const { processMealDescription } = await import('@/ai/flows/process-meal-description-flow');
+                const { analyzeFoodItem } = await import('@/ai/flows/fodmap-detection');
 
-            const finalItem: LoggedFoodItem = {
-                ...namedItem,
-                fodmapData: fodmapAnalysis ?? null,
-                isSimilarToSafe: fodmapAnalysis?.similarityAnalysis?.isSimilar ?? false,
-                userFodmapProfile: itemFodmapProfile ?? null,
-                calories: userDidOverrideMacros ? formData.calories : (fodmapAnalysis?.calories ?? null),
-                protein: userDidOverrideMacros ? formData.protein : (fodmapAnalysis?.protein ?? null),
-                carbs: userDidOverrideMacros ? formData.carbs : (fodmapAnalysis?.carbs ?? null),
-                fat: userDidOverrideMacros ? formData.fat : (fodmapAnalysis?.fat ?? null),
-            };
+                const mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
 
-            if (authUser) await submitToFirebase(finalItem, currentItemId);
-
-            // [FIX] Update local state immediately to reflect AI results (crucial for Guests and instant UI)
-            setTimelineEntries(prev => prev.map(e => e.id === currentItemId ? finalItem : e));
-
-            const duration = performance.now() - startTime;
-            if (duration > 10000) {
-                logAdminEvent({
-                    type: 'performance_issue',
-                    trigger: 'text_analysis',
-                    durationMs: Math.round(duration),
-                    foodName: namedItem.name,
-                    severity: 'warning',
-                    user: authUser?.uid
-                });
-            }
-
-            // Toast for new analysis completion
-            if (!editingItem) toast({ title: "Analysis Complete", description: "Your meal has been analyzed." });
-            else toast({ title: "Meal Re-analyzed", description: "New ingredients processed." });
-
-            // --- Hallucination Checker (Non-Blocking) ---
-            if (authUser && fodmapAnalysis) {
-                // Run in background, don't await to block UI? 
-                // Actually, we want to update the cache when done.
-                // We'll let it run detached (no await) but handle the update inside.
-                verifyFoodAnalysisFlow({
-                    foodItemName: namedItem.name,
+                const namedItem = {
+                    ...optimisticItem,
+                    name: formData.name || mealDescriptionOutput.wittyName,
+                    originalName: mealDescriptionOutput.primaryFoodItemForAnalysis,
                     ingredients: mealDescriptionOutput.consolidatedIngredients,
                     portionSize: mealDescriptionOutput.estimatedPortionSize,
                     portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-                    claimedFodmapRisk: fodmapAnalysis.overallRisk,
-                    claimedReason: fodmapAnalysis.reason,
-                    claimedHealthTags: {
-                        isKeto: fodmapAnalysis.ketoFriendliness?.score.includes('Keto') ?? false,
-                        isGutHealthy: fodmapAnalysis.gutBacteriaImpact?.sentiment === 'Positive'
-                    },
-                    macros: {
-                        calories: fodmapAnalysis.calories ?? null,
-                        protein: fodmapAnalysis.protein ?? null,
-                        carbs: fodmapAnalysis.carbs ?? null,
-                        fat: fodmapAnalysis.fat ?? null
-                    }
-                }).then(async (verification) => {
-                    if (verification) {
-                        const docRef = doc(db, 'users', authUser.uid, 'timelineEntries', currentItemId);
+                };
 
-                        // --- REFLEXION LOOP (Builder-Centric) ---
-                        if (!verification.verified) {
-                            console.log(`[Reflexion] Critic rejected analysis for ${namedItem.name}. Correcting...`);
+                const fodmapAnalysis = await analyzeFoodItem({
+                    foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
+                    ingredients: mealDescriptionOutput.consolidatedIngredients,
+                    portionSize: mealDescriptionOutput.estimatedPortionSize,
+                    portionUnit: mealDescriptionOutput.estimatedPortionUnit,
+                });
 
-                            try {
-                                // 1. Re-run analysis with FEEDBACK
-                                const correctedAnalysis = await analyzeFoodItem({
-                                    foodItem: mealDescriptionOutput.primaryFoodItemForAnalysis,
-                                    ingredients: mealDescriptionOutput.consolidatedIngredients,
-                                    portionSize: mealDescriptionOutput.estimatedPortionSize,
-                                    portionUnit: mealDescriptionOutput.estimatedPortionUnit,
-                                    userSafeFoodItems: safeFoodItemsForAnalysis,
-                                    feedbackContext: verification.flags.join('; ') // Inject the Critic's complaint
-                                });
+                const itemFodmapProfile = fodmapAnalysis?.detailedFodmapProfile ?? _generateFallbackFodmapProfile(namedItem.name);
 
-                                // 2. Update Firestore with NEW Corrected Data
-                                await setDoc(docRef, {
-                                    fodmapData: correctedAnalysis,
-                                    // Mark as "Verified" because we trust the correction (or we could re-verify recursively, but let's do 1-hop for now)
-                                    verificationResult: { verified: true, flags: ['Auto-corrected via Reflexion'] }
-                                }, { merge: true });
+                const finalItem: LoggedFoodItem = {
+                    ...namedItem,
+                    fodmapData: fodmapAnalysis ?? null,
+                    isSimilarToSafe: fodmapAnalysis?.similarityAnalysis?.isSimilar ?? false,
+                    userFodmapProfile: itemFodmapProfile ?? null,
+                    calories: userDidOverrideMacros ? formData.calories : (fodmapAnalysis?.calories ?? editingItem?.calories ?? null),
+                    protein: userDidOverrideMacros ? formData.protein : (fodmapAnalysis?.protein ?? editingItem?.protein ?? null),
+                    carbs: userDidOverrideMacros ? formData.carbs : (fodmapAnalysis?.carbs ?? editingItem?.carbs ?? null),
+                    fat: userDidOverrideMacros ? formData.fat : (fodmapAnalysis?.fat ?? editingItem?.fat ?? null),
+                };
 
-                                // 3. Update Local State to reflect correction immediately
-                                setTimelineEntries(prev => prev.map(e => {
-                                    if (e.id === currentItemId) {
-                                        return {
-                                            ...e,
-                                            fodmapData: correctedAnalysis,
-                                            verificationResult: { verified: true, flags: ['Auto-corrected via Reflexion'] }
-                                        } as LoggedFoodItem;
-                                    }
-                                    return e;
-                                }));
-
-                                toast({ title: "Analysis Refined", description: "AI self-corrected based on safety audit." });
-                                return; // Exit, don't save the old 'failed' verification
-                            } catch (reflexionError) {
-                                console.error("[Reflexion] Correction failed:", reflexionError);
-                                // Fallback to saving the 'failed' state so user warns
-                            }
-                        }
-
-                        // Normal Path (Verified or Correction Failed)
-                        setDoc(docRef, { verificationResult: verification }, { merge: true });
-
-                        // Update local state
-                        setTimelineEntries(prev => prev.map(e => {
-                            if (e.id === currentItemId) {
-                                return { ...e, verificationResult: verification } as LoggedFoodItem;
-                            }
-                            return e;
-                        }));
-                    }
-                }).catch(err => console.error("Verification Trigger Failed:", err));
+                setTimelineEntries(prev => prev.map(e => e.id === currentItemId ? finalItem : e));
+                if (!editingItem) toast({ title: "Analysis Complete", description: "Your meal has been analyzed." });
+                else toast({ title: "Meal Re-analyzed", description: "New ingredients processed." });
+            } catch (e) {
+                console.error(e);
+                toast({ title: 'Analysis Failed', variant: 'destructive' });
+            } finally {
+                setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
             }
-
-        } catch (e) {
-            console.error(e);
-            toast({ title: 'Analysis Failed', variant: 'destructive' });
-        } finally {
-            setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
-
-            // --- Hallucination/Consistency Check (Async) ---
-            // Triggered only if analysis succeeded (we have no easy var here, but editingItem/optimistic state persists)
-            // Ideally we check if 'fodmapAnalysis' was defined above, but scope is closed.
-            // We can re-fetch or assume if 'error' wasn't thrown, we are good.
-            // Let's assume passed.
-            // We need the IDs and data from above.
-
-            // Re-read item to get latest AI data? Or pass it down?
-            // Since we are in finally, we can't access `fodmapAnalysis`.
-            // Refactoring: I should move this INSIDE the try block, right at the end.
         }
     };
 
@@ -1018,6 +1066,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         user: authUser.uid
                     });
                 }
+                logAiPerformanceMetric({
+                    flow: 'scan',
+                    durationMs: Math.round(duration),
+                    success: result.success,
+                    userId: authUser.uid,
+                    entryId: currentItemId,
+                }).catch(() => { /* non-blocking */ });
 
                 if (!result.success) {
                     console.error("Background analysis failed:", result.error);
@@ -1039,6 +1094,16 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }).catch(e => {
                 console.error("Trigger Analysis Error:", e);
                 setIsLoadingAi(prev => ({ ...prev, [currentItemId]: false }));
+                const duration = performance.now() - startTime;
+                if (authUser?.uid) {
+                    logAiPerformanceMetric({
+                        flow: 'scan',
+                        durationMs: Math.round(duration),
+                        success: false,
+                        userId: authUser.uid,
+                        entryId: currentItemId,
+                    }).catch(() => { /* non-blocking */ });
+                }
             });
 
             // Allow user to leave immediately
@@ -1053,6 +1118,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (!authUser) {
                 // Fallback to old Blocking Flow for Guests
                 try {
+                    const { identifyFoodFromImage } = await import('@/ai/flows/identify-food-from-image-flow');
                     const result = await identifyFoodFromImage({
                         imageDataUri: photoData.imageUri || "",
                         additionalContext: photoData.additionalContext,
@@ -1177,6 +1243,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (!newEntry.macrosOverridden || !newEntry.fodmapData) {
             setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
             try {
+                const { analyzeFoodItem } = await import('@/ai/flows/fodmap-detection');
                 const safeFoodItemsForAnalysis = (userProfile?.safeFoods?.length > 0)
                     ? userProfile.safeFoods.map(sf => ({
                         name: sf.name,

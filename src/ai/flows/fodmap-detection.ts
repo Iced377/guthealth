@@ -107,11 +107,10 @@ const AnalyzeFoodItemOutputSchema = z.object({
   protein: z.number().optional().describe('Estimated total protein in grams for the given portion.'),
   carbs: z.number().optional().describe('Estimated total carbohydrates in grams for the given portion.'),
   fat: z.number().optional().describe('Estimated total fat in grams for the given portion.'),
-  glycemicIndexInfo: GlycemicIndexInfoSchema.optional().describe("Glycemic Index information."),
-  dietaryFiberInfo: DietaryFiberInfoSchema.optional().describe("Dietary fiber information."),
-
-  gutBacteriaImpact: GutBacteriaImpactInfoSchema.optional().describe("Gut bacteria impact assessment."),
-  ketoFriendliness: KetoFriendlinessInfoSchema.optional().describe("Keto-friendliness assessment."),
+  glycemicIndexInfo: GlycemicIndexInfoSchema.describe("Glycemic Index information."),
+  dietaryFiberInfo: DietaryFiberInfoSchema.describe("Dietary fiber information."),
+  gutBacteriaImpact: GutBacteriaImpactInfoSchema.describe("Gut bacteria impact assessment."),
+  ketoFriendliness: KetoFriendlinessInfoSchema.describe("Keto-friendliness assessment."),
   detectedAllergens: z.array(z.string()).optional().describe("List of common allergens detected in the ingredients (e.g., Milk, Wheat, Soy). If none, can be empty or omitted."),
   aiSummaries: AISummariesSchema.optional().describe("Concise AI-generated textual summaries for display in notes."),
   similarityAnalysis: SimilarityAnalysisSchema.optional().describe("Analysis of whether this food is similar to the user's known safe foods."),
@@ -197,7 +196,7 @@ Key tasks:
     - Keep all text fields ('reason', 'aiSummaries.*') **EXTREMELY CONCISE** (max 1 short sentence). Avoid fluff.
     - Example: "High in fructans due to garlic." (Not "This item is high in fructans because it contains garlic which is...")
 
-Strictly follow output schema. Omit optional sub-fields if unknown. Ensure nutrition matches the explicit quantities provided in inputs.
+Strictly follow output schema. Always include Glycemic Index, Fiber, Gut Impact, and Keto fields; if unknown, set their values to "Unknown" or leave numeric fields empty. Ensure nutrition matches the explicit quantities provided in inputs.
 `,
 });
 

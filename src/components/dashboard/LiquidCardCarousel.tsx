@@ -33,6 +33,7 @@ interface LiquidCardCarouselProps {
     renderHeader?: (date: Date) => React.ReactNode; // Function to render header for ANY date
     className?: string; // Support extra styling
     isAdmin?: boolean;
+    enableWebFrame?: boolean;
 }
 
 export default function LiquidCardCarousel({
@@ -51,6 +52,7 @@ export default function LiquidCardCarousel({
     renderHeader,
     className,
     isAdmin = false,
+    enableWebFrame = false,
 }: LiquidCardCarouselProps) {
 
     const containerRef = useRef<HTMLDivElement>(null);
@@ -201,14 +203,16 @@ export default function LiquidCardCarousel({
                     <div
                         key={prevDate.toISOString()}
                         style={{ width: width }}
-                        className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y"
+                        className={cn("h-full px-4 overflow-y-auto no-scrollbar touch-pan-y", enableWebFrame && "px-6")}
                     >
                         {/* Render Header for Prev Day */}
-                        <div className="pt-2 pb-4">
+                        <div className={cn("pt-2 pb-4", enableWebFrame && "mx-auto w-full max-w-4xl")}>
                             {renderHeader?.(prevDate)}
                         </div>
-                        <div className="h-4" />
-                        {renderCards(prevEntries)}
+                        <div className={cn("h-4", enableWebFrame && "mx-auto w-full max-w-4xl")} />
+                        <div className={cn(enableWebFrame && "mx-auto w-full max-w-4xl")}>
+                            {renderCards(prevEntries)}
+                        </div>
                     </div>
 
                     {/* CURRENT DAY PANEL (Center) */}
@@ -218,33 +222,37 @@ export default function LiquidCardCarousel({
                         style={{ width: width }}
                         // NOTE: IDK why but overflow-y-hidden helps lock vertical on horizontal swipe sometimes,
                         // but we need scroll. touch-pan-y is the CSS solution.
-                        className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y"
+                        className={cn("h-full px-4 overflow-y-auto no-scrollbar touch-pan-y", enableWebFrame && "px-6")}
                         onScroll={handleScroll}
                     >
                         {/* Render Header for Current Day */}
-                        <div className="pt-2 pb-4">
+                        <div className={cn("pt-2 pb-4", enableWebFrame && "mx-auto w-full max-w-4xl")}>
                             {renderHeader?.(currentDate)}
                         </div>
 
-                        <div className="h-4" />
+                        <div className={cn("h-4", enableWebFrame && "mx-auto w-full max-w-4xl")} />
 
-                        {renderCards(currentEntries)}
+                        <div className={cn(enableWebFrame && "mx-auto w-full max-w-4xl")}>
+                            {renderCards(currentEntries)}
+                        </div>
                     </div>
 
                     {/* NEXT DAY PANEL */}
                     <div
                         key={nextDate.toISOString()}
                         style={{ width: width }}
-                        className="h-full px-4 overflow-y-auto no-scrollbar touch-pan-y"
+                        className={cn("h-full px-4 overflow-y-auto no-scrollbar touch-pan-y", enableWebFrame && "px-6")}
                     >
                         {/* Render Header for Next Day - Only if allowed to navigate there (future allowed?) */}
                         {/* Logic says "if !isToday" usually for next, but swiping logic handles constraint. Rendering logic should just render. */}
-                        <div className="pt-2 pb-4 opacity-50">
+                        <div className={cn("pt-2 pb-4 opacity-50", enableWebFrame && "mx-auto w-full max-w-4xl")}>
                             {/* Opacity hint that it's future or just 'next' */}
                             {!isToday && renderHeader?.(nextDate)}
                         </div>
-                        <div className="h-4" />
-                        {!isToday && renderCards(nextEntries)}
+                        <div className={cn("h-4", enableWebFrame && "mx-auto w-full max-w-4xl")} />
+                        <div className={cn(enableWebFrame && "mx-auto w-full max-w-4xl")}>
+                            {!isToday && renderCards(nextEntries)}
+                        </div>
                     </div>
                 </motion.div>
             )}

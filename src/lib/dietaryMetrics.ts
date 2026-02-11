@@ -50,10 +50,18 @@ export const getDietaryMetrics = (
     const diets = userProfile?.profile?.dietaryPreferences || [];
 
     // Base Metrics
+    const stepsSourceLabel =
+        stepsData?.source === 'apple_health'
+            ? 'Apple Health'
+            : stepsData?.source === 'manual'
+                ? 'Manual'
+                : undefined;
+
     const stepsMetric: DashboardMetric = {
         id: 'steps',
         label: 'Steps',
         value: stepsData?.steps ? stepsData.steps.toLocaleString() : '0',
+        subtext: stepsSourceLabel,
         icon: Footprints,
         color: 'red',
         activeDotIndex: 0

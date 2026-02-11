@@ -182,7 +182,7 @@ export default function IntegrationsStep({ onNext, user, data, updateData }: Int
                                 </div>
                                 <div className="flex flex-col">
                                     <h3 className="text-lg font-bold leading-none">Apple Health</h3>
-                                    <p className="text-xs text-muted-foreground mt-1">Sync steps</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Sync steps via HealthKit</p>
                                     {!isIOS && <p className="text-[10px] text-red-400 mt-1 font-medium">Not available on browser</p>}
                                 </div>
                             </div>
@@ -244,6 +244,12 @@ export default function IntegrationsStep({ onNext, user, data, updateData }: Int
                         </div>
                     </motion.button>
 
+                </div>
+
+                <div className="mt-3 px-2">
+                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                        Apple Health integration uses HealthKit to access your steps data when enabled.
+                    </p>
                 </div>
 
                 <div className="pt-4 shrink-0 w-full px-2 mt-auto">

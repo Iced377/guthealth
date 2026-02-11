@@ -21,20 +21,27 @@ export const calculateDaySummary = (logs: LoggedFoodItem[]): DailyNutritionSumma
 export const calculateDailyPedometerStats = (logs: PedometerLog[]) => {
   if (!logs.length) return null;
 
-  // LOGIC UPDATE: Single Source of Truth
   // Apple Health / Fitbit send "Status Updates" (e.g. "Total is now 500", "Total is now 1000").
-  // Usage of 'reduce' to sum them was incorrect.
-  // We should take the entry with the MAX steps (or latest timestamp) to represent the day.
+  // We should take the MAX steps from auto sources, then apply any manual adjustments.
+  const autoLogs = logs.filter(l => l.source !== 'manual');
+  const manualLogs = logs.filter(l => l.source === 'manual');
 
-  // Sort by steps descending to find the highest count reported for the day
-  const bestLog = logs.sort((a, b) => b.steps - a.steps)[0];
+  const autoMax = autoLogs.length ? Math.max(...autoLogs.map(l => l.steps)) : 0;
+  const manualSum = manualLogs.reduce((sum, l) => sum + l.steps, 0);
+  const totalSteps = Math.max(0, Math.round(autoMax + manualSum));
+
+  // Most recent update determines the "source" label
+  const getUpdateTime = (log: PedometerLog) =>
+    (log.syncedAt ? log.syncedAt.getTime() : log.timestamp.getTime());
+  const latestLog = [...logs].sort((a, b) => getUpdateTime(b) - getUpdateTime(a))[0];
 
   return {
     id: 'daily-summary',
-    timestamp: bestLog.timestamp,
+    timestamp: latestLog.timestamp,
     entryType: 'pedometer_data',
-    steps: bestLog.steps,
-    distance: bestLog.distance,
-    source: bestLog.source
+    steps: totalSteps,
+    distance: latestLog.distance,
+    source: latestLog.source,
+    syncedAt: latestLog.syncedAt
   } as PedometerLog;
 };

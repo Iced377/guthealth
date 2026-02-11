@@ -15,7 +15,7 @@ const IdentifyFoodFromImageInputSchema = z.object({
   imageDataUri: z.string().describe(
     "A photo of a food item or packaging, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
-  additionalContext: z.string().optional().describe("User provided context about the meal (e.g., 'gluten free pasta', 'homemade lasagna with extra cheese'). This is the PRIMARY source of truth for identity if ambiguous."),
+  additionalContext: z.string().optional().describe("User provided context about the meal (e.g., 'gluten free pasta', 'homemade lasagna with extra cheese'). This is a STRONG HINT. Treat it as source of truth ONLY if it explicitly asserts identity (e.g., 'this is X', 'these are X')."),
   userLocale: z.string().optional().describe("User's locale, e.g., 'en-US', to help with units and food names if possible."),
 });
 export type IdentifyFoodFromImageInput = z.infer<typeof IdentifyFoodFromImageInputSchema>;
@@ -49,14 +49,22 @@ User's Additional Context: "{{{additionalContext}}}"
 Image: {{media url=imageDataUri}}
 
 Your tasks:
+IMPORTANT CONTEXT GATING:
+* Use Additional Context as a STRONG HINT, not a source of truth by default.
+* Only treat it as definitive if it explicitly asserts identity, e.g. "this is X", "these are X", "I ate X", "it's X".
+* If context conflicts with what the image clearly shows, prefer the image unless the context explicitly asserts identity.
+* Do NOT blend unrelated context into the image. If context is vague, keep identification image-based.
+
 1.  **'identifiedFoodName'**: Identify the primary food item.
     *   **NOUN ONLY**: Output the food name ONLY (e.g. "Chocolate Brownie").
     *   **NO QUANTITIES**: Do NOT include portion sizes here (i.e. NOT "Half a brownie", NOT "2 Eggs").
-    *   **PRIORITIZE CONTEXT**: If the user's "Additional Context" specifies the food (e.g., "Protein pancakes"), USE THAT NAME (but strip quantities).
+    *   **CONTEXT AS HINT**: If the user's "Additional Context" explicitly asserts identity, USE THAT NAME (but strip quantities). Otherwise, use the image as primary.
 
 2.  **'identifiedIngredients'**: Provide a comma-separated list of main ingredients.
     *   **CRITICAL - VISUAL QUANTITY ESTIMATION**: You **MUST** include an estimated quantity in round brackets next to each ingredient where possible. Example: "Rice (200g), Chicken Breast (150g), Broccoli (80g)".
-    *   **CONTEXT USAGE**: If the user specified ingredients (e.g., "made with almond flour"), include them.
+    *   **CONTEXT USAGE**: If the user specifies a dietary/ingredient base (e.g., "keto dough", "gluten-free bun", "almond flour crust"), REWRITE the relevant base ingredient accordingly, even if the image alone is ambiguous.
+        - Example: Image shows pizza + context "keto dough" -> ingredients should include "keto dough" or "almond flour crust" instead of standard wheat dough.
+    *   **CONTEXT USAGE (BEVERAGE OVERRIDES)**: If the user specifies a beverage variant or substitution (e.g., "Coke Zero", "Diet Coke", "sparkling water"), REWRITE the drink ingredient accordingly, even if the image shows a generic soda cup.
     *   **SUPPLEMENTS/LABELS**: If OCR detects nutrient quantities (e.g., "Vitamin D3 50,000 IU"), they MUST be included exactly as written.
 
 3.  **'estimatedPortionSize' & 'estimatedPortionUnit'**: Provide the total estimate.

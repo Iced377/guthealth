@@ -10,8 +10,10 @@ const VerifyFoodAnalysisInputSchema = z.object({
     portionUnit: z.string(),
     claimedFodmapRisk: z.string(),
     claimedReason: z.string(),
+    claimedKetoScore: z.string().optional().describe('Keto score label from analysis (e.g., "Strict Keto", "Moderate Keto", "Low Carb", "Not Keto-Friendly", "Unknown").'),
+    userId: z.string().optional(),
+    entryId: z.string().optional(),
     claimedHealthTags: z.object({
-        isKeto: z.boolean().optional(),
         isGutHealthy: z.boolean().optional(),
     }).optional(),
     macros: z.object({
@@ -51,8 +53,8 @@ Audit Target:
 Analysis Claims to Verify:
 - FODMAP Risk Claim: "{{claimedFodmapRisk}}"
 - Reasoning Claim: "{{claimedReason}}"
+- Keto Score Claim: "{{claimedKetoScore}}"
 {{#if claimedHealthTags}}
-- Keto Claim: {{claimedHealthTags.isKeto}}
 - Gut Healthy Claim: {{claimedHealthTags.isGutHealthy}}
 {{/if}}
 
@@ -69,7 +71,8 @@ Start Audit:
    - If Claim is "Red" (High Risk) but ingredients are all safe -> FLAG IT.
 
 4. **Macro/Health Logic**:
-    - If Keto Claim is TRUE but ingredients are high carb (Rice, Bread, Sugar) -> FLAG IT.
+    - Only evaluate keto consistency if Keto Score Claim is "Strict Keto" or "Moderate Keto".
+    - If Keto Score Claim is "Strict Keto" or "Moderate Keto" but ingredients are high carb (Rice, Bread, Sugar) -> FLAG IT.
 
 5. **Reflexion (Improvement)**:
    - If you flagged an error, suggest a CONSITENT RULE that would prevent this mistake in the future.
@@ -111,8 +114,36 @@ export const verifyFoodAnalysisFlow = ai.defineFlow(
             const { output } = await verifyFoodAnalysisPrompt(input);
             const result = output || { verified: true, flags: [], suggestedPromptImprovement: "" };
 
+            // Guardrail: only evaluate keto consistency if explicitly claimed as keto-friendly.
+            const ketoClaimed = input.claimedKetoScore === 'Strict Keto' || input.claimedKetoScore === 'Moderate Keto';
+            if (!ketoClaimed && result.flags?.length) {
+                const filteredFlags = result.flags.filter(flag => !/keto claim/i.test(flag));
+                const hadOnlyKetoFlags = filteredFlags.length === 0;
+                result.flags = filteredFlags;
+                if (hadOnlyKetoFlags) {
+                    result.verified = true;
+                    result.suggestedPromptImprovement = "";
+                }
+            }
+
             // Builder-Centric Logging: If verification fails, save 'event' for God View
             if (!result.verified) {
+                try {
+                    await adminDb.collection('ai_telemetry_events').add({
+                        type: 'hallucination_flagged',
+                        timestamp: new Date(),
+                        userId: input.userId || null,
+                        entryId: input.entryId || null,
+                        reason: result.flags?.join('; ') || 'verification_failed',
+                        meta: {
+                            foodItemName: input.foodItemName,
+                            flags: result.flags || []
+                        }
+                    });
+                } catch (telemetryErr) {
+                    console.error("[Critic] Failed to log telemetry:", telemetryErr);
+                }
+
                 try {
                     await adminDb.collection('admin_events').add({
                         type: 'hallucination_detected',
