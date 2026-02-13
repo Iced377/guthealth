@@ -19,7 +19,8 @@ export const releaseNotesData: ReleaseNote[] = [
         features: [
             'Smarter Logic: The AI now understands if you are a "New" user vs. an "Advanced" logger and adjusts its advice accordingly.',
             'Context Awareness: It now recognizes when it\'s late at night or if you\'ve had a low-calorie day relative to the time, giving safer, more relevant advice.',
-            'Data Quality: The system now intelligently flags "impossible" logs (like a 48-hour fast) to prevent confusing advice.'
+            'Data Quality: The system now intelligently flags "impossible" logs (like a 48-hour fast) to prevent confusing advice.',
+            'Ramadan Hub: A new "Coming Soon" teaser for our upcoming dedicated Ramadan experience.'
         ],
         improvements: [],
         fixes: []

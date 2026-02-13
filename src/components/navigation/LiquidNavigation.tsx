@@ -81,6 +81,7 @@ const LOG_ACTIONS: SubMenuItem[] = [
 
 // Explore sub-items
 const EXPLORE_ITEMS: SubMenuItem[] = [
+    { id: 'ramadan', icon: Moon, label: 'Ramadan Hub', path: '/explore/ramadan', accessibilityLabel: 'Ramadan Hub, open Ramadan features' },
     { id: 'app-tour', icon: HelpCircle, label: 'App Tour', accessibilityLabel: 'App Tour, start guided experience' },
     { id: 'about', icon: Info, label: 'About', path: '/about', accessibilityLabel: 'About, app information' },
     { id: 'feedback', icon: MessageSquare, label: 'Feedback', path: '/feedback', accessibilityLabel: 'Give Feedback, send feedback' },
@@ -124,6 +125,7 @@ const LIQUID_SPRING = {
 const NAV_COLORS: Record<string, string> = {
     home: '#3b82f6', // blue-500
     explore: '#8b5cf6', // violet-500
+    ramadan: '#10b981', // emerald-500 (Green for Ramadan)
     insights: '#f59e0b', // amber-500
     profile: '#ec4899', // pink-500
     log: '#10b981', // emerald-500
@@ -504,10 +506,10 @@ export default function LiquidNavigation({
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
                         className={cn(
-                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            "fixed z-[100] flex flex-wrap justify-center items-center gap-3 isolation-isolate px-6 max-w-[340px] mx-auto", // Added flex-wrap, max-w, px-6 to force wrap
                             enableWebBento
-                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
-                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw]"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0"
                         )}
                         style={{
                             transform: 'translateZ(0)',
@@ -563,6 +565,7 @@ export default function LiquidNavigation({
                                         item.id === 'feedback' && "bg-gradient-to-br from-orange-500 to-amber-600",
                                         item.id === 'admin' && "bg-gradient-to-br from-red-500 to-rose-600",
                                         item.id === 'version' && "bg-gradient-to-br from-purple-500 to-violet-600",
+                                        item.id === 'ramadan' && "bg-gradient-to-br from-emerald-500 to-green-600",
                                         "shadow-lg"
                                     )}>
                                         <item.icon className="w-6 h-6 text-white" />
