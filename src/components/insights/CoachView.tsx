@@ -15,9 +15,8 @@ import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { Loader2, Copy, Check, Send } from 'lucide-react';
 import { Clipboard } from '@capacitor/clipboard';
 import DashboardHero from '../dashboard/DashboardHero';
-import { calculateDailyPedometerStats } from '@/lib/utils';
-import { useRamadan } from '@/features/ramadan/useRamadan';
-import { buildRamadanInjection } from '@/features/ramadan/ramadanAi';
+
+
 
 // Helper to determine time of day
 const getTimeSegment = (hour: number) => {
@@ -33,7 +32,6 @@ export function CoachView() {
     const mode: LiquidMode = isDarkMode ? 'dark' : 'light';
     const tokens = getLiquidTokens(mode);
     const { timelineEntries, userProfile } = useActionContext();
-    const ramadan = useRamadan();
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // AI State
@@ -85,8 +83,6 @@ export function CoachView() {
             return acc;
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-        const ramadanContext = buildRamadanInjection(ramadan);
-
         // Calculate Time Since Last Meal
         const lastMeal = timelineEntries.find(e => {
             if (e.entryType === 'food') return (e.calories || 0) > 5;
@@ -98,7 +94,7 @@ export function CoachView() {
             ? Math.abs(now.getTime() - new Date(lastMeal.timestamp).getTime()) / 36e5
             : 0;
 
-        // Fasting Projections (only if fasting preference is on)
+        // Fasting Projections
         const lastMealTime = lastMeal ? new Date(lastMeal.timestamp) : now;
         const target16h = new Date(lastMealTime.getTime() + 16 * 36e5);
 
@@ -116,7 +112,6 @@ export function CoachView() {
                 goal: userProfile?.profile?.goal,
                 currentWeight: userProfile?.profile?.weight
             },
-            ramadanContext,
             currentLocalTime: format(now, 'h:mm a'),
             dailyTotals: {
                 calories: Math.round(dailyTotals.calories),
@@ -133,7 +128,8 @@ export function CoachView() {
             trendsAnalysis: trends
         };
 
-    }, [timelineEntries, userProfile, ramadan]);
+    }, [timelineEntries, userProfile]);
+
 
     // Usage Limit State
     const [dailyUsageCount, setDailyUsageCount] = useState(0);
@@ -277,11 +273,7 @@ export function CoachView() {
         if (aiOutput) {
             return (
                 <div className="space-y-4">
-                    {ramadan.isEnabled && (
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                            Ramadan Context Active
-                        </div>
-                    )}
+
                     <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
                         {aiOutput.aiResponse}
 

@@ -17,8 +17,6 @@ import { getPersonalizedDietitianInsight, PersonalizedDietitianOutput } from '@/
 import { calculateTrendsAnalysis } from '@/utils/insights';
 import { Button } from '@/components/ui/button';
 import { HapticsService } from '@/lib/haptics';
-import { useRamadan } from '@/features/ramadan/useRamadan';
-import { buildRamadanInjection } from '@/features/ramadan/ramadanAi';
 
 // Helper to determine time of day
 const getTimeSegment = (hour: number) => {
@@ -125,7 +123,6 @@ export function CoachSessionSheet() {
     const tokens = getLiquidTokens(mode);
     const isOpen = activeSheet === 'coachSession';
     const { timelineEntries, userProfile } = useActionContext();
-    const ramadan = useRamadan();
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // Select avatar based on mode
@@ -201,10 +198,7 @@ export function CoachSessionSheet() {
             return acc;
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-        const ramadanContext = buildRamadanInjection(ramadan);
-
         // Calculate Time Since Last Meal
-        // Find last REAL meal > 5 calories (ignore water/supplements)
         const lastMeal = timelineEntries.find(e => {
             if (e.entryType === 'food') return (e.calories || 0) > 5;
             if (e.entryType === 'manual_macro') return ((e as any).calories || 0) > 5;
@@ -215,7 +209,7 @@ export function CoachSessionSheet() {
             ? Math.abs(now.getTime() - new Date(lastMeal.timestamp).getTime()) / 36e5
             : 0;
 
-        // Fasting Projections (only if fasting preference is on)
+        // Fasting Projections
         const lastMealTime = lastMeal ? new Date(lastMeal.timestamp) : now;
         const target16h = new Date(lastMealTime.getTime() + 16 * 36e5);
 
@@ -234,7 +228,6 @@ export function CoachSessionSheet() {
                 currentWeight: userProfile?.profile?.weight,
                 macros: userProfile?.profile?.macros
             },
-            ramadanContext,
             currentLocalTime: format(now, 'h:mm a'),
             dailyTotals,
             hoursSinceLastMeal: parseFloat(hoursSinceLastMeal.toFixed(1)),
@@ -246,7 +239,8 @@ export function CoachSessionSheet() {
             trendsAnalysis: trends
         };
 
-    }, [isOpen, timelineEntries, userProfile, ramadan]);
+    }, [isOpen, timelineEntries, userProfile]);
+
 
     // Fetch Insights
     useEffect(() => {
@@ -363,14 +357,7 @@ export function CoachSessionSheet() {
                                     <span className={cn("text-xs", tokens.text.tertiary)}>Advanced Analysis</span>
                                 </div>
                             </div>
-                            {ramadan.isEnabled && (
-                                <div className={cn(
-                                    "text-[10px] uppercase tracking-[0.2em] rounded-full px-3 py-1 border",
-                                    mode === 'dark' ? "border-white/10 text-white/60" : "border-black/10 text-black/50"
-                                )}>
-                                    Ramadan Context
-                                </div>
-                            )}
+
 
                         </div>
 

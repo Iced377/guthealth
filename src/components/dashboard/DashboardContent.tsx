@@ -16,7 +16,6 @@ const ParallaxVitalsHeader = dynamic(() => import('./ParallaxVitalsHeader'), {
 const LiquidCardCarousel = dynamic(() => import('./LiquidCardCarousel'), {
     ssr: false // Carousel is heavily client-side interactive
 });
-const RamadanDashboardDecor = dynamic(() => import('@/features/ramadan/components/RamadanDashboardDecor'), { ssr: false });
 import { useActionContext } from '@/contexts/ActionContext';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { format, isSameDay, addDays } from 'date-fns';
@@ -264,7 +263,6 @@ export default function DashboardContent({
                     <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
                 </div>
             )}
-            <RamadanDashboardDecor />
 
             {isLoading ? (
                 <div className={cn("flex flex-col h-full w-full p-4 gap-6 mt-4 relative z-10", enableWebBento && "max-w-6xl mx-auto px-8")}>

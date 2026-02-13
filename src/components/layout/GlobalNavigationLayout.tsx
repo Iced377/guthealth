@@ -11,8 +11,6 @@ import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { NavVisibilityProvider } from '@/components/navigation/useNavVisibilityController';
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { RamadanProvider } from '@/features/ramadan/RamadanProvider';
-import RamadanOnboardingModal from '@/features/ramadan/components/RamadanOnboardingModal';
 
 const ComposeOverlay = dynamic(() => import('@/components/compose/ComposeOverlay'), { ssr: false });
 const IdentifyFoodByPhotoDialog = dynamic(() => import('@/components/food-logging/IdentifyFoodByPhotoDialog'), { ssr: false });
@@ -275,13 +273,10 @@ const NavigationAndDialogs = () => {
 export const GlobalNavigationLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <ActionProvider>
-            <RamadanProvider>
-                <NavVisibilityProvider>
-                    {children}
-                    <NavigationAndDialogs />
-                    <RamadanOnboardingModal />
-                </NavVisibilityProvider>
-            </RamadanProvider>
+            <NavVisibilityProvider>
+                {children}
+                <NavigationAndDialogs />
+            </NavVisibilityProvider>
         </ActionProvider>
     );
 };

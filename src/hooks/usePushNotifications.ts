@@ -5,17 +5,11 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { doc, arrayUnion, setDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { useRamadan } from '@/features/ramadan/useRamadan';
 
 export const usePushNotifications = () => {
     const { user } = useAuth();
     const { toast } = useToast();
-    const ramadan = useRamadan();
-    const ramadanRef = useRef(ramadan);
 
-    useEffect(() => {
-        ramadanRef.current = ramadan;
-    }, [ramadan]);
 
     useEffect(() => {
         if (!user || Capacitor.getPlatform() === 'web') {
@@ -65,23 +59,8 @@ export const usePushNotifications = () => {
                 const recv = await FirebaseMessaging.addListener('notificationReceived', (event) => {
                     console.log('[Push] Received:', event.notification);
 
-                    const current = ramadanRef.current;
-                    const isQuietHours = current.isEnabled
-                        && current.mode === 'witnessing'
-                        && (current.config.quietHours ?? true)
-                        && current.timings
-                        && new Date() >= current.timings.suhoor
-                        && new Date() <= current.timings.iftar;
-
                     const title = event.notification.title || "New Notification";
                     const body = event.notification.body || "You have a new alert.";
-                    const text = `${title} ${body}`.toLowerCase();
-                    const looksFoodRelated = ['meal', 'food', 'snack', 'lunch', 'breakfast', 'log', 'calorie'].some((k) => text.includes(k));
-
-                    if (isQuietHours && looksFoodRelated) {
-                        console.log('[Push] Suppressed food notification due to Ramadan quiet hours.');
-                        return;
-                    }
 
                     toast({
                         title,

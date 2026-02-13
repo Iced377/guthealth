@@ -47,7 +47,6 @@ import { AppleHealthService } from '@/lib/apple-health';
 import { AppleHealthIcon, FitbitIcon } from '@/components/shared/BrandIcons';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import RamadanSettingsPanel from '@/features/ramadan/components/RamadanSettingsPanel';
 // import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; // Removed
 // import { Calendar } from '@/components/ui/calendar'; // Removed local usage
 import LiquidDateSheet from '@/components/shared/LiquidDateSheet'; // Added
@@ -664,11 +663,7 @@ export default function ProfilePage() {
                     </GlassPanel>
                 )}
 
-                {/* D.5 Ramadan Mode */}
-                <div className="space-y-3">
-                    <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-widest opacity-70">Seasonal Mode</h3>
-                    <RamadanSettingsPanel />
-                </div>
+
 
                 {/* E. Data & Integrations */}
                 <div className="space-y-3">

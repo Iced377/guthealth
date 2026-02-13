@@ -13,7 +13,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { LoggedFoodItem, SymptomLog, UserProfile } from '@/types';
-import { RamadanInjectionContextSchema } from '@/ai/features/ramadan-dietitian';
 
 // Schemas for LoggedFoodItem and SymptomLog to be used within the input
 const FoodItemSchemaForAI = z.object({
@@ -108,7 +107,6 @@ const PersonalizedDietitianInputSchema = z.object({
   })).optional().describe("List of fasting window durations calculated from the last 7 days of logs."),
   timeOfDaySegment: z.string().optional().describe("Current time segment: 'Morning', 'Afternoon', 'Evening', 'Late Night'."),
   safetyFloor: z.number().optional().describe("Calculated 25% deficit limit (TDEE * 0.75). Below this is unsafe."),
-  ramadanContext: RamadanInjectionContextSchema.optional(),
   daysLogged: z.number().optional().describe("Number of distinct days with at least one food log."),
   averageMealsPerDay: z.number().optional().describe("Average number of logged meals per logged day."),
   todayLowCalorieFlag: z.enum(['none', 'low_midday', 'low_evening', 'very_low_evening']).optional(),
@@ -119,9 +117,11 @@ const PersonalizedDietitianInputSchema = z.object({
   isVegan: z.boolean().optional(),
   lowCalorieDays: z.number().optional(),
   veryLowCalorieDays: z.number().optional(),
+  trendsAnalysis: TrendsAnalysisSchema.optional(),
   illogicalFlags: z.array(z.string()).optional(),
 });
 export type PersonalizedDietitianInput = z.infer<typeof PersonalizedDietitianInputSchema>;
+export type FoodItemForAI = z.infer<typeof FoodItemSchemaForAI>;
 
 const PersonalizedDietitianOutputSchema = z.object({
   aiResponse: z.string().describe("The AI dietitian's comprehensive and personalized response to the user's question, based on the provided data. This should be insightful and actionable, formatted clearly (e.g., using markdown for lists or emphasis if appropriate, but will be rendered as a string)."),
@@ -189,20 +189,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 **Sanity Check Flags:** {{#each illogicalFlags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
 {{/if}}
 
-{{#if ramadanContext}}
-**Ramadan Context (Health-Focused):**
-- **Mode:** {{ramadanContext.mode}}
-- **Suhoor ends:** {{ramadanContext.suhoorTime}}
-- **Iftar starts:** {{ramadanContext.iftarTime}}
-- **Next event:** {{ramadanContext.nextEvent}} ({{ramadanContext.countdown}})
-- **Theme:** {{ramadanContext.theme}}
 
-**Ramadan Guidance Rules:**
-* If fasting, never recommend meals during fasting hours.
-* Prioritize hydration and balanced suhoor/iftar timing.
-* Training advice should favor post-iftar windows.
-* If witnessing, focus on supportive, non-food pressure guidance.
-{{/if}}
 
 {{#if trendsAnalysis}}
 **Analysis from Trends Graphs (Last {{trendsAnalysis.totalDaysAnalyzed}} Days):**
@@ -348,7 +335,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 `,
 });
 
-const getDateKey = (timestamp: string): string | null => {
+const getDateKey = (timestamp: string | Date): string | null => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
     return null;
@@ -369,7 +356,7 @@ const hasPreference = (prefs: string[] | undefined, needles: string[]): boolean 
   });
 };
 
-const summarizeLogging = (foodLog: LoggedFoodItem[], todayKey: string | null) => {
+const summarizeLogging = (foodLog: (FoodItemForAI | LoggedFoodItem)[], todayKey: string | null) => {
   const dailyCalories = new Map<string, number>();
   const dailyMeals = new Map<string, number>();
   let singleMealOver2500 = false;
@@ -420,7 +407,7 @@ const summarizeLogging = (foodLog: LoggedFoodItem[], todayKey: string | null) =>
   };
 };
 
-const getMostRecentDateKey = (foodLog: LoggedFoodItem[]): string | null => {
+const getMostRecentDateKey = (foodLog: (FoodItemForAI | LoggedFoodItem)[]): string | null => {
   let latestTime = -1;
   let latestKey: string | null = null;
   for (const item of foodLog) {
@@ -445,7 +432,7 @@ const personalizedDietitianFlow = ai.defineFlow(
       const tdee = input.userProfile?.tdee;
       const safetyFloor = tdee ? Math.round(tdee * 0.75) : undefined;
       const prefs = input.userProfile?.dietaryPreferences;
-      const fastingPreference = hasPreference(prefs, ['fast', 'intermittent']) || input.ramadanContext?.mode === 'fasting';
+      const fastingPreference = hasPreference(prefs, ['fast', 'intermittent']);
       const isKeto = hasPreference(prefs, ['keto', 'low carb', 'low-carb']);
       const isVegetarian = hasPreference(prefs, ['vegetarian']);
       const isVegan = hasPreference(prefs, ['vegan']);
