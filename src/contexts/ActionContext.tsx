@@ -429,6 +429,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             safeFoods: data.safeFoods || [],
                             premium: currentIsPremium,
                             isAdmin: data.isAdmin === true,
+                            ramadanConfig: data.ramadanConfig,
                             profile: data.profile,
                         };
                         setUserProfile(profileData);

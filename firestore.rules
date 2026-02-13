@@ -83,6 +83,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // --- Ramadan Remote Config ---
+    match /config/ramadan {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // --- Contact Submissions ---
     match /contact_submissions/{submissionId} {
       // Allow anyone (even unauthenticated) to submit a contact form

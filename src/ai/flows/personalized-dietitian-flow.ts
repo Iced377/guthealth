@@ -13,6 +13,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { LoggedFoodItem, SymptomLog, UserProfile } from '@/types';
+import { RamadanInjectionContextSchema } from '@/ai/features/ramadan-dietitian';
 
 // Schemas for LoggedFoodItem and SymptomLog to be used within the input
 const FoodItemSchemaForAI = z.object({
@@ -65,7 +66,6 @@ const UserProfileSchemaForAI = z.object({
   }).optional().describe("User's daily macro targets in grams."),
 }).optional();
 
-
 const TrendsAnalysisSchema = z.object({
   cumulativeNetCalories: z.number().describe("Total accummulated calorie difference (Target - Consumed). Positive = Deficit, Negative = Surplus."),
   cumulativeNetCaloriesWithGuardrail: z.number().optional().describe("Total accumulated calorie difference EXCLUDING days with incomplete logging (< 800 kcal). This is the more accurate 'true' deficit."),
@@ -108,6 +108,18 @@ const PersonalizedDietitianInputSchema = z.object({
   })).optional().describe("List of fasting window durations calculated from the last 7 days of logs."),
   timeOfDaySegment: z.string().optional().describe("Current time segment: 'Morning', 'Afternoon', 'Evening', 'Late Night'."),
   safetyFloor: z.number().optional().describe("Calculated 25% deficit limit (TDEE * 0.75). Below this is unsafe."),
+  ramadanContext: RamadanInjectionContextSchema.optional(),
+  daysLogged: z.number().optional().describe("Number of distinct days with at least one food log."),
+  averageMealsPerDay: z.number().optional().describe("Average number of logged meals per logged day."),
+  todayLowCalorieFlag: z.enum(['none', 'low_midday', 'low_evening', 'very_low_evening']).optional(),
+  coachTier: z.enum(['new', 'emerging', 'advanced']).optional(),
+  fastingPreference: z.boolean().optional(),
+  isKeto: z.boolean().optional(),
+  isVegetarian: z.boolean().optional(),
+  isVegan: z.boolean().optional(),
+  lowCalorieDays: z.number().optional(),
+  veryLowCalorieDays: z.number().optional(),
+  illogicalFlags: z.array(z.string()).optional(),
 });
 export type PersonalizedDietitianInput = z.infer<typeof PersonalizedDietitianInputSchema>;
 
@@ -136,10 +148,17 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 **User's Context:**
 - **Current Local Time:** {{{currentLocalTime}}} ({{timeOfDaySegment}})
 - **Time Since Last Meal:** {{#if hoursSinceLastMeal}}{{hoursSinceLastMeal}} hours{{else}}Unknown{{/if}}
+- **Coach Tier:** {{#if coachTier}}{{coachTier}}{{else}}unknown{{/if}}
+- **Days Logged:** {{#if daysLogged}}{{daysLogged}}{{else}}0{{/if}}
+- **Avg Meals/Day:** {{#if averageMealsPerDay}}{{averageMealsPerDay}}{{else}}0{{/if}}
 - **Goal:** {{#if userProfile.goal}}{{userProfile.goal}}{{else}}Not specified{{/if}}
 - **Current Weight:** {{#if userProfile.currentWeight}}{{userProfile.currentWeight}} kg{{else}}Not specified{{/if}}
 - **Activity Level:** {{#if userProfile.activityLevel}}{{userProfile.activityLevel}}{{else}}Not specified{{/if}}
 - **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
+- **Fasting Preference:** {{#if fastingPreference}}Yes{{else}}No/Unknown{{/if}}
+- **Keto Preference:** {{#if isKeto}}Yes{{else}}No/Unknown{{/if}}
+- **Vegetarian:** {{#if isVegetarian}}Yes{{else}}No/Unknown{{/if}}
+- **Vegan:** {{#if isVegan}}Yes{{else}}No/Unknown{{/if}}
 - **TDEE (Daily Energy Expenditure):** {{#if userProfile.tdee}}{{userProfile.tdee}} kcal{{else}}N/A{{/if}}
 - **Safety Floor (Min Recommended Intake):** {{#if safetyFloor}}{{safetyFloor}} kcal{{else}}N/A{{/if}} (TDEE * 0.75)
 - **Macro Targets:** {{#if userProfile.macros}}P: {{userProfile.macros.protein}}g, C: {{userProfile.macros.carbs}}g, F: {{userProfile.macros.fats}}g{{else}}Not specified{{/if}}
@@ -157,6 +176,33 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 {{/if}}
 - **Today's Totals (Calculated):** Calories: {{dailyTotals.calories}}, Protein: {{dailyTotals.protein}}g, Carbs: {{dailyTotals.carbs}}g, Fat: {{dailyTotals.fat}}g
   (Protein: {{dailyTotals.protein}}g * 4 = ~{{#if dailyTotals.protein}}...{{/if}} kcal. Check % of total.)
+
+{{#if lowCalorieDays}}
+**Data Quality Signals:**
+- **Low-Cal Days (<1100 kcal):** {{lowCalorieDays}}
+- **Very Low-Cal Days (<900 kcal):** {{veryLowCalorieDays}}
+{{/if}}
+{{#if todayLowCalorieFlag}}
+**Today's Intake Context Flag:** {{todayLowCalorieFlag}}
+{{/if}}
+{{#if illogicalFlags}}
+**Sanity Check Flags:** {{#each illogicalFlags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{/if}}
+
+{{#if ramadanContext}}
+**Ramadan Context (Health-Focused):**
+- **Mode:** {{ramadanContext.mode}}
+- **Suhoor ends:** {{ramadanContext.suhoorTime}}
+- **Iftar starts:** {{ramadanContext.iftarTime}}
+- **Next event:** {{ramadanContext.nextEvent}} ({{ramadanContext.countdown}})
+- **Theme:** {{ramadanContext.theme}}
+
+**Ramadan Guidance Rules:**
+* If fasting, never recommend meals during fasting hours.
+* Prioritize hydration and balanced suhoor/iftar timing.
+* Training advice should favor post-iftar windows.
+* If witnessing, focus on supportive, non-food pressure guidance.
+{{/if}}
 
 {{#if trendsAnalysis}}
 **Analysis from Trends Graphs (Last {{trendsAnalysis.totalDaysAnalyzed}} Days):**
@@ -197,27 +243,48 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 
 **RESPONSE STRATEGY:**
 
-1.  **CRITICAL: Time of Day & Context Awareness:**
+1.  **FIRST: Onboarding-First for New or Sparse Data Users:**
+    *   **IF \`coachTier\` is \`new\` OR \`daysLogged\` < 3 OR \`averageMealsPerDay\` < 2 OR \`veryLowCalorieDays\` > 0:**
+        *   Focus the response on **how to use the app** and **building the habit** of logging.
+        *   Explain, in simple science-backed language, that consistent logging improves accuracy and reduces guesswork.
+        *   Be explicit that data is **limited** and avoid confident conclusions.
+        *   Provide practical guidance:
+            *   **Log every meal/snack** daily and include **timing**.
+            *   **Track steps and weight** so energy intake/expenditure align with goals.
+            *   **Manual entry** is possible by tapping the relevant **main dashboard card** (meals, steps, weight) for any date.
+            *   Recommend connecting **Apple Health** for steps.
+            *   If they own a **Fitbit Aria** smart scale, mention the app can pull weight automatically.
+        *   Ask 1-2 clarifying questions if profile/goal/symptoms are missing.
+        *   **DO NOT** do macro deep-dives, fasting projections, or keto rules unless the user explicitly asks.
+    *   **TODAY'S CALORIE CONTEXT (CRITICAL):**
+        *   **IF \`todayLowCalorieFlag\` = \`low_midday\`:** This is normal for midday. Encourage completing logs and suggest a plan for the rest of the day.
+        *   **IF \`todayLowCalorieFlag\` = \`low_evening\` or \`very_low_evening\`:** Flag as likely incomplete or insufficient intake for the day. Suggest a balanced meal or snack **unless** the user is fasting by preference or Ramadan context is active.
+        *   **IF fasting/Ramadan:** Treat low daytime intake as expected and shift advice to hydration and meal planning for the eating window.
+
+2.  **CRITICAL: Time of Day & Context Awareness:**
     *   **IF Late Night (22:00 - 04:00):**
         *   **STOP:** Do NOT suggest exercise/walking. The prioritized advice is SLEEP and RECOVERY.
-        *   **FASTING:** 
+        *   **FASTING (Only if \`fastingPreference\` is true or Ramadan context exists):** 
             *   **IF \`hoursSinceLastMeal\` > 4:** State clearly that their fast **ALREADY STARTED** {{hoursSinceLastMeal}} hours ago. Use the provided "Projected Fast Completion" times strictly.
             *   **IF \`hoursSinceLastMeal\` <= 4:** Consider them still in their **Fed State** (Digesting). Do NOT say "Fast has started".
             *   Do NOT say "If you stop eating now".
             *   **NO SNACKS:** Unless explicitly requested.
     *   **IF Morning:** Focus on fueling for the day.
     *   **IF Evening:** Focus on winding down and protein targets.
+    *   **IF \`fastingPreference\` is false/unknown AND no Ramadan context:** Do NOT discuss fasting windows, fasted/fed states, or projected fast completion unless the user explicitly asks.
 
-2.  **Analyze User's Progress Towards Their Goal:**
+3.  **Analyze User's Progress Towards Their Goal:**
+    *   Start with a short, plain-language summary tied to their goal and any logged symptoms (best practices).
     *   **Weight Loss (\`lose_fat\`):** Analyze if their caloric intake and food choices align with a deficit.
-        *   **METABOLIC GUARDRAIL (CRITICAL):** Check if 'Average Daily Intake' < 'Safety Floor' ({{safetyFloor}} kcal).
+        *   **DATA QUALITY GUARDRAIL:** If \`veryLowCalorieDays\` > 0 or \`lowCalorieDays\` > 0, treat calorie totals as **incomplete logging**. Do NOT celebrate large deficits. Emphasize consistent logging instead.
+        *   **METABOLIC GUARDRAIL (CRITICAL):** If Safety Floor is available, check if 'Average Daily Intake' < 'Safety Floor' ({{safetyFloor}} kcal). If Safety Floor is N/A, skip this check.
         *   **IF UNDER FLOOR:** Do NOT praise the large deficit. WARN them that consistently eating below {{safetyFloor}} kcal risks **metabolic slowdown** and cortisol increase. Recommend INCREASING intake slightly to stay above this floor.
         *   **IF ABOVE FLOOR:** Affirm the sustainable deficit.
     *   **Muscle Gain (\`gain_muscle\`):** Check if protein intake is sufficient and if they are eating enough overall to fuel growth.
     *   **Macronutrient Analysis (Crucial):**
         *   **Calculate Protein %:** (Protein_g * 4) / Total_Calories.
             *   **Guidance:** Ideally, Protein should be a significant portion for satiety and muscle (aiming for >25-30% is often good). Praise high protein or suggest increasing it if low.
-        *   **KETO/LOW CARB Deep Dive (If 'Keto' or 'Low Carb' is preferred):**
+        *   **KETO/LOW CARB Deep Dive (Only if \`isKeto\` is true or the user explicitly asks):**
             *   **Adherence Check:** You managed to stay under 50g Net Carbs on **{{trendsAnalysis.ketoAdherenceDays}} out of {{trendsAnalysis.totalDaysAnalyzed}} days**.
                 *   IF > 80%: Praise consistency!
                 *   IF < 50%: Discuss difficulty. "It looks like sticking to strict Keto has been tough ({{trendsAnalysis.ketoAdherenceDays}} days adhered)."
@@ -233,7 +300,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
                 *   **WARNING:** High Protein + Low Fat + Low Carb is dangerous ("Rabbit Starvation"). Keto requires FAT as the fuel source. Suggest adding healthy fats (Olive Oil, Avocado, Nuts).
             *   **Protein Sparing:** Protein should be adequate for muscle sparing, but not excessive on strict therapeutic keto (though less of a concern for weight loss). Focus on *Fats* filling the remaining energy need.
     *   **Maintenance (\`maintain\`):** specific patterns that might cause fluctuations.
-    *   *Intermittent Fasting (State Recognition):*
+    *   *Intermittent Fasting (State Recognition) — ONLY if \`fastingPreference\` is true or the user explicitly asks:*
         *   **A) Current Status (CRITICAL):** Check 'hoursSinceLastMeal'.
             *   **IF < 4 hours:** User is in **FED STATE** (Digestion/Anabolic).
                 *   **ADVICE:** "You are currently in your eating window (Fed State) and digesting your last meal (~{{hoursSinceLastMeal}}h ago)."
@@ -255,29 +322,117 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
         *   **IMPORTANT:** If the "Flux Zones" indicate Stagnation but recent days (or today) show high activity, **Activity Trumps History.** Praise the recent effort to move!
         *   If truly sedentary, encourage movement *at appropriate times* (not midnight).
 
-3.  **Evaluate Daily Habits & Trends:**
+4.  **Evaluate Daily Habits & Trends:**
     *   Look at the *trends* in their logs. Are they consistent? Do they skip meals? Do they binge at night?
     *   If they asked "How am I doing?", give a direct assessment based on their specific goal. "You are doing great with protein, but your caloric intake is slightly low/high for your goal."
 
-4.  **Provide Actionable "Next Steps":**
+5.  **Provide Actionable "Next Steps":**
     *   Don't just analyze; tell them what to do *next*.
     *   Example: "For your next meal, try to add more fiber to stay full." or "You've hit your protein goal, maybe focus on veggies for dinner."
+    *   Respect dietary preferences (e.g., if \`isVegetarian\` or \`isVegan\`, avoid meat/fish suggestions).
 
-5.  **Tone & Style:**
+6.  **Tone & Style:**
     *   Be encouraging but honest. Like a real coach.
     *   Use Markdown for clarity (bolding key points, lists).
     *   Keep it concise where possible, but detailed enough to be valuable.
     *   **NEVER** suggest "Go for a walk" if it is past 10 PM.
 
-6.  **SAFETY & TONE GUARDRAILS:**
+7.  **SAFETY & TONE GUARDRAILS:**
     *   **NO PROFANITY:** Do not use swear words, crude humor, or sexual references.
     *   **NO MEDICAL ADVICE:** Framing remains wellness coaching.
     *   **RESPECT:** Maintain a supportive, professional yet friendly 'coach' persona.
     *   **ROUND NUMBERS:** All calorie and macro numbers MUST be whole integers (e.g., 1625 kcal, 135g). Never use decimals.
+    *   **ILLOGICAL INPUTS:** If \`illogicalFlags\` is present, gently flag the issue and ask the user to verify or correct the log before drawing conclusions.
 
 **Output the response as a JSON object with a single key 'aiResponse'.**
 `,
 });
+
+const getDateKey = (timestamp: string): string | null => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const hasPreference = (prefs: string[] | undefined, needles: string[]): boolean => {
+  if (!prefs || prefs.length === 0) {
+    return false;
+  }
+  return prefs.some((pref) => {
+    const normalized = pref.toLowerCase();
+    return needles.some((needle) => normalized.includes(needle));
+  });
+};
+
+const summarizeLogging = (foodLog: LoggedFoodItem[], todayKey: string | null) => {
+  const dailyCalories = new Map<string, number>();
+  const dailyMeals = new Map<string, number>();
+  let singleMealOver2500 = false;
+
+  for (const item of foodLog) {
+    const dateKey = getDateKey(item.timestamp);
+    if (!dateKey) {
+      continue;
+    }
+    dailyMeals.set(dateKey, (dailyMeals.get(dateKey) || 0) + 1);
+    if (typeof item.calories === 'number') {
+      dailyCalories.set(dateKey, (dailyCalories.get(dateKey) || 0) + item.calories);
+      if (item.calories > 2500) {
+        singleMealOver2500 = true;
+      }
+    }
+  }
+
+  const daysLogged = dailyMeals.size;
+  const totalMeals = Array.from(dailyMeals.values()).reduce((sum, count) => sum + count, 0);
+  const averageMealsPerDay = daysLogged > 0 ? Math.round(totalMeals / daysLogged) : 0;
+
+  let lowCalorieDays = 0;
+  let veryLowCalorieDays = 0;
+  let extremeDailyCalories = false;
+  for (const [dateKey, calories] of dailyCalories.entries()) {
+    if (todayKey && dateKey === todayKey) {
+      continue;
+    }
+    if (calories > 0 && calories < 1100) {
+      lowCalorieDays += 1;
+    }
+    if (calories > 0 && calories < 900) {
+      veryLowCalorieDays += 1;
+    }
+    if (calories > 6000) {
+      extremeDailyCalories = true;
+    }
+  }
+
+  return {
+    daysLogged,
+    averageMealsPerDay,
+    lowCalorieDays,
+    veryLowCalorieDays,
+    singleMealOver2500,
+    extremeDailyCalories,
+  };
+};
+
+const getMostRecentDateKey = (foodLog: LoggedFoodItem[]): string | null => {
+  let latestTime = -1;
+  let latestKey: string | null = null;
+  for (const item of foodLog) {
+    const date = new Date(item.timestamp);
+    const time = date.getTime();
+    if (!Number.isNaN(time) && time > latestTime) {
+      latestTime = time;
+      latestKey = getDateKey(item.timestamp);
+    }
+  }
+  return latestKey;
+};
 
 const personalizedDietitianFlow = ai.defineFlow(
   {
@@ -287,13 +442,72 @@ const personalizedDietitianFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      // Calculate Safety Floor (TDEE * 0.75) if TDEE exists
-      const tdee = input.userProfile?.tdee || 2000; // Default fallback to avoid 0 if unknown
-      const safetyFloor = Math.round(tdee * 0.75);
+      const tdee = input.userProfile?.tdee;
+      const safetyFloor = tdee ? Math.round(tdee * 0.75) : undefined;
+      const prefs = input.userProfile?.dietaryPreferences;
+      const fastingPreference = hasPreference(prefs, ['fast', 'intermittent']) || input.ramadanContext?.mode === 'fasting';
+      const isKeto = hasPreference(prefs, ['keto', 'low carb', 'low-carb']);
+      const isVegetarian = hasPreference(prefs, ['vegetarian']);
+      const isVegan = hasPreference(prefs, ['vegan']);
+
+      const todayKey = getMostRecentDateKey(input.foodLog);
+      const logSummary = summarizeLogging(input.foodLog, todayKey);
+      const illogicalFlags: string[] = [];
+      if (logSummary.singleMealOver2500) {
+        illogicalFlags.push('single_meal_over_2500_kcal');
+      }
+      if (logSummary.extremeDailyCalories) {
+        illogicalFlags.push('extreme_daily_calories');
+      }
+      if (logSummary.averageMealsPerDay > 0 && logSummary.averageMealsPerDay < 2) {
+        illogicalFlags.push('low_meal_frequency');
+      }
+      if (logSummary.lowCalorieDays > 0) {
+        illogicalFlags.push('low_calorie_day_possible_incomplete_logging');
+      }
+      if (logSummary.veryLowCalorieDays > 0) {
+        illogicalFlags.push('very_low_calorie_day_possible_incomplete_logging');
+      }
+      if (input.userProfile?.maxFastingWindowHours && input.userProfile.maxFastingWindowHours > 48) {
+        illogicalFlags.push('fasting_window_over_48h');
+      }
+      if (input.recentFastingWindows?.some((window) => window.durationHours > 48)) {
+        illogicalFlags.push('fasting_window_over_48h_recent');
+      }
+
+      let todayLowCalorieFlag: 'none' | 'low_midday' | 'low_evening' | 'very_low_evening' = 'none';
+      const isEvening = input.timeOfDaySegment === 'Evening' || input.timeOfDaySegment === 'Late Night';
+      if (typeof input.dailyTotals?.calories === 'number') {
+        if (isEvening && input.dailyTotals.calories < 900) {
+          todayLowCalorieFlag = 'very_low_evening';
+        } else if (isEvening && input.dailyTotals.calories < 1100) {
+          todayLowCalorieFlag = 'low_evening';
+        } else if (!isEvening && input.dailyTotals.calories < 1100) {
+          todayLowCalorieFlag = 'low_midday';
+        }
+      }
+
+      let coachTier: 'new' | 'emerging' | 'advanced' = 'advanced';
+      if (logSummary.daysLogged < 3 || !input.userProfile?.goal || !input.userProfile?.tdee) {
+        coachTier = 'new';
+      } else if (logSummary.daysLogged < 5 || logSummary.averageMealsPerDay < 2) {
+        coachTier = 'emerging';
+      }
 
       const transformedInput = {
         ...input,
         safetyFloor: safetyFloor,
+        daysLogged: logSummary.daysLogged,
+        averageMealsPerDay: logSummary.averageMealsPerDay,
+        todayLowCalorieFlag: todayLowCalorieFlag !== 'none' ? todayLowCalorieFlag : undefined,
+        coachTier: coachTier,
+        fastingPreference: fastingPreference,
+        isKeto: isKeto,
+        isVegetarian: isVegetarian,
+        isVegan: isVegan,
+        lowCalorieDays: logSummary.lowCalorieDays,
+        veryLowCalorieDays: logSummary.veryLowCalorieDays,
+        illogicalFlags: illogicalFlags.length > 0 ? illogicalFlags : undefined,
         // No need to transform timestamps as they are already strings (potentially local time strings)
       };
 

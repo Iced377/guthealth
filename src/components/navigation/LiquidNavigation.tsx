@@ -82,6 +82,7 @@ const LOG_ACTIONS: SubMenuItem[] = [
 // Explore sub-items
 const EXPLORE_ITEMS: SubMenuItem[] = [
     { id: 'app-tour', icon: HelpCircle, label: 'App Tour', accessibilityLabel: 'App Tour, start guided experience' },
+    { id: 'ramadan', icon: Moon, label: 'Ramadan Hub', path: '/explore/ramadan', accessibilityLabel: 'Ramadan Hub, view seasonal experience' },
     { id: 'about', icon: Info, label: 'About', path: '/about', accessibilityLabel: 'About, app information' },
     { id: 'feedback', icon: MessageSquare, label: 'Feedback', path: '/feedback', accessibilityLabel: 'Give Feedback, send feedback' },
     { id: 'version', icon: Tag, label: APP_VERSION, accessibilityLabel: 'Version, view release notes' },
@@ -558,6 +559,7 @@ export default function LiquidNavigation({
                                         "w-12 h-12 rounded-xl flex items-center justify-center relative z-10 transition-opacity duration-200",
                                         pressedItem === item.id ? "opacity-0" : "opacity-100",
                                         item.id === 'app-tour' && "bg-gradient-to-br from-indigo-500 to-blue-600",
+                                        item.id === 'ramadan' && "bg-gradient-to-br from-emerald-500 to-green-600 ring-1 ring-white/15",
                                         item.id === 'about' && "bg-gradient-to-br from-gray-500 to-slate-600",
                                         item.id === 'feedback' && "bg-gradient-to-br from-orange-500 to-amber-600",
                                         item.id === 'admin' && "bg-gradient-to-br from-red-500 to-rose-600",

@@ -3,6 +3,7 @@ import type { AnalyzeFoodItemOutput as OriginalAnalyzeFoodItemOutput, FoodFODMAP
 import type { ProcessedFeedbackOutput as AIProcessedFeedback } from "@/ai/flows/process-feedback-flow";
 import type { FoodFODMAPProfile } from "@/ai/flows/food-similarity";
 import type React from 'react';
+import type { RamadanProfileConfig } from '@/features/ramadan/types';
 import type { Timestamp } from 'firebase/firestore';
 export type { UserRecommendationInput } from '@/ai/flows/user-recommendations';
 
@@ -160,6 +161,7 @@ export interface UserProfile {
   safeFoods: SafeFood[];
   premium?: boolean;
   isAdmin?: boolean;
+  ramadanConfig?: RamadanProfileConfig;
   dateOfBirth?: string; // YYYY-MM-DD
   feedbackMeta?: {
     hasSubmittedFeedback: boolean;

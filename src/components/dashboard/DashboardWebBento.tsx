@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { format, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, Flame, Footprints, Scale, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import LiquidCrystalCard from './LiquidCrystalCard';
 import TimelineSymptomCard from '@/components/food-logging/TimelineSymptomCard';
 import type { DailyNutritionSummary, LoggedFoodItem, PedometerLog, TimelineEntry, FitbitLog, UserProfile } from '@/types';
 import { calculateFastingTime } from '@/lib/dietaryMetrics';
+const RamadanDashboardDecor = dynamic(() => import('@/features/ramadan/components/RamadanDashboardDecor'), { ssr: false });
 
 interface DashboardWebBentoProps {
     currentDate: Date;
@@ -121,6 +123,7 @@ export default function DashboardWebBento({
     return (
         <div className="relative w-full">
             <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-12 pt-10">
+                <RamadanDashboardDecor />
                 <div className="grid grid-cols-12 gap-6">
                     <BentoCard
                         className="col-span-12"

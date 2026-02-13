@@ -8,9 +8,22 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.3.2";
+export const APP_VERSION = "5.4.1";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.4.1',
+        date: 'February 13, 2026',
+        title: 'AI Intelligence Upgrade',
+        description: 'A major logic upgrade for your Personal Dietitian, making it smarter, safer, and more context-aware.',
+        features: [
+            'Smarter Logic: The AI now understands if you are a "New" user vs. an "Advanced" logger and adjusts its advice accordingly.',
+            'Context Awareness: It now recognizes when it\'s late at night or if you\'ve had a low-calorie day relative to the time, giving safer, more relevant advice.',
+            'Data Quality: The system now intelligently flags "impossible" logs (like a 48-hour fast) to prevent confusing advice.'
+        ],
+        improvements: [],
+        fixes: []
+    },
     {
         version: '5.3.2',
         date: 'February 6, 2026',
