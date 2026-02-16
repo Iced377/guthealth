@@ -1,7 +1,7 @@
 // src/components/ramadan/RamadanCardStack.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RamadanCard } from './RamadanCard';
 import { RefreshCw } from 'lucide-react';
 import type { RamadanTip } from '@/data/ramadan-seed';
@@ -31,6 +31,7 @@ export function RamadanCardStack({
     savedIds
 }: RamadanCardStackProps) {
     const [index, setIndex] = useState(0);
+    const WINDOW_SIZE = 5;
 
     useEffect(() => {
         if (index > cards.length - 1) {
@@ -72,16 +73,29 @@ export function RamadanCardStack({
         </div>
     );
 
+    const windowStart = useMemo(() => {
+        if (cards.length <= WINDOW_SIZE) return 0;
+        const maxStart = cards.length - WINDOW_SIZE;
+        const half = Math.floor(WINDOW_SIZE / 2);
+        return Math.min(Math.max(index - half, 0), maxStart);
+    }, [cards.length, index]);
+
+    const windowCards = useMemo(
+        () => cards.slice(windowStart, windowStart + WINDOW_SIZE),
+        [cards, windowStart]
+    );
+    const windowIndex = Math.max(0, index - windowStart);
+
     return (
         <div className="relative w-full max-w-sm mx-auto">
             <div className="aspect-[3/4] isolation-isolate perspective-1000">
                 <LiquidChartCarousel
-                    currentIndex={index}
-                    onIndexChange={setIndex}
+                    currentIndex={windowIndex}
+                    onIndexChange={(nextIdx) => setIndex(windowStart + nextIdx)}
                     showDots={false}
                     className="h-full w-full"
                 >
-                    {cards.map((card) => (
+                    {windowCards.map((card) => (
                         <div key={card.topicId} className="h-full w-full flex items-center justify-center px-2">
                             <RamadanCard
                                 tip={card}

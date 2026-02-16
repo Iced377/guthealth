@@ -17,6 +17,14 @@ const DAILY_LIMIT = 10;
 const BUFFER_SIZE = 4;
 const HISTORY_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+const safeSetItem = (key: string, value: string) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        console.warn(`Failed to persist ${key}`, e);
+    }
+};
+
 interface CacheData {
     cards: RamadanTip[];
     timestamp: number;
@@ -210,7 +218,7 @@ export function useRamadanCards() {
                 cards,
                 timestamp: Date.now()
             };
-            localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify(cache));
+            safeSetItem(STORAGE_KEY_CACHE, JSON.stringify(cache));
         }
     }, [cards]);
 
@@ -222,27 +230,27 @@ export function useRamadanCards() {
             lastCategory,
             timestamp: Date.now()
         };
-        localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(payload));
+        safeSetItem(STORAGE_KEY_HISTORY, JSON.stringify(payload));
     }, [history, lastCategory]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        localStorage.setItem(STORAGE_KEY_GOALS, JSON.stringify(committedGoals));
+        safeSetItem(STORAGE_KEY_GOALS, JSON.stringify(committedGoals));
     }, [committedGoals]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        localStorage.setItem(STORAGE_KEY_COMPLETIONS, JSON.stringify(completionLog));
+        safeSetItem(STORAGE_KEY_COMPLETIONS, JSON.stringify(completionLog));
     }, [completionLog]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        localStorage.setItem(STORAGE_KEY_SAVED, JSON.stringify(Array.from(savedIds)));
+        safeSetItem(STORAGE_KEY_SAVED, JSON.stringify(Array.from(savedIds)));
     }, [savedIds]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        localStorage.setItem(STORAGE_KEY_SAVED_LIST, JSON.stringify(savedCards));
+        safeSetItem(STORAGE_KEY_SAVED_LIST, JSON.stringify(savedCards));
     }, [savedCards]);
 
     // Load saved cards from Firestore when logged in
@@ -295,7 +303,7 @@ export function useRamadanCards() {
 
         // Increment
         data.count++;
-        localStorage.setItem(STORAGE_KEY_LIMIT, JSON.stringify(data));
+        safeSetItem(STORAGE_KEY_LIMIT, JSON.stringify(data));
         return true;
     }, []);
 

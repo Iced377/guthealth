@@ -1,7 +1,7 @@
 // src/components/ramadan/SavedCardsStack.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RamadanCard } from './RamadanCard';
 import type { RamadanTip } from '@/data/ramadan-seed';
 import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
@@ -23,6 +23,7 @@ export function SavedCardsStack({
 }: SavedCardsStackProps) {
     const [stack, setStack] = useState<RamadanTip[]>(cards);
     const [index, setIndex] = useState(0);
+    const WINDOW_SIZE = 5;
 
     const renderDots = (total: number, current: number) => {
         const maxDots = 5;
@@ -49,6 +50,7 @@ export function SavedCardsStack({
 
     useEffect(() => {
         setStack(cards);
+        setIndex((prev) => Math.max(0, Math.min(prev, cards.length - 1)));
     }, [cards]);
 
     if (stack.length === 0) {
@@ -59,16 +61,29 @@ export function SavedCardsStack({
         );
     }
 
+    const windowStart = useMemo(() => {
+        if (stack.length <= WINDOW_SIZE) return 0;
+        const maxStart = stack.length - WINDOW_SIZE;
+        const half = Math.floor(WINDOW_SIZE / 2);
+        return Math.min(Math.max(index - half, 0), maxStart);
+    }, [stack.length, index]);
+
+    const windowCards = useMemo(
+        () => stack.slice(windowStart, windowStart + WINDOW_SIZE),
+        [stack, windowStart]
+    );
+    const windowIndex = Math.max(0, index - windowStart);
+
     return (
         <div className="relative w-full max-w-sm mx-auto">
             <div className="aspect-[3/4]">
                 <LiquidChartCarousel
-                    currentIndex={index}
-                    onIndexChange={setIndex}
+                    currentIndex={windowIndex}
+                    onIndexChange={(nextIdx) => setIndex(windowStart + nextIdx)}
                     showDots={false}
                     className="h-full w-full"
                 >
-                    {stack.map((card) => (
+                    {windowCards.map((card) => (
                         <div key={card.topicId} className="h-full w-full flex items-center justify-center px-2">
                             <RamadanCard
                                 tip={card}

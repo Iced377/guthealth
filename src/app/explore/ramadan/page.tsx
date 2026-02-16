@@ -45,14 +45,18 @@ export default function RamadanComingSoonPage() {
 
     React.useEffect(() => {
         if (typeof window === 'undefined') return;
-        const stored = localStorage.getItem('ramadan_start_date');
-        if (stored && START_OPTIONS.includes(stored as any)) {
-            setSelectedStart(stored as (typeof START_OPTIONS)[number]);
-        }
-        const modeStored = localStorage.getItem(RAMADAN_MODE_KEY);
-        if (modeStored === 'fasting' || modeStored === 'witnessing' || modeStored === 'hidden') {
-            setRamadanMode(modeStored);
-            setShowModeDialog(false);
+        try {
+            const stored = localStorage.getItem('ramadan_start_date');
+            if (stored && START_OPTIONS.includes(stored as any)) {
+                setSelectedStart(stored as (typeof START_OPTIONS)[number]);
+            }
+            const modeStored = localStorage.getItem(RAMADAN_MODE_KEY);
+            if (modeStored === 'fasting' || modeStored === 'witnessing' || modeStored === 'hidden') {
+                setRamadanMode(modeStored);
+                setShowModeDialog(false);
+            }
+        } catch (e) {
+            // ignore storage errors
         }
     }, []);
 
@@ -68,7 +72,11 @@ export default function RamadanComingSoonPage() {
                         setRamadanMode(remoteMode);
                         setShowModeDialog(false);
                         if (typeof window !== 'undefined') {
-                            localStorage.setItem(RAMADAN_MODE_KEY, remoteMode);
+                            try {
+                                localStorage.setItem(RAMADAN_MODE_KEY, remoteMode);
+                            } catch (e) {
+                                // ignore
+                            }
                         }
                         return;
                     }
@@ -91,14 +99,22 @@ export default function RamadanComingSoonPage() {
 
     React.useEffect(() => {
         if (typeof window === 'undefined') return;
-        localStorage.setItem('ramadan_start_date', selectedStart);
+        try {
+            localStorage.setItem('ramadan_start_date', selectedStart);
+        } catch (e) {
+            // ignore
+        }
     }, [selectedStart]);
 
     const handleModeSelect = (mode: 'fasting' | 'witnessing' | 'hidden') => {
         setRamadanMode(mode);
         setShowModeDialog(false);
         if (typeof window !== 'undefined') {
-            localStorage.setItem(RAMADAN_MODE_KEY, mode);
+            try {
+                localStorage.setItem(RAMADAN_MODE_KEY, mode);
+            } catch (e) {
+                // ignore
+            }
         }
         if (user) {
             updateDoc(doc(db, 'users', user.uid), {
@@ -111,7 +127,7 @@ export default function RamadanComingSoonPage() {
         }
     };
 
-    const RAMADAN_START = new Date(`${selectedStart}T00:00:00`);
+    const RAMADAN_START = React.useMemo(() => new Date(`${selectedStart}T00:00:00`), [selectedStart]);
     const RAMADAN_DAYS = 30;
 
     const toDateKey = (date: Date) => date.toISOString().slice(0, 10);
@@ -126,7 +142,7 @@ export default function RamadanComingSoonPage() {
     const ramadanDateKeys = React.useMemo(() => ramadanDates.map((date) => toDateKey(date)), [ramadanDates]);
 
     const firstWeekday = ramadanDates[0].getDay(); // 0=Sun
-    const today = new Date();
+    const today = React.useMemo(() => new Date(), []);
     const todayKey = toDateKey(today);
     const [selectedDateKey, setSelectedDateKey] = React.useState(todayKey);
     const activeGoals = committedGoals.filter(goal => goal.active);
@@ -134,6 +150,7 @@ export default function RamadanComingSoonPage() {
     const daysUntilRamadan = Math.max(0, Math.ceil((RAMADAN_START.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
     React.useEffect(() => {
+        if (ramadanDateKeys.length === 0) return;
         setSelectedDateKey((current) => {
             if (ramadanDateKeys.includes(current)) {
                 return current;
@@ -141,12 +158,6 @@ export default function RamadanComingSoonPage() {
             return ramadanDateKeys.includes(todayKey) ? todayKey : ramadanDateKeys[0];
         });
     }, [ramadanDateKeys, todayKey]);
-
-    React.useEffect(() => {
-        setSelectedDateKey((current) => (
-            ramadanDateKeys.includes(current) ? current : ramadanDateKeys[0]
-        ));
-    }, [ramadanDateKeys]);
 
     const shiftSelectedDate = (delta: number) => {
         const idx = ramadanDateKeys.indexOf(selectedDateKey);
@@ -166,6 +177,19 @@ export default function RamadanComingSoonPage() {
             setSelectedDateKey(nextKey);
         }
     };
+
+    const DAY_WINDOW = 5;
+    const dayWindowStart = React.useMemo(() => {
+        if (ramadanDateKeys.length <= DAY_WINDOW) return 0;
+        const maxStart = ramadanDateKeys.length - DAY_WINDOW;
+        const half = Math.floor(DAY_WINDOW / 2);
+        return Math.min(Math.max(dayIndex - half, 0), maxStart);
+    }, [ramadanDateKeys.length, dayIndex]);
+    const dayWindowKeys = React.useMemo(
+        () => ramadanDateKeys.slice(dayWindowStart, dayWindowStart + DAY_WINDOW),
+        [ramadanDateKeys, dayWindowStart]
+    );
+    const dayWindowIndex = Math.max(0, dayIndex - dayWindowStart);
 
     return (
         <div className="relative h-screen w-full overflow-hidden bg-black">
@@ -334,12 +358,12 @@ export default function RamadanComingSoonPage() {
                         </div>
                         <div className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
                             <LiquidChartCarousel
-                                currentIndex={dayIndex}
-                                onIndexChange={handleDayIndexChange}
+                                currentIndex={dayWindowIndex}
+                                onIndexChange={(idx) => handleDayIndexChange(dayWindowStart + idx)}
                                 showDots={false}
                                 className="h-full w-full"
                             >
-                                {ramadanDateKeys.map((dateKey) => {
+                                {dayWindowKeys.map((dateKey) => {
                                     const completedForDay = getCompletionForDate(dateKey);
                                     return (
                                         <div key={dateKey} className="h-full w-full flex items-center justify-center">
