@@ -2,7 +2,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useMotionValue, useTransform, useAnimation, PanInfo, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useAnimation, PanInfo, AnimatePresence, useDragControls } from 'framer-motion';
 import { RamadanCard } from './RamadanCard';
 import { RefreshCw } from 'lucide-react';
 import type { RamadanTip } from '@/data/ramadan-seed';
@@ -31,7 +31,7 @@ export function RamadanCardStack({
     savedIds
 }: RamadanCardStackProps) {
 
-    // Drag constraints
+    const dragControls = useDragControls();
     const x = useMotionValue(0);
     const scale = useTransform(x, [-200, 0, 200], [0.9, 1, 1]); // Do not scale down when swiping right (if acting as back) ? Actually let's keep it consistent
     const rotate = useTransform(x, [-200, 0, 200], [-10, 0, 10]);
@@ -54,6 +54,7 @@ export function RamadanCardStack({
 
     const controls = useAnimation();
     const isDragging = useRef(false);
+    const lastSwipeDir = useRef<'left' | 'right'>('left');
 
     const handleDragEnd = async (_: any, info: PanInfo) => {
         const threshold = 100;
@@ -61,29 +62,24 @@ export function RamadanCardStack({
         const offset = info.offset.x;
 
         if (Math.abs(offset) > threshold || Math.abs(velocity) > 500) {
-            // Swipe Detected
             if (offset < 0) {
                 // SWIPE LEFT -> NEXT (Dismiss)
+                lastSwipeDir.current = 'left';
                 await controls.start({
                     x: -500,
                     opacity: 0,
                     transition: { duration: 0.2 }
                 });
-                removeTopCard();
                 x.set(0);
-                controls.start({ x: 0, opacity: 1, transition: { duration: 0 } });
+                controls.set({ x: 0, opacity: 1 });
+                removeTopCard();
             } else {
                 // SWIPE RIGHT -> PREVIOUS (Rewind)
+                lastSwipeDir.current = 'right';
+                x.set(0);
+                controls.set({ x: 0, opacity: 1 });
                 if (canGoBack) {
-                    // 1. Current card snaps back to center
-                    controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 20 } });
-
-                    // 2. We restore the previous card. It will naturally mount "on top" because of react state update.
-                    // To make it look like it "flew in", we rely on the mount animation of the new card (we need to add one).
                     restoreLastCard();
-                } else {
-                    // Cannot go back (start of deck), just snap back
-                    controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 20 } });
                 }
             }
         } else {
@@ -104,6 +100,9 @@ export function RamadanCardStack({
         </div>
     );
 
+    // New card enters from the opposite side of the swipe
+    const enterX = lastSwipeDir.current === 'left' ? 40 : -40;
+
     return (
         <div className="relative w-full max-w-sm aspect-[3/4] mx-auto isolation-isolate perspective-1000">
             <div className="relative w-full h-full">
@@ -114,7 +113,6 @@ export function RamadanCardStack({
                         className="absolute inset-0 z-0"
                         style={{ scale: backScale, opacity: backOpacity, y: 18 }}
                     >
-                        {/* Render a blurred shell only (no text) so the next card isn't readable */}
                         <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-emerald-900/40 via-emerald-800/20 to-amber-900/30 blur-[18px]" />
                         <div className="absolute inset-0 rounded-[2rem] bg-black/55" />
                     </motion.div>
@@ -122,18 +120,21 @@ export function RamadanCardStack({
 
                 {/* Front Card (Draggable) */}
                 <motion.div
-                    key={cards[0]?.topicId || "empty"} // Key change triggers mount animation
-                    initial={{ x: -20, opacity: 0, scale: 0.95 }} // Subtle entrance
-                    animate={x.get() === 0 ? { x: 0, opacity: 1, scale: 1 } : controls}
-
+                    key={cards[0]?.topicId || "empty"}
+                    initial={{ x: enterX, opacity: 0, scale: 0.95 }}
+                    animate={{ x: 0, opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.05}
+                    dragElastic={0.8}
+                    dragControls={dragControls}
+                    dragListener={false}
+                    dragDirectionLock
+                    onPointerDown={(e) => dragControls.start(e)}
                     onDragStart={() => isDragging.current = true}
                     onDragEnd={handleDragEnd}
-                    style={{ x, rotate, opacity, zIndex: 10 }}
+                    style={{ x, rotate, opacity, zIndex: 10, touchAction: 'pan-y' }}
                     className="absolute inset-0 cursor-grab active:cursor-grabbing will-change-transform"
-                    whileTap={{ scale: 1.02 }}
                 >
                     <RamadanCard
                         tip={cards[0]}

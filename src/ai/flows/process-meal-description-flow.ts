@@ -50,8 +50,8 @@ Analyze the meal description: "{{{mealDescription}}}"
 Output a JSON object matching ProcessMealDescriptionOutputSchema.
 
 Tasks:
-1.  'wittyName': Generate a fun, memorable, or edgy name for the meal. MAX 21 CHARACTERS (including spaces). This is a HARD LIMIT. Keep it short and punchy.
-    *   Examples of compliant names: "Greek Purity", "Mofo Chicken Wrap", "Berry-Good Fuel", "Sad Desk Salad", "Midnight Mistake".
+1.  'wittyName': Generate a fun, memorable, or clever name for the meal. MAX 21 CHARACTERS (including spaces). This is a HARD LIMIT. Keep it short and punchy.
+    *   Examples of compliant names: "Greek Power", "Kickin' Chicken", "Berry-Good Fuel", "Desk Salad", "Midnight Snack".
     *   Do NOT exceed 21 characters.
 2.  'primaryFoodItemForAnalysis': A concise, factual summary of the meal for subsequent nutritional analysis.
     *   CRITICAL: Accurately list ALL components and quantities from '{{{mealDescription}}}'.
@@ -73,7 +73,8 @@ Adhere strictly to the schema. For 'primaryFoodItemForAnalysis', be factual and 
 
 CRITICAL GUARDRAILS:
 *   Ensure the 'wittyName' and all output is appropriate for a general audience (App Store 17+ but avoiding gratuitous vulgarity).
-*   STRICTLY PROHIBITED: Profanity, crude humor, sexual innuendos, or offensive language.
+*   STRICTLY PROHIBITED: Profanity, crude humor, sexual innuendos, offensive language, or personal insults/name-calling.
+*   Do NOT refer to the user with derogatory nouns (e.g., do not use "Egghead", "Chubby", "Lazy", "Fat").
 *   If the input itself is offensive, generate a neutral/polite factual name.`,
 });
 

@@ -680,8 +680,8 @@ export default function AdminDashboardPage() {
                                 <CardContent>
                                     {event.reason && <div className="text-xs text-white/60">Reason: {event.reason}</div>}
                                     {event.meta && (
-                                        <div className="text-xs text-white/40 font-mono mt-2">
-                                            {JSON.stringify(event.meta)}
+                                        <div className="text-xs text-white/40 font-mono mt-2 break-all whitespace-pre-wrap">
+                                            {JSON.stringify(event.meta, null, 2)}
                                         </div>
                                     )}
                                 </CardContent>
@@ -754,7 +754,7 @@ export default function AdminDashboardPage() {
 
                                         <div className="space-y-2">
                                             <h3 className="text-xs uppercase tracking-wider text-white/40">Context</h3>
-                                            <div className="text-sm text-white/70 font-mono bg-black/30 p-3 rounded-lg border border-white/5 h-full">
+                                            <div className="text-sm text-white/70 font-mono bg-black/30 p-3 rounded-lg border border-white/5 h-full break-words whitespace-pre-wrap">
                                                 <p><span className="text-white/30">Claim:</span> {event.meta?.claimedRisk}</p>
                                                 <p><span className="text-white/30">Ingredients:</span> {event.meta?.ingredients}</p>
                                             </div>

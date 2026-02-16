@@ -190,29 +190,38 @@ export default function RamadanComingSoonPage() {
                                 </div>
                             </div>
                         </div>
-                        <h3 className="text-lg font-semibold text-center mb-2">Ramadan Hub Preferences</h3>
+                        <h3 className="text-lg font-semibold text-center mb-2">Ramadan Preferences</h3>
                         <p className="text-sm text-white/80 text-center leading-relaxed mb-4">
                             Help us tailor your experience. We’ve also updated Insights and the Coach to support you during fasting (if you choose it). You can change this anytime later.
                         </p>
                         <div className="flex flex-col gap-2">
-                            <button
+                            <motion.button
                                 onClick={() => handleModeSelect('fasting')}
-                                className="w-full px-4 py-2 rounded-full text-xs font-semibold bg-emerald-500 text-white shadow-[0_8px_18px_rgba(16,185,129,0.35)]"
+                                className="w-full px-4 py-3 rounded-full text-sm font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                                whileTap={{ scale: 1.25 }}
+                                whileHover={{ scale: 1.05 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
                             >
                                 I am fasting
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
                                 onClick={() => handleModeSelect('witnessing')}
-                                className="w-full px-4 py-2 rounded-full text-xs font-semibold bg-white/10 text-white/90 border border-white/20 hover:bg-white/15"
+                                className="w-full px-4 py-3 rounded-full text-sm font-bold bg-white/10 text-white/90 border border-white/20 hover:bg-white/15"
+                                whileTap={{ scale: 1.25 }}
+                                whileHover={{ scale: 1.05 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
                             >
                                 I am witnessing
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
                                 onClick={() => handleModeSelect('hidden')}
-                                className="w-full px-4 py-2 rounded-full text-xs font-semibold text-white/70 border border-white/10 hover:border-white/20"
+                                className="w-full px-4 py-3 rounded-full text-sm font-bold text-white/70 border border-white/10 hover:border-white/20"
+                                whileTap={{ scale: 1.25 }}
+                                whileHover={{ scale: 1.05 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
                             >
                                 Prefer not to share
-                            </button>
+                            </motion.button>
                         </div>
                     </div>
                 </div>
@@ -242,20 +251,11 @@ export default function RamadanComingSoonPage() {
                 </button>
             </div>
 
-            <div className="relative z-10 h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth pb-0">
+            <div className="relative z-10 h-full w-full overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scroll-smooth pb-0" style={{ touchAction: 'pan-y', overscrollBehaviorX: 'none' }}>
 
                 {/* Section 1: Wisdom Cards */}
-                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center p-4 relative">
+                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center p-4 relative overflow-hidden">
                     <div className="w-full max-w-md mx-auto animate-in fade-in zoom-in duration-500 delay-200">
-                        <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wider text-white/70">
-                            <span>Ramadan Mode: {ramadanMode ? ramadanMode : 'not set'}</span>
-                            <button
-                                onClick={() => setShowModeDialog(true)}
-                                className="text-emerald-200/90 hover:text-emerald-100 transition-colors"
-                            >
-                                Change
-                            </button>
-                        </div>
                         <div className="flex items-center justify-center mb-4">
                             <LiquidSegmentedControl
                                 options={[
@@ -293,13 +293,13 @@ export default function RamadanComingSoonPage() {
                             <div className="h-[70vh] w-full rounded-[2rem] border border-white/10 bg-white/5 animate-pulse" />
                         )}
                     </div>
-                    <div className="absolute bottom-[96px] left-1/2 -translate-x-1/2 text-white/45 text-[9px] tracking-[0.18em] uppercase text-center max-w-[92vw] px-3 whitespace-nowrap">
+                    <div className="absolute bottom-[96px] left-1/2 -translate-x-1/2 text-white/45 text-[9px] tracking-[0.18em] uppercase text-center max-w-[92vw] px-3">
                         &lt;&lt;Swipe&gt;&gt; For more Ramadan Tips • Scroll ↓ for Goals & Calendar
                     </div>
                 </section>
 
                 {/* Section 2: Committed Goals */}
-                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 pb-16 relative">
+                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 pb-16 relative overflow-hidden">
                     <div className="w-full max-w-md mx-auto">
                         <div className="mb-4 text-white/90 text-lg tracking-widest uppercase font-semibold">
                             Committed Goals
@@ -307,8 +307,9 @@ export default function RamadanComingSoonPage() {
                         <motion.div
                             className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
                             drag="x"
+                            dragDirectionLock
                             dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.08}
+                            dragElastic={0.8}
                             dragControls={dayDragControls}
                             dragListener={false}
                             onDragEnd={(_: any, info: PanInfo) => {
@@ -322,28 +323,28 @@ export default function RamadanComingSoonPage() {
                             onPointerDown={(e) => dayDragControls.start(e)}
                             style={{ touchAction: 'pan-y' }}
                         >
-                        <div className="mb-4 flex items-center justify-between text-white/90 text-sm font-semibold">
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); shiftSelectedDate(-1); }}
-                                    className="text-white/50 hover:text-white/80"
-                                >
-                                    {'<<'}
-                                </button>
-                                <span>
-                                    {new Date(selectedDateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); shiftSelectedDate(1); }}
-                                    className="text-white/50 hover:text-white/80"
-                                >
-                                    {'>>'}
-                                </button>
+                            <div className="mb-4 flex items-center justify-between text-white/90 text-sm font-semibold">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); shiftSelectedDate(-1); }}
+                                        className="text-white/50 hover:text-white/80"
+                                    >
+                                        {'<<'}
+                                    </button>
+                                    <span>
+                                        {new Date(selectedDateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); shiftSelectedDate(1); }}
+                                        className="text-white/50 hover:text-white/80"
+                                    >
+                                        {'>>'}
+                                    </button>
+                                </div>
+                                <div className="text-white/60 text-xs font-semibold">
+                                    {getCompletionForDate(selectedDateKey).length}/{activeGoals.length}
+                                </div>
                             </div>
-                            <div className="text-white/60 text-xs font-semibold">
-                                {getCompletionForDate(selectedDateKey).length}/{activeGoals.length}
-                            </div>
-                        </div>
                             {activeGoals.length === 0 && (
                                 <div className="text-white/50 text-sm">
                                     Commit a goal from a card to build your Ramadan plan.
@@ -397,104 +398,104 @@ export default function RamadanComingSoonPage() {
                 </section>
 
                 {/* Section 3: Calendar */}
-                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 relative">
+                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 relative overflow-hidden">
                     <div className="w-full max-w-md mx-auto">
                         <div className="mb-4 text-white/90 text-lg tracking-widest uppercase font-semibold">
                             Ramadan Calendar
                         </div>
                         <div className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-                        {isBeforeRamadan && (
-                            <div className="mb-4 rounded-2xl border border-emerald-300/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-                                Ramadan starts on {RAMADAN_START.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. {daysUntilRamadan} days to go.
-                            </div>
-                        )}
+                            {isBeforeRamadan && (
+                                <div className="mb-4 rounded-2xl border border-emerald-300/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                                    Ramadan starts on {RAMADAN_START.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. {daysUntilRamadan} days to go.
+                                </div>
+                            )}
 
-                        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-white/80">
-                            <div className="flex items-center justify-between">
-                                <div className="text-xs uppercase tracking-wider text-white/60">Ramadan Start</div>
-                                <div className="flex gap-1">
-                                {START_OPTIONS.map((date) => (
-                                    <button
-                                        key={date}
-                                        onClick={() => setSelectedStart(date)}
-                                        className={cn(
-                                            "px-3 py-1 rounded-full text-xs font-semibold transition-colors",
-                                            selectedStart === date
-                                                ? "bg-emerald-500/30 text-emerald-100"
-                                                : "bg-white/5 text-white/60 hover:bg-white/10"
-                                        )}
-                                    >
-                                        {new Date(`${date}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    </button>
-                                ))}
+                            <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-white/80">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-xs uppercase tracking-wider text-white/60">Ramadan Start</div>
+                                    <div className="flex gap-1">
+                                        {START_OPTIONS.map((date) => (
+                                            <button
+                                                key={date}
+                                                onClick={() => setSelectedStart(date)}
+                                                className={cn(
+                                                    "px-3 py-1 rounded-full text-xs font-semibold transition-colors",
+                                                    selectedStart === date
+                                                        ? "bg-emerald-500/30 text-emerald-100"
+                                                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                                                )}
+                                            >
+                                                {new Date(`${date}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-2 mb-3 text-white/50 text-[11px] uppercase tracking-wider">
-                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, index) => (
-                                <div key={`${label}-${index}`} className="text-center">{label}</div>
-                            ))}
-                        </div>
-
-                        <div className="grid grid-cols-7 gap-2">
-                            {Array.from({ length: firstWeekday }).map((_, index) => (
-                                <div key={`empty-${index}`} className="h-14" />
-                            ))}
-                            {ramadanDates.map((date) => {
-                                const key = toDateKey(date);
-                                const completedGoals = getCompletionForDate(key);
-                                const completed = completedGoals.length;
-                                const total = activeGoals.length;
-                                const isToday = key === todayKey;
-                                const isSelected = key === selectedDateKey;
-                                const dots = Math.min(total, 3);
-                                return (
-                                    <button
-                                        key={key}
-                                        onClick={() => setSelectedDateKey(key)}
-                                        className={cn(
-                                            "h-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center gap-1",
-                                            isToday && "border-emerald-300/50 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
-                                            isSelected && "ring-2 ring-emerald-300/40"
-                                        )}
-                                        title={total > 0 ? `${completed}/${total} completed` : 'No goals'}
-                                    >
-                                        <div className={cn(
-                                            "text-sm font-semibold",
-                                            isToday ? "text-emerald-200" : "text-white/80"
-                                        )}>
-                                            {date.getDate()}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            {total <= 3 ? (
-                                                Array.from({ length: dots }).map((_, index) => (
-                                                    <span
-                                                        key={`${key}-dot-${index}`}
-                                                        className={cn(
-                                                            "h-1.5 w-1.5 rounded-full",
-                                                            index < completed
-                                                                ? "bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                                                                : "bg-white/25"
-                                                        )}
-                                                    />
-                                                ))
-                                            ) : (
-                                                <span className="flex items-center gap-1 text-[10px] text-emerald-200">
-                                                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                                                    {completed}/{total}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {activeGoals.length === 0 && (
-                            <div className="mt-4 text-white/50 text-sm">
-                                Tap the goal card above to commit your first lantern.
+                            <div className="grid grid-cols-7 gap-2 mb-3 text-white/50 text-[11px] uppercase tracking-wider">
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, index) => (
+                                    <div key={`${label}-${index}`} className="text-center">{label}</div>
+                                ))}
                             </div>
-                        )}
+
+                            <div className="grid grid-cols-7 gap-2">
+                                {Array.from({ length: firstWeekday }).map((_, index) => (
+                                    <div key={`empty-${index}`} className="h-14" />
+                                ))}
+                                {ramadanDates.map((date) => {
+                                    const key = toDateKey(date);
+                                    const completedGoals = getCompletionForDate(key);
+                                    const completed = completedGoals.length;
+                                    const total = activeGoals.length;
+                                    const isToday = key === todayKey;
+                                    const isSelected = key === selectedDateKey;
+                                    const dots = Math.min(total, 3);
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => setSelectedDateKey(key)}
+                                            className={cn(
+                                                "h-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center gap-1",
+                                                isToday && "border-emerald-300/50 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
+                                                isSelected && "ring-2 ring-emerald-300/40"
+                                            )}
+                                            title={total > 0 ? `${completed}/${total} completed` : 'No goals'}
+                                        >
+                                            <div className={cn(
+                                                "text-sm font-semibold",
+                                                isToday ? "text-emerald-200" : "text-white/80"
+                                            )}>
+                                                {date.getDate()}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                {total <= 3 ? (
+                                                    Array.from({ length: dots }).map((_, index) => (
+                                                        <span
+                                                            key={`${key}-dot-${index}`}
+                                                            className={cn(
+                                                                "h-1.5 w-1.5 rounded-full",
+                                                                index < completed
+                                                                    ? "bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                                                                    : "bg-white/25"
+                                                            )}
+                                                        />
+                                                    ))
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-[10px] text-emerald-200">
+                                                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                                                        {completed}/{total}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {activeGoals.length === 0 && (
+                                <div className="mt-4 text-white/50 text-sm">
+                                    Tap the goal card above to commit your first lantern.
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>

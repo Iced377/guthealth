@@ -245,7 +245,9 @@ export function AppJourneyTab() {
                         <motion.div
                             className="w-full bg-gradient-to-b from-blue-500 via-purple-500 to-yellow-500"
                             initial={{ height: '0%' }}
-                            animate={{ height: '50%' }}
+                            animate={{
+                                height: `${milestones.length > 1 ? (milestones.reduce((acc, m, i) => m.status !== 'locked' ? i : acc, 0) / (milestones.length - 1)) * 100 : 0}%`
+                            }}
                             transition={{ duration: 1.5, ease: "easeInOut" }}
                         />
                     </div>

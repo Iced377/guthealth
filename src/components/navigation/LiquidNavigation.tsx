@@ -82,7 +82,7 @@ const LOG_ACTIONS: SubMenuItem[] = [
 
 // Explore sub-items
 const EXPLORE_ITEMS: SubMenuItem[] = [
-    { id: 'ramadan', icon: Moon, label: 'Ramadan Hub', path: '/explore/ramadan', accessibilityLabel: 'Ramadan Hub, open Ramadan features' },
+    { id: 'ramadan', icon: Moon, label: 'Ramadan', path: '/explore/ramadan', accessibilityLabel: 'Ramadan, open Ramadan features' },
     { id: 'app-tour', icon: HelpCircle, label: 'App Tour', accessibilityLabel: 'App Tour, start guided experience' },
     { id: 'about', icon: Info, label: 'About', path: '/about', accessibilityLabel: 'About, app information' },
     { id: 'feedback', icon: MessageSquare, label: 'Feedback', path: '/feedback', accessibilityLabel: 'Give Feedback, send feedback' },
@@ -475,23 +475,29 @@ export default function LiquidNavigation({
                             </div>
                             <h3 className="text-lg font-semibold text-center mb-2">Ramadan Mode Is Here</h3>
                             <p className="text-sm text-white/80 text-center leading-relaxed mb-4">
-                                Wishing you a calm, healthy Ramadan season. We’ve prepared a new Ramadan Hub with
+                                Wishing you a calm, healthy Ramadan season. We’ve prepared a new Ramadan page with
                                 daily wisdom, goals, and a calendar to guide your habits this month. We also updated
                                 Insights and the Coach to support fasting if you choose it.
                             </p>
                             <div className="flex items-center justify-center gap-3">
-                                <button
+                                <motion.button
                                     onClick={() => closeRamadanWelcome(false)}
-                                    className="px-4 py-2 rounded-full text-xs text-white/80 border border-white/15 hover:border-white/30"
+                                    className="px-5 py-2.5 rounded-full text-sm font-bold text-white/80 border border-white/15 hover:border-white/30"
+                                    whileTap={{ scale: 1.25 }}
+                                    whileHover={{ scale: 1.05 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 8 }}
                                 >
                                     Maybe later
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button
                                     onClick={() => closeRamadanWelcome(true)}
-                                    className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-500 text-white shadow-[0_8px_18px_rgba(16,185,129,0.35)]"
+                                    className="px-5 py-2.5 rounded-full text-sm font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                                    whileTap={{ scale: 1.25 }}
+                                    whileHover={{ scale: 1.05 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 8 }}
                                 >
-                                    Open Ramadan Hub
-                                </button>
+                                    Open Ramadan
+                                </motion.button>
                             </div>
                         </motion.div>
                     </motion.div>
