@@ -1,8 +1,10 @@
 import type { NextConfig } from 'next';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
+  experimental: isDev ? {
     allowedDevOrigins: [
       'https://6000-firebase-studio-1748751800187.cluster-jbb3mjctu5cbgsi6hwq6u4btwe.cloudworkstations.dev',
       'localhost:9002',
@@ -10,7 +12,7 @@ const nextConfig: NextConfig = {
       '172.20.10.2:9002', // New Local IP
       '0.0.0.0:9002',
     ],
-  },
+  } : {},
   typescript: {
     ignoreBuildErrors: true,
   },

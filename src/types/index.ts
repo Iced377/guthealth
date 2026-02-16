@@ -166,6 +166,10 @@ export interface UserProfile {
     lastFeedbackAt: Timestamp;
     lastFeedbackType: 'improve' | 'bug' | 'feature';
   };
+  ramadanConfig?: {
+    status: 'fasting' | 'witnessing' | 'hidden';
+    updatedAt?: Timestamp | Date;
+  };
   profile?: {
     hasCompletedSetup: boolean;
     gender: 'male' | 'female';

@@ -8,9 +8,26 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.4.1";
+export const APP_VERSION = "5.5.0";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.0',
+        date: 'February 15, 2026',
+        title: 'Ramadan Experience & Insights Upgrade',
+        description: 'A dedicated Ramadan Hub experience with smarter, safer Insights and Coach guidance, plus planning-friendly logging.',
+        features: [
+            'Ramadan Hub: A new Discover destination with wisdom cards, committed goals, and a Ramadan calendar.',
+            'Ramadan Mode: Choose Fasting, Witnessing, or Prefer not to share to tailor content and coach tone.',
+            'Coach & Highlights: Context-aware guidance that respects Ramadan mode and user logging stage.',
+            'Future Meal Planning: You can now log meals for future dates and times.'
+        ],
+        improvements: [
+            'Highlights: Reduced repetition with contextual rotation and improved onboarding guidance for new users.',
+            'Coach Output: Better formatting and clearer, safer fasting language.'
+        ],
+        fixes: []
+    },
     {
         version: '5.4.1',
         date: 'February 13, 2026',

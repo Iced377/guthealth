@@ -49,6 +49,18 @@ service cloud.firestore {
       match /timelineEntries/{entryId} {
         allow read, write: if isOwner(userId);
       }
+
+      // --- Saved Ramadan Cards ---
+      match /saved_ramadan_cards/{cardId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+          // Schema Validation: Must have core fields
+          request.resource.data.keys().hasAll(['title', 'content', 'topicId', 'category']) &&
+          // Privacy: Must NOT contain raw user profile data
+          !request.resource.data.keys().hasAny(['userProfile', 'tdee', 'weight', 'age', 'healthGoals']);
+          
+        allow delete: if isOwner(userId);
+      }
     }
 
     // --- Feedback Collection ---

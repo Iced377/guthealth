@@ -71,6 +71,7 @@ export function InsightScene({
 
     const onLayoutComplete = () => {
         if (!isTransitioning) return;
+        if (activeInsightId !== id) return;
         if (shouldBeFullscreen) {
             notifyExpandComplete();
         } else {
@@ -158,14 +159,14 @@ export function InsightScene({
                 </AnimatePresence>
             </motion.div>
 
-            {/* Minimize Button (Floating) */}
+            {/* Close Button (Top Right - Always Visible) */}
             <AnimatePresence>
                 {shouldBeFullscreen && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
+                        initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="absolute bottom-12 right-6 z-[100]"
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        className="fixed right-5 top-[calc(env(safe-area-inset-top)+18px)] z-[120]"
                     >
                         <LiquidPressable
                             onClick={handleMinimize}
@@ -173,7 +174,7 @@ export function InsightScene({
                             variant="fab"
                             className={mode === 'dark' ? "bg-white/10 border-white/20" : "bg-white/80 border-black/10 shadow-lg"}
                         >
-                            <Minimize2 className={cn("h-5 w-5", tokens.text.primary)} />
+                            <X className={cn("h-5 w-5", tokens.text.primary)} />
                         </LiquidPressable>
                     </motion.div>
                 )}

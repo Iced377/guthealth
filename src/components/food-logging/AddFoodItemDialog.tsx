@@ -165,7 +165,7 @@ export default function AddFoodItemDialog({
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                    disabled={(date) => date < new Date("2000-01-01")}
                     initialFocus={isEditing}
                   />
                 </PopoverContent>

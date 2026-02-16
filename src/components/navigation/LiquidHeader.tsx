@@ -8,6 +8,8 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 import { Capacitor } from '@capacitor/core';
+import { MoonStar } from 'lucide-react';
+import { RAMADAN_ENABLED } from '@/lib/featureFlags';
 
 const PAGE_TITLES: Record<string, string> = {
     '/': 'Dashboard',
@@ -32,6 +34,8 @@ interface LiquidHeaderProps {
 export default function LiquidHeader({ className, title }: LiquidHeaderProps) {
     const { user } = useAuth();
     const pathname = usePathname();
+    const [ramadanMode, setRamadanMode] = useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
+    const [ramadanStart, setRamadanStart] = useState<Date | null>(null);
 
     const pageTitle = title || PAGE_TITLES[pathname] || 'GutCheck';
     const [isWideLayout, setIsWideLayout] = useState(false);
@@ -42,6 +46,41 @@ export default function LiquidHeader({ className, title }: LiquidHeaderProps) {
         window.addEventListener('resize', updateLayout);
         return () => window.removeEventListener('resize', updateLayout);
     }, []);
+
+    useEffect(() => {
+        if (!RAMADAN_ENABLED) {
+            setRamadanMode(null);
+            return;
+        }
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('ramadan_user_mode_v1');
+            if (stored === 'fasting' || stored === 'witnessing' || stored === 'hidden') {
+                setRamadanMode(stored);
+                return;
+            }
+        }
+        setRamadanMode(null);
+    }, []);
+
+    useEffect(() => {
+        if (!RAMADAN_ENABLED) {
+            setRamadanStart(null);
+            return;
+        }
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('ramadan_start_date') || '2026-02-18';
+            setRamadanStart(new Date(`${stored}T00:00:00`));
+        }
+    }, []);
+
+    const isRamadanDay = (() => {
+        if (!RAMADAN_ENABLED || !ramadanStart) return false;
+        const today = new Date();
+        const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const end = new Date(ramadanStart);
+        end.setDate(end.getDate() + 29);
+        return dayStart >= ramadanStart && dayStart <= end;
+    })();
 
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
     const enableWebFrame = !isIOS && isWideLayout;
@@ -75,9 +114,14 @@ export default function LiquidHeader({ className, title }: LiquidHeaderProps) {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="text-[17px] font-semibold text-foreground"
+                    className="text-[17px] font-semibold text-foreground flex items-center gap-2"
                 >
                     {pageTitle}
+                    {pathname === '/' && isRamadanDay && ramadanMode !== 'hidden' && (
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-400/15 border border-amber-300/30">
+                            <MoonStar className="w-3.5 h-3.5 text-amber-300" />
+                        </span>
+                    )}
                 </motion.h1>
 
                 {/* Right: Spacer for balance */}

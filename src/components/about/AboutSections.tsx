@@ -30,13 +30,13 @@ export function HeroSection() {
                 <div className="relative z-10 w-[280px] h-[280px] sm:w-[450px] sm:h-[450px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
                     <video
                         ref={videoRef}
-                        src="/running.mp4"
+                        src="/ramadan-animation.mp4?v=ramadan"
                         autoPlay
                         loop
                         muted
                         playsInline
                         preload="auto"
-                        className="w-full h-full object-cover object-center scale-150" // scale-150 to zoom in on avatar if needed
+                        className="w-full h-full object-cover object-center scale-[1.7]" // increased scale to fill circle
                     />
                     {/* Inner shadow overlay for better integration */}
                     <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none" />

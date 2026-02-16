@@ -1,5 +1,19 @@
 # Release Notes
 
+## v5.5.0 (February 15, 2026) - Ramadan Experience & Insights Upgrade
+**A dedicated Ramadan Hub experience, smarter contextual Highlights/Coach logic, and future meal planning.**
+
+### ✨ New Features
+- **Ramadan Hub**: A new Discover destination with wisdom cards, committed goals, and a Ramadan calendar.
+- **Ramadan Mode**: Choose Fasting, Witnessing, or Prefer not to share to tailor content and coach tone.
+- **Future Meal Planning**: Log meals for future dates and times.
+
+### 🚀 Improvements
+- **Highlights**: Reduced repetition with contextual rotation and improved onboarding guidance for new users.
+- **Coach Output**: Better formatting and safer fasting language.
+
+---
+
 ## v5.2.4 (February 4, 2026) - Admin Hub & Journey
 **A major upgrade to the Admin Dashboard featuring a new "Journey" timeline, unified scrollable navigation, and a dedicated Brand Kit tab.**
 

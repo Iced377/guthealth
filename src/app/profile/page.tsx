@@ -103,6 +103,7 @@ export default function ProfilePage() {
     const [isExporting, setIsExporting] = useState(false);
     // const [versionTaps, setVersionTaps] = useState(0); // REMOVED: God Mode not wanted
     const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false); // Added for Release Notes
+    const [isAdminUser, setIsAdminUser] = useState(false);
 
     const [isAppleHealthConnected, setIsAppleHealthConnected] = useState(false);
     const [isTogglingAppleHealth, setIsTogglingAppleHealth] = useState(false);
@@ -199,6 +200,7 @@ export default function ProfilePage() {
                     const data = userDoc.data() as UserProfile;
                     setDob(data.dateOfBirth || '');
                     setProfileData(data.profile);
+                    setIsAdminUser(Boolean((data as any).isAdmin));
                 }
 
                 // 2. Fetch Fitbit Status
@@ -769,6 +771,31 @@ export default function ProfilePage() {
                             </div>
                             <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         </button>
+
+                        {isAdminUser && (
+                            <button
+                                onClick={() => {
+                                    try {
+                                        localStorage.removeItem('ramadan_welcome_seen_v1');
+                                        toast({ title: "Reset Complete", description: "Ramadan welcome will show on next Explore open." });
+                                    } catch (e) {
+                                        toast({ title: "Reset Failed", description: "Could not reset Ramadan welcome flag.", variant: "destructive" });
+                                    }
+                                }}
+                                className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left border-b border-white/5"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                        <ChevronRight className="h-4 w-4 rotate-180" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">Reset Ramadan Welcome</span>
+                                        <span className="text-xs text-muted-foreground">Admin-only: show popup again</span>
+                                    </div>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                            </button>
+                        )}
 
                         {/* Sign Out */}
                         <button onClick={handleSignOut} className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left group">

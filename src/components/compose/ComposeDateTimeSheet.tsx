@@ -136,7 +136,7 @@ export default function ComposeDateTimeSheet({
     const segmentOptions = [
         { id: 'TODAY', label: 'Today' },
         { id: 'YESTERDAY', label: 'Yesterday' },
-        { id: 'EARLIER', label: 'Earlier' },
+        { id: 'EARLIER', label: 'Earlier or Future Date' },
     ];
 
     const canSubmit = !(dateMode === 'EARLIER' && !selectedDate);
@@ -262,7 +262,7 @@ export default function ComposeDateTimeSheet({
                                                                 setShowCalendar(false);
                                                             }
                                                         }}
-                                                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                                        disabled={(date) => date < new Date("1900-01-01")}
                                                         initialFocus
                                                     />
                                                 </div>

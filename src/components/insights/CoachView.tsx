@@ -7,7 +7,7 @@ import { getLiquidTokens, LiquidMode } from '@/lib/liquid-tokens';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useActionContext } from '@/contexts/ActionContext';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, differenceInCalendarDays } from 'date-fns';
 import { getPersonalizedDietitianInsight, PersonalizedDietitianOutput } from '@/ai/flows/personalized-dietitian-flow';
 import { calculateTrendsAnalysis } from '@/utils/insights';
 import { FrostBackplate } from './LiquidPrimitive';
@@ -15,6 +15,7 @@ import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { Loader2, Copy, Check, Send } from 'lucide-react';
 import { Clipboard } from '@capacitor/clipboard';
 import DashboardHero from '../dashboard/DashboardHero';
+import { RAMADAN_ENABLED } from '@/lib/featureFlags';
 
 
 
@@ -33,6 +34,7 @@ export function CoachView() {
     const tokens = getLiquidTokens(mode);
     const { timelineEntries, userProfile } = useActionContext();
     const bottomRef = useRef<HTMLDivElement>(null);
+    const [ramadanMode, setRamadanMode] = useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
 
     // AI State
     const [aiOutput, setAiOutput] = useState<PersonalizedDietitianOutput | null>(null);
@@ -40,10 +42,36 @@ export function CoachView() {
     const [isCopied, setIsCopied] = useState(false);
     const [isAnalysisRequested, setIsAnalysisRequested] = useState(false);
 
+    useEffect(() => {
+        if (!RAMADAN_ENABLED) {
+            setRamadanMode(null);
+            return;
+        }
+        const profileMode = (userProfile as any)?.ramadanConfig?.status;
+        if (profileMode === 'fasting' || profileMode === 'witnessing' || profileMode === 'hidden') {
+            setRamadanMode(profileMode);
+            return;
+        }
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('ramadan_user_mode_v1');
+            if (stored === 'fasting' || stored === 'witnessing' || stored === 'hidden') {
+                setRamadanMode(stored);
+                return;
+            }
+        }
+        setRamadanMode(null);
+    }, [userProfile]);
+
     // Prepare Data for Advanced AI (Reused from CoachSessionSheet)
     const preparedInput = useMemo(() => {
         const now = new Date();
         const todayEntries = timelineEntries.filter(e => isSameDay(new Date(e.timestamp), now));
+        const ramadanStartStored = typeof window !== 'undefined'
+            ? (localStorage.getItem('ramadan_start_date') || '2026-02-18')
+            : '2026-02-18';
+        const ramadanStartDate = new Date(`${ramadanStartStored}T00:00:00`);
+        const ramadanDaysUntil = differenceInCalendarDays(ramadanStartDate, now);
+        const ramadanDayNumber = ramadanDaysUntil <= 0 ? Math.abs(ramadanDaysUntil) + 1 : undefined;
 
         // Format Food Log for Schema
         const foodLog = timelineEntries.slice(0, 50).filter(e => e.entryType === 'food' || e.entryType === 'manual_macro').map(e => {
@@ -112,7 +140,12 @@ export function CoachView() {
                 goal: userProfile?.profile?.goal,
                 currentWeight: userProfile?.profile?.weight
             },
+            ramadanMode: ramadanMode || undefined,
+            ramadanStartDate: ramadanStartStored,
+            ramadanDaysUntil: ramadanMode ? ramadanDaysUntil : undefined,
+            ramadanDayNumber: ramadanMode && ramadanDaysUntil <= 0 ? ramadanDayNumber : undefined,
             currentLocalTime: format(now, 'h:mm a'),
+            currentLocalMinutes: now.getHours() * 60 + now.getMinutes(),
             dailyTotals: {
                 calories: Math.round(dailyTotals.calories),
                 protein: Math.round(dailyTotals.protein),
@@ -128,7 +161,7 @@ export function CoachView() {
             trendsAnalysis: trends
         };
 
-    }, [timelineEntries, userProfile]);
+    }, [timelineEntries, userProfile, ramadanMode]);
 
 
     // Usage Limit State
@@ -199,6 +232,46 @@ export function CoachView() {
             // Toast or Alert for Limit
             alert("Daily Coach Limit Reached (5/5). Come back tomorrow!");
         }
+    };
+
+    const renderInlineBold = (text: string) => {
+        const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+        return parts.map((part, idx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={`b-${idx}`}>{part.slice(2, -2)}</strong>;
+            }
+            return <span key={`t-${idx}`}>{part}</span>;
+        });
+    };
+
+    const renderMarkdownish = (text: string) => {
+        const blocks = text.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
+
+        return blocks.map((block, blockIndex) => {
+            const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+            const isList = lines.every((line) => line.startsWith('* ') || line.startsWith('- '));
+
+            if (isList) {
+                return (
+                    <ul key={`block-${blockIndex}`} className="list-disc pl-5 space-y-2">
+                        {lines.map((line, lineIndex) => {
+                            const content = line.replace(/^(\*|-)\s+/, '');
+                            return (
+                                <li key={`li-${blockIndex}-${lineIndex}`}>
+                                    {renderInlineBold(content)}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                );
+            }
+
+            return (
+                <p key={`block-${blockIndex}`} className="mb-3 last:mb-0">
+                    {renderInlineBold(block)}
+                </p>
+            );
+        });
     };
 
     const renderContent = () => {
@@ -274,8 +347,8 @@ export function CoachView() {
             return (
                 <div className="space-y-4">
 
-                    <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed whitespace-pre-wrap", tokens.text.primary)}>
-                        {aiOutput.aiResponse}
+                    <div className={cn("animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed", tokens.text.primary)}>
+                        {renderMarkdownish(aiOutput.aiResponse)}
 
                         <div className={cn("mt-6 py-3 px-4 border-t border-dashed flex items-center justify-center gap-2", mode === 'dark' ? "border-white/10" : "border-black/10")}>
                             <span className={cn("text-xs font-medium opacity-60 text-center", tokens.text.tertiary)}>

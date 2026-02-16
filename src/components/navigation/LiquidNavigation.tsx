@@ -211,6 +211,12 @@ export default function LiquidNavigation({
         return () => window.removeEventListener('resize', updateLayout);
     }, []);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const seen = window.localStorage.getItem(RAMADAN_WELCOME_KEY) === '1';
+        setRamadanWelcomeSeen(seen);
+    }, []);
+
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
     const enableWebBento = !isIOS && isWideLayout;
 
@@ -218,6 +224,9 @@ export default function LiquidNavigation({
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
     const [pressedItem, setPressedItem] = useState<string | null>(null);
     const [showAdminDot, setShowAdminDot] = useState(false);
+    const [ramadanWelcomeSeen, setRamadanWelcomeSeen] = useState(true);
+    const [showRamadanWelcome, setShowRamadanWelcome] = useState(false);
+    const RAMADAN_WELCOME_KEY = 'ramadan_welcome_seen_v1';
 
     // Poll for new joiners if admin
     useEffect(() => {
@@ -270,6 +279,9 @@ export default function LiquidNavigation({
             EXPLORE_ITEMS.forEach(item => {
                 if (item.path) router.prefetch(item.path);
             });
+            if (!ramadanWelcomeSeen) {
+                setShowRamadanWelcome(true);
+            }
         } else if (activePanel === 'insights') {
             INSIGHTS_ITEMS.forEach(item => {
                 if (item.path) router.prefetch(item.path);
@@ -398,8 +410,89 @@ export default function LiquidNavigation({
     // Close panel on backdrop click
     const closePanel = () => setActivePanel(null);
 
+    const closeRamadanWelcome = (navigateToRamadan = false) => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(RAMADAN_WELCOME_KEY, '1');
+        }
+        setRamadanWelcomeSeen(true);
+        setShowRamadanWelcome(false);
+        if (navigateToRamadan) {
+            setActivePanel(null);
+            router.push('/explore/ramadan');
+        }
+    };
+
     return (
         <>
+            {/* Ramadan Welcome Modal */}
+            <AnimatePresence>
+                {showRamadanWelcome && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/45 backdrop-blur-sm px-5"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Ramadan welcome"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.96, opacity: 0, y: 16 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.96, opacity: 0, y: 16 }}
+                            transition={SPRING_REVEAL}
+                            className="w-full max-w-[380px] rounded-[28px] bg-[#0E1C16]/95 border border-white/10 shadow-2xl px-6 pt-6 pb-5 text-white relative"
+                        >
+                            <button
+                                onClick={() => closeRamadanWelcome(false)}
+                                className="absolute top-4 right-4 text-white/70 hover:text-white text-xs"
+                                aria-label="Close"
+                            >
+                                ✕
+                            </button>
+                            <div className="flex items-center justify-center mb-4">
+                                <div className="relative w-[150px] h-[150px] rounded-full flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-emerald-400/30 blur-[40px] rounded-full" />
+                                    <div className="relative z-10 w-[140px] h-[140px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
+                                        <video
+                                            src="/ramadan-animation.mp4?v=ramadan"
+                                            autoPlay
+                                            loop
+                                            muted
+                                            playsInline
+                                            preload="auto"
+                                            className="w-full h-full object-cover object-center scale-[1.75]"
+                                        />
+                                        <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none" />
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 className="text-lg font-semibold text-center mb-2">Ramadan Mode Is Here</h3>
+                            <p className="text-sm text-white/80 text-center leading-relaxed mb-4">
+                                Wishing you a calm, healthy Ramadan season. We’ve prepared a new Ramadan Hub with
+                                daily wisdom, goals, and a calendar to guide your habits this month. We also updated
+                                Insights and the Coach to support fasting if you choose it.
+                            </p>
+                            <div className="flex items-center justify-center gap-3">
+                                <button
+                                    onClick={() => closeRamadanWelcome(false)}
+                                    className="px-4 py-2 rounded-full text-xs text-white/80 border border-white/15 hover:border-white/30"
+                                >
+                                    Maybe later
+                                </button>
+                                <button
+                                    onClick={() => closeRamadanWelcome(true)}
+                                    className="px-4 py-2 rounded-full text-xs font-semibold bg-emerald-500 text-white shadow-[0_8px_18px_rgba(16,185,129,0.35)]"
+                                >
+                                    Open Ramadan Hub
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Backdrop */}
             <AnimatePresence>
                 {activePanel && (
@@ -801,6 +894,7 @@ export default function LiquidNavigation({
                         const isActive = activeTab === item.id || activePanel === item.id;
                         const Icon = item.icon;
                         const isPressed = pressedItem === item.id;
+                        const shouldPulseExplore = item.id === 'explore' && !ramadanWelcomeSeen;
 
                         const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
                         // Lock logic: If walkthrough active, only allow interaction if this specific item is the target
@@ -871,7 +965,8 @@ export default function LiquidNavigation({
                                                 "w-6 h-6 transition-all duration-300",
                                                 (activePanel ? activePanel === item.id : activeTab === item.id)
                                                     ? "text-white drop-shadow-md scale-105 stroke-[2.5px]" // Active = White floating on reflection (3. Content Front)
-                                                    : "text-foreground/50 grayscale-[0.3] stroke-[2px]"
+                                                    : "text-foreground/50 grayscale-[0.3] stroke-[2px]",
+                                                shouldPulseExplore && "animate-icon-pulse-1 text-amber-300 drop-shadow-[0_0_14px_rgba(251,191,36,0.7)]"
                                             )}
                                         />
                                     </div>
