@@ -31,13 +31,32 @@ export function RamadanCardStack({
     savedIds
 }: RamadanCardStackProps) {
     const [index, setIndex] = useState(0);
-    const WINDOW_SIZE = 5;
+    const RENDER_RADIUS = 2;
+    const HYDRATE_DELAY_MS = 120;
+    const [hydrated, setHydrated] = useState<Set<number>>(new Set([0]));
 
     useEffect(() => {
         if (index > cards.length - 1) {
             setIndex(Math.max(0, cards.length - 1));
         }
     }, [cards.length, index]);
+
+    useEffect(() => {
+        if (cards.length === 0) return;
+        // Always hydrate the current card immediately
+        setHydrated(new Set([index]));
+
+        const targets: number[] = [];
+        for (let i = index - RENDER_RADIUS; i <= index + RENDER_RADIUS; i += 1) {
+            if (i >= 0 && i < cards.length) targets.push(i);
+        }
+
+        const timer = setTimeout(() => {
+            setHydrated(new Set(targets));
+        }, HYDRATE_DELAY_MS);
+
+        return () => clearTimeout(timer);
+    }, [index, cards.length]);
 
     const handleSave = (tip: RamadanTip) => {
         saveCard(tip);
@@ -73,38 +92,42 @@ export function RamadanCardStack({
         </div>
     );
 
-    const windowStart = useMemo(() => {
-        if (cards.length <= WINDOW_SIZE) return 0;
-        const maxStart = cards.length - WINDOW_SIZE;
-        const half = Math.floor(WINDOW_SIZE / 2);
-        return Math.min(Math.max(index - half, 0), maxStart);
-    }, [cards.length, index]);
-
-    const windowCards = useMemo(
-        () => cards.slice(windowStart, windowStart + WINDOW_SIZE),
-        [cards, windowStart]
-    );
-    const windowIndex = Math.max(0, index - windowStart);
+    const renderCard = useMemo(() => {
+        return (card: RamadanTip, idx: number) => {
+            const distance = Math.abs(idx - index);
+            if (distance > RENDER_RADIUS) {
+                return <div className="h-full w-full" />;
+            }
+            if (!hydrated.has(idx)) {
+                return (
+                    <div className="h-full w-full rounded-[2rem] border border-white/10 bg-white/5 animate-pulse" />
+                );
+            }
+            return (
+                <RamadanCard
+                    tip={card}
+                    isFront={true}
+                    onSave={handleSave}
+                    onCommit={commitGoal}
+                    isCommitted={committedGoals.some(goal => goal.id === `goal-${card.topicId}`)}
+                    isSaved={savedIds ? savedIds.has(card.topicId) : false}
+                />
+            );
+        };
+    }, [index, hydrated, commitGoal, committedGoals, savedIds]);
 
     return (
         <div className="relative w-full max-w-sm mx-auto">
             <div className="aspect-[3/4] isolation-isolate perspective-1000">
                 <LiquidChartCarousel
-                    currentIndex={windowIndex}
-                    onIndexChange={(nextIdx) => setIndex(windowStart + nextIdx)}
+                    currentIndex={index}
+                    onIndexChange={setIndex}
                     showDots={false}
                     className="h-full w-full"
                 >
-                    {windowCards.map((card) => (
+                    {cards.map((card, idx) => (
                         <div key={card.topicId} className="h-full w-full flex items-center justify-center px-2">
-                            <RamadanCard
-                                tip={card}
-                                isFront={true}
-                                onSave={handleSave}
-                                onCommit={commitGoal}
-                                isCommitted={committedGoals.some(goal => goal.id === `goal-${card.topicId}`)}
-                                isSaved={savedIds ? savedIds.has(card.topicId) : false}
-                            />
+                            {renderCard(card, idx)}
                         </div>
                     ))}
                 </LiquidChartCarousel>
