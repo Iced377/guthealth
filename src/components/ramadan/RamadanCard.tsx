@@ -58,7 +58,7 @@ export function RamadanCard({
 
     return (
         <div className={cn(
-            "relative w-full h-full rounded-[2rem] overflow-hidden backdrop-blur-3xl border shadow-2xl transition-all duration-300",
+            "relative w-full h-full rounded-[2rem] overflow-hidden backdrop-blur-3xl border transition-all duration-300",
             getGradient(),
             "bg-gradient-to-br"
         )}>

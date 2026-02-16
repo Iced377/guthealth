@@ -305,7 +305,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // If user is logged in, check if they have completed setup
-      const hasCompletedSetup = userProfile?.profile?.hasCompletedSetup;
+      const hasCompletedSetup = userProfile?.profile?.hasCompletedSetup === true;
+      const profileMissing = !userProfile?.profile;
+
+      const resolveDate = (value: any) => {
+        if (!value) return null;
+        if (value instanceof Date) return value;
+        if (typeof value?.toDate === 'function') return value.toDate();
+        const parsed = new Date(value);
+        return isNaN(parsed.getTime()) ? null : parsed;
+      };
+
+      const createdAt = resolveDate(userProfile?.createdAt) ||
+        (user?.metadata?.creationTime ? new Date(user.metadata.creationTime) : null);
+      const accountAgeHours = createdAt ? (Date.now() - createdAt.getTime()) / 36e5 : null;
+      const hasLegacySignals = Boolean(
+        userProfile?.dateOfBirth ||
+        (userProfile?.safeFoods?.length ?? 0) > 0 ||
+        userProfile?.ramadanConfig
+      );
+      const shouldSkipSetup = profileMissing && (hasLegacySignals || (accountAgeHours !== null && accountAgeHours > 24));
 
       console.log("[AuthProvider] Setup check:", {
         hasCompletedSetup,
@@ -315,8 +334,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: user.uid
       });
 
+      if (shouldSkipSetup) {
+        console.warn("[AuthProvider] Profile missing but skipping setup redirect (legacy user safeguard).", {
+          hasLegacySignals,
+          accountAgeHours
+        });
+        return;
+      }
+
       // If not completed setup, and not on setup page, redirect
-      if (!hasCompletedSetup && pathname !== '/setup') {
+      if (!hasCompletedSetup && !shouldSkipSetup && pathname !== '/setup') {
         // Allow admin or some specific paths? maybe not.
         // But let's verify we are not in a loop.
         console.log("Redirecting to setup...");

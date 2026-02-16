@@ -4,12 +4,13 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, PanInfo, useDragControls } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { RamadanCardStack } from '@/components/ramadan/RamadanCardStack';
 import { SavedCardsStack } from '@/components/ramadan/SavedCardsStack';
 import { cn } from '@/lib/utils';
 import { useRamadanCards } from '@/hooks/useRamadanCards';
 import LiquidSegmentedControl from '@/components/ui/LiquidSegmentedControl';
+import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -20,7 +21,7 @@ export default function RamadanComingSoonPage() {
     const [showSaved, setShowSaved] = React.useState(false);
     const [ramadanMode, setRamadanMode] = React.useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
     const [showModeDialog, setShowModeDialog] = React.useState(false);
-    const dayDragControls = useDragControls();
+    const [ramadanDialogVideoReady, setRamadanDialogVideoReady] = React.useState(false);
     const {
         cards,
         removeTopCard,
@@ -158,6 +159,14 @@ export default function RamadanComingSoonPage() {
         }
     };
 
+    const dayIndex = Math.max(0, ramadanDateKeys.indexOf(selectedDateKey));
+    const handleDayIndexChange = (idx: number) => {
+        const nextKey = ramadanDateKeys[idx];
+        if (nextKey) {
+            setSelectedDateKey(nextKey);
+        }
+    };
+
     return (
         <div className="relative h-screen w-full overflow-hidden bg-black">
             <style jsx global>{`
@@ -177,6 +186,11 @@ export default function RamadanComingSoonPage() {
                             <div className="relative w-[150px] h-[150px] rounded-full flex items-center justify-center">
                                 <div className="absolute inset-0 bg-emerald-400/30 blur-[40px] rounded-full" />
                                 <div className="relative z-10 w-[140px] h-[140px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
+                                    {!ramadanDialogVideoReady && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/15 backdrop-blur-sm">
+                                            <span className="text-emerald-100/80 text-sm font-semibold animate-pulse">Ramadan</span>
+                                        </div>
+                                    )}
                                     <video
                                         src="/ramadan-animation.mp4?v=ramadan"
                                         autoPlay
@@ -184,7 +198,12 @@ export default function RamadanComingSoonPage() {
                                         muted
                                         playsInline
                                         preload="auto"
-                                        className="w-full h-full object-cover object-center scale-[1.75]"
+                                        poster="/ramadan-bg.png"
+                                        onLoadedData={() => setRamadanDialogVideoReady(true)}
+                                        className={cn(
+                                            "w-full h-full object-cover object-center scale-[1.75] transition-opacity duration-300",
+                                            ramadanDialogVideoReady ? "opacity-100" : "opacity-0"
+                                        )}
                                     />
                                     <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none" />
                                 </div>
@@ -251,10 +270,16 @@ export default function RamadanComingSoonPage() {
                 </button>
             </div>
 
-            <div className="relative z-10 h-full w-full overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scroll-smooth pb-0" style={{ touchAction: 'pan-y', overscrollBehaviorX: 'none' }}>
+            <div
+                className="relative z-10 h-full w-full overflow-y-scroll overflow-x-hidden snap-y snap-mandatory scroll-smooth pb-0"
+                style={{ touchAction: 'pan-y', overscrollBehaviorX: 'none', WebkitOverflowScrolling: 'touch' }}
+            >
 
                 {/* Section 1: Wisdom Cards */}
-                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center p-4 relative overflow-hidden">
+                <section
+                    className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center p-4 relative overflow-hidden"
+                    style={{ touchAction: 'pan-y' }}
+                >
                     <div className="w-full max-w-md mx-auto animate-in fade-in zoom-in duration-500 delay-200">
                         <div className="flex items-center justify-center mb-4">
                             <LiquidSegmentedControl
@@ -294,111 +319,114 @@ export default function RamadanComingSoonPage() {
                         )}
                     </div>
                     <div className="absolute bottom-[96px] left-1/2 -translate-x-1/2 text-white/45 text-[9px] tracking-[0.18em] uppercase text-center max-w-[92vw] px-3">
-                        &lt;&lt;Swipe&gt;&gt; For more Ramadan Tips • Scroll ↓ for Goals & Calendar
+                        Scroll ↓ for Goals & Calendar
                     </div>
                 </section>
 
                 {/* Section 2: Committed Goals */}
-                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 pb-16 relative overflow-hidden">
+                <section
+                    className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 pb-16 relative overflow-hidden"
+                    style={{ touchAction: 'pan-y' }}
+                >
                     <div className="w-full max-w-md mx-auto">
                         <div className="mb-4 text-white/90 text-lg tracking-widest uppercase font-semibold">
                             Committed Goals
                         </div>
-                        <motion.div
-                            className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
-                            drag="x"
-                            dragDirectionLock
-                            dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.8}
-                            dragControls={dayDragControls}
-                            dragListener={false}
-                            onDragEnd={(_: any, info: PanInfo) => {
-                                const threshold = 40;
-                                if (info.offset.x < -threshold) {
-                                    shiftSelectedDate(1);
-                                } else if (info.offset.x > threshold) {
-                                    shiftSelectedDate(-1);
-                                }
-                            }}
-                            onPointerDown={(e) => dayDragControls.start(e)}
-                            style={{ touchAction: 'pan-y' }}
-                        >
-                            <div className="mb-4 flex items-center justify-between text-white/90 text-sm font-semibold">
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); shiftSelectedDate(-1); }}
-                                        className="text-white/50 hover:text-white/80"
-                                    >
-                                        {'<<'}
-                                    </button>
-                                    <span>
-                                        {new Date(selectedDateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); shiftSelectedDate(1); }}
-                                        className="text-white/50 hover:text-white/80"
-                                    >
-                                        {'>>'}
-                                    </button>
-                                </div>
-                                <div className="text-white/60 text-xs font-semibold">
-                                    {getCompletionForDate(selectedDateKey).length}/{activeGoals.length}
-                                </div>
-                            </div>
-                            {activeGoals.length === 0 && (
-                                <div className="text-white/50 text-sm">
-                                    Commit a goal from a card to build your Ramadan plan.
-                                </div>
-                            )}
-                            <div className={cn(
-                                "space-y-3",
-                                activeGoals.length > 5 && "max-h-[300px] overflow-y-auto pr-1"
-                            )}>
-                                {activeGoals.map((goal) => {
-                                    const completedForDay = getCompletionForDate(selectedDateKey);
-                                    const isCompleted = completedForDay.includes(goal.id);
+                        <div className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+                            <LiquidChartCarousel
+                                currentIndex={dayIndex}
+                                onIndexChange={handleDayIndexChange}
+                                showDots={false}
+                                className="h-full w-full"
+                            >
+                                {ramadanDateKeys.map((dateKey) => {
+                                    const completedForDay = getCompletionForDate(dateKey);
                                     return (
-                                        <div
-                                            key={goal.id}
-                                            className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"
-                                        >
-                                            <button
-                                                onClick={() => toggleGoalForDate(selectedDateKey, goal.id)}
-                                                className={cn(
-                                                    "h-10 w-10 rounded-full border flex items-center justify-center transition-all",
-                                                    isCompleted
-                                                        ? "border-emerald-300/70 bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                                                        : "border-white/20 bg-white/10 hover:bg-white/20"
+                                        <div key={dateKey} className="h-full w-full flex items-center justify-center">
+                                            <div className="w-full p-5">
+                                                <div className="mb-4 flex items-center justify-between text-white/90 text-sm font-semibold">
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); shiftSelectedDate(-1); }}
+                                                            className="text-white/50 hover:text-white/80"
+                                                        >
+                                                            {'<<'}
+                                                        </button>
+                                                        <span>
+                                                            {new Date(dateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                        </span>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); shiftSelectedDate(1); }}
+                                                            className="text-white/50 hover:text-white/80"
+                                                        >
+                                                            {'>>'}
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-white/60 text-xs font-semibold">
+                                                        {completedForDay.length}/{activeGoals.length}
+                                                    </div>
+                                                </div>
+                                                {activeGoals.length === 0 && (
+                                                    <div className="text-white/50 text-sm">
+                                                        Commit a goal from a card to build your Ramadan plan.
+                                                    </div>
                                                 )}
-                                                title={isCompleted ? 'Marked complete' : 'Mark complete'}
-                                            >
-                                                <span className={cn(
-                                                    "h-4 w-4 rounded-full",
-                                                    isCompleted ? "bg-emerald-300" : "bg-white/30"
-                                                )} />
-                                            </button>
-                                            <div className="flex-1">
-                                                <div className="text-white/90 text-sm font-semibold">{goal.title}</div>
-                                                {goal.actionItem && (
-                                                    <div className="text-white/60 text-xs mt-1">{goal.actionItem}</div>
-                                                )}
+                                                <div className={cn(
+                                                    "space-y-3",
+                                                    activeGoals.length > 5 && "max-h-[300px] overflow-y-auto pr-1"
+                                                )}>
+                                                    {activeGoals.map((goal) => {
+                                                        const isCompleted = completedForDay.includes(goal.id);
+                                                        return (
+                                                            <div
+                                                                key={`${dateKey}-${goal.id}`}
+                                                                className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"
+                                                            >
+                                                                <button
+                                                                    onClick={() => toggleGoalForDate(dateKey, goal.id)}
+                                                                    className={cn(
+                                                                        "h-10 w-10 rounded-full border flex items-center justify-center transition-all",
+                                                                        isCompleted
+                                                                            ? "border-emerald-300/70 bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                                                                            : "border-white/20 bg-white/10 hover:bg-white/20"
+                                                                    )}
+                                                                    title={isCompleted ? 'Marked complete' : 'Mark complete'}
+                                                                >
+                                                                    <span className={cn(
+                                                                        "h-4 w-4 rounded-full",
+                                                                        isCompleted ? "bg-emerald-300" : "bg-white/30"
+                                                                    )} />
+                                                                </button>
+                                                                <div className="flex-1">
+                                                                    <div className="text-white/90 text-sm font-semibold">{goal.title}</div>
+                                                                    {goal.actionItem && (
+                                                                        <div className="text-white/60 text-xs mt-1">{goal.actionItem}</div>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => uncommitGoal(goal.id)}
+                                                                    className="text-xs text-white/40 hover:text-white/70"
+                                                                >
+                                                                    Uncommit
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                            <button
-                                                onClick={() => uncommitGoal(goal.id)}
-                                                className="text-xs text-white/40 hover:text-white/70"
-                                            >
-                                                Uncommit
-                                            </button>
                                         </div>
                                     );
                                 })}
-                            </div>
-                        </motion.div>
+                            </LiquidChartCarousel>
+                        </div>
                     </div>
                 </section>
 
                 {/* Section 3: Calendar */}
-                <section className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 relative overflow-hidden">
+                <section
+                    className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center px-5 relative overflow-hidden"
+                    style={{ touchAction: 'pan-y' }}
+                >
                     <div className="w-full max-w-md mx-auto">
                         <div className="mb-4 text-white/90 text-lg tracking-widest uppercase font-semibold">
                             Ramadan Calendar

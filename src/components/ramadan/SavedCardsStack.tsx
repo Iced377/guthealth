@@ -1,10 +1,10 @@
 // src/components/ramadan/SavedCardsStack.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, useAnimation, PanInfo, useDragControls } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { RamadanCard } from './RamadanCard';
 import type { RamadanTip } from '@/data/ramadan-seed';
+import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
 
 interface SavedCardsStackProps {
     cards: RamadanTip[];
@@ -21,46 +21,35 @@ export function SavedCardsStack({
     isCommitted,
     isSaved
 }: SavedCardsStackProps) {
-    const dragControls = useDragControls();
     const [stack, setStack] = useState<RamadanTip[]>(cards);
-    const dismissed = useRef<RamadanTip[]>([]);
+    const [index, setIndex] = useState(0);
+
+    const renderDots = (total: number, current: number) => {
+        const maxDots = 5;
+        if (total <= 1) return null;
+
+        const windowSize = Math.min(maxDots, total);
+        const maxStart = Math.max(0, total - windowSize);
+        const start = Math.min(Math.max(current - Math.floor(windowSize / 2), 0), maxStart);
+        const indices = Array.from({ length: windowSize }, (_, i) => start + i);
+
+        return (
+            <div className="mt-3 flex justify-center gap-2 pointer-events-none">
+                {indices.map((idx) => (
+                    <div
+                        key={`saved-dot-${idx}`}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                            idx === current ? 'w-5 bg-white/90' : 'w-1.5 bg-white/40'
+                        }`}
+                    />
+                ))}
+            </div>
+        );
+    };
 
     useEffect(() => {
         setStack(cards);
-        dismissed.current = [];
     }, [cards]);
-
-    const x = useMotionValue(0);
-    const rotate = useTransform(x, [-200, 0, 200], [-10, 0, 10]);
-    const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
-    const controls = useAnimation();
-
-    const handleDragEnd = async (_: any, info: PanInfo) => {
-        const threshold = 80;
-        const velocity = info.velocity.x;
-        const offset = info.offset.x;
-
-        if (Math.abs(offset) > threshold || Math.abs(velocity) > 500) {
-            if (offset < 0) {
-                await controls.start({ x: -500, opacity: 0, transition: { duration: 0.2 } });
-                x.set(0);
-                controls.set({ x: 0, opacity: 1 });
-                const [removed, ...rest] = stack;
-                if (removed) dismissed.current.unshift(removed);
-                setStack(rest);
-            } else {
-                x.set(0);
-                controls.set({ x: 0, opacity: 1 });
-                if (dismissed.current.length > 0) {
-                    const [restored, ...rest] = dismissed.current;
-                    dismissed.current = rest;
-                    setStack(prev => [restored, ...prev]);
-                }
-            }
-        } else {
-            controls.start({ x: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } });
-        }
-    };
 
     if (stack.length === 0) {
         return (
@@ -71,32 +60,29 @@ export function SavedCardsStack({
     }
 
     return (
-        <div className="relative w-full max-w-sm aspect-[3/4] mx-auto">
-            <motion.div
-                key={stack[0].topicId}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.25 }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.8}
-                dragControls={dragControls}
-                dragListener={false}
-                dragDirectionLock
-                onPointerDown={(e) => dragControls.start(e)}
-                onDragEnd={handleDragEnd}
-                style={{ x, rotate, opacity, touchAction: 'pan-y' }}
-                className="absolute inset-0 cursor-grab active:cursor-grabbing"
-            >
-                <RamadanCard
-                    tip={stack[0]}
-                    isFront={true}
-                    onSave={onSave}
-                    onCommit={onCommit}
-                    isCommitted={isCommitted(stack[0].topicId)}
-                    isSaved={isSaved(stack[0].topicId)}
-                />
-            </motion.div>
+        <div className="relative w-full max-w-sm mx-auto">
+            <div className="aspect-[3/4]">
+                <LiquidChartCarousel
+                    currentIndex={index}
+                    onIndexChange={setIndex}
+                    showDots={false}
+                    className="h-full w-full"
+                >
+                    {stack.map((card) => (
+                        <div key={card.topicId} className="h-full w-full flex items-center justify-center px-2">
+                            <RamadanCard
+                                tip={card}
+                                isFront={true}
+                                onSave={onSave}
+                                onCommit={onCommit}
+                                isCommitted={isCommitted(card.topicId)}
+                                isSaved={isSaved(card.topicId)}
+                            />
+                        </div>
+                    ))}
+                </LiquidChartCarousel>
+            </div>
+            {renderDots(stack.length, index)}
         </div>
     );
 }

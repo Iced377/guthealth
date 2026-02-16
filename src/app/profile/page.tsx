@@ -8,7 +8,7 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { db, auth } from '@/config/firebase'; // Added auth
+import { db, auth, firebaseConfig } from '@/config/firebase'; // Added auth
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth'; // Added signOut
 import { Button } from '@/components/ui/button';
@@ -858,6 +858,29 @@ export default function ProfilePage() {
                                 </div>
                                 <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                             </button>
+                        )}
+
+                        {isAdminUser && (
+                            <div className="w-full px-4 py-3 border-b border-white/5 text-[11px] text-muted-foreground space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <span>Firebase Project</span>
+                                    <span className="text-foreground">{firebaseConfig.projectId || 'MISSING'}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span>Auth Domain</span>
+                                    <span className="text-foreground">{firebaseConfig.authDomain || 'MISSING'}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span>Profile Loaded</span>
+                                    <span className="text-foreground">{profileData ? 'yes' : 'no'}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span>Setup Complete</span>
+                                    <span className="text-foreground">
+                                        {profileData?.hasCompletedSetup ? 'yes' : profileData ? 'no' : 'missing'}
+                                    </span>
+                                </div>
+                            </div>
                         )}
 
                         {/* Sign Out */}

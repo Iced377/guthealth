@@ -205,6 +205,15 @@ export default function LiquidNavigation({
     const { currentStep, isWalkthroughActive } = useWalkthrough();
     const [isWideLayout, setIsWideLayout] = useState(false);
 
+    // Panel states
+    const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
+    const [pressedItem, setPressedItem] = useState<string | null>(null);
+    const [showAdminDot, setShowAdminDot] = useState(false);
+    const [ramadanWelcomeSeen, setRamadanWelcomeSeen] = useState(true);
+    const [ramadanVideoReady, setRamadanVideoReady] = useState(false);
+    const [showRamadanWelcome, setShowRamadanWelcome] = useState(false);
+    const RAMADAN_WELCOME_KEY = 'ramadan_welcome_seen_v1';
+
     useEffect(() => {
         const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
         updateLayout();
@@ -222,16 +231,39 @@ export default function LiquidNavigation({
         setRamadanWelcomeSeen(seen);
     }, []);
 
+    useEffect(() => {
+        if (!RAMADAN_ENABLED) return;
+        if (typeof window === 'undefined') return;
+        if (ramadanWelcomeSeen) return;
+
+        let cancelled = false;
+        const preload = () => {
+            const video = document.createElement('video');
+            video.preload = 'auto';
+            video.muted = true;
+            (video as any).playsInline = true;
+            video.src = '/ramadan-animation.mp4?v=ramadan';
+            const markReady = () => {
+                if (!cancelled) setRamadanVideoReady(true);
+            };
+            video.addEventListener('loadeddata', markReady, { once: true });
+            video.addEventListener('canplaythrough', markReady, { once: true });
+            video.load();
+        };
+
+        if ('requestIdleCallback' in window) {
+            (window as any).requestIdleCallback(preload);
+        } else {
+            setTimeout(preload, 0);
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [ramadanWelcomeSeen]);
+
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
     const enableWebBento = !isIOS && isWideLayout;
-
-    // Panel states
-    const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
-    const [pressedItem, setPressedItem] = useState<string | null>(null);
-    const [showAdminDot, setShowAdminDot] = useState(false);
-    const [ramadanWelcomeSeen, setRamadanWelcomeSeen] = useState(true);
-    const [showRamadanWelcome, setShowRamadanWelcome] = useState(false);
-    const RAMADAN_WELCOME_KEY = 'ramadan_welcome_seen_v1';
 
     // Poll for new joiners if admin
     useEffect(() => {
@@ -460,6 +492,11 @@ export default function LiquidNavigation({
                                 <div className="relative w-[150px] h-[150px] rounded-full flex items-center justify-center">
                                     <div className="absolute inset-0 bg-emerald-400/30 blur-[40px] rounded-full" />
                                     <div className="relative z-10 w-[140px] h-[140px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
+                                        {!ramadanVideoReady && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/15 backdrop-blur-sm">
+                                                <Moon className="w-10 h-10 text-emerald-200/80 animate-pulse" />
+                                            </div>
+                                        )}
                                         <video
                                             src="/ramadan-animation.mp4?v=ramadan"
                                             autoPlay
@@ -467,7 +504,12 @@ export default function LiquidNavigation({
                                             muted
                                             playsInline
                                             preload="auto"
-                                            className="w-full h-full object-cover object-center scale-[1.75]"
+                                            poster="/ramadan-bg.png"
+                                            onLoadedData={() => setRamadanVideoReady(true)}
+                                            className={cn(
+                                                "w-full h-full object-cover object-center scale-[1.75] transition-opacity duration-300",
+                                                ramadanVideoReady ? "opacity-100" : "opacity-0"
+                                            )}
                                         />
                                         <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none" />
                                     </div>
