@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://mygutcheck.app',
     allowNavigation: ['mygutcheck.app'],
-    cleartext: true
+    cleartext: false
   },
   plugins: {
     FirebaseAuthentication: {

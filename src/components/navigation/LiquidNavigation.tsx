@@ -37,6 +37,7 @@ import { useNavVisibility } from '@/components/navigation/useNavVisibilityContro
 import { APP_VERSION } from '@/config/releaseNotes';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { Capacitor } from '@capacitor/core';
+import { RAMADAN_ENABLED } from '@/lib/featureFlags';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -212,6 +213,10 @@ export default function LiquidNavigation({
     }, []);
 
     useEffect(() => {
+        if (!RAMADAN_ENABLED) {
+            setShowRamadanWelcome(false);
+            return;
+        }
         if (typeof window === 'undefined') return;
         const seen = window.localStorage.getItem(RAMADAN_WELCOME_KEY) === '1';
         setRamadanWelcomeSeen(seen);
@@ -279,7 +284,7 @@ export default function LiquidNavigation({
             EXPLORE_ITEMS.forEach(item => {
                 if (item.path) router.prefetch(item.path);
             });
-            if (!ramadanWelcomeSeen) {
+            if (RAMADAN_ENABLED && !ramadanWelcomeSeen) {
                 setShowRamadanWelcome(true);
             }
         } else if (activePanel === 'insights') {
@@ -894,7 +899,7 @@ export default function LiquidNavigation({
                         const isActive = activeTab === item.id || activePanel === item.id;
                         const Icon = item.icon;
                         const isPressed = pressedItem === item.id;
-                        const shouldPulseExplore = item.id === 'explore' && !ramadanWelcomeSeen;
+                        const shouldPulseExplore = RAMADAN_ENABLED && item.id === 'explore' && !ramadanWelcomeSeen;
 
                         const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
                         // Lock logic: If walkthrough active, only allow interaction if this specific item is the target
