@@ -25,9 +25,19 @@ const safeSetItem = (key: string, value: string) => {
     }
 };
 
+const shuffleDeck = <T,>(items: T[]) => {
+    const arr = [...items];
+    for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+};
+
 interface CacheData {
     cards: RamadanTip[];
     timestamp: number;
+    randomized?: boolean;
 }
 
 interface RateLimitData {
@@ -188,13 +198,22 @@ export function useRamadanCards() {
                 const parsed: CacheData = JSON.parse(cached);
                 const now = Date.now();
                 if (now - parsed.timestamp < CACHE_TTL && parsed.cards.length > 0) {
-                    setCards(parsed.cards);
+                    const nextCards = parsed.randomized ? parsed.cards : shuffleDeck(parsed.cards);
+                    setCards(nextCards);
                     // Extract history from cached cards to avoid repeating them immediately if we fetch more
                     setHistory((prev) => {
-                        const merged = new Set([...prev, ...parsed.cards.map(c => c.topicId)]);
+                        const merged = new Set([...prev, ...nextCards.map(c => c.topicId)]);
                         return Array.from(merged);
                     });
                     setIsReady(true);
+                    if (!parsed.randomized) {
+                        const refreshed: CacheData = {
+                            cards: nextCards,
+                            timestamp: Date.now(),
+                            randomized: true
+                        };
+                        safeSetItem(STORAGE_KEY_CACHE, JSON.stringify(refreshed));
+                    }
                     return;
                 }
             } catch (e) {
@@ -202,7 +221,7 @@ export function useRamadanCards() {
             }
         }
         // Fallback to seed
-        setCards(RAMADAN_SEED_DECK);
+        setCards(shuffleDeck(RAMADAN_SEED_DECK));
         setIsReady(true);
     }, []);
 
@@ -216,7 +235,8 @@ export function useRamadanCards() {
         if (cards.length > 0) {
             const cache: CacheData = {
                 cards,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                randomized: true
             };
             safeSetItem(STORAGE_KEY_CACHE, JSON.stringify(cache));
         }
