@@ -50,6 +50,11 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      // --- Integration Debug Logs ---
+      match /integration_debug_logs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // --- Saved Ramadan Cards ---
       match /saved_ramadan_cards/{cardId} {
         allow read: if isOwner(userId);

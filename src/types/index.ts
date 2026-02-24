@@ -71,6 +71,7 @@ export interface LoggedFoodItem {
   userFeedback?: 'safe' | 'unsafe' | null;
   macrosOverridden?: boolean;
   isFavorite?: boolean; // Added for favorite functionality
+  favoriteLastUsedAt?: Date;
 
   // Hallucination Checker Result
   verificationResult?: {
@@ -169,6 +170,12 @@ export interface UserProfile {
   ramadanConfig?: {
     status: 'fasting' | 'witnessing' | 'hidden';
     updatedAt?: Timestamp | Date;
+  };
+  integrationDebug?: {
+    appleHealth?: {
+      enabled?: boolean;
+      updatedAt?: Timestamp | Date;
+    };
   };
   profile?: {
     hasCompletedSetup: boolean;

@@ -34,9 +34,12 @@ interface ChartSlideProps {
   targetCalories: number;
   maintenanceCalories?: number; // Pass down
   isChartInteractionEnabled: boolean;
-  barColor: string;
   targetLineColor: string;
   labelColor: string;
+  gridColor: string;
+  cursorColor: string;
+  tooltipStyle: React.CSSProperties;
+  showAxis: boolean;
   shouldAnimate: boolean;
 }
 
@@ -46,13 +49,21 @@ const DailyCaloriesSlide = ({
   targetCalories,
   maintenanceCalories,
   isChartInteractionEnabled,
-  barColor,
   targetLineColor,
   labelColor,
+  gridColor,
+  cursorColor,
+  tooltipStyle,
+  showAxis,
   shouldAnimate
 }: ChartSlideProps) => {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const safetyFloor = maintenanceCalories ? maintenanceCalories * 0.75 : undefined;
+  const metricColor = 'var(--metric-calories, #3B82F6)';
+  const overColor = 'var(--state-over, #FB7185)';
+  const riskColor = 'var(--state-risk, #F59E0B)';
+  const onTrackColor = 'var(--state-on-track, #2DD4BF)';
+  const barFade = 'var(--chart-bar-fade, #334155)';
 
   return (
     <div
@@ -74,24 +85,24 @@ const DailyCaloriesSlide = ({
               }
             }}
           >
-            {isScrubbing && isChartInteractionEnabled && (
-              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+            {(isScrubbing || showAxis) && isChartInteractionEnabled && (
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} stroke={gridColor} />
             )}
             <defs>
               <linearGradient id="barGradientGood" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity={1} />
-                <stop offset="60%" stopColor="#334155" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#334155" stopOpacity={0.2} />
+                <stop offset="0%" stopColor={metricColor} stopOpacity={1} />
+                <stop offset="60%" stopColor={barFade} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={barFade} stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="barGradientOver" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#FB7185" stopOpacity={1} />
-                <stop offset="60%" stopColor="#334155" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#334155" stopOpacity={0.2} />
+                <stop offset="0%" stopColor={overColor} stopOpacity={1} />
+                <stop offset="60%" stopColor={barFade} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={barFade} stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="barGradientRisk" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F59E0B" stopOpacity={1} />
-                <stop offset="60%" stopColor="#334155" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#334155" stopOpacity={0.2} />
+                <stop offset="0%" stopColor={riskColor} stopOpacity={1} />
+                <stop offset="60%" stopColor={barFade} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={barFade} stopOpacity={0.2} />
               </linearGradient>
             </defs>
             <XAxis
@@ -101,7 +112,7 @@ const DailyCaloriesSlide = ({
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+              tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
               interval="preserveStartEnd"
               mirror={true}
             />
@@ -110,7 +121,7 @@ const DailyCaloriesSlide = ({
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+              tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
               domain={[0, 'auto']}
               tickFormatter={(val) => formatGraphNumber(val)}
               className="transition-opacity duration-300"
@@ -122,7 +133,7 @@ const DailyCaloriesSlide = ({
               <ReferenceArea
                 y1={safetyFloor}
                 y2={targetCalories}
-                fill="#2DD4BF"
+                fill={onTrackColor}
                 fillOpacity={0.08}
               />
             )}
@@ -140,31 +151,34 @@ const DailyCaloriesSlide = ({
             {safetyFloor && (
               <ReferenceLine
                 y={safetyFloor}
-                stroke="#EF4444" // Red warning
+                stroke={riskColor}
                 strokeDasharray="2 2"
                 strokeWidth={1}
                 opacity={0.6}
-                label={isScrubbing ? { position: 'right', value: 'Metabolic Floor', fill: '#EF4444', fontSize: 10 } : undefined}
+                label={isScrubbing ? { position: 'right', value: 'Metabolic Floor', fill: riskColor, fontSize: 10 } : undefined}
               />
             )}
 
             {isChartInteractionEnabled && (
               <Tooltip
-                cursor={{ fill: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                cursor={{ fill: cursorColor }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const val = payload[0].value as number;
                     const isBelowFloor = safetyFloor && val < safetyFloor && val > 800; // Ignore <800 as likely partial log
                     return (
-                      <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl">
+                      <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl" style={tooltipStyle}>
                         <p className="font-semibold mb-1">{safeFormatDate(label, 'EEEE, MMM d')}</p>
                         <p className="text-2xl font-bold flex items-center gap-2">
-                          <span className={cn("w-2 h-2 rounded-full", isBelowFloor ? "bg-red-500 animate-pulse" : "bg-[#2aac6b]")} />
+                          <span
+                            className={cn("w-2 h-2 rounded-full", isBelowFloor && "animate-pulse")}
+                            style={{ backgroundColor: isBelowFloor ? riskColor : metricColor }}
+                          />
                           {formatGraphNumber(val)} <span className="text-xs font-normal text-muted-foreground">kcal</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Target: {targetCalories}
-                          {isBelowFloor && <span className="text-red-500 block font-semibold mt-0.5">⚠️ Below Metabolic Floor</span>}
+                          {isBelowFloor && <span className="block font-semibold mt-0.5" style={{ color: 'var(--state-risk, #ef4444)' }}>⚠️ Below Metabolic Floor</span>}
                         </p>
                       </div>
                     );
@@ -207,9 +221,16 @@ const CumulativeCaloriesSlide = ({
   targetLineColor,
   labelColor,
   isChartInteractionEnabled,
+  gridColor,
+  cursorColor,
+  tooltipStyle,
+  showAxis,
   shouldAnimate
 }: ChartSlideProps) => {
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const metricColor = 'var(--metric-calories, #3b82f6)';
+  const deficitColor = 'var(--state-on-track, #22c55e)';
+  const surplusColor = 'var(--state-risk, #ef4444)';
 
   return (
     <div
@@ -228,23 +249,25 @@ const CumulativeCaloriesSlide = ({
           >
             <defs>
               <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                <stop offset="5%" stopColor={metricColor} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={metricColor} stopOpacity={0} />
               </linearGradient>
             </defs>
-            {isScrubbing && isChartInteractionEnabled && <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />}
+            {(isScrubbing || showAxis) && isChartInteractionEnabled && (
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} stroke={gridColor} />
+            )}
             <XAxis
               dataKey="date"
               tickFormatter={(value) => safeFormatDate(value, 'MMM d')}
               stroke={labelColor}
               fontSize={12}
-              tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+              tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
               tickLine={false}
               axisLine={false}
               mirror={true}
             />
             <YAxis
-              tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+              tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
               stroke={labelColor}
               fontSize={12}
               tickLine={false}
@@ -256,16 +279,16 @@ const CumulativeCaloriesSlide = ({
 
             {isChartInteractionEnabled && (
               <Tooltip
-                cursor={{ stroke: targetLineColor, strokeWidth: 1 }}
+                cursor={{ stroke: cursorColor, strokeWidth: 1 }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const val = payload[0].value as number;
                     // FLIPPED: Greater than 0 means Deficit (Good)
                     const isDeficit = val > 0;
                     return (
-                      <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl">
+                      <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl" style={tooltipStyle}>
                         <p className="font-semibold mb-1">{safeFormatDate(label, 'MMM d')} • Net Balance</p>
-                        <p className={cn("text-2xl font-bold flex items-center gap-2", isDeficit ? "text-green-500" : "text-red-500")}>
+                        <p className="text-2xl font-bold flex items-center gap-2" style={{ color: isDeficit ? deficitColor : surplusColor }}>
                           {isDeficit ? "+" : ""}{formatGraphNumber(val)} <span className="text-xs font-normal text-muted-foreground">kcal</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -281,7 +304,7 @@ const CumulativeCaloriesSlide = ({
             <Area
               type="monotone"
               dataKey="cumulative"
-              stroke="#3b82f6"
+              stroke={metricColor}
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorCumulative)"
@@ -297,6 +320,7 @@ const CumulativeCaloriesSlide = ({
 
 function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, maintenanceCalories, viewModeIndex = 0, onViewModeChange, dragControls }: DailyCaloriesTrendChartProps & { viewModeIndex?: number; onViewModeChange?: (index: number) => void; }) {
   const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
+  const [isWebview, setIsWebview] = useState(false);
 
   // Fallback local state if not controlled
   const [localViewModeIndex, setLocalViewModeIndex] = useState(0);
@@ -317,9 +341,21 @@ function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, maintenance
   const shouldAnimate = isFirstRender.current;
 
   // Colors
-  const barColor = '#2aac6b';
-  const targetLineColor = isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
-  const labelColor = isDarkMode ? '#a1a1aa' : '#71717a';
+  const targetLineColor = `var(--chart-target, ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'})`;
+  const labelColor = `var(--chart-axis, ${isDarkMode ? '#a1a1aa' : '#71717a'})`;
+  const gridColor = `var(--chart-grid, ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'})`;
+  const cursorColor = `var(--chart-cursor, ${isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'})`;
+  const tooltipStyle: React.CSSProperties = {
+    backgroundColor: `var(--chart-tooltip-bg, ${isDarkMode ? 'rgba(11,11,15,0.95)' : 'rgba(255,255,255,0.92)'})`,
+    borderColor: `var(--chart-tooltip-border, ${isDarkMode ? 'rgba(31,41,55,0.7)' : 'rgba(15,23,42,0.08)'})`,
+  };
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    setIsWebview(document.documentElement.dataset.webview === 'true');
+  }, []);
+
+  const showAxis = isWebview;
 
   // Calculate Cumulative Data
   const chartData = useMemo(() => {
@@ -355,9 +391,12 @@ function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, maintenance
           targetCalories={targetCalories}
           maintenanceCalories={maintenanceCalories}
           isChartInteractionEnabled={isChartInteractionEnabled}
-          barColor={barColor}
           targetLineColor={targetLineColor}
           labelColor={labelColor}
+          gridColor={gridColor}
+          cursorColor={cursorColor}
+          tooltipStyle={tooltipStyle}
+          showAxis={showAxis}
           shouldAnimate={shouldAnimate}
         />
         <CumulativeCaloriesSlide
@@ -366,9 +405,12 @@ function DailyCaloriesTrendChart({ data, isDarkMode, targetCalories, maintenance
           targetCalories={targetCalories}
           maintenanceCalories={maintenanceCalories}
           isChartInteractionEnabled={isChartInteractionEnabled}
-          barColor={barColor}
           targetLineColor={targetLineColor}
           labelColor={labelColor}
+          gridColor={gridColor}
+          cursorColor={cursorColor}
+          tooltipStyle={tooltipStyle}
+          showAxis={showAxis}
           shouldAnimate={shouldAnimate}
         />
       </LiquidChartCarousel>

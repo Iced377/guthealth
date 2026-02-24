@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { motion, useMotionValue, animate, PanInfo, useSpring, DragControls } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { HapticsService } from '@/lib/haptics';
@@ -13,20 +13,40 @@ interface LiquidChartCarouselProps {
 }
 
 // Standalone Dots Component
-export function CarouselDots({ count, currentIndex, className }: { count: number; currentIndex: number; className?: string }) {
+export function CarouselDots({
+    count,
+    currentIndex,
+    className,
+    showHint = false,
+    hintText = 'Swipe →',
+}: {
+    count: number;
+    currentIndex: number;
+    className?: string;
+    showHint?: boolean;
+    hintText?: string;
+}) {
+    const hasNext = currentIndex < count - 1;
     return (
-        <div className={cn("flex justify-center gap-2 pointer-events-none z-10", className)}>
-            {Array.from({ length: count }).map((_, idx) => (
-                <div
-                    key={idx}
-                    className={cn(
-                        "w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm",
-                        idx === currentIndex
-                            ? "bg-foreground w-4" // Active
-                            : "bg-muted-foreground/40" // Inactive
-                    )}
-                />
-            ))}
+        <div className={cn("flex items-center justify-center gap-3 pointer-events-none z-10", className)}>
+            <div className="flex justify-center gap-2">
+                {Array.from({ length: count }).map((_, idx) => (
+                    <div
+                        key={idx}
+                        className={cn(
+                            "w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm",
+                            idx === currentIndex
+                                ? "bg-foreground w-4" // Active
+                                : "bg-muted-foreground/40" // Inactive
+                        )}
+                    />
+                ))}
+            </div>
+            {showHint && count > 1 && hasNext && (
+                <span className="webview-swipe-hint text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+                    {hintText}
+                </span>
+            )}
         </div>
     );
 }
@@ -46,22 +66,15 @@ export default function LiquidChartCarousel({
     // We bind this to the layout. The "target" x position is always -currentIndex * width
     const x = useMotionValue(0);
 
-    // Update width availability
-    useEffect(() => {
-        if (containerRef.current) {
-            setWidth(containerRef.current.offsetWidth);
-        }
-    }, []);
-
-    // Handle Resize
-    useEffect(() => {
-        const handleResize = () => {
-            if (containerRef.current) {
-                setWidth(containerRef.current.offsetWidth);
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+    // Update width availability + respond to layout changes (expand/collapse)
+    useLayoutEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
+        const updateWidth = () => setWidth(element.offsetWidth);
+        updateWidth();
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(element);
+        return () => observer.disconnect();
     }, []);
 
     // Sync X to current index when it changes externally or initially

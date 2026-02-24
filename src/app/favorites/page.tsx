@@ -27,6 +27,7 @@ import {
   orderBy,
   where,
   getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,11 @@ const generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => {
     return parseFloat((x - Math.floor(x)).toFixed(1)) * 2;
   };
   return { fructans: pseudoRandom(hash + 1), galactans: pseudoRandom(hash + 2), polyolsSorbitol: pseudoRandom(hash + 3), polyolsMannitol: pseudoRandom(hash + 4), lactose: pseudoRandom(hash + 5), fructose: pseudoRandom(hash + 6) };
+};
+
+const getFavoriteKey = (item: LoggedFoodItem) => {
+  const base = (item.originalName || item.name || '').trim().toLowerCase();
+  return base || item.id;
 };
 
 export default function FavoritesPage() {
@@ -112,11 +118,45 @@ export default function FavoritesPage() {
               ...data,
               id: docSnap.id,
               timestamp: (data.timestamp as Timestamp).toDate(),
+              favoriteLastUsedAt: data.favoriteLastUsedAt ? (data.favoriteLastUsedAt as Timestamp).toDate() : undefined,
             } as LoggedFoodItem; // Assuming only LoggedFoodItem can be favorited
           })
           .filter(item => item.entryType === 'food' || item.entryType === 'manual_macro'); // Ensure correct type
 
-        setFavoriteItems(fetchedFavorites);
+        const grouped = new Map<string, LoggedFoodItem[]>();
+        fetchedFavorites.forEach(item => {
+          const key = getFavoriteKey(item);
+          const list = grouped.get(key) || [];
+          list.push(item);
+          grouped.set(key, list);
+        });
+
+        const deduped: LoggedFoodItem[] = [];
+        const batch = authUser ? writeBatch(db) : null;
+        let needsCleanup = false;
+
+        grouped.forEach(items => {
+          const sorted = items.sort((a, b) =>
+            ((b.favoriteLastUsedAt ?? b.timestamp).getTime()) - ((a.favoriteLastUsedAt ?? a.timestamp).getTime())
+          );
+          const [keep, ...rest] = sorted;
+          deduped.push(keep);
+          if (batch && rest.length > 0) {
+            rest.forEach(item => {
+              batch.update(doc(db, 'users', authUser!.uid, 'timelineEntries', item.id), { isFavorite: false });
+            });
+            needsCleanup = true;
+          }
+        });
+
+        if (batch && needsCleanup) {
+          await batch.commit();
+        }
+
+        const sortedFavorites = deduped.sort((a, b) =>
+          ((b.favoriteLastUsedAt ?? b.timestamp).getTime()) - ((a.favoriteLastUsedAt ?? a.timestamp).getTime())
+        );
+        setFavoriteItems(sortedFavorites);
       } catch (err: any) {
         console.error("Error fetching favorite items:", err);
         setError("Could not load your favorite items. Please try again later.");
@@ -133,7 +173,16 @@ export default function FavoritesPage() {
     const newIsFavorite = !currentIsFavorite;
     const entryDocRef = doc(db, 'users', authUser.uid, 'timelineEntries', itemId);
     try {
-      await updateDoc(entryDocRef, { isFavorite: newIsFavorite });
+      if (newIsFavorite) {
+        const now = new Date();
+        await updateDoc(entryDocRef, { isFavorite: true, favoriteLastUsedAt: Timestamp.fromDate(now) });
+        setFavoriteItems(prev =>
+          prev.map(item => item.id === itemId ? { ...item, isFavorite: true, favoriteLastUsedAt: now } : item)
+            .sort((a, b) => ((b.favoriteLastUsedAt ?? b.timestamp).getTime()) - ((a.favoriteLastUsedAt ?? a.timestamp).getTime()))
+        );
+      } else {
+        await updateDoc(entryDocRef, { isFavorite: false });
+      }
       if (newIsFavorite) {
         // This case should not happen from favorites page, but handle defensively
         toast({ title: "Added to Favorites", description: "Item marked as favorite." });
@@ -349,6 +398,16 @@ export default function FavoritesPage() {
     let processedFoodItem: LoggedFoodItem;
 
     try {
+      if (itemToRepeat.isFavorite) {
+        await updateDoc(doc(db, 'users', authUser.uid, 'timelineEntries', itemToRepeat.id), {
+          favoriteLastUsedAt: Timestamp.fromDate(newTimestamp)
+        });
+        setFavoriteItems(prev =>
+          prev.map(item => item.id === itemToRepeat.id ? { ...item, favoriteLastUsedAt: newTimestamp } : item)
+            .sort((a, b) => ((b.favoriteLastUsedAt ?? b.timestamp).getTime()) - ((a.favoriteLastUsedAt ?? a.timestamp).getTime()))
+        );
+      }
+
       // Re-analyze the meal as if it's new
       let fodmapAnalysis: AnalyzeFoodItemOutput | undefined;
       let similarityOutput: FoodSimilarityOutput | undefined;
@@ -455,7 +514,8 @@ export default function FavoritesPage() {
                 <LiquidCrystalCard
                   item={item}
                   onSetFeedback={handleSetFoodFeedback}
-                  onRemoveItem={handleRemoveTimelineEntry}
+                  // Disable delete from Favorites: only allow unfavorite.
+                  onRemoveItem={undefined}
                   onLogSymptoms={() => openSymptomLogDialogWithContext(item.id)}
                   isLoadingAi={!!isLoadingAi[item.id]}
                   onEditIngredients={handleEditTimelineEntry}

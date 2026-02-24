@@ -8,9 +8,25 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.0";
+export const APP_VERSION = "5.5.1";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.1',
+        date: 'February 24, 2026',
+        title: 'Favorites Stability & Webview Fixes',
+        description: 'Cleaner favorites behavior with last-used ordering, plus tighter mobile containment in Admin.',
+        features: [],
+        improvements: [
+            'Favorites now reorder by last used, keeping the most recent at the top.',
+            'Favorites list auto-deduplicates on load to prevent repeated entries of the same meal.',
+            'Admin AI Performance view now wraps correctly on small screens.'
+        ],
+        fixes: [
+            'Using a favorite no longer creates duplicate favorite records.',
+            'Favorites can no longer delete the underlying meal log (unfavorite only).'
+        ]
+    },
     {
         version: '5.5.0',
         date: 'February 15, 2026',

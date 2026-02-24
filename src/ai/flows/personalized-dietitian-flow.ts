@@ -263,6 +263,10 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
         *   Focus the response on **how to use the app** and **building the habit** of logging.
         *   Explain, in simple science-backed language, that consistent logging improves accuracy and reduces guesswork.
         *   Be explicit that data is **limited** and avoid confident conclusions.
+        *   **Include a short TDEE explainer (1-3 sentences):**
+            *   Define TDEE as maintenance calories (what keeps weight stable).
+            *   Explain we estimate it from BMR (height/weight/age/sex) multiplied by an activity factor.
+            *   For fat loss, suggest a **starting** target about **10-20%** below TDEE (roughly **~500 kcal/day** for many adults), then adjust based on 2-3 weeks of trend.
         *   Provide practical guidance:
             *   **Log every meal/snack** daily and include **timing**.
             *   **Track steps and weight** so energy intake/expenditure align with goals.

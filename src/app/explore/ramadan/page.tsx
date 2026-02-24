@@ -12,16 +12,20 @@ import { useRamadanCards } from '@/hooks/useRamadanCards';
 import LiquidSegmentedControl from '@/components/ui/LiquidSegmentedControl';
 import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useTheme } from '@/contexts/ThemeContext';
 import { db } from '@/config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { Capacitor } from '@capacitor/core';
 
 export default function RamadanComingSoonPage() {
     const router = useRouter();
     const { user } = useAuth();
+    const { isDarkMode } = useTheme();
     const [showSaved, setShowSaved] = React.useState(false);
     const [ramadanMode, setRamadanMode] = React.useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
     const [showModeDialog, setShowModeDialog] = React.useState(false);
     const [ramadanDialogVideoReady, setRamadanDialogVideoReady] = React.useState(false);
+    const [isNonIOSMobile, setIsNonIOSMobile] = React.useState(false);
     const {
         cards,
         removeTopCard,
@@ -105,6 +109,25 @@ export default function RamadanComingSoonPage() {
             // ignore
         }
     }, [selectedStart]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const evaluate = () => {
+            const platform = Capacitor.getPlatform?.() ?? 'web';
+            const userAgent = navigator.userAgent || '';
+            const isIOSDevice = /iPad|iPhone|iPod/i.test(userAgent)
+                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isIOS = platform === 'ios' || isIOSDevice;
+            const isAndroid = platform === 'android' || /Android/i.test(userAgent);
+            const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
+            const isMobileUA = /Mobile|Android/i.test(userAgent);
+            setIsNonIOSMobile(!isIOS && isMobileViewport && (isAndroid || isMobileUA));
+        };
+
+        evaluate();
+        window.addEventListener('resize', evaluate);
+        return () => window.removeEventListener('resize', evaluate);
+    }, []);
 
     const handleModeSelect = (mode: 'fasting' | 'witnessing' | 'hidden') => {
         setRamadanMode(mode);
@@ -191,28 +214,71 @@ export default function RamadanComingSoonPage() {
     );
     const dayWindowIndex = Math.max(0, dayIndex - dayWindowStart);
 
+    const surfaceShadow = isDarkMode
+        ? "shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+        : "shadow-[0_24px_60px_rgba(15,23,42,0.12)]";
+    const panelSurface = isDarkMode
+        ? "border-white/10 bg-black/30 backdrop-blur-xl"
+        : "border-emerald-200/60 bg-white/70 backdrop-blur-xl";
+    const panelItemSurface = isDarkMode
+        ? "border-white/10 bg-white/5"
+        : "border-emerald-200/60 bg-white/80";
+    const mutedText = isDarkMode ? "text-white/60" : "text-emerald-700/70";
+    const primaryText = isDarkMode ? "text-white/90" : "text-emerald-950";
+
+    const segmentedControl = (
+        <LiquidSegmentedControl
+            options={[
+                { id: 'all', label: 'All' },
+                { id: 'saved', label: 'Saved' }
+            ]}
+            selected={showSaved ? 'saved' : 'all'}
+            onChange={(id) => setShowSaved(id === 'saved')}
+            layoutIdPrefix="ramadan-cards"
+            className={cn(isNonIOSMobile && "shadow-[0_8px_20px_rgba(0,0,0,0.35)]")}
+        />
+    );
+
     return (
-        <div className="relative h-screen w-full overflow-hidden bg-black">
+        <div className={cn(
+            "relative h-screen w-full overflow-hidden",
+            isDarkMode ? "bg-black" : "bg-[#f4f8f2]"
+        )}>
             <style jsx global>{`
                 .ramadan-contrast [id^='nav-item-'] span {
-                    color: rgba(255, 255, 255, 0.85) !important;
+                    color: ${isDarkMode ? 'rgba(255, 255, 255, 0.85)' : 'rgba(10, 80, 60, 0.9)'} !important;
                 }
                 .ramadan-contrast [id^='nav-item-'] svg {
-                    color: rgba(255, 255, 255, 0.9) !important;
+                    color: ${isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(10, 80, 60, 0.9)'} !important;
                     stroke: currentColor !important;
                 }
             `}</style>
 
             {showModeDialog && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 backdrop-blur-sm px-5">
-                    <div className="w-full max-w-[380px] rounded-[28px] bg-[#0E1C16]/95 border border-white/10 shadow-2xl px-6 pt-6 pb-5 text-white relative">
+                <div className={cn(
+                    "fixed inset-0 z-[80] flex items-center justify-center backdrop-blur-sm px-5",
+                    isDarkMode ? "bg-black/45" : "bg-white/60"
+                )}>
+                    <div className={cn(
+                        "w-full max-w-[380px] rounded-[28px] border shadow-2xl px-6 pt-6 pb-5 relative",
+                        isDarkMode ? "bg-[#0E1C16]/95 border-white/10 text-white" : "bg-white/90 border-emerald-200/60 text-emerald-950"
+                    )}>
                         <div className="flex items-center justify-center mb-4">
                             <div className="relative w-[150px] h-[150px] rounded-full flex items-center justify-center">
-                                <div className="absolute inset-0 bg-emerald-400/30 blur-[40px] rounded-full" />
+                                <div className={cn(
+                                    "absolute inset-0 blur-[40px] rounded-full",
+                                    isDarkMode ? "bg-emerald-400/30" : "bg-emerald-300/40"
+                                )} />
                                 <div className="relative z-10 w-[140px] h-[140px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
                                     {!ramadanDialogVideoReady && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/15 backdrop-blur-sm">
-                                            <span className="text-emerald-100/80 text-sm font-semibold animate-pulse">Ramadan</span>
+                                        <div className={cn(
+                                            "absolute inset-0 flex items-center justify-center backdrop-blur-sm",
+                                            isDarkMode ? "bg-emerald-500/15" : "bg-emerald-200/60"
+                                        )}>
+                                            <span className={cn(
+                                                "text-sm font-semibold animate-pulse",
+                                                isDarkMode ? "text-emerald-100/80" : "text-emerald-900/80"
+                                            )}>Ramadan</span>
                                         </div>
                                     )}
                                     <video
@@ -234,13 +300,21 @@ export default function RamadanComingSoonPage() {
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold text-center mb-2">Ramadan Preferences</h3>
-                        <p className="text-sm text-white/80 text-center leading-relaxed mb-4">
+                        <p className={cn(
+                            "text-sm text-center leading-relaxed mb-4",
+                            isDarkMode ? "text-white/80" : "text-emerald-900/80"
+                        )}>
                             Help us tailor your experience. We’ve also updated Insights and the Coach to support you during fasting (if you choose it). You can change this anytime later.
                         </p>
                         <div className="flex flex-col gap-2">
                             <motion.button
                                 onClick={() => handleModeSelect('fasting')}
-                                className="w-full px-4 py-3 rounded-full text-sm font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                                className={cn(
+                                    "w-full px-4 py-3 rounded-full text-sm font-bold shadow-md",
+                                    isDarkMode
+                                        ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                                        : "bg-emerald-500/80 text-emerald-950 shadow-emerald-200/60"
+                                )}
                                 whileTap={{ scale: 1.25 }}
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 8 }}
@@ -249,7 +323,12 @@ export default function RamadanComingSoonPage() {
                             </motion.button>
                             <motion.button
                                 onClick={() => handleModeSelect('witnessing')}
-                                className="w-full px-4 py-3 rounded-full text-sm font-bold bg-white/10 text-white/90 border border-white/20 hover:bg-white/15"
+                                className={cn(
+                                    "w-full px-4 py-3 rounded-full text-sm font-bold border transition-colors",
+                                    isDarkMode
+                                        ? "bg-white/10 text-white/90 border-white/20 hover:bg-white/15"
+                                        : "bg-white/80 text-emerald-900 border-emerald-200/70 hover:bg-white"
+                                )}
                                 whileTap={{ scale: 1.25 }}
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 8 }}
@@ -258,7 +337,12 @@ export default function RamadanComingSoonPage() {
                             </motion.button>
                             <motion.button
                                 onClick={() => handleModeSelect('hidden')}
-                                className="w-full px-4 py-3 rounded-full text-sm font-bold text-white/70 border border-white/10 hover:border-white/20"
+                                className={cn(
+                                    "w-full px-4 py-3 rounded-full text-sm font-bold border transition-colors",
+                                    isDarkMode
+                                        ? "text-white/70 border-white/10 hover:border-white/20"
+                                        : "text-emerald-900/70 border-emerald-200/70 hover:border-emerald-300/80"
+                                )}
                                 whileTap={{ scale: 1.25 }}
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 8 }}
@@ -275,23 +359,44 @@ export default function RamadanComingSoonPage() {
                     src="/ramadan-bg.png"
                     alt="Ramadan Background"
                     fill
-                    className="object-cover"
+                    className={cn(
+                        "object-cover",
+                        isDarkMode ? "" : "brightness-[1.08] saturate-[0.9]"
+                    )}
                     priority
                     quality={100}
                 />
                 {/* Overlay for text readability */}
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+                <div className={cn(
+                    "absolute inset-0",
+                    isDarkMode
+                        ? "bg-black/40 backdrop-blur-[2px]"
+                        : "bg-gradient-to-b from-white/85 via-white/70 to-emerald-50/70 backdrop-blur-[1px]"
+                )} />
             </div>
 
             {/* Content Container */}
             {/* Fixed Header */}
-            <div className="fixed top-0 left-0 right-0 z-20 flex items-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
+            <div className={cn(
+                "fixed top-0 left-0 right-0 z-20 flex items-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)]",
+                isNonIOSMobile ? "justify-between gap-3" : ""
+            )}>
                 <button
                     onClick={() => router.back()}
-                    className="p-2 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 hover:bg-white/10 transition-colors"
+                    className={cn(
+                        "p-2 rounded-full backdrop-blur-md border transition-colors",
+                        isDarkMode
+                            ? "bg-black/20 text-white border-white/10 hover:bg-white/10"
+                            : "bg-white/80 text-emerald-900 border-emerald-200/70 hover:bg-white"
+                    )}
                 >
                     <ChevronLeft className="w-6 h-6" />
                 </button>
+                {isNonIOSMobile && (
+                    <div className="ml-auto">
+                        {segmentedControl}
+                    </div>
+                )}
             </div>
 
             <div
@@ -304,18 +409,15 @@ export default function RamadanComingSoonPage() {
                     className="h-screen w-full shrink-0 snap-center snap-always flex items-center justify-center p-4 relative overflow-hidden"
                     style={{ touchAction: 'pan-y' }}
                 >
-                    <div className="w-full max-w-md mx-auto animate-in fade-in zoom-in duration-500 delay-200">
-                        <div className="flex items-center justify-center mb-4">
-                            <LiquidSegmentedControl
-                                options={[
-                                    { id: 'all', label: 'All' },
-                                    { id: 'saved', label: 'Saved' }
-                                ]}
-                                selected={showSaved ? 'saved' : 'all'}
-                                onChange={(id) => setShowSaved(id === 'saved')}
-                                layoutIdPrefix="ramadan-cards"
-                            />
-                        </div>
+                    <div className={cn(
+                        "w-full max-w-md mx-auto animate-in fade-in zoom-in duration-500 delay-200",
+                        isNonIOSMobile && "-translate-y-6"
+                    )}>
+                        {!isNonIOSMobile && (
+                            <div className="flex items-center justify-center mb-4">
+                                {segmentedControl}
+                            </div>
+                        )}
                         {isReady ? (
                             showSaved ? (
                                 <SavedCardsStack
@@ -324,6 +426,7 @@ export default function RamadanComingSoonPage() {
                                     onCommit={commitGoal}
                                     isCommitted={(topicId) => activeGoals.some(goal => goal.id === `goal-${topicId}`)}
                                     isSaved={(topicId) => savedIds.has(topicId)}
+                                    compact={isNonIOSMobile}
                                 />
                             ) : (
                                 <RamadanCardStack
@@ -336,13 +439,20 @@ export default function RamadanComingSoonPage() {
                                     committedGoals={activeGoals}
                                     isLoading={isLoading}
                                     savedIds={savedIds}
+                                    compact={isNonIOSMobile}
                                 />
                             )
                         ) : (
-                            <div className="h-[70vh] w-full rounded-[2rem] border border-white/10 bg-white/5 animate-pulse" />
+                            <div className={cn(
+                                "h-[70vh] w-full rounded-[2rem] border animate-pulse",
+                                isDarkMode ? "border-white/10 bg-white/5" : "border-emerald-200/60 bg-white/70"
+                            )} />
                         )}
                     </div>
-                    <div className="absolute bottom-[96px] left-1/2 -translate-x-1/2 text-white/45 text-[9px] tracking-[0.18em] uppercase text-center max-w-[92vw] px-3">
+                    <div className={cn(
+                        "absolute bottom-[96px] left-1/2 -translate-x-1/2 text-[9px] tracking-[0.18em] uppercase text-center max-w-[92vw] px-3",
+                        isDarkMode ? "text-white/45" : "text-emerald-700/70"
+                    )}>
                         Scroll ↓ for Goals & Calendar
                     </div>
                 </section>
@@ -353,10 +463,17 @@ export default function RamadanComingSoonPage() {
                     style={{ touchAction: 'pan-y' }}
                 >
                     <div className="w-full max-w-md mx-auto">
-                        <div className="mb-4 text-white/90 text-lg tracking-widest uppercase font-semibold">
+                        <div className={cn(
+                            "mb-4 text-lg tracking-widest uppercase font-semibold",
+                            primaryText
+                        )}>
                             Committed Goals
                         </div>
-                        <div className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+                        <div className={cn(
+                            "rounded-3xl border backdrop-blur-xl",
+                            panelSurface,
+                            surfaceShadow
+                        )}>
                             <LiquidChartCarousel
                                 currentIndex={dayWindowIndex}
                                 onIndexChange={(idx) => handleDayIndexChange(dayWindowStart + idx)}
@@ -368,11 +485,17 @@ export default function RamadanComingSoonPage() {
                                     return (
                                         <div key={dateKey} className="h-full w-full flex items-center justify-center">
                                             <div className="w-full p-5">
-                                                <div className="mb-4 flex items-center justify-between text-white/90 text-sm font-semibold">
+                                                <div className={cn(
+                                                    "mb-4 flex items-center justify-between text-sm font-semibold",
+                                                    primaryText
+                                                )}>
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); shiftSelectedDate(-1); }}
-                                                            className="text-white/50 hover:text-white/80"
+                                                            className={cn(
+                                                                "transition-colors",
+                                                                isDarkMode ? "text-white/50 hover:text-white/80" : "text-emerald-700/70 hover:text-emerald-900"
+                                                            )}
                                                         >
                                                             {'<<'}
                                                         </button>
@@ -381,17 +504,26 @@ export default function RamadanComingSoonPage() {
                                                         </span>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); shiftSelectedDate(1); }}
-                                                            className="text-white/50 hover:text-white/80"
+                                                            className={cn(
+                                                                "transition-colors",
+                                                                isDarkMode ? "text-white/50 hover:text-white/80" : "text-emerald-700/70 hover:text-emerald-900"
+                                                            )}
                                                         >
                                                             {'>>'}
                                                         </button>
                                                     </div>
-                                                    <div className="text-white/60 text-xs font-semibold">
+                                                    <div className={cn(
+                                                        "text-xs font-semibold",
+                                                        mutedText
+                                                    )}>
                                                         {completedForDay.length}/{activeGoals.length}
                                                     </div>
                                                 </div>
                                                 {activeGoals.length === 0 && (
-                                                    <div className="text-white/50 text-sm">
+                                                    <div className={cn(
+                                                        "text-sm",
+                                                        mutedText
+                                                    )}>
                                                         Commit a goal from a card to build your Ramadan plan.
                                                     </div>
                                                 )}
@@ -404,7 +536,10 @@ export default function RamadanComingSoonPage() {
                                                         return (
                                                             <div
                                                                 key={`${dateKey}-${goal.id}`}
-                                                                className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"
+                                                                className={cn(
+                                                                    "flex items-start justify-between gap-3 rounded-2xl border p-3",
+                                                                    panelItemSurface
+                                                                )}
                                                             >
                                                                 <button
                                                                     onClick={() => toggleGoalForDate(dateKey, goal.id)}
@@ -418,18 +553,27 @@ export default function RamadanComingSoonPage() {
                                                                 >
                                                                     <span className={cn(
                                                                         "h-4 w-4 rounded-full",
-                                                                        isCompleted ? "bg-emerald-300" : "bg-white/30"
+                                                                        isCompleted ? "bg-emerald-300" : (isDarkMode ? "bg-white/30" : "bg-emerald-200/70")
                                                                     )} />
                                                                 </button>
                                                                 <div className="flex-1">
-                                                                    <div className="text-white/90 text-sm font-semibold">{goal.title}</div>
+                                                                    <div className={cn(
+                                                                        "text-sm font-semibold",
+                                                                        primaryText
+                                                                    )}>{goal.title}</div>
                                                                     {goal.actionItem && (
-                                                                        <div className="text-white/60 text-xs mt-1">{goal.actionItem}</div>
+                                                                        <div className={cn(
+                                                                            "text-xs mt-1",
+                                                                            mutedText
+                                                                        )}>{goal.actionItem}</div>
                                                                     )}
                                                                 </div>
                                                                 <button
                                                                     onClick={() => uncommitGoal(goal.id)}
-                                                                    className="text-xs text-white/40 hover:text-white/70"
+                                                                    className={cn(
+                                                                        "text-xs transition-colors",
+                                                                        isDarkMode ? "text-white/40 hover:text-white/70" : "text-emerald-700/60 hover:text-emerald-900"
+                                                                    )}
                                                                 >
                                                                     Uncommit
                                                                 </button>
@@ -452,19 +596,38 @@ export default function RamadanComingSoonPage() {
                     style={{ touchAction: 'pan-y' }}
                 >
                     <div className="w-full max-w-md mx-auto">
-                        <div className="mb-4 text-white/90 text-lg tracking-widest uppercase font-semibold">
+                        <div className={cn(
+                            "mb-4 text-lg tracking-widest uppercase font-semibold",
+                            primaryText
+                        )}>
                             Ramadan Calendar
                         </div>
-                        <div className="rounded-3xl border border-white/10 bg-black/30 backdrop-blur-xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+                        <div className={cn(
+                            "rounded-3xl border backdrop-blur-xl p-5",
+                            panelSurface,
+                            surfaceShadow
+                        )}>
                             {isBeforeRamadan && (
-                                <div className="mb-4 rounded-2xl border border-emerald-300/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                                <div className={cn(
+                                    "mb-4 rounded-2xl border px-4 py-3 text-sm",
+                                    isDarkMode
+                                        ? "border-emerald-300/20 bg-emerald-500/10 text-emerald-100"
+                                        : "border-emerald-200/70 bg-emerald-100/70 text-emerald-900"
+                                )}>
                                     Ramadan starts on {RAMADAN_START.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}. {daysUntilRamadan} days to go.
                                 </div>
                             )}
 
-                            <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-white/80">
+                            <div className={cn(
+                                "mb-4 flex flex-col gap-3 rounded-2xl border px-3 py-2",
+                                panelItemSurface,
+                                isDarkMode ? "text-white/80" : "text-emerald-900"
+                            )}>
                                 <div className="flex items-center justify-between">
-                                    <div className="text-xs uppercase tracking-wider text-white/60">Ramadan Start</div>
+                                    <div className={cn(
+                                        "text-xs uppercase tracking-wider",
+                                        mutedText
+                                    )}>Ramadan Start</div>
                                     <div className="flex gap-1">
                                         {START_OPTIONS.map((date) => (
                                             <button
@@ -473,8 +636,8 @@ export default function RamadanComingSoonPage() {
                                                 className={cn(
                                                     "px-3 py-1 rounded-full text-xs font-semibold transition-colors",
                                                     selectedStart === date
-                                                        ? "bg-emerald-500/30 text-emerald-100"
-                                                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                                                        ? (isDarkMode ? "bg-emerald-500/30 text-emerald-100" : "bg-emerald-200/70 text-emerald-900")
+                                                        : (isDarkMode ? "bg-white/5 text-white/60 hover:bg-white/10" : "bg-white/70 text-emerald-700 hover:bg-white")
                                                 )}
                                             >
                                                 {new Date(`${date}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -483,7 +646,10 @@ export default function RamadanComingSoonPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-7 gap-2 mb-3 text-white/50 text-[11px] uppercase tracking-wider">
+                            <div className={cn(
+                                "grid grid-cols-7 gap-2 mb-3 text-[11px] uppercase tracking-wider",
+                                mutedText
+                            )}>
                                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, index) => (
                                     <div key={`${label}-${index}`} className="text-center">{label}</div>
                                 ))}
@@ -506,15 +672,22 @@ export default function RamadanComingSoonPage() {
                                             key={key}
                                             onClick={() => setSelectedDateKey(key)}
                                             className={cn(
-                                                "h-14 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center gap-1",
-                                                isToday && "border-emerald-300/50 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
+                                                "h-14 rounded-2xl border transition-colors flex flex-col items-center justify-center gap-1",
+                                                isDarkMode
+                                                    ? "border-white/10 bg-white/5 hover:bg-white/10"
+                                                    : "border-emerald-200/70 bg-white/80 hover:bg-white",
+                                                isToday && (isDarkMode
+                                                    ? "border-emerald-300/50 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.25)]"
+                                                    : "border-emerald-300/80 bg-emerald-100/70 shadow-[0_0_20px_rgba(16,185,129,0.18)]"),
                                                 isSelected && "ring-2 ring-emerald-300/40"
                                             )}
                                             title={total > 0 ? `${completed}/${total} completed` : 'No goals'}
                                         >
                                             <div className={cn(
                                                 "text-sm font-semibold",
-                                                isToday ? "text-emerald-200" : "text-white/80"
+                                                isToday
+                                                    ? (isDarkMode ? "text-emerald-200" : "text-emerald-800")
+                                                    : (isDarkMode ? "text-white/80" : "text-emerald-900")
                                             )}>
                                                 {date.getDate()}
                                             </div>
@@ -527,12 +700,15 @@ export default function RamadanComingSoonPage() {
                                                                 "h-1.5 w-1.5 rounded-full",
                                                                 index < completed
                                                                     ? "bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                                                                    : "bg-white/25"
+                                                                    : (isDarkMode ? "bg-white/25" : "bg-emerald-200/80")
                                                             )}
                                                         />
                                                     ))
                                                 ) : (
-                                                    <span className="flex items-center gap-1 text-[10px] text-emerald-200">
+                                                    <span className={cn(
+                                                        "flex items-center gap-1 text-[10px]",
+                                                        isDarkMode ? "text-emerald-200" : "text-emerald-800"
+                                                    )}>
                                                         <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                                                         {completed}/{total}
                                                     </span>
@@ -544,7 +720,10 @@ export default function RamadanComingSoonPage() {
                             </div>
 
                             {activeGoals.length === 0 && (
-                                <div className="mt-4 text-white/50 text-sm">
+                                <div className={cn(
+                                    "mt-4 text-sm",
+                                    mutedText
+                                )}>
                                     Tap the goal card above to commit your first lantern.
                                 </div>
                             )}

@@ -1,6 +1,6 @@
 
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
@@ -13,10 +13,17 @@ import { WalkthroughProvider } from '@/contexts/WalkthroughContext';
 import { GlobalNavigationLayout } from '@/components/layout/GlobalNavigationLayout';
 import NetworkStatusIndicator from '@/components/ui/NetworkStatusIndicator';
 import WalkthroughLazyClient from '@/components/walkthrough/WalkthroughLazyClient';
+import WebviewFlag from '@/components/layout/WebviewFlag';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
   display: 'swap',
 });
 
@@ -95,9 +102,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning className={`${inter.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground`}>
+      <body suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable} font-body antialiased min-h-screen flex flex-col bg-background text-foreground`}>
         <AuthProvider>
           <ThemeProvider>
+            <WebviewFlag />
             <WalkthroughProvider>
               <NetworkStatusIndicator />
               <GlobalNavigationLayout>

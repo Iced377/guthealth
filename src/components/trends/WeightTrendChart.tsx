@@ -46,15 +46,28 @@ const WeightChartSlide = ({
     globalInputDisabled: boolean;
 }) => {
     const [isScrubbing, setIsScrubbing] = useState(false);
+    const [isWebview, setIsWebview] = useState(false);
 
     // Animation gate for stability
     const isFirstRender = useRef(true);
     useEffect(() => { isFirstRender.current = false; }, []);
     const shouldAnimate = isFirstRender.current;
 
-    const weightColor = '#2aac6b'; // Primary Green
-    const fatColor = '#f59e0b'; // Amber/Orange for Fat
-    const labelColor = isDarkMode ? '#a1a1aa' : '#71717a';
+    const weightColor = 'var(--metric-weight, #2aac6b)';
+    const fatColor = 'var(--metric-fat, #f59e0b)';
+    const labelColor = `var(--chart-axis, ${isDarkMode ? '#a1a1aa' : '#71717a'})`;
+    const gridColor = `var(--chart-grid, ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'})`;
+    const tooltipStyle: React.CSSProperties = {
+        backgroundColor: `var(--chart-tooltip-bg, ${isDarkMode ? 'rgba(11,11,15,0.95)' : 'rgba(255,255,255,0.92)'})`,
+        borderColor: `var(--chart-tooltip-border, ${isDarkMode ? 'rgba(31,41,55,0.7)' : 'rgba(15,23,42,0.08)'})`,
+    };
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        setIsWebview(document.documentElement.dataset.webview === 'true');
+    }, []);
+
+    const showAxis = isWebview;
 
     // Sanitize ID for SVG compatibility
     const safeViewMode = viewMode.replace(/\s+/g, '-');
@@ -118,8 +131,8 @@ const WeightChartSlide = ({
                             </linearGradient>
                         </defs>
 
-                        {isScrubbing && isChartInteractionEnabled && (
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                        {(isScrubbing || showAxis) && isChartInteractionEnabled && (
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} stroke={gridColor} />
                         )}
 
                         <XAxis
@@ -129,7 +142,7 @@ const WeightChartSlide = ({
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+                            tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
                             interval="preserveStartEnd"
                             mirror={true}
                         />
@@ -138,7 +151,7 @@ const WeightChartSlide = ({
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+                            tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
                             domain={domain}
                             type="number"
                             allowDataOverflow={false}
@@ -152,19 +165,19 @@ const WeightChartSlide = ({
                                 content={({ active, payload, label }) => {
                                     if (active && payload && payload.length) {
                                         return (
-                                            <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl">
+                                            <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl" style={tooltipStyle}>
                                                 <p className="font-semibold mb-1">{safeFormatDate(label, 'EEEE, MMM d')}</p>
 
                                                 {(viewMode === 'Weight' || viewMode === 'Both') && (
                                                     <p className="text-xl font-bold flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-[#2aac6b]" />
+                                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: weightColor }} />
                                                         {formatGraphNumber(payload.find(p => p.dataKey === 'weight')?.value as number)} <span className="text-xs font-normal text-muted-foreground">kg</span>
                                                     </p>
                                                 )}
 
                                                 {(viewMode === 'Fat Mass' || viewMode === 'Both') && (
                                                     <p className="text-xl font-bold flex items-center gap-2 mt-1">
-                                                        <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
+                                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: fatColor }} />
                                                         {formatGraphNumber(payload.find(p => p.dataKey === 'fatMass')?.value as number || 0)} <span className="text-xs font-normal text-muted-foreground">kg fat</span>
                                                     </p>
                                                 )}

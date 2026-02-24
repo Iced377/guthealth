@@ -31,14 +31,28 @@ const VIEW_OPTIONS: ViewMode[] = ['Steps', 'Calories', 'Correlation'];
 function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
     const { isChartInteractionEnabled, globalInputDisabled } = useTrendsMotionController();
     const [isScrubbing, setIsScrubbing] = useState(false);
+    const [isWebview, setIsWebview] = useState(false);
 
     // Animation gate for stability
     const isFirstRender = useRef(true);
     useEffect(() => { isFirstRender.current = false; }, []);
     const shouldAnimate = isFirstRender.current;
 
-    const stepsColor = '#3b82f6';
-    const labelColor = isDarkMode ? '#a1a1aa' : '#71717a';
+    const stepsColor = 'var(--metric-steps, #3b82f6)';
+    const labelColor = `var(--chart-axis, ${isDarkMode ? '#a1a1aa' : '#71717a'})`;
+    const gridColor = `var(--chart-grid, ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'})`;
+    const cursorColor = `var(--chart-cursor, ${isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'})`;
+    const tooltipStyle: React.CSSProperties = {
+        backgroundColor: `var(--chart-tooltip-bg, ${isDarkMode ? 'rgba(11,11,15,0.95)' : 'rgba(255,255,255,0.92)'})`,
+        borderColor: `var(--chart-tooltip-border, ${isDarkMode ? 'rgba(31,41,55,0.7)' : 'rgba(15,23,42,0.08)'})`,
+    };
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        setIsWebview(document.documentElement.dataset.webview === 'true');
+    }, []);
+
+    const showAxis = isWebview;
 
     return (
         <div className="w-full h-full relative">
@@ -54,8 +68,8 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
                             }
                         }}
                     >
-                        {isScrubbing && isChartInteractionEnabled && (
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                        {(isScrubbing || showAxis) && isChartInteractionEnabled && (
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} stroke={gridColor} />
                         )}
 
                         <XAxis
@@ -65,7 +79,7 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+                            tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
                             interval="preserveStartEnd"
                             mirror={true}
                         />
@@ -74,7 +88,7 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tick={{ fill: isScrubbing ? labelColor : 'transparent', fontSize: 12 }}
+                            tick={{ fill: (showAxis || isScrubbing) ? labelColor : 'transparent', fontSize: 12 }}
                             domain={[0, 'auto']}
                             tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
                             mirror={true}
@@ -82,14 +96,14 @@ function ActivityTrendChart({ data, isDarkMode }: ActivityTrendChartProps) {
 
                         {isChartInteractionEnabled && (
                             <Tooltip
-                                cursor={{ fill: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                                cursor={{ fill: cursorColor }}
                                 content={({ active, payload, label }) => {
                                     if (active && payload && payload.length) {
                                         return (
-                                            <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl">
+                                            <div className="bg-background/80 backdrop-blur-md border border-border p-3 rounded-2xl shadow-xl" style={tooltipStyle}>
                                                 <p className="font-semibold mb-1">{safeFormatDate(label, 'EEEE, MMM d')}</p>
                                                 <p className="text-xl font-bold flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
+                                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: stepsColor }} />
                                                     {formatGraphNumber(payload[0].value as number)} <span className="text-xs font-normal text-muted-foreground">steps</span>
                                                 </p>
                                             </div>

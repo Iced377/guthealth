@@ -4,18 +4,22 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { db } from '@/config/firebase'; // Client SDK for viewing
-import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, where, getDocs, deleteDoc, Timestamp } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy, Sparkles, Rocket, Timer } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ShieldCheck, Users, MessageSquare, BrainCircuit, Star, Smartphone, Mail, Copy, Sparkles, Rocket, Timer, ListTodo } from 'lucide-react';
 import { format } from 'date-fns';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ComposedChart, Line, Bar } from 'recharts';
 import type { FeedbackSubmission } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { BrandTab } from '@/components/admin/BrandTab';
 import { AppJourneyTab } from '@/components/admin/AppJourneyTab';
+import { AppleHealthSourceTotalsLog, writeIntegrationDebugFlag } from '@/lib/integration-monitoring';
 
 
 interface AdminEvent {
@@ -67,8 +71,202 @@ interface AiTelemetryEvent {
     timestamp?: any;
 }
 
+type UiPlanItem = {
+    id: string;
+    title: string;
+    detail: string;
+    deliverable: string;
+};
+
+type UiPlanSection = {
+    id: string;
+    phase: string;
+    title: string;
+    timeline: string;
+    description: string;
+    items: UiPlanItem[];
+};
+
+const UI_AWARD_PLAN_STORAGE_KEY = 'admin-ui-award-plan-webview-v1';
+type UiPlanBatchItem = { id: string; value: boolean };
+
+const UI_AWARD_PLAN_AUTOCOMPLETE_BATCHES: Array<{ key: string; items: UiPlanBatchItem[] }> = [
+    {
+        key: 'admin-ui-award-plan-autocomplete-v1',
+        items: [
+            { id: 'award-bar', value: true },
+            { id: 'ui-forensics', value: true },
+            { id: 'data-language', value: true },
+            { id: 'design-system', value: true },
+            { id: 'component-rebuild', value: true },
+            { id: 'ia-hierarchy', value: true },
+            { id: 'chart-upgrade', value: true },
+        ],
+    },
+    {
+        key: 'admin-ui-award-plan-autocomplete-v2',
+        items: [
+            { id: 'chart-upgrade', value: true },
+            { id: 'mode-parity', value: true },
+        ],
+    },
+];
+
+const UI_AWARD_PLAN_OVERRIDE_BATCHES: Array<{ key: string; items: UiPlanBatchItem[] }> = [
+    {
+        key: 'admin-ui-award-plan-override-v1',
+        items: [{ id: 'webview-implementation', value: false }],
+    },
+    {
+        key: 'admin-ui-award-plan-override-v2',
+        items: [
+            { id: 'webview-implementation', value: false },
+            { id: 'interaction-pass', value: false },
+        ],
+    },
+];
+
+const UI_AWARD_PLAN_SECTIONS: UiPlanSection[] = [
+    {
+        id: 'strategy',
+        phase: 'Phase 1',
+        title: 'Strategy & Criteria',
+        timeline: 'Week 0-1',
+        description: 'Define what award-winning means and document current drift.',
+        items: [
+            {
+                id: 'award-bar',
+                title: 'Define Award Bar rubric',
+                detail: 'One-page rubric for hierarchy, data clarity, interaction, and brand coherence.',
+                deliverable: 'Award Bar spec with success thresholds.',
+            },
+            {
+                id: 'ui-forensics',
+                title: 'Run UI forensics audit',
+                detail: 'Inventory every webview component and log inconsistencies across pages.',
+                deliverable: 'Audit board + mismatch list.',
+            },
+        ],
+    },
+    {
+        id: 'foundations',
+        phase: 'Phase 2',
+        title: 'Data Language & System',
+        timeline: 'Week 1-3',
+        description: 'Lock the data semantics and build a webview-only design system.',
+        items: [
+            {
+                id: 'data-language',
+                title: 'Unify data language',
+                detail: 'Single color mapping for metrics and standard target/variance semantics.',
+                deliverable: 'Data semantics map + color system.',
+            },
+            {
+                id: 'design-system',
+                title: 'Establish webview design system',
+                detail: 'Define grid, spacing, typography, and tokens for light + dark parity.',
+                deliverable: 'Token sheet + type scale.',
+            },
+        ],
+    },
+    {
+        id: 'components',
+        phase: 'Phase 3',
+        title: 'Components & IA',
+        timeline: 'Week 3-5',
+        description: 'Rebuild UI components and align screen hierarchy.',
+        items: [
+            {
+                id: 'component-rebuild',
+                title: 'Rebuild core components',
+                detail: 'Clarify roles for stats vs filters vs actions with full states.',
+                deliverable: 'Component library with interaction states.',
+            },
+            {
+                id: 'ia-hierarchy',
+                title: 'Restructure information hierarchy',
+                detail: 'Align each screen to a single narrative flow.',
+                deliverable: 'IA diagrams + annotated wireframes.',
+            },
+        ],
+    },
+    {
+        id: 'charts',
+        phase: 'Phase 4',
+        title: 'Charts & Mode Parity',
+        timeline: 'Week 5-6',
+        description: 'Make charts interpretable and light/dark parity exact.',
+        items: [
+            {
+                id: 'chart-upgrade',
+                title: 'Upgrade chart system',
+                detail: 'Add legends, axes hints, targets, and consistent encoding.',
+                deliverable: 'Chart kit + updated specs.',
+            },
+            {
+                id: 'mode-parity',
+                title: 'Light/Dark parity check',
+                detail: 'Match hierarchy, contrast, and role clarity across modes.',
+                deliverable: 'Parity matrix with fixes.',
+            },
+        ],
+    },
+    {
+        id: 'implementation',
+        phase: 'Phase 5',
+        title: 'Implementation & Behavior',
+        timeline: 'Week 6-7',
+        description: 'Ship webview UI updates and lock interaction patterns.',
+        items: [
+            {
+                id: 'webview-implementation',
+                title: 'Webview implementation pass',
+                detail: 'Apply tokens and components across all webview pages.',
+                deliverable: 'Updated webview UI build.',
+            },
+            {
+                id: 'interaction-pass',
+                title: 'UX behavior & interaction pass',
+                detail: 'Standardize nav states, context cues, and CTA logic.',
+                deliverable: 'Interaction behavior map.',
+            },
+        ],
+    },
+    {
+        id: 'polish',
+        phase: 'Phase 6',
+        title: 'Polish & QA',
+        timeline: 'Week 8-9',
+        description: 'Finalize visuals and validate against award bar.',
+        items: [
+            {
+                id: 'visual-polish',
+                title: 'Visual polish pass',
+                detail: 'Tighten spacing, contrast, and micro-alignment.',
+                deliverable: 'Final visual pass.',
+            },
+            {
+                id: 'award-qa',
+                title: 'Award Bar QA',
+                detail: 'Score each screen and run quick external review.',
+                deliverable: 'Final score report + launch greenlight.',
+            },
+        ],
+    },
+];
+
+const buildUiPlanState = () => {
+    const state: Record<string, boolean> = {};
+    UI_AWARD_PLAN_SECTIONS.forEach((section) => {
+        section.items.forEach((item) => {
+            state[item.id] = false;
+        });
+    });
+    return state;
+};
+
 export default function AdminDashboardPage() {
-    const { userProfile, loading: authLoading } = useAuth();
+    const { userProfile, loading: authLoading, user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [events, setEvents] = useState<AdminEvent[]>([]);
@@ -88,6 +286,71 @@ export default function AdminDashboardPage() {
     const [aiPerfMetrics, setAiPerfMetrics] = useState<AiPerformanceMetric[]>([]);
     const [aiTelemetryEvents, setAiTelemetryEvents] = useState<AiTelemetryEvent[]>([]);
     const [aiPerfFlowFilter, setAiPerfFlowFilter] = useState<'write' | 'scan' | 'both'>('both');
+    const [integrationDebugEnabled, setIntegrationDebugEnabled] = useState(false);
+    const [appleHealthDebugLog, setAppleHealthDebugLog] = useState<AppleHealthSourceTotalsLog | null>(null);
+    const [appleHealthDebugHistory, setAppleHealthDebugHistory] = useState<AppleHealthSourceTotalsLog[]>([]);
+    const [uiPlanState, setUiPlanState] = useState<Record<string, boolean>>(() => buildUiPlanState());
+
+    useEffect(() => {
+        if (!userProfile) return;
+        const enabled = !!userProfile.integrationDebug?.appleHealth?.enabled;
+        setIntegrationDebugEnabled(enabled);
+        writeIntegrationDebugFlag(enabled);
+    }, [userProfile]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const stored = window.localStorage.getItem(UI_AWARD_PLAN_STORAGE_KEY);
+            if (!stored) return;
+            const parsed = JSON.parse(stored) as Record<string, boolean>;
+            setUiPlanState((prev) => ({ ...prev, ...parsed }));
+        } catch (error) {
+            console.warn('[Admin UI Plan] Failed to load checklist state.', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            UI_AWARD_PLAN_AUTOCOMPLETE_BATCHES.forEach((batch) => {
+                const alreadyApplied = window.localStorage.getItem(batch.key);
+                if (alreadyApplied) return;
+                setUiPlanState((prev) => {
+                    const next = { ...prev };
+                    batch.items.forEach((item) => {
+                        if (item.id in next) next[item.id] = item.value;
+                    });
+                    return next;
+                });
+                window.localStorage.setItem(batch.key, new Date().toISOString());
+            });
+
+            UI_AWARD_PLAN_OVERRIDE_BATCHES.forEach((batch) => {
+                const alreadyApplied = window.localStorage.getItem(batch.key);
+                if (alreadyApplied) return;
+                setUiPlanState((prev) => {
+                    const next = { ...prev };
+                    batch.items.forEach((item) => {
+                        if (item.id in next) next[item.id] = item.value;
+                    });
+                    return next;
+                });
+                window.localStorage.setItem(batch.key, new Date().toISOString());
+            });
+        } catch (error) {
+            console.warn('[Admin UI Plan] Failed to auto-complete checklist items.', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            window.localStorage.setItem(UI_AWARD_PLAN_STORAGE_KEY, JSON.stringify(uiPlanState));
+        } catch (error) {
+            console.warn('[Admin UI Plan] Failed to save checklist state.', error);
+        }
+    }, [uiPlanState]);
 
     // Data Subscription
     useEffect(() => {
@@ -429,6 +692,17 @@ export default function AdminDashboardPage() {
         setPerformanceSeries(series);
     }, [performanceSamples]);
 
+    const uiPlanTotalItems = UI_AWARD_PLAN_SECTIONS.reduce((acc, section) => acc + section.items.length, 0);
+    const uiPlanCompletedItems = UI_AWARD_PLAN_SECTIONS.reduce(
+        (acc, section) => acc + section.items.filter((item) => uiPlanState[item.id]).length,
+        0
+    );
+    const uiPlanCompletionPct = uiPlanTotalItems ? Math.round((uiPlanCompletedItems / uiPlanTotalItems) * 100) : 0;
+
+    const handleUiPlanToggle = (id: string, checked: boolean | 'indeterminate') => {
+        setUiPlanState((prev) => ({ ...prev, [id]: Boolean(checked) }));
+    };
+
     const handleResolve = async (id: string) => {
         await updateDoc(doc(db, 'admin_events', id), {
             resolved: true // One way transition usually? Or toggle. Let's make it strict Resolve.
@@ -451,6 +725,96 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const handleIntegrationDebugToggle = async (checked: boolean) => {
+        if (!user?.uid) return;
+        setIntegrationDebugEnabled(checked);
+        writeIntegrationDebugFlag(checked);
+        try {
+            await updateDoc(doc(db, 'users', user.uid), {
+                'integrationDebug.appleHealth.enabled': checked,
+                'integrationDebug.appleHealth.updatedAt': Timestamp.now()
+            });
+            toast({
+                title: checked ? 'Integration monitoring enabled' : 'Integration monitoring disabled',
+                description: 'Apple Health step sync will store per-source totals for this account.'
+            });
+        } catch (error) {
+            console.error('Failed to update integration debug flag:', error);
+            toast({ title: 'Failed to update setting', variant: 'destructive' });
+        }
+    };
+
+    const refreshIntegrationDebugData = async () => {
+        if (!user?.uid) return;
+        try {
+            const logsRef = collection(db, 'users', user.uid, 'integration_debug_logs');
+            const logsQuery = query(logsRef, orderBy('loggedAt', 'desc'), limit(20));
+            const snapshot = await getDocs(logsQuery);
+            const data = snapshot.docs.map((docSnap) => {
+                const raw = docSnap.data() as any;
+                const loggedAt = raw.loggedAt?.toDate ? raw.loggedAt.toDate() : null;
+                const timestamp = raw.timestamp || (loggedAt ? loggedAt.toISOString() : '');
+                return {
+                    id: docSnap.id,
+                    label: raw.label,
+                    timestamp,
+                    rawTotal: raw.rawTotal || 0,
+                    dedupedTotal: raw.dedupedTotal || 0,
+                    sampleCount: raw.sampleCount || 0,
+                    sources: raw.sources || [],
+                } as AppleHealthSourceTotalsLog;
+            });
+            setAppleHealthDebugHistory(data);
+            setAppleHealthDebugLog(data[0] || null);
+        } catch (error) {
+            console.error('Failed to refresh integration debug data:', error);
+        }
+    };
+
+    const handleClearIntegrationHistory = async () => {
+        if (!user?.uid) return;
+        try {
+            const logsRef = collection(db, 'users', user.uid, 'integration_debug_logs');
+            const logsQuery = query(logsRef, orderBy('loggedAt', 'desc'), limit(50));
+            const snapshot = await getDocs(logsQuery);
+            await Promise.all(snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref)));
+            setAppleHealthDebugHistory([]);
+            setAppleHealthDebugLog(null);
+            toast({ title: 'Integration logs cleared' });
+        } catch (error) {
+            console.error('Failed to clear integration logs:', error);
+            toast({ title: 'Failed to clear logs', variant: 'destructive' });
+        }
+    };
+
+    useEffect(() => {
+        if (!user?.uid) return;
+        const logsRef = collection(db, 'users', user.uid, 'integration_debug_logs');
+        const logsQuery = query(logsRef, orderBy('loggedAt', 'desc'), limit(20));
+        const unsubscribe = onSnapshot(logsQuery, (snapshot) => {
+            const data = snapshot.docs.map((docSnap) => {
+                const raw = docSnap.data() as any;
+                const loggedAt = raw.loggedAt?.toDate ? raw.loggedAt.toDate() : null;
+                const timestamp = raw.timestamp || (loggedAt ? loggedAt.toISOString() : '');
+                return {
+                    id: docSnap.id,
+                    label: raw.label,
+                    timestamp,
+                    rawTotal: raw.rawTotal || 0,
+                    dedupedTotal: raw.dedupedTotal || 0,
+                    sampleCount: raw.sampleCount || 0,
+                    sources: raw.sources || [],
+                } as AppleHealthSourceTotalsLog;
+            });
+            setAppleHealthDebugHistory(data);
+            setAppleHealthDebugLog(data[0] || null);
+        }, (error) => {
+            console.error('Integration logs subscription error:', error);
+        });
+
+        return () => unsubscribe();
+    }, [user?.uid]);
+
     if (authLoading || !userProfile?.isAdmin) {
         return <div className="h-screen w-full flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
     }
@@ -458,6 +822,12 @@ export default function AdminDashboardPage() {
     // Helper for rendering charts
     const maxDaily = Math.max(...acquisitionData.daily, 5); // Avoid div by zero
     const maxCumulative = Math.max(...acquisitionData.cumulative, 10);
+    const formatLogTimestamp = (value?: string, pattern: string = 'PPpp') => {
+        if (!value) return 'Unknown';
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return 'Unknown';
+        return format(parsed, pattern);
+    };
 
     return (
         <div className="min-h-screen bg-black/95 text-white font-sans px-4 md:px-8 pb-96 pt-16 md:pt-8">
@@ -477,6 +847,14 @@ export default function AdminDashboardPage() {
                         <TabsTrigger value="journey" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
                             <Rocket className="w-5 h-5 md:w-4 md:h-4" />
                             <span>Journey</span>
+                        </TabsTrigger>
+
+                        <TabsTrigger value="ui-plan" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[120px]">
+                            <ListTodo className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>UI Plan</span>
+                            <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-200 border-0 text-[10px] px-1.5">
+                                {uiPlanCompletedItems}/{uiPlanTotalItems}
+                            </Badge>
                         </TabsTrigger>
 
                         <TabsTrigger value="ai" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
@@ -507,6 +885,11 @@ export default function AdminDashboardPage() {
                             <span>App Perf</span>
                         </TabsTrigger>
 
+                        <TabsTrigger value="integrations" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[140px]">
+                            <Smartphone className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Integration Monitoring</span>
+                        </TabsTrigger>
+
                         <TabsTrigger value="brand" className="data-[state=active]:bg-pink-500/20 data-[state=active]:text-pink-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
                             <Sparkles className="w-5 h-5 md:w-4 md:h-4" />
                             <span>Brand Kit</span>
@@ -519,21 +902,189 @@ export default function AdminDashboardPage() {
                     <AppJourneyTab />
                 </TabsContent>
 
+                <TabsContent value="ui-plan" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader className="pb-2">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <CardTitle className="text-white">Award-Level UI Overhaul Plan</CardTitle>
+                                    <CardDescription className="text-white/50">
+                                        Tick off each step to bring light + dark webview modes to award-winning scores.
+                                    </CardDescription>
+                                </div>
+                                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-200 border-0">
+                                    {uiPlanCompletionPct}% complete
+                                </Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                                    <span className="text-white/70">Progress</span>
+                                    <span className="text-white">{uiPlanCompletedItems} / {uiPlanTotalItems} steps</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                                    <div className="h-full bg-emerald-400" style={{ width: `${uiPlanCompletionPct}%` }} />
+                                </div>
+                                <p className="text-xs text-white/50">Scope: Webview only. Applies to both light and dark modes.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {UI_AWARD_PLAN_SECTIONS.map((section) => (
+                                    <div key={section.id} className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="space-y-1">
+                                                <div className="text-[11px] uppercase tracking-[0.2em] text-white/40">{section.phase}</div>
+                                                <div className="text-lg font-semibold text-white">{section.title}</div>
+                                                <div className="text-xs text-white/50">{section.description}</div>
+                                            </div>
+                                            <Badge variant="secondary" className="bg-white/10 text-white/70 border-0 text-[10px] px-2">
+                                                {section.timeline}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {section.items.map((item) => {
+                                                const isDone = uiPlanState[item.id];
+                                                const checkboxId = `ui-plan-${item.id}`;
+                                                return (
+                                                    <div key={item.id} className="flex items-start gap-3 rounded-lg border border-white/10 bg-black/30 p-3">
+                                                        <Checkbox
+                                                            id={checkboxId}
+                                                            checked={isDone}
+                                                            onCheckedChange={(checked) => handleUiPlanToggle(item.id, checked)}
+                                                            className="mt-1 border-white/40 data-[state=checked]:bg-emerald-400 data-[state=checked]:text-black data-[state=checked]:border-emerald-400"
+                                                        />
+                                                        <div className="space-y-1">
+                                                            <Label
+                                                                htmlFor={checkboxId}
+                                                                className={`text-sm font-medium cursor-pointer ${isDone ? 'text-white/50 line-through' : 'text-white'}`}
+                                                            >
+                                                                {item.title}
+                                                            </Label>
+                                                            <p className={`text-xs ${isDone ? 'text-white/40' : 'text-white/60'}`}>
+                                                                {item.detail}
+                                                            </p>
+                                                            <p className="text-[11px] text-white/40">Deliverable: {item.deliverable}</p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
                 {/* Brand Tab */}
                 <TabsContent value="brand" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <BrandTab onClose={() => setActiveTab('journey')} />
                 </TabsContent>
 
-                {/* AI Performance Tab (God View) */}
-                <TabsContent value="ai" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <TabsContent value="integrations" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <Card className="bg-white/5 border-white/10">
                         <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
+                            <CardTitle className="text-sm uppercase tracking-wider text-emerald-200">Integration Monitoring</CardTitle>
+                            <CardDescription className="text-white/40">Debug step sync issues across data sources.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                                <div className="space-y-1">
+                                    <Label className="text-white">Log Apple Health step totals by source</Label>
+                                    <p className="text-xs text-white/50">
+                                        When enabled, Apple Health sync stores per-source totals and raw vs deduped steps for this account only.
+                                    </p>
+                                </div>
+                                <Switch checked={integrationDebugEnabled} onCheckedChange={handleIntegrationDebugToggle} />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button size="sm" variant="secondary" onClick={refreshIntegrationDebugData}>
+                                    Refresh Data
+                                </Button>
+                                <Button size="sm" variant="ghost" className="text-white/60" onClick={handleClearIntegrationHistory}>
+                                    Clear Logs
+                                </Button>
+                            </div>
+
+                            {appleHealthDebugLog ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                            <div className="text-xs text-white/50">Last Sync</div>
+                                            <div className="text-sm text-white">
+                                                {formatLogTimestamp(appleHealthDebugLog.timestamp)}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                            <div className="text-xs text-white/50">Day</div>
+                                            <div className="text-sm text-white">{appleHealthDebugLog.label}</div>
+                                        </div>
+                                        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                            <div className="text-xs text-white/50">Samples</div>
+                                            <div className="text-sm text-white">{appleHealthDebugLog.sampleCount}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                            <div className="text-xs text-white/50">Raw Total (sum of sources)</div>
+                                            <div className="text-lg text-white">{appleHealthDebugLog.rawTotal.toLocaleString()} steps</div>
+                                        </div>
+                                        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                            <div className="text-xs text-white/50">Deduped Total (hourly max)</div>
+                                            <div className="text-lg text-white">{appleHealthDebugLog.dedupedTotal.toLocaleString()} steps</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                        <div className="text-xs uppercase tracking-wide text-white/50">Sources (Top 10)</div>
+                                        <div className="mt-3 space-y-2">
+                                            {appleHealthDebugLog.sources.slice(0, 10).map((source) => (
+                                                <div key={source.source} className="flex items-center justify-between text-sm text-white">
+                                                    <span className="truncate pr-3">{source.source}</span>
+                                                    <span className="font-mono">{source.steps.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {appleHealthDebugHistory.length > 1 && (
+                                        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+                                            <div className="text-xs uppercase tracking-wide text-white/50">Recent Syncs</div>
+                                            <div className="mt-3 space-y-2">
+                                                {appleHealthDebugHistory.slice(0, 5).map((entry) => (
+                                                    <div key={entry.id} className="flex items-center justify-between text-xs text-white/70">
+                                                        <span className="truncate pr-3">
+                                                            {entry.label} · {formatLogTimestamp(entry.timestamp, 'PP')}
+                                                        </span>
+                                                        <span className="font-mono">{entry.dedupedTotal.toLocaleString()} steps</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-xs text-white/50 border border-white/10 rounded-xl p-4">
+                                    No Apple Health debug data yet. Enable the toggle and re-sync steps to capture a sample.
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* AI Performance Tab (God View) */}
+                <TabsContent value="ai" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-x-hidden">
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader className="pb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="min-w-0">
                                     <CardTitle className="text-sm uppercase tracking-wider text-purple-200">AI Latency + Volume</CardTitle>
                                     <CardDescription className="text-white/40">Average latency (line) and prompt count (bars)</CardDescription>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <Button
                                         size="sm"
                                         variant={aiPerfFlowFilter === 'write' ? 'default' : 'ghost'}
@@ -670,8 +1221,8 @@ export default function AdminDashboardPage() {
                         {aiTelemetryEvents.slice(0, 10).map(event => (
                             <Card key={event.id} className="bg-white/5 border-white/10">
                                 <CardHeader className="pb-2">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="text-sm text-white">{event.type}</CardTitle>
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                        <CardTitle className="text-sm text-white break-words">{event.type}</CardTitle>
                                         <span className="text-xs text-white/40 font-mono">
                                             {event.timestamp?.toDate ? format(event.timestamp.toDate(), 'PP p') : 'Just now'}
                                         </span>
@@ -701,10 +1252,10 @@ export default function AdminDashboardPage() {
                             <Card key={event.id} className={`bg-white/5 border-white/10 ${event.resolved || event.dismissed ? 'opacity-50 hidden' : ''}`}>
                                 {/* Hide resolved/dismissed to keep feed clean? Or just dim? Let's dim + filter in query properly later. For now, client filter. */}
 
-                                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                                    <div className="flex items-center gap-3">
+                                <CardHeader className="pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div className="flex items-center gap-3 min-w-0">
                                         <AlertTriangle className="text-yellow-500 w-5 h-5" />
-                                        <CardTitle className="text-lg font-mono text-white">
+                                        <CardTitle className="text-lg font-mono text-white break-words">
                                             {event.foodName}
                                         </CardTitle>
                                     </div>

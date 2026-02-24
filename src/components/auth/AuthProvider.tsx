@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { UserProfile } from '@/types';
 import { App } from '@capacitor/app';
+import { writeIntegrationDebugFlag } from '@/lib/integration-monitoring';
 
 interface AuthContextType {
   user: User | null;
@@ -279,9 +280,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onSnapshot(userDocRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          setUserProfile(docSnap.data() as UserProfile);
+          const data = docSnap.data() as UserProfile;
+          setUserProfile(data);
+          writeIntegrationDebugFlag(!!data.integrationDebug?.appleHealth?.enabled);
         } else {
           setUserProfile(null);
+          writeIntegrationDebugFlag(false);
         }
         setProfileLoading(false);
       },

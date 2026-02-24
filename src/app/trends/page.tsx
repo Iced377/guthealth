@@ -429,7 +429,7 @@ export default function TrendsPage() {
 
   return (
     <TrendsMotionControllerProvider>
-      <div className="bg-background h-screen w-full relative">
+      <div className="bg-background h-screen w-full relative webview-root">
         {/* Fixed Global Time Control */}
         <motion.div
           className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 pointer-events-none"
@@ -498,6 +498,8 @@ export default function TrendsPage() {
                 count={2}
                 currentIndex={calorieViewIndex}
                 className="mt-4"
+                showHint
+                hintText="Swipe →"
               />
             </div>
           ) : (filteredEntries.length > 0 && (
@@ -528,6 +530,8 @@ export default function TrendsPage() {
                 count={3}
                 currentIndex={weightViewIndex}
                 className="mt-4"
+                showHint
+                hintText="Swipe →"
               />
             </div>
           ) : (filteredEntries.length > 0 && (

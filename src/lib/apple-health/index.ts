@@ -1,5 +1,115 @@
 import { Capacitor } from '@capacitor/core';
 import { Health } from '@capgo/capacitor-health';
+import { Timestamp, doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/config/firebase';
+import { AppleHealthSourceTotalsLog, appendAppleHealthDebugLog, readIntegrationDebugFlag } from '@/lib/integration-monitoring';
+
+type HealthSample = {
+    value: number;
+    startDate: string;
+    endDate?: string;
+    sourceName?: string;
+    sourceId?: string;
+};
+
+const normalizeSourceKey = (sample: HealthSample) =>
+    (sample.sourceId || sample.sourceName || 'unknown').toLowerCase();
+
+const summarizeSourceTotals = (samples: HealthSample[]) => {
+    const totals: Record<string, number> = {};
+    let rawTotal = 0;
+
+    for (const sample of samples) {
+        const sourceKey = normalizeSourceKey(sample);
+        const value = Number(sample.value) || 0;
+        rawTotal += value;
+        totals[sourceKey] = (totals[sourceKey] || 0) + value;
+    }
+
+    return { totals, rawTotal };
+};
+
+const persistAppleHealthDebugLog = async (log: AppleHealthSourceTotalsLog) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        const logId = `apple-health-${log.label}`;
+        await setDoc(doc(db, 'users', user.uid, 'integration_debug_logs', logId), {
+            ...log,
+            loggedAt: Timestamp.now(),
+            platform: 'ios',
+            source: 'apple_health'
+        }, { merge: true });
+    } catch (error) {
+        console.warn('[Health][Debug] Failed to persist Apple Health log:', error);
+    }
+};
+
+const logSourceTotals = (
+    label: string,
+    samples: HealthSample[],
+    dedupedTotal: number,
+    options?: { persistRemote?: boolean }
+) => {
+    if (!readIntegrationDebugFlag()) return;
+    const { totals, rawTotal } = summarizeSourceTotals(samples);
+    const sources = Object.entries(totals)
+        .sort((a, b) => b[1] - a[1])
+        .map(([source, steps]) => ({ source, steps: Math.round(steps) }));
+
+    const logPayload: AppleHealthSourceTotalsLog = {
+        id: `apple-health-${label}-${Date.now()}`,
+        label,
+        timestamp: new Date().toISOString(),
+        rawTotal: Math.round(rawTotal),
+        dedupedTotal: Math.round(dedupedTotal),
+        sampleCount: samples.length,
+        sources
+    };
+
+    appendAppleHealthDebugLog(logPayload);
+    if (options?.persistRemote) {
+        void persistAppleHealthDebugLog(logPayload);
+    }
+
+    console.log(`[Health][Debug] Steps by source (${label})`, {
+        sources,
+        rawTotal: Math.round(rawTotal),
+        dedupedTotal,
+        sampleCount: samples.length
+    });
+};
+
+// Deduplicate overlapping sources by taking the MAX source total per hour.
+// This approximates Apple Health's source-priority behavior and avoids double counting.
+const sumStepsWithHourlySourceDedup = (samples: HealthSample[]): number => {
+    if (!samples.length) return 0;
+
+    const hourBuckets = new Map<string, Map<string, number>>();
+
+    for (const sample of samples) {
+        const start = new Date(sample.startDate);
+        if (Number.isNaN(start.getTime())) continue;
+
+        const bucketKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}T${String(start.getHours()).padStart(2, '0')}`;
+        const sourceKey = normalizeSourceKey(sample);
+        const value = Number(sample.value) || 0;
+
+        if (!hourBuckets.has(bucketKey)) {
+            hourBuckets.set(bucketKey, new Map<string, number>());
+        }
+        const sourceTotals = hourBuckets.get(bucketKey)!;
+        sourceTotals.set(sourceKey, (sourceTotals.get(sourceKey) || 0) + value);
+    }
+
+    let total = 0;
+    for (const sourceTotals of hourBuckets.values()) {
+        const maxForHour = Math.max(...Array.from(sourceTotals.values()), 0);
+        total += maxForHour;
+    }
+
+    return Math.round(total);
+};
 
 export const AppleHealthService = {
     isAvailable: async (): Promise<boolean> => {
@@ -61,26 +171,11 @@ export const AppleHealthService = {
                 endDate: now.toISOString(),
                 limit: 5000,
             });
-
-            // Strict Source Prioritization
-            // Strategy: If ANY data exists from an Apple Watch, we use ONLY Apple Watch data for the day.
-            // This prevents double-counting where the Phone tracks steps alongside the Watch.
-            // While this might miss steps if the user takes off the watch and walks with the phone,
-            // it is the only reliable way to avoid duplication without native HKStatisticsQuery access.
-
-            const hasWatchData = result.samples.some(s => (s.sourceName || '').toLowerCase().includes('watch'));
-
-            let totalSteps = 0;
-            if (hasWatchData) {
-                totalSteps = result.samples
-                    .filter(s => (s.sourceName || '').toLowerCase().includes('watch'))
-                    .reduce((acc, curr) => acc + curr.value, 0);
-            } else {
-                totalSteps = result.samples
-                    .reduce((acc, curr) => acc + curr.value, 0);
-            }
-
-            return Math.round(totalSteps);
+            const samples = result.samples as HealthSample[];
+            const dedupedTotal = sumStepsWithHourlySourceDedup(samples);
+            const dayLabel = `${startOfDay.getFullYear()}-${String(startOfDay.getMonth() + 1).padStart(2, '0')}-${String(startOfDay.getDate()).padStart(2, '0')}`;
+            logSourceTotals(dayLabel, samples, dedupedTotal, { persistRemote: true });
+            return dedupedTotal;
 
         } catch (error: any) {
             const errMsg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
@@ -175,20 +270,9 @@ export const AppleHealthService = {
                     limit: 3000,
                 });
 
-                const samples = result.samples;
+                const samples = result.samples as HealthSample[];
                 if (!samples.length) return;
-
-                const hasWatchData = samples.some(s => (s.sourceName || '').toLowerCase().includes('watch'));
-                let total = 0;
-
-                if (hasWatchData) {
-                    total = samples
-                        .filter(s => (s.sourceName || '').toLowerCase().includes('watch'))
-                        .reduce((acc, curr) => acc + curr.value, 0);
-                } else {
-                    total = samples
-                        .reduce((acc, curr) => acc + curr.value, 0);
-                }
+                const total = sumStepsWithHourlySourceDedup(samples);
 
                 // Key: YYYY-MM-DD (Local)
                 const year = startOfDay.getFullYear();
@@ -196,6 +280,8 @@ export const AppleHealthService = {
                 const day = String(startOfDay.getDate()).padStart(2, '0');
                 const key = `${year}-${month}-${day}`;
 
+                // Only persist today's log remotely to avoid flooding the database.
+                logSourceTotals(key, samples, total, { persistRemote: offset === 0 });
                 dailyTotals[key] = Math.round(total);
             };
 

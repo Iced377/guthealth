@@ -8,6 +8,8 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import LiquidHeader from '@/components/navigation/LiquidHeader';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useActionContext } from '@/contexts/ActionContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 import type { TimelineEntry, DailyNutritionSummary } from '@/types';
 import { Capacitor } from '@capacitor/core';
 
@@ -32,6 +34,7 @@ const LandingPage = dynamic(() => import('@/components/guest/LandingPage'), {
 
 export default function RootPage() {
   const { user: authUser, loading: authLoading } = useAuth();
+  const { isDarkMode } = useTheme();
   const {
     timelineEntries,
     userProfile,
@@ -150,26 +153,11 @@ export default function RootPage() {
 
   return (
     <div
-      className={enableWebBento ? "min-h-screen flex flex-col text-foreground bg-[#0b0f14]" : "min-h-screen flex flex-col bg-background text-foreground"}
+      className={enableWebBento
+        ? "min-h-screen flex flex-col text-foreground webview-root"
+        : "min-h-screen flex flex-col bg-background text-foreground"}
       data-web-bento={enableWebBento ? "true" : undefined}
     >
-      {enableWebBento && (
-        <div
-          className="pointer-events-none fixed inset-0 z-0"
-          style={{
-            backgroundColor: '#0b0f14',
-            backgroundImage: [
-              'radial-gradient(600px 600px at 12% 8%, rgba(39,174,96,0.22), transparent 60%)',
-              'radial-gradient(520px 520px at 88% 12%, rgba(217,240,229,0.18), transparent 60%)',
-              'radial-gradient(700px 700px at 20% 85%, rgba(42,157,143,0.20), transparent 60%)',
-              'radial-gradient(640px 640px at 82% 78%, rgba(38,70,83,0.20), transparent 60%)',
-              'radial-gradient(520px 520px at 70% 40%, rgba(233,196,106,0.16), transparent 60%)',
-              'radial-gradient(560px 560px at 35% 55%, rgba(244,162,97,0.14), transparent 60%)',
-              'radial-gradient(500px 500px at 60% 20%, rgba(235,87,87,0.12), transparent 60%)'
-            ].join(',')
-          }}
-        />
-      )}
       {!enableWebBento && <LiquidHeader title={format(currentDate, 'EEEE, MMM d')} />}
 
       <div id="dashboard-container" className={enableWebBento ? "relative z-10 flex-grow flex flex-col items-center justify-start pb-24" : "flex-grow flex flex-col items-center justify-start pb-24"}>

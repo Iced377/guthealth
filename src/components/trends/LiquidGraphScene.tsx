@@ -107,7 +107,7 @@ export default function LiquidGraphScene({
             onLayoutAnimationStart={onLayoutStart}
             onLayoutAnimationComplete={onLayoutComplete}
             className={cn(
-                "relative rounded-3xl overflow-hidden shadow-sm origin-center",
+                "relative rounded-3xl overflow-hidden shadow-sm origin-center webview-trend-card",
                 // Transition settings handled by Framer default or we can override transition prop
                 // Conditional Styling
                 !isFocused
@@ -115,6 +115,7 @@ export default function LiquidGraphScene({
                     : "fixed inset-0 z-[60] bg-background h-[100dvh] w-screen m-0 rounded-none border-none isolate", // Increased z-index to 60 to be above Nav (50) and NavReveal (49)
                 className
             )}
+            data-focused={isFocused ? 'true' : 'false'}
             style={{
                 ...frozenStyle,
                 transform: 'translateZ(0)', // Force GPU
@@ -145,7 +146,8 @@ export default function LiquidGraphScene({
                 <motion.div layout="position" className="mb-6 z-10 pointer-events-none">
                     <motion.p
                         layout="position"
-                        className="text-xs font-semibold tracking-widest text-[#2aac6b] uppercase mb-1 opacity-80"
+                        className="text-xs font-semibold tracking-widest uppercase mb-1 opacity-80"
+                        style={{ color: 'var(--state-on-track, #2aac6b)' }}
                     >
                         {contextLabel}
                     </motion.p>

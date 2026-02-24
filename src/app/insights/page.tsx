@@ -21,11 +21,19 @@ function InsightsLayout() {
   const { isDarkMode } = useTheme();
   const mode = isDarkMode ? 'dark' : 'light';
   const tokens = getLiquidTokens(mode);
+  const [isWebview, setIsWebview] = useState(
+    typeof document !== 'undefined' && document.documentElement.dataset.webview === 'true'
+  );
 
   // Data Hooks
   const { user, userProfile } = useAuth();
   const { timelineEntries } = useActionContext();
   const { healthData } = useHealthKit();
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    setIsWebview(document.documentElement.dataset.webview === 'true');
+  }, []);
 
   // --- LOGIC CORE ---
 
@@ -112,10 +120,34 @@ function InsightsLayout() {
     }
   }, [selectedCategory]);
 
+  if (isWebview) {
+    return (
+      <div
+        className={cn(
+          "min-h-[100dvh] relative overflow-hidden transition-colors duration-500 webview-root",
+          tokens.background.root,
+          tokens.text.primary
+        )}
+      >
+        <div className={cn(
+          "fixed inset-0 pointer-events-none z-0 transition-opacity duration-500",
+          isDarkMode
+            ? "bg-gradient-to-br from-indigo-950/20 via-black to-black opacity-100"
+            : "opacity-0"
+        )} />
+        <div className="relative z-10 w-full min-h-[100dvh] pt-32 pb-32">
+          <div className="w-full mx-auto max-w-3xl flex flex-col items-center justify-start px-4">
+            <CoachView />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
-        "min-h-[100dvh] relative overflow-hidden transition-colors duration-500",
+        "min-h-[100dvh] relative overflow-hidden transition-colors duration-500 webview-root",
         tokens.background.root,
         tokens.text.primary
       )}
@@ -145,7 +177,7 @@ function InsightsLayout() {
       >
         {/* Page 1: Highlights */}
         <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-48 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="w-full max-w-md mx-auto px-4 min-h-full">
+          <div className={cn("w-full mx-auto px-4 min-h-full", isWebview ? "max-w-3xl" : "max-w-md")}>
             <DashboardHero
               userProfile={userProfile!}
               timelineEntries={timelineEntries}
@@ -158,7 +190,7 @@ function InsightsLayout() {
 
         {/* Page 2: Coach */}
         <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-32 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="w-full max-w-md mx-auto min-h-full flex flex-col items-center justify-start relative z-10">
+          <div className={cn("w-full mx-auto min-h-full flex flex-col items-center justify-start relative z-10", isWebview ? "max-w-3xl" : "max-w-md")}>
             <CoachView />
           </div>
         </div>

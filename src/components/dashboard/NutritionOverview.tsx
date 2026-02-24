@@ -17,6 +17,7 @@ interface NutritionOverviewProps {
     summary: DailyNutritionSummary;
     goals?: NutritionGoals;
     dietaryPreferences?: string[];
+    variant?: 'default' | 'webview';
 }
 
 // Helper component for the Liquid Progress Bar (Mercury Tube)
@@ -52,44 +53,40 @@ const MacroCard = ({
     // Theme configurations
     const themes = {
         orange: {
-            border: "border-orange-200/20 dark:border-orange-800/30",
             bg: "bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent",
             iconColor: "text-orange-500",
             textColor: "text-orange-950 dark:text-orange-100",
             subTextColor: "text-orange-900/60 dark:text-orange-200/60",
             progressTrack: "bg-orange-950/5",
             progressIndicator: "bg-gradient-to-r from-orange-400 to-orange-500",
-            shadow: "shadow-[0_8px_16px_-6px_rgba(249,115,22,0.2)]"
+            shadow: ""
         },
         red: {
-            border: "border-red-200/20 dark:border-red-800/30",
             bg: "bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent",
             iconColor: "text-red-500",
             textColor: "text-red-950 dark:text-red-100",
             subTextColor: "text-red-900/60 dark:text-red-200/60",
             progressTrack: "bg-red-950/5",
             progressIndicator: "bg-gradient-to-r from-red-400 to-red-500",
-            shadow: "shadow-[0_8px_16px_-6px_rgba(239,68,68,0.2)]"
+            shadow: ""
         },
         yellow: {
-            border: "border-yellow-200/20 dark:border-yellow-800/30",
             bg: "bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent",
             iconColor: "text-yellow-500",
             textColor: "text-yellow-950 dark:text-yellow-100",
             subTextColor: "text-yellow-900/60 dark:text-yellow-200/60",
             progressTrack: "bg-yellow-950/5",
             progressIndicator: "bg-gradient-to-r from-yellow-400 to-yellow-500",
-            shadow: "shadow-[0_8px_16px_-6px_rgba(234,179,8,0.2)]"
+            shadow: ""
         },
         blue: {
-            border: "border-blue-200/20 dark:border-blue-800/30",
             bg: "bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent",
             iconColor: "text-blue-500",
             textColor: "text-blue-950 dark:text-blue-100",
             subTextColor: "text-blue-900/60 dark:text-blue-200/60",
             progressTrack: "bg-blue-950/5",
             progressIndicator: "bg-gradient-to-r from-blue-400 to-blue-500",
-            shadow: "shadow-[0_8px_16px_-6px_rgba(59,130,246,0.2)]"
+            shadow: ""
         }
     };
 
@@ -98,13 +95,13 @@ const MacroCard = ({
     return (
         <Card className={cn(
             "relative overflow-hidden group select-none backdrop-blur-md border transition-all duration-500 hover:scale-[1.02]",
-            theme.border,
+            "bg-white/10 dark:bg-black/[0.28] border-white/20 dark:border-transparent shadow-[0_14px_32px_rgba(15,23,42,0.04)]",
             theme.bg,
             theme.shadow
         )}>
 
             {/* LAYER 3 (Back): Subtle Gloss/Reflection overlay inside the card background */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent opacity-50 pointer-events-none mix-blend-overlay" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-30 dark:from-white/35 dark:opacity-45 pointer-events-none mix-blend-overlay" />
 
             {/* LAYER 2 (Middle): Floating 3D Icon - Blurred & Angled for Depth */}
             <div className="absolute right-[-15%] top-[-15%] h-[80%] w-[80%] z-0 pointer-events-none transition-transform duration-700 ease-out group-hover:scale-110 group-hover:rotate-12 opacity-[0.12] blur-sm">
@@ -143,7 +140,42 @@ const MacroCard = ({
     );
 };
 
-export default function NutritionOverview({ summary, goals, dietaryPreferences }: NutritionOverviewProps) {
+const WebviewMacroTile = ({
+    title,
+    value,
+    subtext,
+    percent,
+    colorVar,
+}: {
+    title: string;
+    value: number | string;
+    subtext: string;
+    percent?: number;
+    colorVar: string;
+}) => {
+    const progress = Math.min(100, percent ?? 0);
+    const accent = `var(${colorVar})`;
+    const track = 'color-mix(in srgb, var(--web-border-subtle) 65%, transparent)';
+    return (
+        <div className="webview-panel p-4 space-y-3">
+            <div className="flex items-center justify-between">
+                <span className="webview-label">{title}</span>
+                <span className="text-[11px] webview-text-muted">{subtext}</span>
+            </div>
+            <div className="text-2xl font-semibold" style={{ color: accent }}>
+                {value}
+            </div>
+            <div className="h-2 rounded-full" style={{ backgroundColor: track }}>
+                <div
+                    className="h-full rounded-full"
+                    style={{ width: `${progress}%`, backgroundColor: accent }}
+                />
+            </div>
+        </div>
+    );
+};
+
+export default function NutritionOverview({ summary, goals, dietaryPreferences, variant = 'default' }: NutritionOverviewProps) {
     // defaults if not provided
     const targets = goals || {
         calories: 2168,
@@ -166,6 +198,43 @@ export default function NutritionOverview({ summary, goals, dietaryPreferences }
     const carbsValue = isKeto ? Math.round(netCarbs) : Math.round(summary.carbs);
     const carbsPercent = getPercent(carbsValue, targets.carbs);
     const carbsSubtext = `${Math.round(carbsPercent)}% of target`;
+
+    if (variant === 'webview') {
+        return (
+            <div className="w-full">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                    <WebviewMacroTile
+                        title="Calories"
+                        value={Math.round(summary.calories)}
+                        subtext={`${Math.round(getPercent(summary.calories, targets.calories))}% of target`}
+                        percent={getPercent(summary.calories, targets.calories)}
+                        colorVar="--metric-calories"
+                    />
+                    <WebviewMacroTile
+                        title="Protein"
+                        value={`${Math.round(summary.protein)}g`}
+                        subtext={`${Math.round(getPercent(summary.protein, targets.protein))}% of target`}
+                        percent={getPercent(summary.protein, targets.protein)}
+                        colorVar="--metric-protein"
+                    />
+                    <WebviewMacroTile
+                        title={carbsTitle}
+                        value={`${carbsValue}g`}
+                        subtext={carbsSubtext}
+                        percent={carbsPercent}
+                        colorVar="--metric-carbs"
+                    />
+                    <WebviewMacroTile
+                        title="Fat"
+                        value={`${Math.round(summary.fat)}g`}
+                        subtext={`${Math.round(getPercent(summary.fat, targets.fat))}% of target`}
+                        percent={getPercent(summary.fat, targets.fat)}
+                        colorVar="--metric-fat"
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full">

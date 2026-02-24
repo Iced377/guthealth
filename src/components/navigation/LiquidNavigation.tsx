@@ -897,6 +897,7 @@ export default function LiquidNavigation({
                     "isolate",
                     "transform-gpu" // Preserve translate utilities + GPU layer
                 )}
+                data-liquid-nav-shell
                 style={{
                     willChange: 'transform, opacity',
                     contain: 'layout paint style'

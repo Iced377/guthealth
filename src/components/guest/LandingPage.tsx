@@ -12,6 +12,7 @@ const { version } = pkg;
 export default function LandingPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
+  const [isWebview, setIsWebview] = useState(false);
   const lastScrollY = useRef(0);
 
   useEffect(() => {
@@ -43,8 +44,16 @@ export default function LandingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    setIsWebview(document.documentElement.dataset.webview === 'true');
+  }, []);
+
   return (
-    <div ref={scrollRef} className="fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45]">
+    <div
+      ref={scrollRef}
+      className={`fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45] landing-root ${isWebview ? 'landing-webview snap-y snap-mandatory' : ''}`}
+    >
       {/* Version Display (Top Left) */}
       <div className="fixed top-14 left-6 z-50 pointer-events-none opacity-50 text-xs font-mono text-muted-foreground">
         v{version}
@@ -79,7 +88,7 @@ export default function LandingPage() {
       </AnimatePresence>
 
       <main>
-        <HeroSection />
+        <HeroSection scrollContainerRef={scrollRef} />
         <ProblemSection scrollContainerRef={scrollRef} />
         <StorySection />
         <FeatureGrid />

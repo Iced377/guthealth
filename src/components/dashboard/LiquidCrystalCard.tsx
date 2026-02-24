@@ -84,7 +84,7 @@ export default function LiquidCrystalCard({
         <Dialog>
             <DialogTrigger asChild>
                 <Card className={cn(
-                    "glass-crystal relative overflow-hidden rounded-3xl border-0 h-full flex flex-col group active-press cursor-pointer",
+                    "glass-crystal relative overflow-hidden rounded-3xl border-0 h-full flex flex-col group active-press cursor-pointer webview-meal-card",
                     className
                 )}>
                     {/* Animated Background Mesh (Unique per card type?) */}
@@ -101,12 +101,12 @@ export default function LiquidCrystalCard({
                         <FoodIcon className="w-48 h-48 text-primary" strokeWidth={1} />
                     </div>
 
-                    <CardHeader className="px-5 py-4 relative z-10 space-y-0">
+                    <CardHeader className="px-5 py-4 relative z-10 space-y-0 webview-meal-header">
                         <div className="flex justify-between items-start">
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
                                     <span
-                                        className="text-xs font-medium text-muted-foreground/80 bg-background/30 px-2 py-0.5 rounded-full border border-white/5 backdrop-blur-md"
+                                        className="text-xs font-medium text-muted-foreground/80 bg-background/30 px-2 py-0.5 rounded-full border border-white/5 backdrop-blur-md webview-meal-time"
                                     >
                                         {exactTime}
                                     </span>
@@ -143,7 +143,7 @@ export default function LiquidCrystalCard({
                                     )}
                                 </div>
 
-                                <div className="text-left text-xl font-bold font-headline leading-tight text-foreground/90 line-clamp-2 transition-colors">
+                                <div className="text-left text-xl font-bold font-headline leading-tight text-foreground/90 line-clamp-2 transition-colors webview-meal-title">
                                     {item.name}
                                 </div>
                             </div>
@@ -252,22 +252,22 @@ export default function LiquidCrystalCard({
                         </div>
                     </CardHeader>
 
-                    <CardContent className="px-5 pb-5 pt-0 flex-grow flex flex-col justify-end relative z-10 gap-3">
+                    <CardContent className="px-5 pb-5 pt-0 flex-grow flex flex-col justify-end relative z-10 gap-3 webview-meal-content">
 
                         {/* Macros Grid */}
                         {macroParts.length > 0 && (
                             <div
                                 id={item.id === 'walkthrough-mock-item' ? "walkthrough-mock-card-macros" : undefined}
-                                className="flex flex-wrap gap-1.5 mb-1"
+                                className="flex flex-wrap gap-1.5 mb-1 webview-meal-macros"
                             >
                                 {macroParts.map((macro, idx) => (
                                     <div
                                         key={idx}
                                         id={(item.id === 'walkthrough-mock-item' && idx === macroParts.length - 1) ? 'walkthrough-macro-anchor' : undefined}
-                                        className="flex items-center gap-1 bg-background/40 backdrop-blur-md px-2 py-1 z-20 rounded-lg border border-white/5"
+                                        className="flex items-center gap-1 bg-background/40 backdrop-blur-md px-2 py-1 z-20 rounded-lg border border-white/5 webview-meal-macro"
                                     >
                                         <macro.icon className={cn("w-3 h-3", macro.color)} />
-                                        <span className="text-[10px] sm:text-xs font-bold text-foreground/90">{macro.value}</span>
+                                        <span className="text-[10px] sm:text-xs font-bold text-foreground/90 webview-meal-macro-value">{macro.value}</span>
                                     </div>
                                 ))}
                             </div>
@@ -277,7 +277,7 @@ export default function LiquidCrystalCard({
                         {hasHealthIndicators && (
                             <div
                                 id={item.id === 'walkthrough-mock-item' ? "walkthrough-mock-card-indicators" : undefined}
-                                className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mask-linear-fade"
+                                className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mask-linear-fade webview-meal-indicators"
                             >
                                 <div className="scale-90 origin-left"><FodmapIndicator score={item.fodmapData!.overallRisk} /></div>
 

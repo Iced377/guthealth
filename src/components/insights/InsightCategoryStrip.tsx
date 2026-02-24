@@ -79,7 +79,7 @@ export function InsightCategoryStrip() {
             <motion.div
                 layoutId="insight-control-pill"
                 className={cn(
-                    "pointer-events-auto backdrop-blur-3xl backdrop-saturate-200 border shadow-lg rounded-full overflow-hidden transition-all duration-500 ease-[0.23,1,0.32,1] relative",
+                    "pointer-events-auto backdrop-blur-3xl backdrop-saturate-200 border shadow-lg rounded-full overflow-hidden transition-all duration-500 ease-[0.23,1,0.32,1] relative insight-tab",
                     isDarkMode
                         ? "bg-black/5 border-white/10"
                         : "bg-white/5 border-black/5",

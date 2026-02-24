@@ -6,6 +6,7 @@ import { RamadanCard } from './RamadanCard';
 import { RefreshCw } from 'lucide-react';
 import type { RamadanTip } from '@/data/ramadan-seed';
 import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface RamadanCardStackProps {
     cards: RamadanTip[];
@@ -17,6 +18,7 @@ interface RamadanCardStackProps {
     committedGoals: { id: string }[];
     savedIds?: Set<string>;
     isLoading: boolean;
+    compact?: boolean;
 }
 
 export function RamadanCardStack({
@@ -28,8 +30,10 @@ export function RamadanCardStack({
     isLoading,
     commitGoal,
     committedGoals,
-    savedIds
+    savedIds,
+    compact = false
 }: RamadanCardStackProps) {
+    const { isDarkMode } = useTheme();
     const [index, setIndex] = useState(0);
     const RENDER_RADIUS = 2;
     const HYDRATE_DELAY_MS = 120;
@@ -77,7 +81,9 @@ export function RamadanCardStack({
                     <div
                         key={`dot-${idx}`}
                         className={`h-1.5 rounded-full transition-all duration-300 ${
-                            idx === current ? 'w-5 bg-white/90' : 'w-1.5 bg-white/40'
+                            idx === current
+                                ? `w-5 ${isDarkMode ? 'bg-white/90' : 'bg-emerald-700'}`
+                                : `w-1.5 ${isDarkMode ? 'bg-white/40' : 'bg-emerald-300'}`
                         }`}
                     />
                 ))}
@@ -86,7 +92,7 @@ export function RamadanCardStack({
     };
 
     if (cards.length === 0) return (
-        <div className="flex flex-col items-center justify-center h-96 text-white/50">
+        <div className={`flex flex-col items-center justify-center h-96 ${isDarkMode ? 'text-white/50' : 'text-emerald-700/70'}`}>
             <RefreshCw className="w-8 h-8 animate-spin mb-4" />
             <p>Loading Wisdom...</p>
         </div>
@@ -100,7 +106,9 @@ export function RamadanCardStack({
             }
             if (!hydrated.has(idx)) {
                 return (
-                    <div className="h-full w-full rounded-[2rem] border border-white/10 bg-white/5 animate-pulse" />
+                    <div className={`h-full w-full rounded-[2rem] border animate-pulse ${
+                        isDarkMode ? 'border-white/10 bg-white/5' : 'border-emerald-200/60 bg-white/80'
+                    }`} />
                 );
             }
             return (
@@ -111,10 +119,11 @@ export function RamadanCardStack({
                     onCommit={commitGoal}
                     isCommitted={committedGoals.some(goal => goal.id === `goal-${card.topicId}`)}
                     isSaved={savedIds ? savedIds.has(card.topicId) : false}
+                    compact={compact}
                 />
             );
         };
-    }, [index, hydrated, commitGoal, committedGoals, savedIds]);
+    }, [index, hydrated, commitGoal, committedGoals, savedIds, compact]);
 
     return (
         <div className="relative w-full max-w-sm mx-auto">

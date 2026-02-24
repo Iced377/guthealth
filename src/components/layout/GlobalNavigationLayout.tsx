@@ -9,6 +9,7 @@ import LiquidNavigation from '@/components/navigation/LiquidNavigation';
 import { COMMON_SYMPTOMS, LoggedFoodItem } from '@/types';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { NavVisibilityProvider } from '@/components/navigation/useNavVisibilityController';
+import AdminNavVisibilityController from '@/components/navigation/AdminNavVisibilityController';
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
@@ -88,8 +89,19 @@ const NavigationAndDialogs = () => {
     const [isReuseMenuOpen, setIsReuseMenuOpen] = useState(false);
 
     // Get Favorites
-    const favoriteMeals = timelineEntries.filter((entry): entry is LoggedFoodItem =>
+    const getFavoriteSortTime = (item: LoggedFoodItem) => {
+        const value = item.favoriteLastUsedAt ?? item.timestamp;
+        if (value instanceof Date) return value.getTime();
+        if (value && typeof value === 'object' && 'toDate' in (value as any)) {
+            return (value as any).toDate().getTime();
+        }
+        return new Date(value as any).getTime();
+    };
+
+    const favoriteMeals = [...timelineEntries.filter((entry): entry is LoggedFoodItem =>
         entry.entryType === 'food' && (entry as LoggedFoodItem).isFavorite === true
+    )].sort((a, b) =>
+        getFavoriteSortTime(b) - getFavoriteSortTime(a)
     );
 
     // Note: timelineEntries contains TimelineEntry which is a union. We filter for food items that are favorites.
@@ -275,6 +287,7 @@ export const GlobalNavigationLayout = ({ children }: { children: React.ReactNode
         <ActionProvider>
             <NavVisibilityProvider>
                 {children}
+                <AdminNavVisibilityController />
                 <NavigationAndDialogs />
             </NavVisibilityProvider>
         </ActionProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Timer, Footprints, Trophy, Utensils } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,12 @@ export default function DashboardHero({
     summary,
     stepsData
 }: DashboardHeroProps) {
+    const [isWebview, setIsWebview] = useState(false);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        setIsWebview(document.documentElement.dataset.webview === 'true');
+    }, []);
 
     // 1. Time of Day Greeting
     const greeting = useMemo(() => {
@@ -69,9 +75,9 @@ export default function DashboardHero({
     const fastingTime = calculateFastingTime(timelineEntries);
     const steps = stepsData?.steps || 0;
 
-    // Quick Stat Pill Component
+    // Quick Stat Pill Component (mobile + non-webview)
     const StatPill = ({ icon: Icon, value, label, colorClass }: any) => (
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md shadow-sm">
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md shadow-sm webview-stat-chip">
             <Icon className={cn("w-3.5 h-3.5", colorClass)} />
             <div className="flex items-baseline gap-1">
                 <span className="text-xs font-bold font-mono">{value}</span>
@@ -79,6 +85,56 @@ export default function DashboardHero({
             </div>
         </div>
     );
+
+    const WebviewStat = ({ label, value, accentVar }: { label: string; value: string; accentVar: string }) => {
+        const accent = `var(${accentVar})`;
+        return (
+            <div className="relative overflow-hidden webview-panel px-4 py-3">
+                <div className="absolute left-0 top-0 h-full w-1.5" style={{ backgroundColor: accent }} />
+                <div className="pl-3 space-y-1">
+                    <div className="webview-label">{label}</div>
+                    <div className="text-lg font-semibold webview-metric-value" style={{ color: accent }}>
+                        {value}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    if (isWebview) {
+        return (
+            <div className="webview-hero-card webview-texture p-6 space-y-5">
+                <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
+                    <div className="space-y-2">
+                        <div className="webview-label">Highlights</div>
+                        <div className="webview-hero-title">
+                            {greeting}, <span className="text-primary">{firstName}</span>
+                        </div>
+                        <p className="text-sm webview-text-secondary">
+                            You're on track. <span className="font-semibold">{todayMeals} meals</span> logged today.
+                        </p>
+                    </div>
+                    <div
+                        className="webview-chip px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]"
+                        style={{
+                            color: 'var(--metric-calories, #f97316)',
+                            backgroundColor: 'color-mix(in srgb, var(--metric-calories, #f97316) 12%, transparent)',
+                            borderColor: 'color-mix(in srgb, var(--metric-calories, #f97316) 35%, transparent)',
+                        }}
+                    >
+                        {streak} day streak
+                    </div>
+                </div>
+
+                <div className="relative z-10 grid grid-cols-2 gap-3">
+                    <WebviewStat label="Fasting" value={fastingTime} accentVar="--metric-fasting" />
+                    <WebviewStat label="Calories" value={`${Math.round(summary.calories)} kcal`} accentVar="--metric-calories" />
+                    <WebviewStat label="Protein" value={`${Math.round(summary.protein)}g`} accentVar="--metric-protein" />
+                    <WebviewStat label="Steps" value={steps > 999 ? `${(steps / 1000).toFixed(1)}k` : `${steps}`} accentVar="--metric-steps" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full flex flex-col gap-4 mb-2">

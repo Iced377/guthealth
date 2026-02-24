@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { RamadanCard } from './RamadanCard';
 import type { RamadanTip } from '@/data/ramadan-seed';
 import LiquidChartCarousel from '@/components/trends/LiquidChartCarousel';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SavedCardsStackProps {
     cards: RamadanTip[];
@@ -12,6 +13,7 @@ interface SavedCardsStackProps {
     onCommit: (tip: RamadanTip) => void;
     isCommitted: (topicId: string) => boolean;
     isSaved: (topicId: string) => boolean;
+    compact?: boolean;
 }
 
 export function SavedCardsStack({
@@ -19,8 +21,10 @@ export function SavedCardsStack({
     onSave,
     onCommit,
     isCommitted,
-    isSaved
+    isSaved,
+    compact = false
 }: SavedCardsStackProps) {
+    const { isDarkMode } = useTheme();
     const [stack, setStack] = useState<RamadanTip[]>(cards);
     const [index, setIndex] = useState(0);
 
@@ -39,7 +43,9 @@ export function SavedCardsStack({
                     <div
                         key={`saved-dot-${idx}`}
                         className={`h-1.5 rounded-full transition-all duration-300 ${
-                            idx === current ? 'w-5 bg-white/90' : 'w-1.5 bg-white/40'
+                            idx === current
+                                ? `w-5 ${isDarkMode ? 'bg-white/90' : 'bg-emerald-700'}`
+                                : `w-1.5 ${isDarkMode ? 'bg-white/40' : 'bg-emerald-300'}`
                         }`}
                     />
                 ))}
@@ -54,7 +60,7 @@ export function SavedCardsStack({
 
     if (stack.length === 0) {
         return (
-            <div className="text-white/60 text-sm text-center py-6">
+            <div className={`text-sm text-center py-6 ${isDarkMode ? 'text-white/60' : 'text-emerald-700/70'}`}>
                 No saved cards yet.
             </div>
         );
@@ -78,6 +84,7 @@ export function SavedCardsStack({
                                 onCommit={onCommit}
                                 isCommitted={isCommitted(card.topicId)}
                                 isSaved={isSaved(card.topicId)}
+                                compact={compact}
                             />
                         </div>
                     ))}

@@ -1,5 +1,19 @@
 # Release Notes
 
+## v5.5.1 (February 24, 2026) - Favorites Stability & Webview Fixes
+**Cleaner favorites behavior with last-used ordering, plus tighter mobile containment in Admin.**
+
+### 🚀 Improvements
+- **Favorites Ordering**: Favorites now reorder by last used, keeping the most recent at the top.
+- **Auto-Dedup**: The favorites list automatically de-duplicates to prevent repeated entries of the same meal.
+- **Admin Mobile Layout**: AI Performance cards now wrap correctly on small screens.
+
+### 🐛 Bug Fixes
+- **Favorites Reuse**: Using a favorite no longer creates duplicate favorite records.
+- **Safety**: Favorites can no longer delete the underlying meal log (unfavorite only).
+
+---
+
 ## v5.5.0 (February 15, 2026) - Ramadan Experience & Insights Upgrade
 **A dedicated Ramadan Hub experience, smarter contextual Highlights/Coach logic, and future meal planning.**
 

@@ -16,7 +16,7 @@ export default function ScrollSection({ children, className, fullHeight = true }
         <motion.section
             ref={ref}
             className={cn(
-                "relative flex flex-col items-center justify-center w-full px-4 overflow-hidden snap-start snap-always",
+                "relative flex flex-col items-center justify-center w-full px-4 overflow-hidden snap-start snap-always landing-snap",
                 fullHeight ? "min-h-screen" : "py-32",
                 className
             )}

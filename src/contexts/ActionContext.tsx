@@ -15,7 +15,8 @@ import {
     updateDoc,
     addDoc,
     getDoc,
-    deleteDoc
+    deleteDoc,
+    writeBatch
 } from 'firebase/firestore';
 import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, LoggedSymptom, PedometerLog, FitbitLog } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +48,11 @@ const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => 
         lactose: pseudoRandom(hash + 5),
         fructose: pseudoRandom(hash + 6),
     };
+};
+
+const getFavoriteKey = (item: LoggedFoodItem) => {
+    const base = (item.originalName || item.name || '').trim().toLowerCase();
+    return base || item.id;
 };
 
 export interface SymptomLogTriggerContext {
@@ -477,6 +483,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 ...data,
                                 id: docSnap.id,
                                 timestamp: (data.timestamp as Timestamp).toDate(),
+                                ...(data.favoriteLastUsedAt ? { favoriteLastUsedAt: (data.favoriteLastUsedAt as Timestamp).toDate() } : {}),
                                 ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
                             } as TimelineEntry;
                         });
@@ -506,6 +513,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                         ...data,
                                         id: docSnap.id,
                                         timestamp: (data.timestamp as Timestamp).toDate(),
+                                        ...(data.favoriteLastUsedAt ? { favoriteLastUsedAt: (data.favoriteLastUsedAt as Timestamp).toDate() } : {}),
                                         ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
                                     } as TimelineEntry;
                                 });
@@ -627,6 +635,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const handleRepeatMeal = async (itemToRepeat: LoggedFoodItem) => {
         const newItemId = `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newTimestamp = new Date();
+        const shouldBumpFavorite = itemToRepeat.isFavorite === true;
 
         // 1. Create Optimistic Item immediately
         const optimisticItem: LoggedFoodItem = {
@@ -660,8 +669,19 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             userFeedback: null,
             macrosOverridden: itemToRepeat.macrosOverridden ?? false,
-            isFavorite: itemToRepeat.isFavorite ?? false,
+            isFavorite: false,
         };
+
+        if (shouldBumpFavorite) {
+            setTimelineEntries(prev => prev.map(entry => entry.id === itemToRepeat.id ? { ...entry, favoriteLastUsedAt: newTimestamp } : entry));
+            if (authUser) {
+                updateDoc(doc(db, 'users', authUser.uid, 'timelineEntries', itemToRepeat.id), {
+                    favoriteLastUsedAt: Timestamp.fromDate(newTimestamp)
+                }).catch(() => {
+                    // Non-blocking: ignore failures to update last-used.
+                });
+            }
+        }
 
         // 2. Commit Optimistic State
         setTimelineEntries(prev => [optimisticItem, ...prev].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
@@ -1320,10 +1340,61 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     const handleToggleFavoriteFoodItem = async (itemId: string, isFav: boolean) => {
+        const targetEntry = timelineEntries.find(entry => entry.id === itemId);
+        const targetFood = targetEntry && targetEntry.entryType === 'food' ? (targetEntry as LoggedFoodItem) : null;
+        const now = new Date();
+
         if (authUser) {
-            await updateDoc(doc(db, 'users', authUser.uid, 'timelineEntries', itemId), { isFavorite: isFav });
+            if (isFav && targetFood) {
+                const favoriteKey = getFavoriteKey(targetFood);
+                const duplicates = timelineEntries.filter(entry =>
+                    entry.id !== itemId &&
+                    entry.entryType === 'food' &&
+                    (entry as LoggedFoodItem).isFavorite === true &&
+                    getFavoriteKey(entry as LoggedFoodItem) === favoriteKey
+                ) as LoggedFoodItem[];
+
+                const batch = writeBatch(db);
+                batch.update(doc(db, 'users', authUser.uid, 'timelineEntries', itemId), {
+                    isFavorite: true,
+                    favoriteLastUsedAt: Timestamp.fromDate(now)
+                });
+                duplicates.forEach(dup => {
+                    batch.update(doc(db, 'users', authUser.uid, 'timelineEntries', dup.id), { isFavorite: false });
+                });
+                await batch.commit();
+            } else if (isFav) {
+                await updateDoc(doc(db, 'users', authUser.uid, 'timelineEntries', itemId), {
+                    isFavorite: true,
+                    favoriteLastUsedAt: Timestamp.fromDate(now)
+                });
+            } else {
+                await updateDoc(doc(db, 'users', authUser.uid, 'timelineEntries', itemId), { isFavorite: false });
+            }
+        }
+
+        if (isFav && targetFood) {
+            const favoriteKey = getFavoriteKey(targetFood);
+            setTimelineEntries(prev => prev.map(entry => {
+                if (entry.id === itemId) {
+                    return { ...entry, isFavorite: true, favoriteLastUsedAt: now } as TimelineEntry;
+                }
+                if (entry.entryType === 'food' &&
+                    (entry as LoggedFoodItem).isFavorite === true &&
+                    getFavoriteKey(entry as LoggedFoodItem) === favoriteKey
+                ) {
+                    return { ...entry, isFavorite: false } as TimelineEntry;
+                }
+                return entry;
+            }));
+        } else if (isFav) {
+            setTimelineEntries(prev => prev.map(entry =>
+                entry.id === itemId ? { ...entry, isFavorite: true, favoriteLastUsedAt: now } as TimelineEntry : entry
+            ));
         } else {
-            setTimelineEntries(prev => prev.map(e => e.id === itemId ? { ...e, isFavorite: isFav } as TimelineEntry : e));
+            setTimelineEntries(prev => prev.map(entry =>
+                entry.id === itemId ? { ...entry, isFavorite: false } as TimelineEntry : entry
+            ));
         }
     };
 

@@ -10,7 +10,7 @@ import DashboardWebBento from './DashboardWebBento';
 
 // Lazy load heavy interactive components
 const ParallaxVitalsHeader = dynamic(() => import('./ParallaxVitalsHeader'), {
-    loading: () => <div className="w-full h-32 rounded-2xl bg-white/5 animate-pulse" />,
+    loading: () => <div className="w-full h-32 rounded-2xl bg-white/5 animate-pulse webview-skeleton" />,
     ssr: false // Optimization: No need to SSR the complex motion header
 });
 const LiquidCardCarousel = dynamic(() => import('./LiquidCardCarousel'), {
@@ -208,36 +208,38 @@ export default function DashboardContent({
         return null;
     }, [sortedEntries]);
 
+    const skeletonBlock = enableWebBento ? "webview-skeleton" : "animate-pulse";
+
     if (!userProfile || isLoading) {
         return (
             <div className="w-full flex flex-col gap-6 px-4 md:px-8">
                 {/* Header Skeleton */}
-                <div className="w-full h-24 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse" />
+                <div className={cn("w-full h-24 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5", skeletonBlock)} />
 
                 {/* Vitals Skeleton (Steps) */}
-                <div className="w-full h-16 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse flex items-center justify-center">
-                    <div className="h-2 w-32 bg-white/10 rounded-full" />
+                <div className={cn("w-full h-16 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 flex items-center justify-center", skeletonBlock)}>
+                    <div className={cn("h-2 w-32 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
                 </div>
 
                 {/* Feed Skeleton */}
                 <div className="flex-1 flex flex-col gap-4">
                     {[1, 2].map((i) => (
-                        <div key={i} className="w-full h-40 rounded-3xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse p-4 space-y-4 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
+                        <div key={i} className={cn("w-full h-40 rounded-3xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 p-4 space-y-4 relative overflow-hidden", skeletonBlock)}>
+                            <div className={cn("absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer", enableWebBento && "webview-shimmer")} style={{ animationDelay: `${i * 100}ms` }} />
                             <div className="flex justify-between items-start">
-                                <div className="h-6 w-48 bg-white/10 rounded-lg" />
-                                <div className="h-8 w-8 rounded-full bg-white/10" />
+                                <div className={cn("h-6 w-48 bg-white/10 rounded-lg", enableWebBento && "webview-skeleton-line")} />
+                                <div className={cn("h-8 w-8 rounded-full bg-white/10", enableWebBento && "webview-skeleton-line")} />
                             </div>
                             <div className="flex gap-2">
-                                <div className="h-4 w-12 bg-white/10 rounded-full" />
-                                <div className="h-4 w-12 bg-white/10 rounded-full" />
-                                <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                <div className={cn("h-4 w-12 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
+                                <div className={cn("h-4 w-12 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
+                                <div className={cn("h-4 w-12 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
                             </div>
                         </div>
                     ))}
 
                     <div className="flex items-center justify-center py-4">
-                        <p className="text-xs font-medium text-muted-foreground animate-pulse">
+                        <p className={cn("text-xs font-medium text-muted-foreground animate-pulse", enableWebBento && "webview-loading-text")}>
                             {(isIOS && userProfile?.profile?.appleHealthEnabled) ? 'Syncing your health data...' : 'Loading your dashboard...'}
                         </p>
                     </div>
@@ -269,36 +271,36 @@ export default function DashboardContent({
                     {/* Header Skeleton (Macros) */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
                         {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="h-24 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer" />
+                            <div key={i} className={cn("h-24 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 relative overflow-hidden", skeletonBlock)}>
+                                <div className={cn("absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer", enableWebBento && "webview-shimmer")} />
                             </div>
                         ))}
                     </div>
 
                     {/* Vitals Skeleton (Steps) */}
-                    <div className="w-full h-16 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse flex items-center justify-center">
-                        <div className="h-2 w-32 bg-white/10 rounded-full" />
+                    <div className={cn("w-full h-16 rounded-2xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 flex items-center justify-center", skeletonBlock)}>
+                        <div className={cn("h-2 w-32 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
                     </div>
 
                     {/* Feed Skeleton */}
                     <div className="flex-1 flex flex-col gap-4">
                         {[1, 2].map((i) => (
-                            <div key={i} className="w-full h-40 rounded-3xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 animate-pulse p-4 space-y-4 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
+                            <div key={i} className={cn("w-full h-40 rounded-3xl bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/5 p-4 space-y-4 relative overflow-hidden", skeletonBlock)}>
+                                <div className={cn("absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg] animate-shimmer", enableWebBento && "webview-shimmer")} style={{ animationDelay: `${i * 100}ms` }} />
                                 <div className="flex justify-between items-start">
-                                    <div className="h-6 w-48 bg-white/10 rounded-lg" />
-                                    <div className="h-8 w-8 rounded-full bg-white/10" />
+                                    <div className={cn("h-6 w-48 bg-white/10 rounded-lg", enableWebBento && "webview-skeleton-line")} />
+                                    <div className={cn("h-8 w-8 rounded-full bg-white/10", enableWebBento && "webview-skeleton-line")} />
                                 </div>
                                 <div className="flex gap-2">
-                                    <div className="h-4 w-12 bg-white/10 rounded-full" />
-                                    <div className="h-4 w-12 bg-white/10 rounded-full" />
-                                    <div className="h-4 w-12 bg-white/10 rounded-full" />
+                                    <div className={cn("h-4 w-12 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
+                                    <div className={cn("h-4 w-12 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
+                                    <div className={cn("h-4 w-12 bg-white/10 rounded-full", enableWebBento && "webview-skeleton-line")} />
                                 </div>
                             </div>
                         ))}
 
                         <div className="flex items-center justify-center py-4">
-                            <p className="text-xs font-medium text-muted-foreground animate-pulse">
+                            <p className={cn("text-xs font-medium text-muted-foreground animate-pulse", enableWebBento && "webview-loading-text")}>
                                 {(isIOS && userProfile?.profile?.appleHealthEnabled) ? 'Syncing your health data...' : 'Loading your dashboard...'}
                             </p>
                         </div>

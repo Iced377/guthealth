@@ -46,6 +46,7 @@ export const LiquidPressable = React.forwardRef<HTMLButtonElement, LiquidPressab
     const baseStyles = cn(
         'relative isolate overflow-hidden outline-none',
         'flex items-center justify-center font-medium select-none transition-all duration-300',
+        'webview-interactive',
 
         // Use TOKEN base styles
         tokens.lens.base,
