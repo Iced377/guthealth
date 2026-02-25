@@ -64,7 +64,7 @@ const NavigationAndDialogs = () => {
         userProfile
     } = useActionContext();
 
-    const { user } = useAuth();
+    const { user, loading: authLoading, userProfile: authUserProfile } = useAuth();
 
     // Hoisted Photo Scan Logic
     const scanInputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +108,7 @@ const NavigationAndDialogs = () => {
 
 
     const isExcluded =
-        !user || // Exclude for non-users
+        (!user && !authLoading) || // Exclude only once auth is resolved
         pathname?.startsWith('/login') ||
         pathname?.startsWith('/signup') ||
         pathname === '/about' ||
@@ -139,7 +139,7 @@ const NavigationAndDialogs = () => {
                     onAppTourClick={() => startWalkthrough('welcome')}
                     onVersionClick={openReleaseNotes}
                     isReleaseNotesOpen={isReleaseNotesOpen}
-                    isAdmin={userProfile?.isAdmin ?? false}
+                    isAdmin={authUserProfile?.isAdmin ?? userProfile?.isAdmin ?? false}
                 />
             )}
 

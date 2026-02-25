@@ -76,7 +76,7 @@ export default function DashboardContent({
     } = useActionContext();
 
     const { startWalkthrough } = useWalkthrough();
-    const { healthData } = useHealthKit();
+    const { healthData } = useHealthKit(!!userProfile?.profile?.appleHealthEnabled);
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
     const [isWideLayout, setIsWideLayout] = useState(false);
 

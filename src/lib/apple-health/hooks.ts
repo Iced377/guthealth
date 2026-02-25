@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { AppleHealthService } from './index';
 
-export function useHealthKit() {
+export function useHealthKit(enabled: boolean = true) {
     const [healthData, setHealthData] = useState<{ steps: number; distance: number } | null>(null);
     const [isAvailable, setIsAvailable] = useState(false);
 
     useEffect(() => {
+        if (!enabled) {
+            setHealthData(null);
+            setIsAvailable(false);
+            return;
+        }
         const init = async () => {
             const available = await AppleHealthService.isAvailable();
             setIsAvailable(available);
@@ -27,10 +32,10 @@ export function useHealthKit() {
             }
         };
         init();
-    }, []);
+    }, [enabled]);
 
     const refreshHealthData = async () => {
-        if (isAvailable) {
+        if (enabled && isAvailable) {
             const steps = await AppleHealthService.getTodaySteps();
             setHealthData({ steps, distance: 0 });
         }

@@ -28,7 +28,7 @@ function InsightsLayout() {
   // Data Hooks
   const { user, userProfile } = useAuth();
   const { timelineEntries } = useActionContext();
-  const { healthData } = useHealthKit();
+  const { healthData } = useHealthKit(!!userProfile?.profile?.appleHealthEnabled);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;

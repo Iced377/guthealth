@@ -19,7 +19,9 @@ export const releaseNotesData: ReleaseNote[] = [
         features: [],
         improvements: [
             'On iOS, full history hydration now waits until you open Trends, Insights, or Admin to keep the dashboard light.',
-            'Landing hero controls now stay above the video background.'
+            'Landing hero controls now stay above the video background.',
+            'Apple Health hooks now respect the integration toggle to avoid background work when disabled.',
+            'Bottom navigation stays available during auth hydration and admin visibility is more consistent.'
         ],
         fixes: [
             'Dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.'

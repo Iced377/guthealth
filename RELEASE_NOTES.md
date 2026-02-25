@@ -6,6 +6,8 @@
 ### 🚀 Improvements
 - **History Hydration Gate**: On iOS, full history hydration now waits until you open Trends, Insights, or Admin to keep the dashboard light.
 - **Hero Controls**: Start/Login and Help buttons now stay above the hero background.
+- **HealthKit Respect**: Apple Health hooks no longer run when integration is disabled.
+- **Nav Stability**: Bottom nav stays available during auth hydration and keeps admin visibility consistent.
 
 ### 🐛 Bug Fixes
 - **Dashboard Jank**: The dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.
