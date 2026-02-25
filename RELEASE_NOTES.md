@@ -1,5 +1,16 @@
 # Release Notes
 
+## v5.5.4 (February 25, 2026) - iOS Dashboard Performance Isolation
+**Restored smooth iOS dashboard performance for large histories.**
+
+### 🚀 Improvements
+- **History Hydration Gate**: On iOS, full history hydration now waits until you open Trends, Insights, or Admin to keep the dashboard light.
+
+### 🐛 Bug Fixes
+- **Dashboard Jank**: The dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.
+
+---
+
 ## v5.5.3 (February 25, 2026) - Apple Health Sync Throttle
 **Reduced background load by throttling historical Apple Health syncs.**
 

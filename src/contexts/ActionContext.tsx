@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db } from '@/config/firebase';
 import {
@@ -27,6 +27,8 @@ import { useFitbitSync } from '@/hooks/useFitbitSync';
 import type { SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
 import type { IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
 import { triggerFoodAnalysis, triggerTextFoodAnalysis, logAdminEvent, logAiPerformanceMetric, logAiTelemetryEvent } from '@/actions/food-analysis';
+import { usePathname } from 'next/navigation';
+import { Capacitor } from '@capacitor/core';
 
 
 const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => {
@@ -194,6 +196,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [editingItem, setEditingItem] = useState<LoggedFoodItem | null>(null);
     const [selectedLogTimestampForPreviousMeal, setSelectedLogTimestampForPreviousMeal] = useState<Date | undefined>(undefined);
     const [lastAddedItem, setLastAddedItem] = useState<{ id: string, date: Date } | null>(null);
+
+    const pathname = usePathname();
+    const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
+    const hydrateFullHistoryRef = useRef<null | (() => void)>(null);
+    const fullHistoryHydratedRef = useRef(false);
 
     const openAddVitalsDialog = useCallback((date: Date, currentWeight?: number | null, currentSteps?: number | null, currentFat?: number | null) => {
         setVitalsDialogDate(date);
@@ -500,7 +507,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     });
 
                     if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
-                        const hydrateFullHistory = () => {
+                        fullHistoryHydratedRef.current = false;
+                        hydrateFullHistoryRef.current = () => {
                             if (isCancelled) return;
                             if (unsubscribeTimeline) unsubscribeTimeline();
 
@@ -528,15 +536,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 setIsDataLoading(false);
                             });
                         };
-
-                        const delayMs = 10000;
-                        setTimeout(() => {
-                            if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-                                (window as any).requestIdleCallback(hydrateFullHistory, { timeout: 2500 });
-                            } else {
-                                hydrateFullHistory();
-                            }
-                        }, delayMs);
+                    } else {
+                        hydrateFullHistoryRef.current = null;
+                        fullHistoryHydratedRef.current = false;
                     }
 
                 } catch (error) {
@@ -547,6 +549,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 setUserProfile(initialGuestProfile);
                 setTimelineEntries([]);
                 setIsDataLoading(false);
+                hydrateFullHistoryRef.current = null;
+                fullHistoryHydratedRef.current = false;
             }
         };
 
@@ -557,6 +561,29 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (unsubscribeTimeline) unsubscribeTimeline();
         };
     }, [authUser, authLoading]);
+
+    useEffect(() => {
+        if (!hydrateFullHistoryRef.current) return;
+        if (fullHistoryHydratedRef.current) return;
+
+        const allowFullHistory = !isIOS
+            || (pathname?.startsWith('/trends') || pathname?.startsWith('/insights') || pathname?.startsWith('/admin'));
+
+        if (!allowFullHistory) return;
+
+        fullHistoryHydratedRef.current = true;
+        const delayMs = 4000;
+        const run = () => hydrateFullHistoryRef.current?.();
+        const timer = setTimeout(() => {
+            if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                (window as any).requestIdleCallback(run, { timeout: 2500 });
+            } else {
+                run();
+            }
+        }, delayMs);
+
+        return () => clearTimeout(timer);
+    }, [pathname, isIOS, authUser]);
 
     // Auto-verify backfill for recent items (User Experience)
     useEffect(() => {

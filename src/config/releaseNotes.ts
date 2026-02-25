@@ -8,9 +8,22 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.3";
+export const APP_VERSION = "5.5.4";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.4',
+        date: 'February 25, 2026',
+        title: 'iOS Dashboard Performance Isolation',
+        description: 'Restored smooth iOS dashboard performance for large histories.',
+        features: [],
+        improvements: [
+            'On iOS, full history hydration now waits until you open Trends, Insights, or Admin to keep the dashboard light.'
+        ],
+        fixes: [
+            'Dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.'
+        ]
+    },
     {
         version: '5.5.3',
         date: 'February 25, 2026',

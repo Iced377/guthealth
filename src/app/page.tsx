@@ -78,6 +78,13 @@ export default function RootPage() {
     setPrevTimelineLength(timelineEntries.length);
   }, [timelineEntries, authUser, prevTimelineLength]);
 
+  const dashboardEntries = useMemo(() => {
+    if (!isIOS) return timelineEntries;
+    const maxEntries = 600;
+    if (timelineEntries.length <= maxEntries) return timelineEntries;
+    return timelineEntries.slice(0, maxEntries);
+  }, [timelineEntries, isIOS]);
+
   const dailyNutritionSummary = useMemo<DailyNutritionSummary>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -86,7 +93,7 @@ export default function RootPage() {
 
     let totals: DailyNutritionSummary = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    timelineEntries.forEach(entry => {
+    dashboardEntries.forEach(entry => {
       if (entry.entryType === 'food' || entry.entryType === 'manual_macro') {
         const entryDate = new Date(entry.timestamp);
         if (entryDate >= today && entryDate < tomorrow) {
@@ -98,9 +105,9 @@ export default function RootPage() {
       }
     });
     return totals;
-  }, [timelineEntries]);
+  }, [dashboardEntries]);
 
-  const groupedTimelineEntries = useMemo(() => groupEntriesByDate(timelineEntries), [timelineEntries]);
+  const groupedTimelineEntries = useMemo(() => groupEntriesByDate(dashboardEntries), [dashboardEntries]);
 
   const betaUserMessageContent = (
     <div className="mt-8 max-w-3xl mx-auto text-left sm:text-center bg-primary/5 p-6 rounded-lg border border-primary/20 shadow-sm">
@@ -164,7 +171,7 @@ export default function RootPage() {
         <DashboardContent
           userProfile={userProfile!}
           isLoading={isDataLoading}
-          timelineEntries={timelineEntries}
+          timelineEntries={dashboardEntries}
           dailyNutritionSummary={dailyNutritionSummary}
           isLoadingAi={isLoadingAi}
           onSetFeedback={handleSetFoodFeedback}
