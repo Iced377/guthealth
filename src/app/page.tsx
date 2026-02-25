@@ -49,6 +49,7 @@ export default function RootPage() {
     handleEditTimelineEntry,
     handleRepeatMeal,
     handleToggleFavoriteFoodItem,
+    setTimelineWindowAnchor,
   } = useActionContext();
 
   const [isPremiumDashboardOpen, setIsPremiumDashboardOpen] = useState(false);
@@ -57,6 +58,10 @@ export default function RootPage() {
   // Dashboard Date State (Hoisted for Header)
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isWideLayout, setIsWideLayout] = useState(false);
+
+  useEffect(() => {
+    setTimelineWindowAnchor(currentDate);
+  }, [currentDate, setTimelineWindowAnchor]);
 
   useEffect(() => {
     const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);

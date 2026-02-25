@@ -134,6 +134,9 @@ interface ActionContextType {
 
     lastAddedItem: { id: string, date: Date } | null;
     setLastAddedItem: (item: { id: string, date: Date } | null) => void;
+
+    // Dashboard timeline window (iOS perf)
+    setTimelineWindowAnchor: (date: Date) => void;
 }
 
 const ActionContext = createContext<ActionContextType | undefined>(undefined);
@@ -203,6 +206,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const subscribeLimitedRef = useRef<null | (() => void)>(null);
     const subscribeFullRef = useRef<null | (() => void)>(null);
     const activeTimelineModeRef = useRef<'limited' | 'full' | null>(null);
+    const [timelineWindowAnchor, setTimelineWindowAnchorState] = useState<Date>(new Date());
+    const timelineWindowAnchorRef = useRef<Date>(timelineWindowAnchor);
 
     const openAddVitalsDialog = useCallback((date: Date, currentWeight?: number | null, currentSteps?: number | null, currentFat?: number | null) => {
         setVitalsDialogDate(date);
@@ -250,6 +255,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const openReleaseNotes = useCallback(() => setIsReleaseNotesOpen(true), []);
     const closeReleaseNotes = useCallback(() => setIsReleaseNotesOpen(false), []);
+
+    const setTimelineWindowAnchor = useCallback((date: Date) => {
+        const normalized = new Date(date);
+        normalized.setHours(12, 0, 0, 0);
+        timelineWindowAnchorRef.current = normalized;
+        setTimelineWindowAnchorState(normalized);
+    }, []);
 
     const handleLogVitals = async (weight: number | null, steps: number | null, fatPercent: number | null, date: Date) => {
         // Prepare batch updates mainly for steps cleanup
@@ -464,14 +476,30 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     const timelineEntriesColRef = collection(db, 'users', authUser.uid, 'timelineEntries');
                     let q;
                     if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
-                        const initialWindowStart = new Date();
-                        initialWindowStart.setDate(initialWindowStart.getDate() - PREMIUM_INITIAL_DAYS);
-                        console.log(`SetupData: Premium initial window ${PREMIUM_INITIAL_DAYS} days`);
-                        q = query(
-                            timelineEntriesColRef,
-                            orderBy('timestamp', 'desc'),
-                            where('timestamp', '>=', Timestamp.fromDate(initialWindowStart))
-                        );
+                        if (isIOS) {
+                            const anchor = timelineWindowAnchorRef.current ?? new Date();
+                            const windowStart = new Date(anchor);
+                            windowStart.setDate(windowStart.getDate() - 6);
+                            windowStart.setHours(0, 0, 0, 0);
+                            const windowEnd = new Date(anchor);
+                            windowEnd.setDate(windowEnd.getDate() + 1);
+                            windowEnd.setHours(23, 59, 59, 999);
+                            q = query(
+                                timelineEntriesColRef,
+                                orderBy('timestamp', 'desc'),
+                                where('timestamp', '>=', Timestamp.fromDate(windowStart)),
+                                where('timestamp', '<=', Timestamp.fromDate(windowEnd))
+                            );
+                        } else {
+                            const initialWindowStart = new Date();
+                            initialWindowStart.setDate(initialWindowStart.getDate() - PREMIUM_INITIAL_DAYS);
+                            console.log(`SetupData: Premium initial window ${PREMIUM_INITIAL_DAYS} days`);
+                            q = query(
+                                timelineEntriesColRef,
+                                orderBy('timestamp', 'desc'),
+                                where('timestamp', '>=', Timestamp.fromDate(initialWindowStart))
+                            );
+                        }
                     } else {
                         const twoDaysAgo = new Date();
                         twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -515,6 +543,25 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
                     subscribeLimitedRef.current = () => {
                         if (isCancelled) return;
+                        if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
+                            if (isIOS) {
+                                const anchor = timelineWindowAnchorRef.current ?? new Date();
+                                const windowStart = new Date(anchor);
+                                windowStart.setDate(windowStart.getDate() - 6);
+                                windowStart.setHours(0, 0, 0, 0);
+                                const windowEnd = new Date(anchor);
+                                windowEnd.setDate(windowEnd.getDate() + 1);
+                                windowEnd.setHours(23, 59, 59, 999);
+                                const rollingQuery = query(
+                                    timelineEntriesColRef,
+                                    orderBy('timestamp', 'desc'),
+                                    where('timestamp', '>=', Timestamp.fromDate(windowStart)),
+                                    where('timestamp', '<=', Timestamp.fromDate(windowEnd))
+                                );
+                                subscribeWithQuery(rollingQuery);
+                                return;
+                            }
+                        }
                         subscribeWithQuery(q);
                     };
 
@@ -591,6 +638,17 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         run();
     }, [pathname, isIOS, authUser]);
+
+    useEffect(() => {
+        if (!subscribeLimitedRef.current) return;
+        if (activeTimelineModeRef.current !== 'limited') return;
+
+        const timer = setTimeout(() => {
+            subscribeLimitedRef.current?.();
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, [timelineWindowAnchor]);
 
     // Auto-verify backfill for recent items (User Experience)
     useEffect(() => {
@@ -1496,6 +1554,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // Scroll Signal
             lastAddedItem,
             setLastAddedItem,
+            setTimelineWindowAnchor,
         }}>
             {children}
         </ActionContext.Provider>

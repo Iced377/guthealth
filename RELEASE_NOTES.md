@@ -10,6 +10,7 @@
 - **Nav Stability**: Bottom nav stays available during auth hydration and keeps admin visibility consistent.
 - **iOS Timeline Mode**: Dashboard stays on a light timeline; full history only loads when you visit Trends/Insights/Admin.
 - **Nav Efficiency**: Favorites list is memoized to reduce unnecessary recomputes.
+- **Rolling Window**: On iOS, the dashboard timeline now shifts a 7-day window as you swipe dates, preserving history access without loading full history.
 
 ### 🐛 Bug Fixes
 - **Dashboard Jank**: The dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.
