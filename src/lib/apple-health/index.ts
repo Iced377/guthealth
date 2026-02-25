@@ -274,63 +274,61 @@ export const AppleHealthService = {
         }
     },
 
-    // Optimized to query day-by-day to avoid hitting sample limits on large ranges
+    // Optimized: single aggregated query (deduped by HealthKit)
     getDailyStepsHistory: async (days: number = 30): Promise<Record<string, number>> => {
         if (Capacitor.getPlatform() !== 'ios') return {};
         try {
             const dailyTotals: Record<string, number> = {};
             const now = new Date();
+            const startDate = new Date(now);
+            startDate.setDate(now.getDate() - (days - 1));
+            startDate.setHours(0, 0, 0, 0);
 
-            const processDay = async (offset: number) => {
-                const date = new Date(now);
-                date.setDate(now.getDate() - offset);
-
-                // Set to MIDNIGHT local time for start/end query
-                const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
-
-                // 1. Guard check
-                try {
-                    const status = await Health.checkAuthorization({ read: ['steps'] });
-                    if (!status.readAuthorized.includes('steps')) {
-                        return;
-                    }
-                } catch (e) {
-                    return;
+            // 1. Guard check (once)
+            try {
+                const status = await Health.checkAuthorization({ read: ['steps'] });
+                if (!status.readAuthorized.includes('steps')) {
+                    return {};
                 }
+            } catch {
+                return {};
+            }
 
-                // 2. Use existing logic for specific day
+            // 2. Aggregated query by day
+            const { samples } = await Health.queryAggregated({
+                dataType: 'steps',
+                startDate: startDate.toISOString(),
+                endDate: now.toISOString(),
+                bucket: 'day',
+                aggregation: 'sum',
+            });
+
+            (samples || []).forEach((sample: any) => {
+                const sampleDate = new Date(sample.startDate);
+                const year = sampleDate.getFullYear();
+                const month = String(sampleDate.getMonth() + 1).padStart(2, '0');
+                const day = String(sampleDate.getDate()).padStart(2, '0');
+                const key = `${year}-${month}-${day}`;
+                dailyTotals[key] = Math.round(Number(sample.value) || 0);
+            });
+
+            // Optional debug: only log today’s sources when monitoring is enabled
+            if (readIntegrationDebugFlag()) {
+                const startOfDay = new Date(now);
+                startOfDay.setHours(0, 0, 0, 0);
                 const result = await Health.readSamples({
                     dataType: 'steps',
                     startDate: startOfDay.toISOString(),
-                    endDate: endOfDay.toISOString(),
-                    limit: 3000,
+                    endDate: now.toISOString(),
+                    limit: 5000,
                 });
-
-                const samples = result.samples as HealthSample[];
-                if (!samples.length) return;
-                const total = sumStepsWithHourlySourceDedup(samples);
-
-                // Key: YYYY-MM-DD (Local)
-                const year = startOfDay.getFullYear();
-                const month = String(startOfDay.getMonth() + 1).padStart(2, '0');
-                const day = String(startOfDay.getDate()).padStart(2, '0');
-                const key = `${year}-${month}-${day}`;
-
-                // Only persist today's log remotely to avoid flooding the database.
-                logSourceTotals(key, samples, total, { persistRemote: offset === 0 });
-                dailyTotals[key] = Math.round(total);
-            };
-
-            // Sequential execution for stability
-            for (let i = 0; i < days; i++) {
-                await processDay(i);
+                const samplesForLog = result.samples as HealthSample[];
+                const todayKey = `${startOfDay.getFullYear()}-${String(startOfDay.getMonth() + 1).padStart(2, '0')}-${String(startOfDay.getDate()).padStart(2, '0')}`;
+                logSourceTotals(todayKey, samplesForLog, dailyTotals[todayKey] || 0, { persistRemote: true });
             }
 
             return dailyTotals;
-
         } catch (error: any) {
-            // Log for debugging but return empty object to prevent app crash
             const errMsg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
             console.warn('[Health] Daily history fetch suppressed (safely):', errMsg);
             return {};

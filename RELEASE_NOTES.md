@@ -1,5 +1,16 @@
 # Release Notes
 
+## v5.5.3 (February 25, 2026) - Apple Health Sync Throttle
+**Reduced background load by throttling historical Apple Health syncs.**
+
+### 🚀 Improvements
+- **Sync Throttle**: Apple Health history sync now runs at most once per day per user.
+
+### 🐛 Bug Fixes
+- **Performance**: Reduced iOS dashboard jitter caused by repeated HealthKit history fetches.
+
+---
+
 ## v5.5.2 (February 25, 2026) - HealthKit Dedupe & Landing Polish
 **Stabilized step counts with HealthKit totals and refined the landing hero stacking on mobile.**
 

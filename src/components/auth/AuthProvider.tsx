@@ -97,6 +97,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
 
                 // Fetch history - the service itself now catches errors and returns {} safely
+                // Throttle full history sync to once per day.
+                const historyKey = `appleHealth.historySync.${targetUser.uid}`;
+                let shouldSync = true;
+                try {
+                  const lastSync = localStorage.getItem(historyKey);
+                  if (lastSync) {
+                    const last = new Date(lastSync);
+                    shouldSync = isNaN(last.getTime()) || (Date.now() - last.getTime()) > 24 * 60 * 60 * 1000;
+                  }
+                } catch {
+                  // If storage is unavailable, proceed with sync.
+                }
+
+                if (!shouldSync) {
+                  console.log("[HealthSync] History sync skipped (throttled).");
+                  return;
+                }
+
                 console.log("[HealthSync] Fetching 30-day history...");
                 const history = await AppleHealthService.getDailyStepsHistory(30);
 
@@ -124,6 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
 
                 await Promise.all(batchPromises);
+
+                try {
+                  localStorage.setItem(historyKey, new Date().toISOString());
+                } catch {
+                  // No-op: storage might be unavailable
+                }
                 console.log(`Health sync: synced ${Object.keys(history).length} days`);
               } catch (healthError) {
                 console.warn("[HealthSync] Sync suppressed safely:", healthError);

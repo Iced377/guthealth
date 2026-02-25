@@ -8,9 +8,22 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.2";
+export const APP_VERSION = "5.5.3";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.3',
+        date: 'February 25, 2026',
+        title: 'Apple Health Sync Throttle',
+        description: 'Reduced background load by throttling historical Apple Health syncs.',
+        features: [],
+        improvements: [
+            'Apple Health history sync now runs at most once per day per user.'
+        ],
+        fixes: [
+            'Reduced iOS dashboard jitter caused by repeated HealthKit history fetches.'
+        ]
+    },
     {
         version: '5.5.2',
         date: 'February 25, 2026',
