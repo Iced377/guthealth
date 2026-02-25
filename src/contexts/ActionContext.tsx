@@ -177,6 +177,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile>(initialGuestProfile);
     const [isDataLoading, setIsDataLoading] = useState(true);
+    const [isSetupComplete, setIsSetupComplete] = useState(false);
     const [isLoadingAi, setIsLoadingAi] = useState<Record<string, boolean>>({});
 
     const [isSimplifiedAddFoodDialogOpen, setIsSimplifiedAddFoodDialogOpenState] = useState(false);
@@ -532,15 +533,18 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
                     activeTimelineModeRef.current = 'limited';
                     subscribeLimitedRef.current?.();
+                    setIsSetupComplete(true);
 
                 } catch (error) {
                     console.error("Error setting up user data:", error);
                     setIsDataLoading(false);
+                    setIsSetupComplete(true);
                 }
             } else {
                 setUserProfile(initialGuestProfile);
                 setTimelineEntries([]);
                 setIsDataLoading(false);
+                setIsSetupComplete(true);
                 subscribeLimitedRef.current = null;
                 subscribeFullRef.current = null;
                 activeTimelineModeRef.current = null;
@@ -563,7 +567,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, [authUser, authLoading]);
 
     useEffect(() => {
-        if (!subscribeLimitedRef.current) return;
+        if (!isSetupComplete || !subscribeLimitedRef.current) return;
 
         const allowFullHistory = !isIOS
             || pathname === '/'
@@ -594,7 +598,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
 
         run();
-    }, [pathname, isIOS, authUser]);
+    }, [pathname, isIOS, authUser, isSetupComplete]);
 
     // Auto-verify backfill for recent items (User Experience)
     useEffect(() => {

@@ -481,7 +481,7 @@ export default function DashboardWebBento({
 
     const streak = useMemo(() => {
         let currentStreak = 0;
-        const today = new Date();
+        const today = currentDate;
         for (let i = 0; i < 365; i += 1) {
             const dateToCheck = subDays(today, i);
             const hasLog = timelineEntries.some((entry) =>
@@ -581,7 +581,7 @@ export default function DashboardWebBento({
                 dailyStats.set(key, { calories: 0, entries: 0 });
             }
             const day = dailyStats.get(key)!;
-            day.calories += entry.calories || 0;
+            day.calories += (entry as LoggedFoodItem).calories || 0;
             day.entries += 1;
         });
 

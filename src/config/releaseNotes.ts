@@ -8,9 +8,23 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.4";
+export const APP_VERSION = "5.5.5";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.5',
+        date: 'February 25, 2026',
+        title: 'Performance & History Fixes',
+        description: 'Fixed dashboard historical data clipping and floating menu performance drops on iOS.',
+        features: [],
+        improvements: [
+            'Floating menu background utilizes simplified transparency on iOS to reduce rendering burden.'
+        ],
+        fixes: [
+            'Dashboard history now properly hydrates all available logs correctly on load, instead of capping at 3 days.',
+            "Streak gamification logic fixed to appropriately track from the dashboard's selected date context."
+        ]
+    },
     {
         version: '5.5.4',
         date: 'February 25, 2026',

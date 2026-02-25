@@ -13,13 +13,15 @@ interface DashboardHeroProps {
     timelineEntries: TimelineEntry[];
     summary: DailyNutritionSummary;
     stepsData?: PedometerLog | null;
+    currentDate?: Date;
 }
 
 export default function DashboardHero({
     userProfile,
     timelineEntries,
     summary,
-    stepsData
+    stepsData,
+    currentDate
 }: DashboardHeroProps) {
     const [isWebview, setIsWebview] = useState(false);
 
@@ -50,7 +52,7 @@ export default function DashboardHero({
     // 3. Streak Calculation (Consecutive Days with at least 1 food log)
     const streak = useMemo(() => {
         let currentStreak = 0;
-        const today = new Date();
+        const today = currentDate || new Date();
         // Check past 365 days
         for (let i = 0; i < 365; i++) {
             const dateToCheck = subDays(today, i);

@@ -275,7 +275,7 @@ export default function DashboardContent({
 
 
             {/* Background Gradient Mesh (skip on web bento; global background handles it) */}
-            {!enableWebBento && (
+            {!enableWebBento && !isIOS && (
                 <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
                     <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] animate-pulse-slow" />
                     <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[120px]" />
