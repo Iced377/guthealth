@@ -22,6 +22,8 @@ export function HeroSection({ scrollContainerRef }: { scrollContainerRef?: React
     const heroTitleY = useTransform(scrollYProgress, [0, 0.6], [0, -16]);
     const heroCopyOpacity = useTransform(scrollYProgress, [0, 0.55, 0.7], [1, 0.6, 0]);
     const heroCopyY = useTransform(scrollYProgress, [0, 0.7], [0, -8]);
+    const heroMobileOpacity = useTransform(scrollYProgress, [0.4, 0.6], [1, 0]);
+    const heroMobileY = useTransform(scrollYProgress, [0.4, 0.6], [0, -24]);
     const featuresOpacity = useTransform(scrollYProgress, [0.46, 0.72], [0, 1]);
     const featuresY = useTransform(scrollYProgress, [0.46, 0.72], [14, 0]);
     const featureLabelOpacity = useTransform(scrollYProgress, [0.46, 0.64], [0, 1]);
@@ -65,8 +67,8 @@ export function HeroSection({ scrollContainerRef }: { scrollContainerRef?: React
     const proofCard3Y = useTransform(scrollYProgress, [0.48, 0.6], [0, 18]);
 
     return (
-        <section ref={heroRef} className="relative h-[200vh] w-full snap-start snap-always landing-snap">
-            <div className="sticky top-0 h-screen w-full flex items-center justify-center px-6">
+        <section ref={heroRef} className="relative h-[200vh] w-full snap-start snap-always landing-snap z-50 isolate">
+            <div className="sticky top-0 h-screen w-full flex items-start lg:items-center justify-center px-6 pt-[calc(env(safe-area-inset-top)+96px)] lg:pt-0 z-50">
                 <div className="absolute inset-0 -z-10">
                     <video
                         src="/gutcheck-lp-bg.mp4"
@@ -130,9 +132,10 @@ export function HeroSection({ scrollContainerRef }: { scrollContainerRef?: React
                     </motion.div>
                 </motion.div>
 
+                {/* Desktop hero */}
                 <motion.div
                     style={{ y: heroY }}
-                    className="relative z-20 flex flex-col items-center text-center"
+                    className="relative z-20 hidden lg:flex flex-col items-center text-center"
                 >
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
@@ -155,6 +158,54 @@ export function HeroSection({ scrollContainerRef }: { scrollContainerRef?: React
                     >
                         The advanced intelligence platform for your digestive health.
                     </motion.p>
+                </motion.div>
+
+                {/* Mobile hero (separate to avoid overlap with features) */}
+                <motion.div
+                    style={{ opacity: heroMobileOpacity, y: heroMobileY }}
+                    className="relative z-20 flex lg:hidden flex-col items-center text-center w-full max-w-sm"
+                >
+                    <motion.h1
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.7 }}
+                        className="text-center font-bold text-4xl sm:text-5xl tracking-tight text-white drop-shadow-[0_18px_40px_rgba(0,0,0,0.7)] mb-4 font-headline"
+                    >
+                        GutCheck.
+                        <br />
+                        <span className="text-3xl sm:text-4xl text-emerald-300 drop-shadow-[0_12px_30px_rgba(0,0,0,0.6)]">Know your body.</span>
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7, duration: 0.7 }}
+                        className="text-base sm:text-lg text-white/85 text-center max-w-xs drop-shadow-[0_10px_25px_rgba(0,0,0,0.7)]"
+                    >
+                        The advanced intelligence platform for your digestive health.
+                    </motion.p>
+
+                    <motion.div
+                        style={{ opacity: proofOpacity, y: proofY, scale: proofScale, filter: proofBlur }}
+                        className="mt-6 w-full space-y-3 pointer-events-none"
+                    >
+                        <div className="rounded-3xl bg-white/95 text-slate-900 shadow-2xl p-4">
+                            <div className="text-xs font-semibold tracking-widest text-slate-700">★★★★★</div>
+                            <div className="text-base font-semibold mt-1">Smart, Simple and Helpful</div>
+                            <div className="text-[11px] text-slate-500 mt-1">Feb 17, 2026 · Zaid Barakat</div>
+                            <p className="text-xs text-slate-700 mt-2 leading-relaxed">
+                                Gut Check is honestly one of the most useful health apps I’ve tried.
+                            </p>
+                        </div>
+                        <div className="rounded-3xl bg-white/95 text-slate-900 shadow-2xl p-4">
+                            <div className="text-xs font-semibold tracking-widest text-slate-700">★★★★★</div>
+                            <div className="text-base font-semibold mt-1">Best UX ever</div>
+                            <div className="text-[11px] text-slate-500 mt-1">Feb 17, 2026 · mordorozzo</div>
+                            <p className="text-xs text-slate-700 mt-2 leading-relaxed">
+                                Super easy to use and natively integrated with Apple devices.
+                            </p>
+                        </div>
+                    </motion.div>
                 </motion.div>
 
                 <motion.div
@@ -191,7 +242,7 @@ export function HeroSection({ scrollContainerRef }: { scrollContainerRef?: React
                         <motion.div style={{ opacity: appleOpacity, y: appleY, scale: appleScale }} className="absolute left-1/2 bottom-[16%] -translate-x-1/2 text-white">
                             <div className="absolute -inset-6 -z-10 rounded-full bg-black/40 blur-3xl" />
                             <div className="flex flex-col items-center gap-2 text-lg font-semibold drop-shadow-[0_14px_30px_rgba(0,0,0,0.8)]">
-                                <Image src="/Apple Store DL.png" alt="Apple Health" width={180} height={56} className="h-auto w-44" />
+                                <Image src="/Apple Store DL.png" alt="Apple Health" width={180} height={56} className="h-auto w-44" style={{ height: "auto" }} />
                                 <span>Works with Apple Health</span>
                             </div>
                         </motion.div>
@@ -205,20 +256,25 @@ export function HeroSection({ scrollContainerRef }: { scrollContainerRef?: React
                         </motion.div>
                     </div>
 
-                    <div className="lg:hidden h-full w-full flex flex-col items-center justify-center gap-8 px-6 text-center text-white">
+                    <div className="lg:hidden absolute inset-x-0 top-[48%] pb-[max(env(safe-area-inset-bottom),16px)] flex flex-col items-center gap-4 px-6 text-center text-white">
                         <motion.div style={{ opacity: featureLabelOpacity, y: featureLabelY }}>
                             <h3 className="text-2xl font-semibold text-emerald-300 drop-shadow-[0_12px_30px_rgba(0,0,0,0.8)]">
                                 Gutcheck Helps You Track:
                             </h3>
                         </motion.div>
-                        <motion.p style={{ opacity: feature1Opacity, y: feature1Y }} className="text-base font-semibold drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]">
-                            ★ Macros · ★ Fiber · ★ FODMAP · ★ KETO · ★ Glycemic Index · ★ Intermittent Fast & More
-                        </motion.p>
-                        <motion.div style={{ opacity: appleOpacity, y: appleY }} className="flex flex-col items-center gap-2 text-lg font-semibold drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]">
-                            <Image src="/Apple Store DL.png" alt="Apple Health" width={160} height={52} className="h-auto w-40" />
+                        <div className="grid grid-cols-2 gap-x-5 gap-y-2.5 text-base font-semibold drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]">
+                            <motion.div style={{ opacity: feature1Opacity, y: feature1Y }}>★ Macros</motion.div>
+                            <motion.div style={{ opacity: feature2Opacity, y: feature2Y }}>★ Fiber</motion.div>
+                            <motion.div style={{ opacity: feature3Opacity, y: feature3Y }}>★ FODMAP</motion.div>
+                            <motion.div style={{ opacity: feature4Opacity, y: feature4Y }}>★ KETO</motion.div>
+                            <motion.div style={{ opacity: feature5Opacity, y: feature5Y }}>★ Glycemic Index</motion.div>
+                            <motion.div style={{ opacity: feature6Opacity, y: feature6Y }}>★ Intermittent Fast & More</motion.div>
+                        </div>
+                        <motion.div style={{ opacity: appleOpacity, y: appleY }} className="flex flex-col items-center gap-1.5 text-sm font-semibold drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]">
+                            <Image src="/Apple Store DL.png" alt="Apple Health" width={160} height={52} className="h-auto w-40" style={{ height: "auto" }} />
                             <span>Works with Apple Health</span>
                         </motion.div>
-                        <motion.div style={{ opacity: rightStatementOpacity, y: rightStatementY }} className="text-xl font-semibold drop-shadow-[0_14px_30px_rgba(0,0,0,0.8)]">
+                        <motion.div style={{ opacity: rightStatementOpacity, y: rightStatementY }} className="text-lg font-semibold drop-shadow-[0_14px_30px_rgba(0,0,0,0.8)] max-w-xs">
                             Simply Describe your Meal or Snap it, and GutCheck will do the rest
                         </motion.div>
                     </div>
@@ -250,10 +306,10 @@ export function ProblemSection({ scrollContainerRef }: { scrollContainerRef?: Re
     const y3 = useTransform(scrollYProgress, [0.55, 0.7], [50, 0]);
 
     return (
-        <section ref={containerRef} className="relative h-[300vh] bg-background z-20 snap-start snap-always landing-snap">
-            <div className="sticky top-0 h-screen w-full flex flex-col items-center pt-16 sm:pt-24 px-4 overflow-hidden z-40">
+        <section ref={containerRef} className="relative h-[300vh] bg-background z-0 snap-start snap-always landing-snap">
+            <div className="sticky top-0 h-screen w-full flex flex-col items-center pt-16 sm:pt-24 px-4 overflow-hidden z-0">
                 {/* Header (Always Visible) - Compacted */}
-                <div className="text-center mb-4 sm:mb-8 space-y-3 max-w-3xl shrink-0 bg-background/95 backdrop-blur-xl border border-white/10 p-5 sm:p-6 rounded-[2rem] shadow-2xl z-30 landing-card landing-wide">
+                <div className="text-center mb-4 sm:mb-8 space-y-3 max-w-3xl shrink-0 bg-background/95 backdrop-blur-xl border border-white/10 p-5 sm:p-6 rounded-[2rem] shadow-2xl z-0 landing-card landing-wide">
                     <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">The old way is broken.</h2>
                     <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed hidden sm:block">
                         Traditional food logging hasn't changed in years. It's demanding, vaguely accurate, and often demotivating.

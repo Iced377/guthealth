@@ -8,9 +8,23 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.1";
+export const APP_VERSION = "5.5.2";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.2',
+        date: 'February 25, 2026',
+        title: 'HealthKit Dedupe & Landing Polish',
+        description: 'Stabilized step counts with HealthKit totals and refined the landing hero stacking on mobile.',
+        features: [],
+        improvements: [
+            'Apple Health steps now use HealthKit aggregated totals for stable, deduped counts.',
+            'Landing hero now preserves video background while swapping content between flicks.',
+            'Mobile hero layout tightened to avoid text overlap and improve safe-area spacing.',
+            'Apple Store badge now enforces aspect ratio to avoid layout warnings.'
+        ],
+        fixes: []
+    },
     {
         version: '5.5.1',
         date: 'February 24, 2026',

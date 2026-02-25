@@ -1,6 +1,6 @@
 {
   "name": "guthealth",
-  "version": "5.5.1",
+  "version": "5.5.2",
   "private": true,
   "scripts": {
     "dev": "NEXT_DISABLE_TURBOPACK=1 next dev -p 9002 -H 0.0.0.0",

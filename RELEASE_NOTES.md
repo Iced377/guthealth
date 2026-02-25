@@ -1,5 +1,16 @@
 # Release Notes
 
+## v5.5.2 (February 25, 2026) - HealthKit Dedupe & Landing Polish
+**Stabilized step counts with HealthKit totals and refined the landing hero stacking on mobile.**
+
+### 🚀 Improvements
+- **HealthKit Totals**: Step counts now use HealthKit aggregated totals for stable, deduped results.
+- **Hero Flow**: Video background stays locked while hero content swaps between flicks.
+- **Mobile Hero**: Safer spacing and layout tweaks to prevent overlap on smaller screens.
+- **Apple Badge**: App Store badge now maintains proper aspect ratio.
+
+---
+
 ## v5.5.1 (February 24, 2026) - Favorites Stability & Webview Fixes
 **Cleaner favorites behavior with last-used ordering, plus tighter mobile containment in Admin.**
 

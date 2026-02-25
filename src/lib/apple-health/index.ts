@@ -164,18 +164,55 @@ export const AppleHealthService = {
                 return 0;
             }
 
-            // 2. Fetch all step samples for today
-            const result = await Health.readSamples({
-                dataType: 'steps',
-                startDate: startOfDay.toISOString(),
-                endDate: now.toISOString(),
-                limit: 5000,
-            });
-            const samples = result.samples as HealthSample[];
-            const dedupedTotal = sumStepsWithHourlySourceDedup(samples);
-            const dayLabel = `${startOfDay.getFullYear()}-${String(startOfDay.getMonth() + 1).padStart(2, '0')}-${String(startOfDay.getDate()).padStart(2, '0')}`;
-            logSourceTotals(dayLabel, samples, dedupedTotal, { persistRemote: true });
-            return dedupedTotal;
+            // 2. Prefer HealthKit's aggregated daily total (deduped by Apple)
+            let aggregatedTotal = 0;
+            try {
+                const { samples: aggregatedSamples } = await Health.queryAggregated({
+                    dataType: 'steps',
+                    startDate: startOfDay.toISOString(),
+                    endDate: now.toISOString(),
+                    bucket: 'day',
+                    aggregation: 'sum',
+                });
+
+                const todaySample = (aggregatedSamples || []).find(sample => {
+                    const sampleDate = new Date(sample.startDate);
+                    return sampleDate.getFullYear() === startOfDay.getFullYear()
+                        && sampleDate.getMonth() === startOfDay.getMonth()
+                        && sampleDate.getDate() === startOfDay.getDate();
+                }) || (aggregatedSamples || [])[ (aggregatedSamples || []).length - 1 ];
+
+                aggregatedTotal = Math.round(Number(todaySample?.value || 0));
+            } catch (error) {
+                console.warn('[Health] Aggregated steps failed, falling back to samples.', error);
+            }
+
+            // 3. Debug logging: capture raw sources when monitoring is enabled
+            if (readIntegrationDebugFlag()) {
+                const result = await Health.readSamples({
+                    dataType: 'steps',
+                    startDate: startOfDay.toISOString(),
+                    endDate: now.toISOString(),
+                    limit: 5000,
+                });
+                const samples = result.samples as HealthSample[];
+                const dayLabel = `${startOfDay.getFullYear()}-${String(startOfDay.getMonth() + 1).padStart(2, '0')}-${String(startOfDay.getDate()).padStart(2, '0')}`;
+                logSourceTotals(dayLabel, samples, aggregatedTotal, { persistRemote: true });
+            }
+
+            // 4. Fallback if aggregation returned 0 (use local dedupe)
+            if (aggregatedTotal === 0) {
+                const result = await Health.readSamples({
+                    dataType: 'steps',
+                    startDate: startOfDay.toISOString(),
+                    endDate: now.toISOString(),
+                    limit: 5000,
+                });
+                const samples = result.samples as HealthSample[];
+                aggregatedTotal = sumStepsWithHourlySourceDedup(samples);
+            }
+
+            return aggregatedTotal;
 
         } catch (error: any) {
             const errMsg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
