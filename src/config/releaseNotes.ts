@@ -18,7 +18,8 @@ export const releaseNotesData: ReleaseNote[] = [
         description: 'Restored smooth iOS dashboard performance for large histories.',
         features: [],
         improvements: [
-            'On iOS, full history hydration now waits until you open Trends, Insights, or Admin to keep the dashboard light.'
+            'On iOS, full history hydration now waits until you open Trends, Insights, or Admin to keep the dashboard light.',
+            'Landing hero controls now stay above the video background.'
         ],
         fixes: [
             'Dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.'

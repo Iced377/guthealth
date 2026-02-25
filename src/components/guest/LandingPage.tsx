@@ -55,7 +55,7 @@ export default function LandingPage() {
       className={`fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45] landing-root ${isWebview ? 'landing-webview snap-y snap-mandatory' : ''}`}
     >
       {/* Version Display (Top Left) */}
-      <div className="fixed top-14 left-6 z-50 pointer-events-none opacity-50 text-xs font-mono text-muted-foreground">
+      <div className="fixed top-14 left-6 z-[70] pointer-events-none opacity-50 text-xs font-mono text-muted-foreground">
         v{version}
       </div>
 
@@ -67,7 +67,7 @@ export default function LandingPage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed top-14 right-6 z-50 flex flex-col items-end gap-3"
+            className="fixed top-14 right-6 z-[70] flex flex-col items-end gap-3"
           >
             <Link
               href="/login"
