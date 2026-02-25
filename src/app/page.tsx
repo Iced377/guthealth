@@ -49,7 +49,6 @@ export default function RootPage() {
     handleEditTimelineEntry,
     handleRepeatMeal,
     handleToggleFavoriteFoodItem,
-    setTimelineWindowAnchor,
   } = useActionContext();
 
   const [isPremiumDashboardOpen, setIsPremiumDashboardOpen] = useState(false);
@@ -58,10 +57,6 @@ export default function RootPage() {
   // Dashboard Date State (Hoisted for Header)
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isWideLayout, setIsWideLayout] = useState(false);
-
-  useEffect(() => {
-    setTimelineWindowAnchor(currentDate);
-  }, [currentDate, setTimelineWindowAnchor]);
 
   useEffect(() => {
     const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
@@ -83,12 +78,7 @@ export default function RootPage() {
     setPrevTimelineLength(timelineEntries.length);
   }, [timelineEntries, authUser, prevTimelineLength]);
 
-  const dashboardEntries = useMemo(() => {
-    if (!isIOS) return timelineEntries;
-    const maxEntries = 600;
-    if (timelineEntries.length <= maxEntries) return timelineEntries;
-    return timelineEntries.slice(0, maxEntries);
-  }, [timelineEntries, isIOS]);
+  const dashboardEntries = useMemo(() => timelineEntries, [timelineEntries]);
 
   const dailyNutritionSummary = useMemo<DailyNutritionSummary>(() => {
     const today = new Date();

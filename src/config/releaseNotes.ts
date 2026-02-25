@@ -22,9 +22,9 @@ export const releaseNotesData: ReleaseNote[] = [
             'Landing hero controls now stay above the video background.',
             'Apple Health hooks now respect the integration toggle to avoid background work when disabled.',
             'Bottom navigation stays available during auth hydration and admin visibility is more consistent.',
-            'iOS timeline mode now stays lightweight on dashboard and loads full history only in Trends/Insights/Admin.',
+            'Dashboard keeps full history available while optimizing heavy computations for iOS.',
             'Favorites list is memoized to reduce repeated recomputes.',
-            'iOS dashboard now shifts a 7-day rolling window as you swipe dates, preserving history access without full-history load.'
+            'Date-based summaries/steps/weight now use precomputed maps to cut repeated filtering.'
         ],
         fixes: [
             'Dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.'

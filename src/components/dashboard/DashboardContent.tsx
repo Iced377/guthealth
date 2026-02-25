@@ -153,26 +153,60 @@ export default function DashboardContent({
     };
 
 
-    // Combined Timeline Entries for Carousel (ALL dates)
-    const sortedEntries = useMemo(() => {
-        return [...timelineEntries].sort((a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-    }, [timelineEntries]);
+    // Combined Timeline Entries for Carousel (already ordered by Firestore)
+    const sortedEntries = useMemo(() => timelineEntries, [timelineEntries]);
 
-
-    // Helper to get data for ANY date (efficiently enough for small lists)
-    const getSummaryForDate = useCallback((date: Date) => {
-        const daysLogs = sortedEntries.filter(log =>
-            isSameDay(new Date(log.timestamp), date) && log.entryType === 'food'
-        ) as LoggedFoodItem[];
-        return calculateDaySummary(daysLogs);
+    const entriesByDate = useMemo(() => {
+        const map = new Map<string, TimelineEntry[]>();
+        sortedEntries.forEach((entry) => {
+            const key = format(new Date(entry.timestamp), 'yyyy-MM-dd');
+            const list = map.get(key);
+            if (list) {
+                list.push(entry);
+            } else {
+                map.set(key, [entry]);
+            }
+        });
+        return map;
     }, [sortedEntries]);
 
+    const summaryByDate = useMemo(() => {
+        const map = new Map<string, ReturnType<typeof calculateDaySummary>>();
+        entriesByDate.forEach((entries, key) => {
+            const foodLogs = entries.filter(e => e.entryType === 'food') as LoggedFoodItem[];
+            map.set(key, calculateDaySummary(foodLogs));
+        });
+        return map;
+    }, [entriesByDate]);
 
+    const stepsByDate = useMemo(() => {
+        const map = new Map<string, PedometerLog>();
+        entriesByDate.forEach((entries, key) => {
+            const pedometerLogs = entries.filter(e => e.entryType === 'pedometer_data') as PedometerLog[];
+            if (pedometerLogs.length > 0) {
+                map.set(key, calculateDailyPedometerStats(pedometerLogs));
+            }
+        });
+        return map;
+    }, [entriesByDate]);
+
+    const weightByDate = useMemo(() => {
+        const map = new Map<string, FitbitLog>();
+        entriesByDate.forEach((entries, key) => {
+            const weightLogs = entries.filter(e => e.entryType === 'fitbit_data' && (e as FitbitLog).weight) as FitbitLog[];
+            if (weightLogs.length > 0) {
+                map.set(key, weightLogs[0]);
+            }
+        });
+        return map;
+    }, [entriesByDate]);
+
+    const getSummaryForDate = useCallback((date: Date) => {
+        const key = format(date, 'yyyy-MM-dd');
+        return summaryByDate.get(key) ?? calculateDaySummary([]);
+    }, [summaryByDate]);
 
     const getStepsForDate = useCallback((date: Date) => {
-        // If HealthKit hook returns total for today, use it if currentDate is Today.
         if (isSameDay(date, new Date()) && healthData) {
             return {
                 id: 'today-steps',
@@ -183,30 +217,12 @@ export default function DashboardContent({
                 source: 'apple_health'
             } as PedometerLog;
         }
-        const dayPedometerLogs = sortedEntries.filter(log =>
-            isSameDay(new Date(log.timestamp), date) && log.entryType === 'pedometer_data'
-        ) as PedometerLog[];
-
-        if (dayPedometerLogs.length > 0) {
-            return calculateDailyPedometerStats(dayPedometerLogs);
-        }
-        return null;
-    }, [sortedEntries, healthData]);
-
+        return stepsByDate.get(format(date, 'yyyy-MM-dd')) ?? null;
+    }, [stepsByDate, healthData]);
 
     const getWeightForDate = useCallback((date: Date) => {
-        // If HealthKit or Fitbit hook had real-time data we could merge it here.
-        // For now, we rely on timelineEntries (which includes synced Fitbit data).
-        const dayWeightLogs = sortedEntries.filter(log =>
-            isSameDay(new Date(log.timestamp), date) && log.entryType === 'fitbit_data' && log.weight
-        ) as FitbitLog[];
-
-        if (dayWeightLogs.length > 0) {
-            // Return the latest weight entry for the day
-            return dayWeightLogs[0];
-        }
-        return null;
-    }, [sortedEntries]);
+        return weightByDate.get(format(date, 'yyyy-MM-dd')) ?? null;
+    }, [weightByDate]);
 
     const skeletonBlock = enableWebBento ? "webview-skeleton" : "animate-pulse";
 
