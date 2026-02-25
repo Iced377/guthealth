@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { ActionProvider, useActionContext } from '@/contexts/ActionContext';
@@ -98,11 +98,13 @@ const NavigationAndDialogs = () => {
         return new Date(value as any).getTime();
     };
 
-    const favoriteMeals = [...timelineEntries.filter((entry): entry is LoggedFoodItem =>
-        entry.entryType === 'food' && (entry as LoggedFoodItem).isFavorite === true
-    )].sort((a, b) =>
-        getFavoriteSortTime(b) - getFavoriteSortTime(a)
-    );
+    const favoriteMeals = useMemo(() => (
+        [...timelineEntries.filter((entry): entry is LoggedFoodItem =>
+            entry.entryType === 'food' && (entry as LoggedFoodItem).isFavorite === true
+        )].sort((a, b) =>
+            getFavoriteSortTime(b) - getFavoriteSortTime(a)
+        )
+    ), [timelineEntries]);
 
     // Note: timelineEntries contains TimelineEntry which is a union. We filter for food items that are favorites.
 

@@ -199,8 +199,10 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const pathname = usePathname();
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
-    const hydrateFullHistoryRef = useRef<null | (() => void)>(null);
-    const fullHistoryHydratedRef = useRef(false);
+    const unsubscribeTimelineRef = useRef<null | (() => void)>(null);
+    const subscribeLimitedRef = useRef<null | (() => void)>(null);
+    const subscribeFullRef = useRef<null | (() => void)>(null);
+    const activeTimelineModeRef = useRef<'limited' | 'full' | null>(null);
 
     const openAddVitalsDialog = useCallback((date: Date, currentWeight?: number | null, currentSteps?: number | null, currentFat?: number | null) => {
         setVitalsDialogDate(date);
@@ -415,7 +417,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, []);
 
     useEffect(() => {
-        let unsubscribeTimeline: () => void;
+        // timeline subscription is managed via unsubscribeTimelineRef
         let isCancelled = false;
 
         const setupData = async () => {
@@ -483,63 +485,52 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
                     if (isCancelled) return;
 
-                    unsubscribeTimeline = onSnapshot(q, (snapshot) => {
-                        const fetchedEntries: TimelineEntry[] = snapshot.docs.map(docSnap => {
-                            const data = docSnap.data();
-                            return {
-                                ...data,
-                                id: docSnap.id,
-                                timestamp: (data.timestamp as Timestamp).toDate(),
-                                ...(data.favoriteLastUsedAt ? { favoriteLastUsedAt: (data.favoriteLastUsedAt as Timestamp).toDate() } : {}),
-                                ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
-                            } as TimelineEntry;
-                        });
-                        setTimelineEntries(fetchedEntries);
-                        setIsDataLoading(false);
-                    }, (error) => {
-                        // Ignore permission errors that happen during logout
-                        if (error.code === 'permission-denied') {
-                            console.log("Timeline snapshot permission denied (likely logout).");
-                        } else {
-                            console.error("Timeline snapshot error:", error);
+                    const subscribeWithQuery = (queryRef: ReturnType<typeof query>) => {
+                        if (unsubscribeTimelineRef.current) {
+                            unsubscribeTimelineRef.current();
                         }
-                        setIsDataLoading(false);
-                    });
+                        unsubscribeTimelineRef.current = onSnapshot(queryRef, (snapshot) => {
+                            const fetchedEntries: TimelineEntry[] = snapshot.docs.map(docSnap => {
+                                const data = docSnap.data();
+                                return {
+                                    ...data,
+                                    id: docSnap.id,
+                                    timestamp: (data.timestamp as Timestamp).toDate(),
+                                    ...(data.favoriteLastUsedAt ? { favoriteLastUsedAt: (data.favoriteLastUsedAt as Timestamp).toDate() } : {}),
+                                    ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
+                                } as TimelineEntry;
+                            });
+                            setTimelineEntries(fetchedEntries);
+                            setIsDataLoading(false);
+                        }, (error) => {
+                            // Ignore permission errors that happen during logout
+                            if (error.code === 'permission-denied') {
+                                console.log("Timeline snapshot permission denied (likely logout).");
+                            } else {
+                                console.error("Timeline snapshot error:", error);
+                            }
+                            setIsDataLoading(false);
+                        });
+                    };
+
+                    subscribeLimitedRef.current = () => {
+                        if (isCancelled) return;
+                        subscribeWithQuery(q);
+                    };
 
                     if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
-                        fullHistoryHydratedRef.current = false;
-                        hydrateFullHistoryRef.current = () => {
+                        const fullQuery = query(timelineEntriesColRef, orderBy('timestamp', 'desc'));
+                        subscribeFullRef.current = () => {
                             if (isCancelled) return;
-                            if (unsubscribeTimeline) unsubscribeTimeline();
-
                             console.log('SetupData: Hydrating full premium history');
-                            const fullQuery = query(timelineEntriesColRef, orderBy('timestamp', 'desc'));
-                            unsubscribeTimeline = onSnapshot(fullQuery, (snapshot) => {
-                                const fetchedEntries: TimelineEntry[] = snapshot.docs.map(docSnap => {
-                                    const data = docSnap.data();
-                                    return {
-                                        ...data,
-                                        id: docSnap.id,
-                                        timestamp: (data.timestamp as Timestamp).toDate(),
-                                        ...(data.favoriteLastUsedAt ? { favoriteLastUsedAt: (data.favoriteLastUsedAt as Timestamp).toDate() } : {}),
-                                        ...(data.syncedAt ? { syncedAt: (data.syncedAt as Timestamp).toDate() } : {})
-                                    } as TimelineEntry;
-                                });
-                                setTimelineEntries(fetchedEntries);
-                                setIsDataLoading(false);
-                            }, (error) => {
-                                if (error.code === 'permission-denied') {
-                                    console.log("Timeline snapshot permission denied (likely logout).");
-                                } else {
-                                    console.error("Timeline snapshot error:", error);
-                                }
-                                setIsDataLoading(false);
-                            });
+                            subscribeWithQuery(fullQuery);
                         };
                     } else {
-                        hydrateFullHistoryRef.current = null;
-                        fullHistoryHydratedRef.current = false;
+                        subscribeFullRef.current = null;
                     }
+
+                    activeTimelineModeRef.current = 'limited';
+                    subscribeLimitedRef.current?.();
 
                 } catch (error) {
                     console.error("Error setting up user data:", error);
@@ -549,8 +540,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 setUserProfile(initialGuestProfile);
                 setTimelineEntries([]);
                 setIsDataLoading(false);
-                hydrateFullHistoryRef.current = null;
-                fullHistoryHydratedRef.current = false;
+                subscribeLimitedRef.current = null;
+                subscribeFullRef.current = null;
+                activeTimelineModeRef.current = null;
+                if (unsubscribeTimelineRef.current) {
+                    unsubscribeTimelineRef.current();
+                    unsubscribeTimelineRef.current = null;
+                }
             }
         };
 
@@ -558,31 +554,42 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         return () => {
             isCancelled = true;
-            if (unsubscribeTimeline) unsubscribeTimeline();
+            if (unsubscribeTimelineRef.current) {
+                unsubscribeTimelineRef.current();
+                unsubscribeTimelineRef.current = null;
+            }
         };
     }, [authUser, authLoading]);
 
     useEffect(() => {
-        if (!hydrateFullHistoryRef.current) return;
-        if (fullHistoryHydratedRef.current) return;
+        if (!subscribeLimitedRef.current) return;
 
         const allowFullHistory = !isIOS
             || (pathname?.startsWith('/trends') || pathname?.startsWith('/insights') || pathname?.startsWith('/admin'));
 
-        if (!allowFullHistory) return;
+        const nextMode: 'limited' | 'full' = (allowFullHistory && subscribeFullRef.current) ? 'full' : 'limited';
+        if (activeTimelineModeRef.current === nextMode) return;
 
-        fullHistoryHydratedRef.current = true;
-        const delayMs = 4000;
-        const run = () => hydrateFullHistoryRef.current?.();
-        const timer = setTimeout(() => {
-            if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-                (window as any).requestIdleCallback(run, { timeout: 2500 });
-            } else {
-                run();
-            }
-        }, delayMs);
+        activeTimelineModeRef.current = nextMode;
+        const run = nextMode === 'full'
+            ? subscribeFullRef.current
+            : subscribeLimitedRef.current;
 
-        return () => clearTimeout(timer);
+        if (!run) return;
+
+        if (nextMode === 'full') {
+            const delayMs = 3500;
+            const timer = setTimeout(() => {
+                if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                    (window as any).requestIdleCallback(() => run(), { timeout: 2500 });
+                } else {
+                    run();
+                }
+            }, delayMs);
+            return () => clearTimeout(timer);
+        }
+
+        run();
     }, [pathname, isIOS, authUser]);
 
     // Auto-verify backfill for recent items (User Experience)

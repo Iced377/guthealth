@@ -8,6 +8,8 @@
 - **Hero Controls**: Start/Login and Help buttons now stay above the hero background.
 - **HealthKit Respect**: Apple Health hooks no longer run when integration is disabled.
 - **Nav Stability**: Bottom nav stays available during auth hydration and keeps admin visibility consistent.
+- **iOS Timeline Mode**: Dashboard stays on a light timeline; full history only loads when you visit Trends/Insights/Admin.
+- **Nav Efficiency**: Favorites list is memoized to reduce unnecessary recomputes.
 
 ### 🐛 Bug Fixes
 - **Dashboard Jank**: The dashboard timeline now caps render to recent entries on iOS, preventing slowdowns with long histories.
