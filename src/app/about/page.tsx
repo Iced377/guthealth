@@ -14,7 +14,7 @@ export default function AboutPage() {
     const scrollRef = React.useRef<HTMLDivElement>(null);
 
     return (
-        <div ref={scrollRef} className="fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased safe-area-pt scroll-smooth z-[45]">
+        <div ref={scrollRef} className="fixed inset-0 bg-background text-foreground overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-body antialiased scroll-smooth z-[45]">
             {/* Minimalistic Back Button */}
             <MotionLink
                 href="/"

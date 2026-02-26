@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 type NavLockReason = 'NONE' | 'CHART_EXPANDED' | 'SHEET_OPEN' | 'PANEL_OPEN' | string;
 
@@ -18,16 +19,8 @@ export const NavVisibilityProvider: React.FC<{ children: React.ReactNode }> = ({
     const [isNavVisible, setIsNavVisibleState] = useState(true);
     const [navLockReason, setNavLockReason] = useState<NavLockReason>('NONE');
 
-    // We keep a set of active locks if we want multiple things to lock it? 
-    // The user spec implies a single reason string, but "lockNav('CHART_EXPANDED')" suggests we might need to handle concurrency.
-    // "If navLockReason !== 'NONE', ignore all hide/show requests."
-    // Let's use a Set or just specific priority. 
-    // Simplified: If the user calls lockNav, we set the reason. If they call unlockNav with THAT reason, we clear it (if it matches).
-    // Actually, a Set of reasons is safer so multiple locks don't race.
-    // But strictly following user spec: "navLockReason: 'NONE' | 'CHART_EXPANDED'..."
-    // I will implement a Set internally but expose the "primary" reason or just check if Set.size > 0.
-
     const [locks, setLocks] = useState<Set<string>>(new Set());
+    const pathname = usePathname();
 
     const currentReason = useMemo(() => {
         if (locks.size === 0) return 'NONE';
@@ -40,9 +33,6 @@ export const NavVisibilityProvider: React.FC<{ children: React.ReactNode }> = ({
     }, [locks]);
 
     const lockNav = useCallback((reason: string) => {
-        // When locking, we usually want to ensure it is visible (or keep current state).
-        // range: "Prefer visible unless explicitly hidden before lock".
-        // I will just lock it. The caller can ensure visibility if they want.
         setLocks(prev => {
             const newLocks = new Set(prev);
             newLocks.add(reason);
@@ -57,6 +47,11 @@ export const NavVisibilityProvider: React.FC<{ children: React.ReactNode }> = ({
             return newLocks;
         });
     }, []);
+
+    // Reset visibility to true when the route changes
+    useEffect(() => {
+        setNavVisible(true);
+    }, [pathname, setNavVisible]);
 
     const value = useMemo(() => ({
         isNavVisible,

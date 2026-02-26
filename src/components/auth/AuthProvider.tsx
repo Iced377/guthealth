@@ -97,14 +97,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
 
                 // Fetch history - the service itself now catches errors and returns {} safely
-                // Throttle full history sync to once per day.
+                // Throttle full history sync to once per hour OR on a new calendar day.
                 const historyKey = `appleHealth.historySync.${targetUser.uid}`;
                 let shouldSync = true;
                 try {
-                  const lastSync = localStorage.getItem(historyKey);
-                  if (lastSync) {
-                    const last = new Date(lastSync);
-                    shouldSync = isNaN(last.getTime()) || (Date.now() - last.getTime()) > 24 * 60 * 60 * 1000;
+                  const lastSyncStr = localStorage.getItem(historyKey);
+                  if (lastSyncStr) {
+                    const lastSync = new Date(lastSyncStr);
+                    const now = new Date();
+
+                    const isNewDay = lastSync.getDate() !== now.getDate() ||
+                      lastSync.getMonth() !== now.getMonth() ||
+                      lastSync.getFullYear() !== now.getFullYear();
+
+                    const hoursSinceLastSync = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60);
+
+                    shouldSync = isNaN(lastSync.getTime()) || isNewDay || hoursSinceLastSync >= 1;
                   }
                 } catch {
                   // If storage is unavailable, proceed with sync.

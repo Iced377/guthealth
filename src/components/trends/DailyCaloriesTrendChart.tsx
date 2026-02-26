@@ -59,11 +59,10 @@ const DailyCaloriesSlide = ({
 }: ChartSlideProps) => {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const safetyFloor = maintenanceCalories ? maintenanceCalories * 0.75 : undefined;
-  const metricColor = 'var(--metric-calories, #3B82F6)';
-  const overColor = 'var(--state-over, #FB7185)';
-  const riskColor = 'var(--state-risk, #F59E0B)';
-  const onTrackColor = 'var(--state-on-track, #2DD4BF)';
-  const barFade = 'var(--chart-bar-fade, #334155)';
+  const metricColor = 'var(--metric-calories, #f97316)';
+  const overColor = 'var(--state-over, #f59e0b)';
+  const riskColor = 'var(--state-risk, #ef4444)';
+  const onTrackColor = 'var(--state-on-track, #10b981)';
 
   return (
     <div
@@ -88,23 +87,6 @@ const DailyCaloriesSlide = ({
             {(isScrubbing || showAxis) && isChartInteractionEnabled && (
               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} stroke={gridColor} />
             )}
-            <defs>
-              <linearGradient id="barGradientGood" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={metricColor} stopOpacity={1} />
-                <stop offset="60%" stopColor={barFade} stopOpacity={0.5} />
-                <stop offset="100%" stopColor={barFade} stopOpacity={0.2} />
-              </linearGradient>
-              <linearGradient id="barGradientOver" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={overColor} stopOpacity={1} />
-                <stop offset="60%" stopColor={barFade} stopOpacity={0.5} />
-                <stop offset="100%" stopColor={barFade} stopOpacity={0.2} />
-              </linearGradient>
-              <linearGradient id="barGradientRisk" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={riskColor} stopOpacity={1} />
-                <stop offset="60%" stopColor={barFade} stopOpacity={0.5} />
-                <stop offset="100%" stopColor={barFade} stopOpacity={0.2} />
-              </linearGradient>
-            </defs>
             <XAxis
               dataKey="date"
               tickFormatter={(value) => safeFormatDate(value, 'MMM d')}
@@ -196,14 +178,14 @@ const DailyCaloriesSlide = ({
             >
               {data.map((entry, index) => {
                 const isBelowFloor = safetyFloor && entry.calories < safetyFloor && entry.calories > 800;
-                let fillUrl = 'url(#barGradientGood)';
-                if (entry.calories > targetCalories) fillUrl = 'url(#barGradientOver)';
-                if (isBelowFloor) fillUrl = 'url(#barGradientRisk)';
+                let color = metricColor;
+                if (entry.calories > targetCalories) color = overColor;
+                if (isBelowFloor) color = riskColor;
 
                 return (
                   <Cell
                     key={`cell-${index}`}
-                    fill={fillUrl}
+                    fill={color}
                     opacity={isBelowFloor ? 0.9 : 1}
                   />
                 )

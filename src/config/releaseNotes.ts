@@ -8,9 +8,23 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.5";
+export const APP_VERSION = "5.5.6";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.6',
+        date: 'February 26, 2026',
+        title: 'Background Sync Reliability',
+        description: 'Fixed a bug where Apple Health steps from yesterday would get permanently stuck without syncing after 24 hours.',
+        features: [],
+        improvements: [
+            'Apple Health historical batch syncing now runs every 1 hour, up from 24 hours, ensuring tighter continuity.',
+            'Initial background syncing forces a fresh fetch crossing into any new calendar day.'
+        ],
+        fixes: [
+            'Fixed dashboard step counts locking to outdated historical snapshot values between continuous app usage sessions.'
+        ]
+    },
     {
         version: '5.5.5',
         date: 'February 25, 2026',
