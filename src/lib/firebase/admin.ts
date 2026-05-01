@@ -6,9 +6,17 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
   : null;
 
-// Fix escaped newlines if they were mangled by environment variable injection
+// Fix escaped newlines or spaces if they were mangled by environment variable injection
 if (serviceAccount && serviceAccount.private_key) {
-  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  let formatted = serviceAccount.private_key;
+  formatted = formatted.replace(/\\n/g, '\n');
+  formatted = formatted.replace(/-----BEGIN PRIVATE KEY-----/g, '-----BEGIN_PRIVATE_KEY-----');
+  formatted = formatted.replace(/-----END PRIVATE KEY-----/g, '-----END_PRIVATE_KEY-----');
+  formatted = formatted.replace(/[ \t]+/g, '\n');
+  formatted = formatted.replace(/-----BEGIN_PRIVATE_KEY-----/g, '-----BEGIN PRIVATE KEY-----\n');
+  formatted = formatted.replace(/-----END_PRIVATE_KEY-----/g, '\n-----END PRIVATE KEY-----\n');
+  formatted = formatted.replace(/\n+/g, '\n');
+  serviceAccount.private_key = formatted.trim();
 }
 
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
