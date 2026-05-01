@@ -35,9 +35,11 @@ export function getAdminApp(): App {
         return app;
       } catch (e) {
         console.error("❌ [Admin SDK] Cert initialization failed:", e);
-        // If cert fails, maybe we shouldn't throw but try fallback? 
-        // For now, let's allow it to throw if the explicit key failed.
-        throw e;
+        console.warn("⚠️ [Admin SDK] Falling back to default credentials (ADC) due to cert failure.");
+        const app = initializeApp({ projectId });
+        const firestore = getFirestore(app);
+        firestore.settings({ ignoreUndefinedProperties: true });
+        return app;
       }
     } else {
       console.warn("⚠️ [Admin SDK] No Service Account Key found. Falling back to default credentials (ADC).");
