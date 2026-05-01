@@ -8,7 +8,6 @@ import { useActionContext } from '@/contexts/ActionContext';
 import { calculateTrendsAnalysis } from '@/utils/insights';
 import { useMemo, useEffect, useState } from 'react';
 import { differenceInDays, startOfDay, subDays } from 'date-fns';
-import { RAMADAN_ENABLED } from '@/lib/featureFlags';
 
 const HIGHLIGHT_HISTORY_KEY = 'insights_highlight_history_v1';
 const HIGHLIGHT_HISTORY_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -16,27 +15,6 @@ const HIGHLIGHT_HISTORY_TTL = 7 * 24 * 60 * 60 * 1000;
 export function InsightFeed() {
     const { selectedCategory } = useInsightsMotionController();
     const { timelineEntries, userProfile } = useActionContext();
-    const [ramadanMode, setRamadanMode] = useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
-
-    useEffect(() => {
-        if (!RAMADAN_ENABLED) {
-            setRamadanMode(null);
-            return;
-        }
-        const profileMode = (userProfile as any)?.ramadanConfig?.status;
-        if (profileMode === 'fasting' || profileMode === 'witnessing' || profileMode === 'hidden') {
-            setRamadanMode(profileMode);
-            return;
-        }
-        if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('ramadan_user_mode_v1');
-            if (stored === 'fasting' || stored === 'witnessing' || stored === 'hidden') {
-                setRamadanMode(stored);
-                return;
-            }
-        }
-        setRamadanMode(null);
-    }, [userProfile]);
 
     const trends = useMemo(() => {
         return calculateTrendsAnalysis(timelineEntries, userProfile);
@@ -90,8 +68,6 @@ export function InsightFeed() {
         const dietaryPrefs = userProfile?.profile?.dietaryPreferences || [];
         const isFastingUser = dietaryPrefs.includes('intermittent_fasting');
         const isKetoUser = dietaryPrefs.includes('keto');
-        const isRamadanFasting = ramadanMode === 'fasting';
-        const isRamadanWitnessing = ramadanMode === 'witnessing';
 
         const isNewUser = !firstLog || daysSinceFirstLog < 7 || loggedDays < 3;
         const hasSufficientCalories = loggedDays >= 5 && avgLogsPerDay7 >= 2;
@@ -369,82 +345,6 @@ export function InsightFeed() {
             });
         }
 
-        if (RAMADAN_ENABLED && isRamadanFasting) {
-            add(5, {
-                id: 'ramadan-hydration-window',
-                category: 'Ramadan',
-                title: 'Hydration Window',
-                preview: 'Spread fluids between Iftar and bedtime for steadier hydration.',
-                detail: (
-                    <div className="space-y-4">
-                        <FrostBackplate>
-                            <p className="mb-2 font-bold text-white">Why It Helps</p>
-                            <p>Spacing fluids across the evening can reduce late‑night thirst and support next‑day energy.</p>
-                        </FrostBackplate>
-                    </div>
-                )
-            });
-            add(6, {
-                id: 'ramadan-suhoor-balance',
-                category: 'Ramadan',
-                title: 'Balanced Suhoor',
-                preview: 'Protein + fiber at Suhoor can improve fullness through the day.',
-                detail: (
-                    <div className="space-y-4">
-                        <FrostBackplate>
-                            <p className="mb-2 font-bold text-white">Simple Plate</p>
-                            <p>Include protein, fiber‑rich carbs, and fluids. This supports steady energy and comfort.</p>
-                        </FrostBackplate>
-                    </div>
-                )
-            });
-            add(6, {
-                id: 'ramadan-iftar-pace',
-                category: 'Ramadan',
-                title: 'Gentle Iftar Pace',
-                preview: 'Start light, pause, then continue your main meal.',
-                detail: (
-                    <div className="space-y-4">
-                        <FrostBackplate>
-                            <p className="mb-2 font-bold text-white">Why It Works</p>
-                            <p>Slower pacing can improve comfort and reduce overeating after a long fast.</p>
-                        </FrostBackplate>
-                    </div>
-                )
-            });
-        }
-
-        if (RAMADAN_ENABLED && isRamadanWitnessing) {
-            add(6, {
-                id: 'ramadan-support',
-                category: 'Community',
-                title: 'Supportive Routines',
-                preview: 'Small scheduling tweaks can make fasting easier for others.',
-                detail: (
-                    <div className="space-y-4">
-                        <FrostBackplate>
-                            <p className="mb-2 font-bold text-white">Ideas</p>
-                            <p>Plan social meals later in the day and keep daytime meetings short when possible.</p>
-                        </FrostBackplate>
-                    </div>
-                )
-            });
-            add(7, {
-                id: 'ramadan-sleep-support',
-                category: 'Recovery',
-                title: 'Sleep Steadiness',
-                preview: 'Community schedules shift — keep your sleep window steady.',
-                detail: (
-                    <div className="space-y-4">
-                        <FrostBackplate>
-                            <p className="mb-2 font-bold text-white">Why It Matters</p>
-                            <p>Stable sleep supports mood, focus, and energy even when routines shift around you.</p>
-                        </FrostBackplate>
-                    </div>
-                )
-            });
-        }
-
         if (trends.calorieStepCorrelationSlope !== undefined) {
             const slope = trends.calorieStepCorrelationSlope;
             const impact = slope > 0.05 ? "Positive" : (slope < -0.05 ? "Inverse" : "Neutral");
@@ -511,7 +411,7 @@ export function InsightFeed() {
 
         return selected.length ? selected : insights;
 
-    }, [trends, timelineEntries, userProfile, ramadanMode]);
+    }, [trends, timelineEntries, userProfile]);
 
     const selectedInsightKey = useMemo(() => realInsights.map(i => i.id).join('|'), [realInsights]);
 

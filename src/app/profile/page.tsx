@@ -39,7 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
     Calendar as CalendarIcon, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target,
     Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil, Download,
-    ShieldCheck, ChevronRight, Settings, FileText, Moon
+    ShieldCheck, ChevronRight, Settings, FileText
 } from 'lucide-react';
 import { UserProfile } from '@/types';
 import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
@@ -113,50 +113,7 @@ export default function ProfilePage() {
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
 
-    // Ramadan Mode
-    const RAMADAN_MODE_KEY = 'ramadan_user_mode_v1';
-    const [ramadanMode, setRamadanMode] = useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
-    const [showRamadanModeDialog, setShowRamadanModeDialog] = useState(false);
 
-    useEffect(() => {
-        if (!user) return;
-        const loadRamadanMode = async () => {
-            try {
-                const snap = await getDoc(doc(db, 'users', user.uid));
-                if (snap.exists()) {
-                    const data = snap.data() as any;
-                    const remoteMode = data?.ramadanConfig?.status;
-                    if (remoteMode === 'fasting' || remoteMode === 'witnessing' || remoteMode === 'hidden') {
-                        setRamadanMode(remoteMode);
-                        return;
-                    }
-                }
-                // Fallback to localStorage
-                if (typeof window !== 'undefined') {
-                    const stored = localStorage.getItem(RAMADAN_MODE_KEY);
-                    if (stored === 'fasting' || stored === 'witnessing' || stored === 'hidden') {
-                        setRamadanMode(stored);
-                    }
-                }
-            } catch (e) {
-                // silent
-            }
-        };
-        loadRamadanMode();
-    }, [user]);
-
-    const handleRamadanModeChange = (mode: 'fasting' | 'witnessing' | 'hidden') => {
-        setRamadanMode(mode);
-        setShowRamadanModeDialog(false);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem(RAMADAN_MODE_KEY, mode);
-        }
-        if (user) {
-            updateDoc(doc(db, 'users', user.uid), {
-                ramadanConfig: { status: mode }
-            }).catch(() => { });
-        }
-    };
 
     const handleDeleteAccount = async () => {
         if (!user) return;
@@ -818,47 +775,7 @@ export default function ProfilePage() {
                             <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         </button>
 
-                        {/* Ramadan Mode */}
-                        <button
-                            onClick={() => setShowRamadanModeDialog(true)}
-                            className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left border-b border-white/5"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                    <Moon className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-foreground">Ramadan Mode</span>
-                                    <span className="text-xs text-muted-foreground capitalize">{ramadanMode || 'Not set'}</span>
-                                </div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                        </button>
 
-                        {isAdminUser && (
-                            <button
-                                onClick={() => {
-                                    try {
-                                        localStorage.removeItem('ramadan_welcome_seen_v1');
-                                        toast({ title: "Reset Complete", description: "Ramadan welcome will show on next Explore open." });
-                                    } catch (e) {
-                                        toast({ title: "Reset Failed", description: "Could not reset Ramadan welcome flag.", variant: "destructive" });
-                                    }
-                                }}
-                                className="w-full flex items-center justify-between p-4 active:bg-white/5 transition-colors text-left border-b border-white/5"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                        <ChevronRight className="h-4 w-4 rotate-180" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">Reset Ramadan Welcome</span>
-                                        <span className="text-xs text-muted-foreground">Admin-only: show popup again</span>
-                                    </div>
-                                </div>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                            </button>
-                        )}
 
                         {isAdminUser && (
                             <div className="w-full px-4 py-3 border-b border-white/5 text-[11px] text-muted-foreground space-y-1">
@@ -1015,70 +932,7 @@ export default function ProfilePage() {
                 </div>
             </main>
 
-            {/* Ramadan Mode Selection Dialog */}
-            {showRamadanModeDialog && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 backdrop-blur-sm px-5">
-                    <div className="w-full max-w-[340px] rounded-[28px] glass-crystal border border-white/10 shadow-2xl px-6 pt-6 pb-5 text-foreground">
-                        <h3 className="text-lg font-semibold text-center mb-2">Ramadan Mode</h3>
-                        <p className="text-sm text-muted-foreground text-center leading-relaxed mb-4">
-                            This adjusts your Ramadan hub experience and insight generation.
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <motion.button
-                                onClick={() => handleRamadanModeChange('fasting')}
-                                className={cn(
-                                    "w-full px-4 py-2.5 rounded-full text-sm font-bold transition-all",
-                                    ramadanMode === 'fasting'
-                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                        : "bg-white/10 text-foreground hover:bg-white/15"
-                                )}
-                                whileTap={{ scale: 1.25 }}
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
-                            >
-                                I am fasting
-                            </motion.button>
-                            <motion.button
-                                onClick={() => handleRamadanModeChange('witnessing')}
-                                className={cn(
-                                    "w-full px-4 py-2.5 rounded-full text-sm font-bold transition-all",
-                                    ramadanMode === 'witnessing'
-                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                        : "bg-white/10 text-foreground hover:bg-white/15"
-                                )}
-                                whileTap={{ scale: 1.25 }}
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
-                            >
-                                I am witnessing
-                            </motion.button>
-                            <motion.button
-                                onClick={() => handleRamadanModeChange('hidden')}
-                                className={cn(
-                                    "w-full px-4 py-2.5 rounded-full text-sm font-bold transition-all",
-                                    ramadanMode === 'hidden'
-                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                        : "bg-white/10 text-foreground/70 hover:bg-white/15"
-                                )}
-                                whileTap={{ scale: 1.25 }}
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
-                            >
-                                Prefer not to share
-                            </motion.button>
-                            <motion.button
-                                onClick={() => setShowRamadanModeDialog(false)}
-                                className="mt-1 w-full px-4 py-2 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                whileTap={{ scale: 1.25 }}
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 8 }}
-                            >
-                                Cancel
-                            </motion.button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 }

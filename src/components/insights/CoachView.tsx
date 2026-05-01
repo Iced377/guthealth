@@ -14,9 +14,6 @@ import { FrostBackplate } from './LiquidPrimitive';
 import { LiquidPressable } from '@/components/ui/LiquidPressable';
 import { Loader2, Copy, Check, Send } from 'lucide-react';
 import { Clipboard } from '@capacitor/clipboard';
-import DashboardHero from '../dashboard/DashboardHero';
-import { RAMADAN_ENABLED } from '@/lib/featureFlags';
-
 
 
 // Helper to determine time of day
@@ -34,44 +31,16 @@ export function CoachView() {
     const tokens = getLiquidTokens(mode);
     const { timelineEntries, userProfile } = useActionContext();
     const bottomRef = useRef<HTMLDivElement>(null);
-    const [ramadanMode, setRamadanMode] = useState<'fasting' | 'witnessing' | 'hidden' | null>(null);
 
     // AI State
     const [aiOutput, setAiOutput] = useState<PersonalizedDietitianOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const [isAnalysisRequested, setIsAnalysisRequested] = useState(false);
-
-    useEffect(() => {
-        if (!RAMADAN_ENABLED) {
-            setRamadanMode(null);
-            return;
-        }
-        const profileMode = (userProfile as any)?.ramadanConfig?.status;
-        if (profileMode === 'fasting' || profileMode === 'witnessing' || profileMode === 'hidden') {
-            setRamadanMode(profileMode);
-            return;
-        }
-        if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('ramadan_user_mode_v1');
-            if (stored === 'fasting' || stored === 'witnessing' || stored === 'hidden') {
-                setRamadanMode(stored);
-                return;
-            }
-        }
-        setRamadanMode(null);
-    }, [userProfile]);
-
     // Prepare Data for Advanced AI (Reused from CoachSessionSheet)
     const preparedInput = useMemo(() => {
         const now = new Date();
         const todayEntries = timelineEntries.filter(e => isSameDay(new Date(e.timestamp), now));
-        const ramadanStartStored = typeof window !== 'undefined'
-            ? (localStorage.getItem('ramadan_start_date') || '2026-02-18')
-            : '2026-02-18';
-        const ramadanStartDate = new Date(`${ramadanStartStored}T00:00:00`);
-        const ramadanDaysUntil = differenceInCalendarDays(ramadanStartDate, now);
-        const ramadanDayNumber = ramadanDaysUntil <= 0 ? Math.abs(ramadanDaysUntil) + 1 : undefined;
 
         // Format Food Log for Schema
         const foodLog = timelineEntries.slice(0, 50).filter(e => e.entryType === 'food' || e.entryType === 'manual_macro').map(e => {
@@ -140,10 +109,6 @@ export function CoachView() {
                 goal: userProfile?.profile?.goal,
                 currentWeight: userProfile?.profile?.weight
             },
-            ramadanMode: ramadanMode || undefined,
-            ramadanStartDate: ramadanStartStored,
-            ramadanDaysUntil: ramadanMode ? ramadanDaysUntil : undefined,
-            ramadanDayNumber: ramadanMode && ramadanDaysUntil <= 0 ? ramadanDayNumber : undefined,
             currentLocalTime: format(now, 'h:mm a'),
             currentLocalMinutes: now.getHours() * 60 + now.getMinutes(),
             dailyTotals: {
@@ -161,7 +126,7 @@ export function CoachView() {
             trendsAnalysis: trends
         };
 
-    }, [timelineEntries, userProfile, ramadanMode]);
+    }, [timelineEntries, userProfile]);
 
 
     // Usage Limit State

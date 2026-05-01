@@ -8,9 +8,24 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.6";
+export const APP_VERSION = "5.5.7";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.5.7',
+        date: 'May 1, 2026',
+        title: 'Critical Stability & AI Fixes',
+        description: 'Fixed an infinite loop causing AI verification failures, and resolved a critical iOS simulator crash on startup.',
+        features: [],
+        improvements: [
+            'Hardened authentication plugin error handling to prevent native serialization crashes on iOS.'
+        ],
+        fixes: [
+            'Fixed an infinite loop where the app would continuously retry failed AI verification requests, causing "Error 429 Too Many Requests".',
+            'Resolved a JavaScript crash on the Landing Page caused by module imports in Capacitor environments.',
+            'Fixed a blank screen issue on the iOS simulator by gracefully handling native plugin token exceptions.'
+        ]
+    },
     {
         version: '5.5.6',
         date: 'February 26, 2026',

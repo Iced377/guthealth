@@ -600,6 +600,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         run();
     }, [pathname, isIOS, authUser, isSetupComplete]);
 
+    const verifyingItemsRef = useRef<Set<string>>(new Set());
+
     // Auto-verify backfill for recent items (User Experience)
     useEffect(() => {
         if (!authUser || isDataLoading) return;
@@ -612,8 +614,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ) as LoggedFoodItem[];
 
         unverifiedItems.forEach(item => {
-            // Rate limit? Just do one at a time or all? 
-            // Let's do it safely.
+            if (verifyingItemsRef.current.has(item.id)) return;
+            verifyingItemsRef.current.add(item.id);
+
             (async () => {
                 const { verifyFoodAnalysisFlow } = await import('@/ai/flows/verify-food-analysis');
                 const fodmapAnalysis = item.fodmapData!;
@@ -641,7 +644,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     const docRef = doc(db, 'users', authUser.uid, 'timelineEntries', item.id);
                     setDoc(docRef, { verificationResult: verification }, { merge: true });
                 }
-            })().catch(e => console.error("Backfill verification failed", e));
+            })().catch(e => {
+                console.error("Backfill verification failed", e);
+                // We purposefully do NOT remove it from verifyingItemsRef.current
+                // so we don't infinitely retry a failing API call in the same session.
+            });
         });
     }, [timelineEntries, authUser, isDataLoading]);
 

@@ -37,7 +37,6 @@ import { useNavVisibility } from '@/components/navigation/useNavVisibilityContro
 import { APP_VERSION } from '@/config/releaseNotes';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { Capacitor } from '@capacitor/core';
-import { RAMADAN_ENABLED } from '@/lib/featureFlags';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -82,7 +81,6 @@ const LOG_ACTIONS: SubMenuItem[] = [
 
 // Explore sub-items
 const EXPLORE_ITEMS: SubMenuItem[] = [
-    { id: 'ramadan', icon: Moon, label: 'Ramadan', path: '/explore/ramadan', accessibilityLabel: 'Ramadan, open Ramadan features' },
     { id: 'app-tour', icon: HelpCircle, label: 'App Tour', accessibilityLabel: 'App Tour, start guided experience' },
     { id: 'about', icon: Info, label: 'About', path: '/about', accessibilityLabel: 'About, app information' },
     { id: 'feedback', icon: MessageSquare, label: 'Feedback', path: '/feedback', accessibilityLabel: 'Give Feedback, send feedback' },
@@ -126,7 +124,6 @@ const LIQUID_SPRING = {
 const NAV_COLORS: Record<string, string> = {
     home: '#3b82f6', // blue-500
     explore: '#8b5cf6', // violet-500
-    ramadan: '#10b981', // emerald-500 (Green for Ramadan)
     insights: '#f59e0b', // amber-500
     profile: '#ec4899', // pink-500
     log: '#10b981', // emerald-500
@@ -209,10 +206,6 @@ export default function LiquidNavigation({
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
     const [pressedItem, setPressedItem] = useState<string | null>(null);
     const [showAdminDot, setShowAdminDot] = useState(false);
-    const [ramadanWelcomeSeen, setRamadanWelcomeSeen] = useState(true);
-    const [ramadanVideoReady, setRamadanVideoReady] = useState(false);
-    const [showRamadanWelcome, setShowRamadanWelcome] = useState(false);
-    const RAMADAN_WELCOME_KEY = 'ramadan_welcome_seen_v1';
 
     useEffect(() => {
         const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
@@ -221,51 +214,8 @@ export default function LiquidNavigation({
         return () => window.removeEventListener('resize', updateLayout);
     }, []);
 
-    useEffect(() => {
-        if (!RAMADAN_ENABLED) {
-            setShowRamadanWelcome(false);
-            return;
-        }
-        if (typeof window === 'undefined') return;
-        const seen = window.localStorage.getItem(RAMADAN_WELCOME_KEY) === '1';
-        setRamadanWelcomeSeen(seen);
-    }, []);
-
-    useEffect(() => {
-        if (!RAMADAN_ENABLED) return;
-        if (typeof window === 'undefined') return;
-        if (ramadanWelcomeSeen) return;
-
-        let cancelled = false;
-        const preload = () => {
-            const video = document.createElement('video');
-            video.preload = 'auto';
-            video.muted = true;
-            (video as any).playsInline = true;
-            video.src = '/ramadan-animation.mp4?v=ramadan';
-            const markReady = () => {
-                if (!cancelled) setRamadanVideoReady(true);
-            };
-            video.addEventListener('loadeddata', markReady, { once: true });
-            video.addEventListener('canplaythrough', markReady, { once: true });
-            video.load();
-        };
-
-        if ('requestIdleCallback' in window) {
-            (window as any).requestIdleCallback(preload);
-        } else {
-            setTimeout(preload, 0);
-        }
-
-        return () => {
-            cancelled = true;
-        };
-    }, [ramadanWelcomeSeen]);
-
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
     const enableWebBento = !isIOS && isWideLayout;
-
-    // Poll for new joiners if admin
     useEffect(() => {
         if (!isAdmin) return;
         const check = async () => {
@@ -316,9 +266,6 @@ export default function LiquidNavigation({
             EXPLORE_ITEMS.forEach(item => {
                 if (item.path) router.prefetch(item.path);
             });
-            if (RAMADAN_ENABLED && !ramadanWelcomeSeen) {
-                setShowRamadanWelcome(true);
-            }
         } else if (activePanel === 'insights') {
             INSIGHTS_ITEMS.forEach(item => {
                 if (item.path) router.prefetch(item.path);
@@ -447,104 +394,8 @@ export default function LiquidNavigation({
     // Close panel on backdrop click
     const closePanel = () => setActivePanel(null);
 
-    const closeRamadanWelcome = (navigateToRamadan = false) => {
-        if (typeof window !== 'undefined') {
-            window.localStorage.setItem(RAMADAN_WELCOME_KEY, '1');
-        }
-        setRamadanWelcomeSeen(true);
-        setShowRamadanWelcome(false);
-        if (navigateToRamadan) {
-            setActivePanel(null);
-            router.push('/explore/ramadan');
-        }
-    };
-
     return (
         <>
-            {/* Ramadan Welcome Modal */}
-            <AnimatePresence>
-                {showRamadanWelcome && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/45 backdrop-blur-sm px-5"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="Ramadan welcome"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.96, opacity: 0, y: 16 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.96, opacity: 0, y: 16 }}
-                            transition={SPRING_REVEAL}
-                            className="w-full max-w-[380px] rounded-[28px] bg-[#0E1C16]/95 border border-white/10 shadow-2xl px-6 pt-6 pb-5 text-white relative"
-                        >
-                            <button
-                                onClick={() => closeRamadanWelcome(false)}
-                                className="absolute top-4 right-4 text-white/70 hover:text-white text-xs"
-                                aria-label="Close"
-                            >
-                                ✕
-                            </button>
-                            <div className="flex items-center justify-center mb-4">
-                                <div className="relative w-[150px] h-[150px] rounded-full flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-emerald-400/30 blur-[40px] rounded-full" />
-                                    <div className="relative z-10 w-[140px] h-[140px] rounded-full overflow-hidden border-4 border-white/10 shadow-2xl ring-1 ring-white/20">
-                                        {!ramadanVideoReady && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/15 backdrop-blur-sm">
-                                                <Moon className="w-10 h-10 text-emerald-200/80 animate-pulse" />
-                                            </div>
-                                        )}
-                                        <video
-                                            src="/ramadan-animation.mp4?v=ramadan"
-                                            autoPlay
-                                            loop
-                                            muted
-                                            playsInline
-                                            preload="auto"
-                                            poster="/ramadan-bg.png"
-                                            onLoadedData={() => setRamadanVideoReady(true)}
-                                            className={cn(
-                                                "w-full h-full object-cover object-center scale-[1.75] transition-opacity duration-300",
-                                                ramadanVideoReady ? "opacity-100" : "opacity-0"
-                                            )}
-                                        />
-                                        <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
-                            <h3 className="text-lg font-semibold text-center mb-2">Ramadan Mode Is Here</h3>
-                            <p className="text-sm text-white/80 text-center leading-relaxed mb-4">
-                                Wishing you a calm, healthy Ramadan season. We’ve prepared a new Ramadan page with
-                                daily wisdom, goals, and a calendar to guide your habits this month. We also updated
-                                Insights and the Coach to support fasting if you choose it.
-                            </p>
-                            <div className="flex items-center justify-center gap-3">
-                                <motion.button
-                                    onClick={() => closeRamadanWelcome(false)}
-                                    className="px-5 py-2.5 rounded-full text-sm font-bold text-white/80 border border-white/15 hover:border-white/30"
-                                    whileTap={{ scale: 1.25 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 8 }}
-                                >
-                                    Maybe later
-                                </motion.button>
-                                <motion.button
-                                    onClick={() => closeRamadanWelcome(true)}
-                                    className="px-5 py-2.5 rounded-full text-sm font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                                    whileTap={{ scale: 1.25 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 8 }}
-                                >
-                                    Open Ramadan
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* Backdrop */}
             <AnimatePresence>
@@ -711,7 +562,6 @@ export default function LiquidNavigation({
                                         item.id === 'feedback' && "bg-gradient-to-br from-orange-500 to-amber-600",
                                         item.id === 'admin' && "bg-gradient-to-br from-red-500 to-rose-600",
                                         item.id === 'version' && "bg-gradient-to-br from-purple-500 to-violet-600",
-                                        item.id === 'ramadan' && "bg-gradient-to-br from-emerald-500 to-green-600",
                                         "shadow-lg"
                                     )}>
                                         <item.icon className="w-6 h-6 text-white" />
@@ -948,7 +798,6 @@ export default function LiquidNavigation({
                         const isActive = activeTab === item.id || activePanel === item.id;
                         const Icon = item.icon;
                         const isPressed = pressedItem === item.id;
-                        const shouldPulseExplore = RAMADAN_ENABLED && item.id === 'explore' && !ramadanWelcomeSeen;
 
                         const isTargeted = currentStep?.targetId === `nav-item-${item.id}`;
                         // Lock logic: If walkthrough active, only allow interaction if this specific item is the target
@@ -1019,8 +868,7 @@ export default function LiquidNavigation({
                                                 "w-6 h-6 transition-all duration-300",
                                                 (activePanel ? activePanel === item.id : activeTab === item.id)
                                                     ? "text-white drop-shadow-md scale-105 stroke-[2.5px]" // Active = White floating on reflection (3. Content Front)
-                                                    : "text-foreground/50 grayscale-[0.3] stroke-[2px]",
-                                                shouldPulseExplore && "animate-icon-pulse-1 text-amber-300 drop-shadow-[0_0_14px_rgba(251,191,36,0.7)]"
+                                                    : "text-foreground/50 grayscale-[0.3] stroke-[2px]"
                                             )}
                                         />
                                     </div>

@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import { HeroSection, ProblemSection, StorySection, FeatureGrid, SecuritySection, FinalCTA } from '@/components/about/AboutSections';
-import pkg from '../../../package.json';
-
-const { version } = pkg;
+import { APP_VERSION as version } from '@/config/releaseNotes';
 
 export default function LandingPage() {
   const scrollRef = useRef<HTMLDivElement>(null);

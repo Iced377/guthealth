@@ -163,24 +163,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         }
-      } catch (e) {
-        console.error("Error in syncHealthData:", e);
+      } catch (e: any) {
+        console.error("Error in syncHealthData:", e?.message || String(e));
       }
     };
 
     // Listener for App Resume
     const setupAppListener = async () => {
-      await App.addListener('resume', async () => {
-        console.log('App resumed, refreshing session...');
-        if (auth.currentUser) {
-          try {
-            await auth.currentUser.getIdToken(true);
-            await syncHealthData(auth.currentUser);
-          } catch (e) {
-            console.error("Error refreshing token or syncing on resume", e);
+      try {
+        await App.addListener('resume', async () => {
+          console.log('App resumed, refreshing session...');
+          if (auth.currentUser) {
+            try {
+              await auth.currentUser.getIdToken(true);
+              await syncHealthData(auth.currentUser);
+            } catch (e: any) {
+              console.error("Error refreshing token or syncing on resume", e?.message || String(e));
+            }
           }
-        }
-      });
+        });
+      } catch (err: any) {
+        console.error("Failed to setup app listener:", err?.message || String(err));
+      }
     };
     setupAppListener();
 
@@ -229,13 +233,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.log("[AuthProvider] Session cookie synced");
 
               // onAuthStateChanged will fire automatically and set the user
-            } catch (error) {
-              console.error("[AuthProvider] Failed to exchange token:", error);
+            } catch (error: any) {
+              console.error("[AuthProvider] Failed to exchange token:", error?.message || String(error));
               setAuthLoading(false);
             }
           }
-        } catch (error) {
-          console.log("[AuthProvider] No plugin user found or error:", error);
+        } catch (error: any) {
+          console.log("[AuthProvider] No plugin user found or error:", error?.message || String(error));
         }
       }
     };
@@ -254,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
 
           // Trigger Health Sync on Load
-          syncHealthData(firebaseUser).catch(err => console.error("Initial load sync failed", err));
+          syncHealthData(firebaseUser).catch(err => console.error("Initial load sync failed", err?.message || String(err)));
 
 
 
@@ -275,11 +279,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // So here we just set user and AuthLoading. ProfileLoading will be handled by the new effect.
 
 
-        } catch (error) {
-          console.error('Failed to sync session cookie:', error);
+        } catch (error: any) {
+          console.error('Failed to sync session cookie:', error?.message || String(error));
         }
       } else {
-        await fetch('/api/auth/logout', { method: 'POST' });
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (error: any) {
+          console.error('Failed to logout session:', error?.message || String(error));
+        }
         setUserProfile(null);
         setProfileLoading(false); // Only stop loading profile if no user
       }
@@ -321,8 +329,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setProfileLoading(false);
       },
-      (err) => {
-        console.error("Error in profile listener:", err);
+      (err: any) => {
+        console.error("Error in profile listener:", err?.message || String(err));
         setProfileLoading(false);
       }
     );
@@ -357,8 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const accountAgeHours = createdAt ? (Date.now() - createdAt.getTime()) / 36e5 : null;
       const hasLegacySignals = Boolean(
         userProfile?.dateOfBirth ||
-        (userProfile?.safeFoods?.length ?? 0) > 0 ||
-        userProfile?.ramadanConfig
+        (userProfile?.safeFoods?.length ?? 0) > 0
       );
       const shouldSkipSetup = profileMissing && (hasLegacySignals || (accountAgeHours !== null && accountAgeHours > 24));
 
@@ -391,7 +398,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // HIDE SPLASH SCREEN WHEN READY
   useEffect(() => {
     if (!authLoading && !profileLoading) {
-      SplashScreen.hide().catch((err: any) => console.warn("Splash hide error", err));
+      SplashScreen.hide().catch((err: any) => console.warn("Splash hide error", err?.message || String(err)));
     }
   }, [authLoading, profileLoading]);
 

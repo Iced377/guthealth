@@ -167,10 +167,6 @@ export interface UserProfile {
     lastFeedbackAt: Timestamp;
     lastFeedbackType: 'improve' | 'bug' | 'feature';
   };
-  ramadanConfig?: {
-    status: 'fasting' | 'witnessing' | 'hidden';
-    updatedAt?: Timestamp | Date;
-  };
   integrationDebug?: {
     appleHealth?: {
       enabled?: boolean;

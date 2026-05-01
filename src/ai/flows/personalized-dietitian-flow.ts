@@ -112,10 +112,6 @@ const PersonalizedDietitianInputSchema = z.object({
   averageMealsPerDay: z.number().optional().describe("Average number of logged meals per logged day."),
   todayLowCalorieFlag: z.enum(['none', 'low_midday', 'low_evening', 'very_low_evening']).optional(),
   coachTier: z.enum(['new', 'emerging', 'advanced']).optional(),
-  ramadanMode: z.enum(['fasting', 'witnessing', 'hidden']).optional(),
-  ramadanStartDate: z.string().optional(),
-  ramadanDaysUntil: z.number().optional(),
-  ramadanDayNumber: z.number().optional(),
   fastingPreference: z.boolean().optional(),
   isKeto: z.boolean().optional(),
   isVegetarian: z.boolean().optional(),
@@ -158,9 +154,6 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 - **Days Logged:** {{#if daysLogged}}{{daysLogged}}{{else}}0{{/if}}
 - **Avg Meals/Day:** {{#if averageMealsPerDay}}{{averageMealsPerDay}}{{else}}0{{/if}}
 - **Goal:** {{#if userProfile.goal}}{{userProfile.goal}}{{else}}Not specified{{/if}}
-- **Ramadan Mode:** {{#if ramadanMode}}{{ramadanMode}}{{else}}not_active{{/if}}
-- **Ramadan Start Date:** {{#if ramadanStartDate}}{{ramadanStartDate}}{{else}}N/A{{/if}}
-- **Ramadan Countdown:** {{#if ramadanDaysUntil}}{{ramadanDaysUntil}} days{{else}}N/A{{/if}}
 - **Current Weight:** {{#if userProfile.currentWeight}}{{userProfile.currentWeight}} kg{{else}}Not specified{{/if}}
 - **Activity Level:** {{#if userProfile.activityLevel}}{{userProfile.activityLevel}}{{else}}Not specified{{/if}}
 - **Dietary Preferences:** {{#if userProfile.dietaryPreferences}}{{#each userProfile.dietaryPreferences}}{{.}}, {{/each}}{{else}}None{{/if}}
@@ -239,25 +232,6 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
 
 **RESPONSE STRATEGY:**
 
-0.  **Ramadan Context & Disclosure (CRITICAL):**
-    *   **IF \`ramadanMode\` = \`fasting\`:**
-        *   Treat daytime low intake as expected. Focus on hydration between Iftar and sleep, balanced Suhoor, and gentle pacing at Iftar.
-        *   You may reference Iftar/Suhoor, but keep language **non‑religious** and **health‑focused**.
-        *   **Do NOT** describe this as "intermittent fasting" or say the user "prefers intermittent fasting." Use **"Ramadan fasting"** or **"fasting window"** language instead.
-        *   **If \`ramadanDaysUntil\` > 0:** mention “Ramadan starts in {{ramadanDaysUntil}} days” in the opening summary.
-        *   **If \`ramadanDaysUntil\` = 0:** mention “Ramadan starts today” in the opening summary.
-        *   **If \`ramadanDayNumber\` exists:** mention “Ramadan is underway (Day {{ramadanDayNumber}})” in the opening summary.
-    *   **IF \`ramadanMode\` = \`witnessing\`:**
-        *   Do **NOT** give fasting directives. Provide neutral wellness tips, supportive routines, and respectful scheduling guidance.
-        *   Avoid Iftar/Suhoor instructions.
-        *   **IMPORTANT:** Ignore any intermittent fasting preference in this mode. Do not mention fasting states, windows, or projections.
-        *   **Meal Timing Guidance (WITNESSING):** Offer practical ideas for eating and hydrating respectfully at work/school, e.g. eat earlier at home, take a private lunch break, plan a light snack before commuting, and hydrate discretely. Emphasize sustainability and not skipping meals entirely.
-        *   **If \`ramadanDaysUntil\` > 0:** mention “Ramadan starts in {{ramadanDaysUntil}} days” in the opening summary.
-        *   **If \`ramadanDaysUntil\` = 0:** mention “Ramadan starts today” in the opening summary.
-        *   **If \`ramadanDayNumber\` exists:** mention “Ramadan is underway (Day {{ramadanDayNumber}})” in the opening summary.
-    *   **IF \`ramadanMode\` = \`hidden\` OR not_active:**
-        *   Do **NOT** mention Ramadan at all. Provide standard guidance only.
-
 1.  **FIRST: Onboarding-First for New or Sparse Data Users:**
     *   **IF \`coachTier\` is \`new\` OR \`daysLogged\` < 3 OR \`averageMealsPerDay\` < 2 OR \`veryLowCalorieDays\` > 0:**
         *   Focus the response on **how to use the app** and **building the habit** of logging.
@@ -277,20 +251,20 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
         *   **DO NOT** do macro deep-dives, fasting projections, or keto rules unless the user explicitly asks.
     *   **TODAY'S CALORIE CONTEXT (CRITICAL):**
         *   **IF \`todayLowCalorieFlag\` = \`low_midday\`:** This is normal for midday. Encourage completing logs and suggest a plan for the rest of the day.
-        *   **IF \`todayLowCalorieFlag\` = \`low_evening\` or \`very_low_evening\`:** Flag as likely incomplete or insufficient intake for the day. Suggest a balanced meal or snack **unless** the user is fasting by preference or \`ramadanMode\` = \`fasting\`.
-        *   **IF fastingPreference OR \`ramadanMode\` = \`fasting\`:** Treat low daytime intake as expected and shift advice to hydration and meal planning for the eating window.
+        *   **IF \`todayLowCalorieFlag\` = \`low_evening\` or \`very_low_evening\`:** Flag as likely incomplete or insufficient intake for the day. Suggest a balanced meal or snack **unless** the user is fasting by preference.
+        *   **IF fastingPreference:** Treat low daytime intake as expected and shift advice to hydration and meal planning for the eating window.
 
 2.  **CRITICAL: Time of Day & Context Awareness:**
     *   **IF Late Night (22:00 - 04:00):**
         *   **STOP:** Do NOT suggest exercise/walking. The prioritized advice is SLEEP and RECOVERY.
-        *   **FASTING (Only if \`fastingPreference\` is true OR \`ramadanMode\` = \`fasting\`):** 
+        *   **FASTING (Only if \`fastingPreference\` is true):** 
             *   **IF \`hoursSinceLastMeal\` > 4:** State clearly that their fast **ALREADY STARTED** {{hoursSinceLastMeal}} hours ago. Use the provided "Projected Fast Completion" times strictly.
             *   **IF \`hoursSinceLastMeal\` <= 4:** Consider them still in their **Fed State** (Digesting). Do NOT say "Fast has started".
             *   Do NOT say "If you stop eating now".
             *   **NO SNACKS:** Unless explicitly requested.
     *   **IF Morning:** Focus on fueling for the day.
-    *   **IF Evening:** Focus on winding down and protein targets.
-    *   **IF \`fastingPreference\` is false/unknown AND \`ramadanMode\` is not \`fasting\`:** Do NOT discuss fasting windows, fasted/fed states, or projected fast completion unless the user explicitly asks.
+    *   **IF Evening:** Focus on wind down and protein targets.
+    *   **IF \`fastingPreference\` is false/unknown:** Do NOT discuss fasting windows, fasted/fed states, or projected fast completion unless the user explicitly asks.
 
 3.  **Analyze User's Progress Towards Their Goal:**
     *   Start with a short, plain-language summary tied to their goal and any logged symptoms (best practices).
@@ -319,9 +293,7 @@ Your goal is to provide a highly personalized, empathetic, and actionable respon
                 *   **WARNING:** High Protein + Low Fat + Low Carb is dangerous ("Rabbit Starvation"). Keto requires FAT as the fuel source. Suggest adding healthy fats (Olive Oil, Avocado, Nuts).
             *   **Protein Sparing:** Protein should be adequate for muscle sparing, but not excessive on strict therapeutic keto (though less of a concern for weight loss). Focus on *Fats* filling the remaining energy need.
     *   **Maintenance (\`maintain\`):** specific patterns that might cause fluctuations.
-    *   *Fasting Window (State Recognition) — ONLY if \`ramadanMode\` = \`fasting\` OR (\`ramadanMode\` is not set AND \`fastingPreference\` is true) OR the user explicitly asks:*
-        *   **If \`ramadanMode\` = \`fasting\`:** label this section as **“Ramadan Fasting Routine”** and avoid “intermittent fasting” phrasing.
-        *   **If \`ramadanMode\` = \`witnessing\` or \`hidden\`:** skip this entire section even if preferences mention fasting.
+    *   *Fasting Window (State Recognition) — ONLY if \`fastingPreference\` is true OR the user explicitly asks:*
         *   **A) Current Status (CRITICAL):** Check 'hoursSinceLastMeal'.
             *   **IF < 4 hours:** User is in **FED STATE** (Digestion/Anabolic).
                 *   **ADVICE:** "You are currently in your eating window (Fed State) and digesting your last meal (~{{hoursSinceLastMeal}}h ago)."
@@ -476,14 +448,7 @@ const personalizedDietitianFlow = ai.defineFlow(
       const tdee = input.userProfile?.tdee;
       const safetyFloor = tdee ? Math.round(tdee * 0.75) : undefined;
       const prefs = input.userProfile?.dietaryPreferences;
-      const ramadanMode = input.ramadanMode;
-      const fastingPreferenceFromPrefs = hasPreference(prefs, ['fast', 'intermittent']);
-      const fastingPreference =
-        ramadanMode === 'fasting'
-          ? true
-          : ramadanMode
-            ? false
-            : fastingPreferenceFromPrefs;
+      const fastingPreference = hasPreference(prefs, ['fast', 'intermittent']);
       const isKeto = hasPreference(prefs, ['keto', 'low carb', 'low-carb']);
       const isVegetarian = hasPreference(prefs, ['vegetarian']);
       const isVegan = hasPreference(prefs, ['vegan']);
@@ -552,7 +517,6 @@ const personalizedDietitianFlow = ai.defineFlow(
         averageMealsPerDay: logSummary.averageMealsPerDay,
         todayLowCalorieFlag: todayLowCalorieFlag !== 'none' ? todayLowCalorieFlag : undefined,
         coachTier: coachTier,
-        ramadanMode: ramadanMode,
         fastingPreference: fastingPreference,
         isKeto: isKeto,
         isVegetarian: isVegetarian,
