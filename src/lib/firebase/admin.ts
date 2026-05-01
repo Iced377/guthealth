@@ -6,6 +6,11 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
   : null;
 
+// Fix escaped newlines if they were mangled by environment variable injection
+if (serviceAccount && serviceAccount.private_key) {
+  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+}
+
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 export function getAdminApp(): App {
