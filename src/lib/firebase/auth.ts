@@ -95,12 +95,6 @@ export const signInWithApple = async () => {
       const result = await FirebaseAuthentication.signInWithApple();
       console.log("[Auth] Plugin result:", JSON.stringify(result, null, 2));
 
-      const { idToken, nonce: rawNonce } = result.credential || {};
-
-      if (!idToken || !rawNonce) {
-        throw new Error('Missing idToken or nonce from plugin');
-      }
-
       // CRITICAL: After plugin sign-in, get the FIREBASE ID token (not Apple token)
       // The plugin has already exchanged the Apple token for a Firebase session
       const firebaseToken = await FirebaseAuthentication.getIdToken();

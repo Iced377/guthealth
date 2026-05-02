@@ -33,25 +33,19 @@ export default function AppleAuthButton({
         setIsLoading(true);
 
         try {
-            const result = await signInWithApple();
-
-            // On native platforms, the plugin authenticates but doesn't sync with JS SDK
-            // So we manually navigate to the main app page
-            if (Capacitor.isNativePlatform() && result?.user) {
-                console.log("[AppleAuthButton] Native auth successful, navigating to home...");
-                router.push('/');
-            }
+            await signInWithApple();
             // On web, AuthProvider's onAuthStateChanged handles navigation
+            // On native, AuthProvider also handles the sync and LoginPage handles the redirect
         } catch (error: any) {
             console.error("Apple login error:", error);
-            setIsLoading(false);
-
             // Generic error toast
             toast({
                 title: 'Sign in failed',
                 description: 'Could not sign in with Apple. Please try again.',
                 variant: 'destructive',
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
