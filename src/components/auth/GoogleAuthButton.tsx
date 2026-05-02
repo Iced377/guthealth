@@ -52,9 +52,16 @@ export default function GoogleAuthButton({
                     variant: 'default',
                 });
             } else {
+                let errorMessage = error?.message || 'Could not sign in with Google. Please try again.';
+                
+                // If it's a server-side error from our exchange endpoint
+                if (error?.details || error?.error === 'Token exchange failed') {
+                    errorMessage = error.details || error.message || errorMessage;
+                }
+
                 toast({
                     title: 'Login failed',
-                    description: error?.message || 'Could not sign in with Google. Please try again.',
+                    description: errorMessage,
                     variant: 'destructive',
                 });
             }

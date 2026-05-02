@@ -38,10 +38,18 @@ export default function AppleAuthButton({
             // On native, AuthProvider also handles the sync and LoginPage handles the redirect
         } catch (error: any) {
             console.error("Apple login error:", error);
+            
+            let errorMessage = 'Could not sign in with Apple. Please try again.';
+            
+            // Try to extract server-side error message
+            if (error?.message?.includes('Token exchange failed') || error?.error === 'Token exchange failed') {
+                errorMessage = error.message || error.details || errorMessage;
+            }
+
             // Generic error toast
             toast({
                 title: 'Sign in failed',
-                description: 'Could not sign in with Apple. Please try again.',
+                description: errorMessage,
                 variant: 'destructive',
             });
         } finally {
