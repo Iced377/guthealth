@@ -212,7 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               });
 
               if (!response.ok) {
-                throw new Error(`Token exchange failed: ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || `Token exchange failed: ${response.statusText}`);
               }
 
               const { customToken } = await response.json();
