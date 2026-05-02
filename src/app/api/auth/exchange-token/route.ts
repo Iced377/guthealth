@@ -33,12 +33,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ customToken });
     } catch (error: any) {
         console.error('[Token Exchange] Error:', error);
-        console.error('[Token Exchange] Error code:', error.code);
-        console.error('[Token Exchange] Error message:', error.message);
-        console.error('[Token Exchange] Full error:', JSON.stringify(error, null, 2));
-
+        console.error('[Token Exchange] Project ID:', adminAuth.app.options.projectId);
+        
+        // Return more detail to the client for debugging (remove this in final production)
         return NextResponse.json(
-            { error: 'Invalid or expired token', details: error.message, code: error.code },
+            { 
+                error: 'Token exchange failed', 
+                message: error.message, 
+                code: error.code,
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            },
             { status: 401 }
         );
     }

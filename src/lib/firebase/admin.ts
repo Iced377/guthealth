@@ -14,9 +14,11 @@ if (serviceAccount && serviceAccount.private_key) {
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 export function getAdminApp(): App {
+  console.log(`[Admin SDK] Attempting to initialize for project: ${projectId || 'default'}`);
+  
   if (getApps().length === 0) {
     if (serviceAccount) {
-      console.log("✅ [Admin SDK] Initializing with Service Account Key...");
+      console.log("✅ [Admin SDK] Service Account detected");
       try {
         const app = initializeApp({
           credential: cert(serviceAccount),
