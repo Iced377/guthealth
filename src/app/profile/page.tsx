@@ -9,7 +9,7 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { db, auth, firebaseConfig } from '@/config/firebase'; // Added auth
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { signOut } from 'firebase/auth'; // Added signOut
 import { Button } from '@/components/ui/button';
 // import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // REMOVED: Using glass panels instead
@@ -39,9 +39,9 @@ import { useToast } from '@/hooks/use-toast';
 import {
     Calendar as CalendarIcon, Save, ArrowLeft, Activity, User, Ruler, Scale, Zap, Target,
     Flame, TrendingUp, TrendingDown, Utensils, LogOut, Pencil, Download,
-    ShieldCheck, ChevronRight, Settings, FileText
+    ShieldCheck, ChevronRight, Settings, FileText, Dumbbell, Footprints, Weight, Loader2
 } from 'lucide-react';
-import { UserProfile } from '@/types';
+import { UserProfile, ExpertClientRelationship, ConsentDataCategory } from '@/types';
 import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIPLIERS, GOAL_ADJUSTMENTS } from '@/lib/calculations';
 import { generateUserDataExport } from '@/utils/data-export';
 import { AppleHealthService } from '@/lib/apple-health';
@@ -112,6 +112,10 @@ export default function ProfilePage() {
     // Account Deletion State
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+
+    // Expert Relationship State
+    const [expertRelationship, setExpertRelationship] = useState<ExpertClientRelationship | null>(null);
+    const [isRevoking, setIsRevoking] = useState<string | null>(null);
 
 
 
@@ -217,6 +221,17 @@ export default function ProfilePage() {
                     const data = await res.json();
                     setIsFitbitConnected(!!data.isConnected);
                 }
+
+                // 3. Fetch Expert Relationship
+                const relSnap = await getDocs(
+                    query(collection(db, 'expertClientRelationships'), where('clientUserId', '==', user.uid), where('active', '==', true))
+                );
+                if (!relSnap.empty) {
+                    setExpertRelationship({ id: relSnap.docs[0].id, ...relSnap.docs[0].data() } as ExpertClientRelationship);
+                } else {
+                    setExpertRelationship(null);
+                }
+
             } catch (error) {
                 console.error("Error fetching profile data:", error);
                 toast({ title: "Error", description: "Failed to load profile data.", variant: "destructive" });
@@ -402,6 +417,56 @@ export default function ProfilePage() {
             router.push('/');
         } catch (error) {
             console.error("Sign out error", error);
+        }
+    };
+
+    const handleToggleAccess = async (category: ConsentDataCategory, checked: boolean) => {
+        if (!user || !expertRelationship) return;
+        setIsRevoking(category);
+        
+        try {
+            const currentCategories = expertRelationship.consentedDataCategories;
+            let nextCategories: ConsentDataCategory[] = [];
+            
+            if (checked) {
+                nextCategories = [...currentCategories, category];
+            } else {
+                nextCategories = currentCategories.filter(c => c !== category);
+            }
+            
+            // 1. Update relationship
+            await updateDoc(doc(db, 'expertClientRelationships', expertRelationship.id), {
+                consentedDataCategories: nextCategories,
+                updatedAt: Timestamp.now()
+            });
+            
+            // 2. Log audit event
+            await addDoc(collection(db, 'expertConsentAuditEvents'), {
+                userId: user.uid,
+                expertId: expertRelationship.expertId,
+                relationshipId: expertRelationship.id,
+                action: checked ? 'grant' : 'revoke',
+                category,
+                timestamp: Timestamp.now(),
+                userAgent: navigator.userAgent
+            });
+            
+            // 3. Update local state
+            setExpertRelationship({
+                ...expertRelationship,
+                consentedDataCategories: nextCategories
+            });
+            
+            toast({ 
+                title: checked ? "Access Granted" : "Access Revoked", 
+                description: `${category.replace(/([A-Z])/g, ' $1').trim()} access updated.` 
+            });
+            
+        } catch (e) {
+            console.error("Failed to update access:", e);
+            toast({ title: "Error", description: "Failed to update permissions.", variant: "destructive" });
+        } finally {
+            setIsRevoking(null);
         }
     };
 
@@ -756,6 +821,59 @@ export default function ProfilePage() {
                         </button>
                     </GlassPanel>
                 </div>
+
+                {/* E2. Access & Permissions (Expert Revocation) */}
+                {expertRelationship && (
+                    <div className="pt-4 space-y-3">
+                        <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-widest opacity-70">Access & Permissions</h3>
+                        <GlassPanel className="space-y-4">
+                            <div className="flex items-center gap-3 pb-1">
+                                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                    <ShieldCheck className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-foreground leading-tight">Expert Data Sharing</h4>
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Active Relationship</p>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-1">
+                                {[
+                                    { id: 'foodJournal', label: 'Food Journal', icon: Utensils },
+                                    { id: 'weight', label: 'Weight history', icon: Weight },
+                                    { id: 'steps', label: 'Daily Steps', icon: Footprints },
+                                    { id: 'goal', label: 'Health Goals', icon: Target },
+                                ].map((item) => {
+                                    const isGranted = expertRelationship.consentedDataCategories.includes(item.id as ConsentDataCategory);
+                                    const isLoading = isRevoking === item.id;
+                                    
+                                    return (
+                                        <div key={item.id} className="flex items-center justify-between py-2.5 px-1 border-b border-white/5 last:border-0">
+                                            <div className="flex items-center gap-3">
+                                                <item.icon className={cn("h-4 w-4", isGranted ? "text-indigo-400" : "text-muted-foreground/40")} />
+                                                <span className={cn("text-sm font-medium transition-colors", isGranted ? "text-foreground" : "text-muted-foreground")}>
+                                                    {item.label}
+                                                </span>
+                                            </div>
+                                            {isLoading ? (
+                                                <Loader2 className="h-4 w-4 animate-spin text-emerald-500/50" />
+                                            ) : (
+                                                <Switch 
+                                                    checked={isGranted} 
+                                                    onCheckedChange={(checked) => handleToggleAccess(item.id as ConsentDataCategory, checked)}
+                                                    className="data-[state=checked]:bg-indigo-500"
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground/60 leading-snug px-1">
+                                Your expert can only see the data categories you enable here. Revoking access takes effect immediately.
+                            </p>
+                        </GlassPanel>
+                    </div>
+                )}
 
                 {/* F. Account Actions */}
                 <div className="pt-8 space-y-3">

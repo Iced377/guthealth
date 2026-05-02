@@ -20,13 +20,32 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // --- Expert Identity Helpers ---
+    function getMyExpertId() {
+      return exists(/databases/$(database)/documents/expertUserLinks/$(request.auth.uid)) ? 
+             get(/databases/$(database)/documents/expertUserLinks/$(request.auth.uid)).data.expertId : null;
+    }
+
+    function isActingAsExpertForClient(clientUserId, requiredCategory) {
+      let expertId = getMyExpertId();
+      let relId = expertId + '_' + clientUserId;
+      return expertId != null &&
+             exists(/databases/$(database)/documents/expertProfiles/$(expertId)) &&
+             get(/databases/$(database)/documents/expertProfiles/$(expertId)).data.active == true &&
+             exists(/databases/$(database)/documents/expertClientRelationships/$(relId)) &&
+             get(/databases/$(database)/documents/expertClientRelationships/$(relId)).data.status == 'active' &&
+             get(/databases/$(database)/documents/expertClientRelationships/$(relId)).data.consentStatus == 'granted' &&
+             requiredCategory in get(/databases/$(database)/documents/expertClientRelationships/$(relId)).data.consentedDataCategories;
+    }
+
+
     // --- Users Collection ---
     // Contains user profiles, settings, and safe foods.
     // --- Users Collection ---
     // Contains user profiles, settings, and safe foods.
     match /users/{userId} {
-      // Allow users to read (get) their own document. Admins can get any.
-      allow get: if isOwner(userId) || isAdmin();
+      // Allow users to read (get) their own document. Admins can get any. Experts can read if profile consent is granted.
+      allow get: if isOwner(userId) || isAdmin() || isActingAsExpertForClient(userId, 'profile');
       
       // Allow ONLY Admins to list all users (for acquisition stats).
       // 'isOwner' cannot be used for list() as it requires checking every doc against the UID, which fails query validation without a where clause.
@@ -47,7 +66,9 @@ service cloud.firestore {
 
       // --- Subcollections ---
       match /timelineEntries/{entryId} {
-        allow read, write: if isOwner(userId);
+        // Experts can read if foodJournal consent is granted.
+        allow read: if isOwner(userId) || isActingAsExpertForClient(userId, 'foodJournal');
+        allow write: if isOwner(userId);
       }
 
       // --- Integration Debug Logs ---
@@ -168,6 +189,94 @@ service cloud.firestore {
 
       allow read: if isAdmin();
       allow update, delete: if false;
+    }
+
+    // --- EXPERT FEATURE COLLECTIONS ---
+    
+    match /expertUserLinks/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow write: if isAdmin();
+    }
+
+    match /expertProfiles/{expertId} {
+      // Anyone authenticated can read active profiles (needed to select an expert)
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /expertClientRelationships/{relId} {
+      // relId is enforced to be {expertId}_{clientUserId}
+      // Users can read their own relationships
+      allow read: if isAuthenticated() && (
+        resource.data.clientUserId == request.auth.uid || 
+        resource.data.expertId == getMyExpertId() || 
+        isAdmin()
+      );
+      
+      // Users can only create/update their own consent
+      allow create: if isAuthenticated() && 
+                    request.resource.data.clientUserId == request.auth.uid &&
+                    relId == (request.resource.data.expertId + '_' + request.auth.uid) &&
+                    exists(/databases/$(database)/documents/expertProfiles/$(request.resource.data.expertId));
+                    
+      allow update: if isAuthenticated() && 
+                    resource.data.clientUserId == request.auth.uid &&
+                    // Ensure they don't try to change the expert or user link
+                    request.resource.data.expertId == resource.data.expertId &&
+                    request.resource.data.clientUserId == resource.data.clientUserId;
+    }
+
+    match /expertConsentVersions/{versionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /expertConsentAuditEvents/{eventId} {
+      // Append only, client creates it for themselves
+      allow create: if isAuthenticated() && request.resource.data.clientUserId == request.auth.uid;
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.clientUserId == request.auth.uid);
+      allow update, delete: if false;
+    }
+
+    match /foodRealityCaptures/{captureId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isActingAsExpertForClient(resource.data.userId, 'foodRealityCapture')
+      );
+      allow write: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid || 
+        isActingAsExpertForClient(request.resource.data.userId, 'foodRealityCapture')
+      );
+    }
+
+    match /foodRealityDaySummaries/{summaryId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isActingAsExpertForClient(resource.data.userId, 'foodRealityCapture')
+      );
+      allow write: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid || 
+        isActingAsExpertForClient(request.resource.data.userId, 'foodRealityCapture')
+      );
+    }
+
+    match /foodRealityReports/{reportId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isActingAsExpertForClient(resource.data.userId, 'foodRealityReport')
+      );
+      // Only server/Cloud Function should write reports ideally, but if client writes:
+      allow write: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid || 
+        isActingAsExpertForClient(request.resource.data.userId, 'foodRealityReport')
+      );
+    }
+
+    match /expertNotes/{noteId} {
+      // Only the specific expert can read/write their notes
+      allow read, write: if isAuthenticated() && resource.data.expertId == getMyExpertId();
+      // On create, must match current expert ID
+      allow create: if isAuthenticated() && request.resource.data.expertId == getMyExpertId();
     }
 
     // --- Default Deny ---

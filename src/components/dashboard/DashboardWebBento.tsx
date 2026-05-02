@@ -744,7 +744,7 @@ export default function DashboardWebBento({
                                         accentVar="--metric-weight"
                                     />
                                     <SummaryMetric
-                                        label="Fasting"
+                                        label="Time since last meal"
                                         value={fastingTime}
                                         helper="Today"
                                         accentVar="--metric-fasting"

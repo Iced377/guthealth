@@ -27,6 +27,7 @@ import {
     Info,
     Tag,
     ChevronRight,
+    Dumbbell,
 } from 'lucide-react';
 
 const CustomActivityIcon = Activity; // Alias for semantic clarity or future swap
@@ -37,6 +38,9 @@ import { useNavVisibility } from '@/components/navigation/useNavVisibilityContro
 import { APP_VERSION } from '@/config/releaseNotes';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import { Capacitor } from '@capacitor/core';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { db } from '@/config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -59,6 +63,7 @@ interface SubMenuItem {
     action?: () => void;
     accessibilityLabel: string;
     adminOnly?: boolean;
+    expertOnly?: boolean;
     hideIfCompleted?: boolean;
 }
 
@@ -91,7 +96,7 @@ const EXPLORE_ITEMS: SubMenuItem[] = [
 const INSIGHTS_ITEMS: SubMenuItem[] = [
     { id: 'insights-view', icon: Lightbulb, label: 'Insights', path: '/insights', accessibilityLabel: 'Insights, AI analysis' },
     { id: 'trends', icon: Activity, label: 'Trends', path: '/trends', accessibilityLabel: 'Trends, view patterns' },
-
+    { id: 'expert', icon: Dumbbell, label: 'Expert', path: '/expert', accessibilityLabel: 'Expert Support, food reality capture' },
 ];
 
 // Profile sub-items
@@ -99,6 +104,7 @@ const PROFILE_ITEMS: SubMenuItem[] = [
     { id: 'user-centre', icon: UserCircle, label: 'User Centre', path: '/profile', accessibilityLabel: 'User Centre, account settings' },
     { id: 'favorites', icon: Heart, label: 'Favorites', path: '/favorites', accessibilityLabel: 'Favorites, view saved entries' },
     { id: 'theme', icon: Sun, label: 'Theme', accessibilityLabel: 'Toggle light or dark mode' },
+    { id: 'expert-hub', icon: Users, label: 'Expert Hub', path: '/expert-hub', accessibilityLabel: 'Expert Hub, view assigned users', expertOnly: true },
     {
         id: 'admin',
         icon: Users,
@@ -206,6 +212,21 @@ export default function LiquidNavigation({
     const [activePanel, setActivePanel] = useState<'log' | 'explore' | 'insights' | 'profile' | null>(null);
     const [pressedItem, setPressedItem] = useState<string | null>(null);
     const [showAdminDot, setShowAdminDot] = useState(false);
+    const [isExpert, setIsExpert] = useState(false);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        if (!user?.uid) return;
+        const checkExpert = async () => {
+            try {
+                const snap = await getDoc(doc(db, 'expertUserLinks', user.uid));
+                setIsExpert(snap.exists());
+            } catch (e) {
+                // ignore
+            }
+        };
+        checkExpert();
+    }, [user?.uid]);
 
     useEffect(() => {
         const updateLayout = () => setIsWideLayout(window.innerWidth >= 1024);
@@ -385,9 +406,10 @@ export default function LiquidNavigation({
         return true;
     });
 
-    // Filter profile items for admin
+    // Filter profile items for admin and expert
     const filteredProfileItems = PROFILE_ITEMS.filter(item => {
         if (item.adminOnly && !isAdmin) return false;
+        if (item.expertOnly && !isExpert) return false;
         return true;
     });
 
@@ -503,7 +525,7 @@ export default function LiquidNavigation({
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
                         className={cn(
-                            "fixed z-[100] flex flex-wrap justify-center items-center gap-3 isolation-isolate px-6 max-w-[340px] mx-auto", // Added flex-wrap, max-w, px-6 to force wrap
+                            "fixed z-[100] flex flex-wrap justify-center items-center gap-3 isolation-isolate px-4 max-w-[340px] mx-auto", // Reduced max-w to force 4 per row
                             enableWebBento
                                 ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw]"
                                 : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0"
@@ -583,10 +605,10 @@ export default function LiquidNavigation({
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
                         className={cn(
-                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            "fixed z-[100] flex flex-wrap justify-center gap-3 isolation-isolate px-4 max-w-[340px] mx-auto", // Reduced max-w to force 4 per row
                             enableWebBento
-                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
-                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw]"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0"
                         )}
                         style={{
                             transform: 'translateZ(0)',
@@ -638,7 +660,7 @@ export default function LiquidNavigation({
                                         pressedItem === item.id ? "opacity-0" : "opacity-100",
                                         item.id === 'insights-view' && "bg-gradient-to-br from-amber-400 to-orange-500",
                                         item.id === 'trends' && "bg-gradient-to-br from-emerald-400 to-teal-500",
-
+                                        item.id === 'expert' && "bg-[#ffc01f]",
                                         "shadow-lg"
                                     )}>
                                         <item.icon className="w-6 h-6 text-white" />
@@ -660,10 +682,10 @@ export default function LiquidNavigation({
                         exit={{ opacity: 0, scale: 0.94, y: 15 }}
                         transition={SPRING_REVEAL}
                         className={cn(
-                            "fixed z-[100] flex justify-center gap-3 isolation-isolate",
+                            "fixed z-[100] flex flex-wrap justify-center gap-3 isolation-isolate px-4 max-w-[340px] mx-auto", // Reduced max-w to force 4 per row
                             enableWebBento
-                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw] max-w-[640px] mx-auto"
-                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4"
+                                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0 w-[50vw]"
+                                : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-0 right-0"
                         )}
                         style={{
                             transform: 'translateZ(0)',
@@ -716,7 +738,8 @@ export default function LiquidNavigation({
                                         pressedItem === item.id ? "opacity-0" : "opacity-100",
                                         item.id === 'user-centre' && "bg-gradient-to-br from-blue-500 to-indigo-600",
                                         item.id === 'favorites' && "bg-gradient-to-br from-pink-500 to-rose-600",
-                                        item.id === 'theme' && "bg-gradient-to-br from-amber-400 to-yellow-500",
+                                        item.id === 'theme' && "bg-[#1e3a8a]",
+                                        item.id === 'expert-hub' && "bg-[#ffc01f]",
                                         item.id === 'admin' && "bg-gradient-to-br from-red-500 to-rose-600",
                                         "shadow-lg"
                                     )}>

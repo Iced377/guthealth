@@ -93,10 +93,10 @@ function InsightsLayout() {
     const width = el.offsetWidth;
     const threshold = width / 2;
 
-    if (scrollLeft < threshold && selectedCategory !== 'Today') {
-      setCategory('Today');
-    } else if (scrollLeft >= threshold && selectedCategory !== 'Coach') {
+    if (scrollLeft < threshold && selectedCategory !== 'Coach') {
       setCategory('Coach');
+    } else if (scrollLeft >= threshold && selectedCategory !== 'Today') {
+      setCategory('Today');
     }
   };
 
@@ -106,7 +106,7 @@ function InsightsLayout() {
     if (!el) return;
 
     const width = el.offsetWidth;
-    const targetScroll = selectedCategory === 'Coach' ? width : 0;
+    const targetScroll = selectedCategory === 'Today' ? width : 0;
 
     // Only scroll if strictly needed to avoid fighting the user
     if (Math.abs(el.scrollLeft - targetScroll) > 10) {
@@ -175,7 +175,14 @@ function InsightsLayout() {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        {/* Page 1: Highlights */}
+        {/* Page 1: Coach */}
+        <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-32 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className={cn("w-full mx-auto min-h-full flex flex-col items-center justify-start relative z-10", isWebview ? "max-w-3xl" : "max-w-md")}>
+            <CoachView />
+          </div>
+        </div>
+
+        {/* Page 2: Highlights */}
         <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-48 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className={cn("w-full mx-auto px-4 min-h-full", isWebview ? "max-w-3xl" : "max-w-md")}>
             <DashboardHero
@@ -185,13 +192,6 @@ function InsightsLayout() {
               stepsData={stepsData}
             />
             <InsightFeed />
-          </div>
-        </div>
-
-        {/* Page 2: Coach */}
-        <div className="w-full flex-shrink-0 snap-center h-full overflow-y-auto pt-32 pb-32 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className={cn("w-full mx-auto min-h-full flex flex-col items-center justify-start relative z-10", isWebview ? "max-w-3xl" : "max-w-md")}>
-            <CoachView />
           </div>
         </div>
       </div>

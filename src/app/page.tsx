@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import GradientText from '@/components/shared/GradientText';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import LiquidHeader from '@/components/navigation/LiquidHeader';
@@ -12,6 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import type { TimelineEntry, DailyNutritionSummary } from '@/types';
 import { Capacitor } from '@capacitor/core';
+import ExpertAssignmentPrompt from '@/components/dashboard/ExpertAssignmentPrompt';
 
 // Helper
 const groupEntriesByDate = (entries: TimelineEntry[]) => {
@@ -33,6 +35,7 @@ const LandingPage = dynamic(() => import('@/components/guest/LandingPage'), {
 });
 
 export default function RootPage() {
+  const router = useRouter();
   const { user: authUser, loading: authLoading } = useAuth();
   const { isDarkMode } = useTheme();
   const {
@@ -49,10 +52,12 @@ export default function RootPage() {
     handleEditTimelineEntry,
     handleRepeatMeal,
     handleToggleFavoriteFoodItem,
+    handleUpdateExpertPromptStatus,
   } = useActionContext();
 
   const [isPremiumDashboardOpen, setIsPremiumDashboardOpen] = useState(false);
   const [isGuestSheetOpen, setIsGuestSheetOpen] = useState(false);
+  const [isExpertPromptOpen, setIsExpertPromptOpen] = useState(false);
 
   // Dashboard Date State (Hoisted for Header)
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -77,6 +82,20 @@ export default function RootPage() {
     }
     setPrevTimelineLength(timelineEntries.length);
   }, [timelineEntries, authUser, prevTimelineLength]);
+
+  // Expert Prompt Logic
+  useEffect(() => {
+    if (!isDataLoading && userProfile && authUser) {
+      // Only show if never answered
+      if (!userProfile.profile?.expertPromptStatus) {
+        // Small delay to let initial animation finish
+        const timer = setTimeout(() => {
+          setIsExpertPromptOpen(true);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isDataLoading, userProfile, authUser]);
 
   const dashboardEntries = useMemo(() => timelineEntries, [timelineEntries]);
 
@@ -184,6 +203,20 @@ export default function RootPage() {
           onDateChange={setCurrentDate}
         />
       </div>
+
+      <ExpertAssignmentPrompt 
+        isOpen={isExpertPromptOpen}
+        onClose={() => setIsExpertPromptOpen(false)}
+        onAccept={async () => {
+          await handleUpdateExpertPromptStatus('accepted');
+          setIsExpertPromptOpen(false);
+          router.push('/expert');
+        }}
+        onLater={async () => {
+          await handleUpdateExpertPromptStatus('later');
+          setIsExpertPromptOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -134,6 +134,7 @@ interface ActionContextType {
 
     lastAddedItem: { id: string, date: Date } | null;
     setLastAddedItem: (item: { id: string, date: Date } | null) => void;
+    handleUpdateExpertPromptStatus: (status: 'accepted' | 'later') => Promise<void>;
 
 }
 
@@ -202,6 +203,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const pathname = usePathname();
     const isIOS = typeof window !== 'undefined' && Capacitor.getPlatform() === 'ios';
     const unsubscribeTimelineRef = useRef<null | (() => void)>(null);
+    const unsubscribeUserRef = useRef<null | (() => void)>(null);
     const subscribeLimitedRef = useRef<null | (() => void)>(null);
     const subscribeFullRef = useRef<null | (() => void)>(null);
     const activeTimelineModeRef = useRef<'limited' | 'full' | null>(null);
@@ -463,6 +465,22 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     console.log('SetupData: Auth User UID:', authUser.uid);
                     console.log('SetupData: Is Premium:', currentIsPremium);
 
+                    // Listen for profile updates (e.g. from Setup Wizard)
+                    if (unsubscribeUserRef.current) {
+                        unsubscribeUserRef.current();
+                    }
+                    unsubscribeUserRef.current = onSnapshot(userDocRef, (snap) => {
+                        if (isCancelled || !snap.exists()) return;
+                        const snapData = snap.data();
+                        setUserProfile(prev => ({
+                            ...prev,
+                            safeFoods: snapData.safeFoods || [],
+                            premium: snapData.premium || false,
+                            isAdmin: snapData.isAdmin === true,
+                            profile: snapData.profile,
+                        }));
+                    });
+
                     const timelineEntriesColRef = collection(db, 'users', authUser.uid, 'timelineEntries');
                     let q;
                     if (TEMPORARILY_UNLOCK_ALL_FEATURES || currentIsPremium) {
@@ -552,6 +570,10 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     unsubscribeTimelineRef.current();
                     unsubscribeTimelineRef.current = null;
                 }
+                if (unsubscribeUserRef.current) {
+                    unsubscribeUserRef.current();
+                    unsubscribeUserRef.current = null;
+                }
             }
         };
 
@@ -562,6 +584,10 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (unsubscribeTimelineRef.current) {
                 unsubscribeTimelineRef.current();
                 unsubscribeTimelineRef.current = null;
+            }
+            if (unsubscribeUserRef.current) {
+                unsubscribeUserRef.current();
+                unsubscribeUserRef.current = null;
             }
         };
     }, [authUser, authLoading]);
@@ -1508,6 +1534,18 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             selectedLogTimestampForPreviousMeal,
             setSelectedLogTimestampForPreviousMeal,
+            handleUpdateExpertPromptStatus: async (status: 'accepted' | 'later') => {
+                if (!authUser) return;
+                try {
+                    const userDocRef = doc(db, 'users', authUser.uid);
+                    await updateDoc(userDocRef, {
+                        'profile.expertPromptStatus': status
+                    });
+                    // Local state will be updated by onSnapshot listener in ActionProvider
+                } catch (e) {
+                    console.error("Failed to update expert prompt status:", e);
+                }
+            },
             // Scroll Signal
             lastAddedItem,
             setLastAddedItem,

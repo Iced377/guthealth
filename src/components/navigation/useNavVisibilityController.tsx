@@ -28,9 +28,8 @@ export const NavVisibilityProvider: React.FC<{ children: React.ReactNode }> = ({
     }, [locks]);
 
     const setNavVisible = useCallback((visible: boolean) => {
-        if (locks.size > 0) return; // Locked, ignore
         setIsNavVisibleState(visible);
-    }, [locks]);
+    }, []);
 
     const lockNav = useCallback((reason: string) => {
         setLocks(prev => {

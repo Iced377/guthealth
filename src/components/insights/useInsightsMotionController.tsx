@@ -37,7 +37,7 @@ export function InsightsMotionControllerProvider({ children }: { children: React
     const [interactionMode, setInteractionMode] = useState<InteractionMode>('BROWSE');
     const [activeInsightId, setActiveInsightId] = useState<string | null>(null);
     const [activeSheet, setActiveSheet] = useState<'coachSession' | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<string>('Today');
+    const [selectedCategory, setSelectedCategory] = useState<string>('Coach');
 
     // Derived State
     // BROWSE is the only mode where scroll is allowed.

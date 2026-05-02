@@ -19,7 +19,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { BrandTab } from '@/components/admin/BrandTab';
 import { AppJourneyTab } from '@/components/admin/AppJourneyTab';
+import { ExpertsTab } from '@/components/admin/ExpertsTab';
 import { AppleHealthSourceTotalsLog, writeIntegrationDebugFlag } from '@/lib/integration-monitoring';
+import { cn } from '@/lib/utils';
+
 
 
 interface AdminEvent {
@@ -880,6 +883,11 @@ export default function AdminDashboardPage() {
                             <span>Growth</span>
                         </TabsTrigger>
 
+                        <TabsTrigger value="experts" className="data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
+                            <Star className="w-5 h-5 md:w-4 md:h-4" />
+                            <span>Experts</span>
+                        </TabsTrigger>
+
                         <TabsTrigger value="performance" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-300 py-3 px-6 h-auto gap-2 flex-col md:flex-row items-center justify-center min-w-[100px]">
                             <Timer className="w-5 h-5 md:w-4 md:h-4" />
                             <span>App Perf</span>
@@ -900,6 +908,10 @@ export default function AdminDashboardPage() {
                 {/* Journey Tab */}
                 <TabsContent value="journey" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <AppJourneyTab />
+                </TabsContent>
+
+                <TabsContent value="experts" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <ExpertsTab />
                 </TabsContent>
 
                 <TabsContent value="ui-plan" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">

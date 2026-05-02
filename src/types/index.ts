@@ -194,6 +194,7 @@ export interface UserProfile {
     // Calculated
     bmr: number;
     tdee: number;
+    expertPromptStatus?: 'pending' | 'accepted' | 'later';
     macros: {
       protein: number;
       carbs: number;
@@ -322,4 +323,152 @@ export interface AIInsight {
   text: string;
   timestamp: Date;
   read: boolean;
+}
+
+// ==========================================
+// EXPERT FEATURE TYPES (Strictly "Expert" branding)
+// ==========================================
+
+export interface ExpertProfile {
+  id: string;
+  linkedUserId: string;
+  displayName: string;
+  headline: string;
+  profilePictureUrl?: string;
+  profilePictureCropData?: string; // e.g., JSON string of crop coordinates
+  specialityTags: string[];
+  active: boolean;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+}
+
+export interface ExpertConsentVersion {
+  version: string;
+  text: string;
+  createdAt: Timestamp | Date;
+  active: boolean;
+  hash: string;
+}
+
+export type ConsentDataCategory = 
+  | 'profile' 
+  | 'weight' 
+  | 'goal' 
+  | 'foodJournal' 
+  | 'steps' 
+  | 'foodRealityCapture' 
+  | 'foodRealityReport';
+
+export interface ExpertClientRelationship {
+  id: string;
+  expertId: string;
+  clientUserId: string;
+  status: 'active' | 'revoked' | 'paused';
+  consentStatus: 'granted' | 'revoked' | 'pending';
+  consentedDataCategories: ConsentDataCategory[];
+  consentVersion: string;
+  consentTextHash: string;
+  consentedAt?: Timestamp | Date;
+  revokedAt?: Timestamp | Date;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+}
+
+export interface ExpertConsentAuditEvent {
+  id: string;
+  relationshipId: string;
+  clientUserId: string;
+  expertId: string;
+  eventType: 'granted' | 'revoked' | 'updated';
+  dataCategories: ConsentDataCategory[];
+  consentVersion: string;
+  timestamp: Timestamp | Date;
+}
+
+export type CompletenessStatus = 'full' | 'partial' | 'insufficient' | 'unknown';
+export type NormalityStatus = 'normal' | 'mostly_normal' | 'not_normal' | 'inferred_normal' | 'unknown';
+
+export interface FoodRealityCapture {
+  id: string;
+  userId: string;
+  expertId?: string;
+  relationshipId?: string;
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  source: 'recent_logs' | 'fresh_capture' | 'partial_data';
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  selectedDates: string[]; // YYYY-MM-DD
+  focusAreas: string[];
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+  completedAt?: Timestamp | Date;
+  confidenceScore?: number;
+  completenessScore?: number;
+  normalityScore?: number;
+  reportId?: string;
+  sharedWithExpert: boolean;
+}
+
+export interface FoodRealityDaySummary {
+  id: string;
+  captureId: string;
+  userId: string;
+  date: string; // YYYY-MM-DD
+  dayNumber: number;
+  mealCount: number;
+  aiCoachCompletenessStatus: CompletenessStatus;
+  hasBreakfast: boolean;
+  hasLunch: boolean;
+  hasDinner: boolean;
+  hasSnacks: boolean;
+  hasDrinks: boolean;
+  hasSupplements: boolean;
+  isTrainingDay?: boolean;
+  normalityStatus: NormalityStatus;
+  unusualReasons?: string[];
+  missedItems?: string[];
+  userConfirmedComplete: boolean;
+  completenessScore: number;
+  confidenceScore: number;
+}
+
+export interface FoodRealityReport {
+  id: string;
+  captureId: string;
+  userId: string;
+  expertId?: string;
+  relationshipId?: string;
+  createdAt: Timestamp | Date;
+  averageCalories?: number;
+  averageProtein?: number;
+  averageCarbs?: number;
+  averageFat?: number;
+  averageFiber?: number;
+  averageWater?: number;
+  averageCaffeine?: number;
+  proteinDistribution?: any; // JSON string or specific object
+  mealTimingPattern?: string;
+  lateEatingFrequency?: number;
+  snackingPattern?: string;
+  restaurantMealFrequency?: number;
+  supplementPattern?: string;
+  trainingDayFuelNotes?: string;
+  loggingConfidence: 'High' | 'Medium' | 'Low';
+  dataQualityWarnings?: string[];
+  expertStyleSummary?: string;
+  userFriendlySummary?: string;
+  recommendedNextActions?: string[];
+  sharedWithExpert: boolean;
+}
+
+export interface ExpertNote {
+  id: string;
+  expertId: string;
+  clientUserId: string;
+  relationshipId: string;
+  tags: string[];
+  noteText?: string;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+  visibility: 'expert_only';
 }

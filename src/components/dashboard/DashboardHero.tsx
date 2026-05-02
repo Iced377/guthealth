@@ -79,11 +79,11 @@ export default function DashboardHero({
 
     // Quick Stat Pill Component (mobile + non-webview)
     const StatPill = ({ icon: Icon, value, label, colorClass }: any) => (
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md shadow-sm webview-stat-chip">
-            <Icon className={cn("w-3.5 h-3.5", colorClass)} />
-            <div className="flex items-baseline gap-1">
-                <span className="text-xs font-bold font-mono">{value}</span>
-                <span className="text-[10px] text-muted-foreground uppercase">{label}</span>
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-3xl px-3 py-1.5 backdrop-blur-md shadow-sm webview-stat-chip">
+            <Icon className={cn("w-3.5 h-3.5 shrink-0", colorClass)} />
+            <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold font-mono whitespace-nowrap">{value}</span>
+                <span className="text-[9px] leading-[1.1] text-muted-foreground uppercase">{label}</span>
             </div>
         </div>
     );
@@ -129,7 +129,7 @@ export default function DashboardHero({
                 </div>
 
                 <div className="relative z-10 grid grid-cols-2 gap-3">
-                    <WebviewStat label="Fasting" value={fastingTime} accentVar="--metric-fasting" />
+                    <WebviewStat label="Time since last meal" value={fastingTime} accentVar="--metric-fasting" />
                     <WebviewStat label="Calories" value={`${Math.round(summary.calories)} kcal`} accentVar="--metric-calories" />
                     <WebviewStat label="Protein" value={`${Math.round(summary.protein)}g`} accentVar="--metric-protein" />
                     <WebviewStat label="Steps" value={steps > 999 ? `${(steps / 1000).toFixed(1)}k` : `${steps}`} accentVar="--metric-steps" />
@@ -168,7 +168,7 @@ export default function DashboardHero({
                     {/* Quick Stats Pills */}
                     <div className="h-4 w-px bg-border/50 mx-1" /> {/* Divider */}
 
-                    <StatPill icon={Timer} value={fastingTime} label="Fast" colorClass="text-purple-400" />
+                    <StatPill icon={Timer} value={fastingTime} label={<span className="block text-left whitespace-nowrap">Time since<br/>last meal</span>} colorClass="text-purple-400" />
                     <StatPill icon={Flame} value={Math.round(summary.calories)} label="Kcal" colorClass="text-orange-400" />
                     <StatPill icon={Utensils} value={`${Math.round(summary.protein)}g`} label="Prot" colorClass="text-red-400" />
                     <StatPill icon={Footprints} value={steps > 999 ? `${(steps / 1000).toFixed(1)}k` : steps} label="Step" colorClass="text-emerald-400" />

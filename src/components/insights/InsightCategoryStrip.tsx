@@ -59,8 +59,8 @@ export function InsightCategoryStrip() {
 
     // Options for Segmented Control
     const OPTIONS = [
-        { id: 'Today', label: 'Highlights' },
-        { id: 'Coach', label: 'Coach' }
+        { id: 'Coach', label: 'Coach' },
+        { id: 'Today', label: 'Highlights' }
     ];
 
     // Avatar Logic

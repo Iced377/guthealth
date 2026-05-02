@@ -1,5 +1,26 @@
 # Release Notes
 
+## v5.6.0 (May 2, 2026) - Expert Hub & Support
+**Launch of the Expert Hub and professional support infrastructure.**
+
+### ✨ New Features
+- **Expert Hub**: A dedicated dashboard for nutrition experts to manage client relationships and review Food Reality Captures.
+- **Expert Assignment Prompt**: Personalized dashboard invitations to connect with professional support.
+- **Food Reality Reports**: Experts can now generate 3-day average reports for their clients with one click.
+- **Expert Client Dashboard**: A new space for users to manage their assigned expert and data permissions.
+
+### 🚀 Improvements
+- **Emerald Theme Standardization**: Final migration of all remaining purple/indigo elements to the brand's primary emerald green palette.
+- **Navigation Optimization**: Standardized the navigation grid to a strict 4-item maximum per row for better mobile and iOS layout consistency.
+- **Expert Hub Reliability**: Fixed infinite loading states and optimized data hydration for expert workflows.
+- **Security**: Updated Firestore rules to support expert-client data sharing while maintaining strict privacy.
+
+### 🐛 Bug Fixes
+- **Stability**: Resolved 'setDoc' reference errors during report generation.
+- **Layout**: Fixed grid wrapping issues in navigation sub-panels on smaller devices.
+
+---
+
 ## v5.5.4 (February 25, 2026) - iOS Dashboard Performance Isolation
 **Restored smooth iOS dashboard performance for large histories.**
 
