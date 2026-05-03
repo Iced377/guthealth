@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
                 error: 'Token exchange failed', 
                 message: error.message, 
                 code: error.code,
+                projectId: adminAuth.app.options.projectId,
                 stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
             },
             { status: 401 }

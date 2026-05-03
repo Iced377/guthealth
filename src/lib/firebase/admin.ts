@@ -2,9 +2,18 @@ import { App, getApp, getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
+const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+if (!rawKey) {
+  console.warn("⚠️ [Admin SDK] FIREBASE_SERVICE_ACCOUNT_KEY environment variable is MISSING or EMPTY.");
+}
+
+const serviceAccount = rawKey
+  ? JSON.parse(rawKey)
   : null;
+
+if (serviceAccount && !serviceAccount.private_key) {
+  console.error("❌ [Admin SDK] Service Account Key was parsed, but 'private_key' is MISSING.");
+}
 
 // Fix escaped newlines that are common when injecting JSON into environment variables
 if (serviceAccount && serviceAccount.private_key) {

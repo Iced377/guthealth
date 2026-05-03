@@ -41,9 +41,9 @@ export default function AppleAuthButton({
             
             let errorMessage = 'Could not sign in with Apple. Please try again.';
             
-            // Try to extract server-side error message
-            if (error?.message?.includes('Token exchange failed') || error?.error === 'Token exchange failed') {
-                errorMessage = error.message || error.details || errorMessage;
+            // If it's a server-side error from our exchange endpoint
+            if (error?.details || error?.error === 'Token exchange failed') {
+                errorMessage = `${error.details || error.message || errorMessage} (Project: ${error.projectId || 'unknown'})`;
             }
 
             // Generic error toast

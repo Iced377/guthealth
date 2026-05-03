@@ -56,7 +56,7 @@ export default function GoogleAuthButton({
                 
                 // If it's a server-side error from our exchange endpoint
                 if (error?.details || error?.error === 'Token exchange failed') {
-                    errorMessage = error.details || error.message || errorMessage;
+                    errorMessage = `${error.details || error.message || errorMessage} (Project: ${error.projectId || 'unknown'})`;
                 }
 
                 toast({
