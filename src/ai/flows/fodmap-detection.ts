@@ -181,11 +181,16 @@ Key tasks:
 
 2.  **QUANTITY-DRIVEN NUTRITION (CRITICAL)**:
     - **CHECK INGREDIENTS FOR QUANTITIES**: The 'Ingredients' input may contain quantities in brackets, e.g., "Rice (200g), Chicken (150g)". **YOU MUST USE THESE EXACT QUANTITIES** to calculate calories and macros.
-    - If '{{{foodItem}}}' has quantities (e.g., "4 eggs"), use them.
-    - Sum all components for final 'calories', 'protein', 'carbs', 'fat'.
+    - If '{{{foodItem}}}' has quantities (e.g., "4 eggs", "220g chicken"), use them.
+    - **MATH IS REQUIRED**: Sum all components. If a weight is provided (e.g., 220g), multiply by standard density. 
+        - **VERIFY**: "220g cooked chicken" = 220 * 0.31 = ~68g protein. If your result is 30g, you have FAILED.
+        - **VERIFY**: "100g cooked pasta" = ~150 kcal.
+    - **DENSITY GUIDE**: Cooked Chicken Breast (~31g P, ~165 kcal / 100g), Cooked Steak (~25g P, ~250 kcal / 100g), Cooked Pasta/Noodles (~5g P, ~40g C, ~150-200 kcal / 100g).
+    - If 'USER CONTEXT' or the description specifies "raw" vs "cooked", adjust densities accordingly. **CRITICAL**: Cooked meat is ~25-30% more nutrient-dense by weight than raw meat because it loses water. If the user says "cooked chicken (100g)", it has ~31g protein. If they say "raw chicken (100g)", it has ~23g protein. Assume "cooked" unless stated.
 
 3.  **Portion Sizing**:
     - If no explicit quantity is known, assume a **STANDARD SERVING** for the identified food (e.g. 1 medium bowl, 1 slice). Do NOT overestimate.
+    - If 'Portion' ({{{portionSize}}} {{{portionUnit}}}) is "1 serving" but the description has a weight (e.g. "200g"), the weight in the description **TRUMPS** the generic "1 serving".
 
 4.  **Other Health Indicators (STRICT LOGIC)**:
     - **Keto**: If ingredients contain "Sugar", "Cane Sugar", "Honey", "Maple Syrup", "Flour", "Rice", "Bread", "Pasta", or "Oats" -> 'ketoFriendliness.score' MUST be 'Not Keto-Friendly' (unless Context explicitly says "Keto Version").

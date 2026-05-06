@@ -16,7 +16,7 @@ import { ExpertCropper } from '@/components/admin/ExpertCropper';
 import { getCroppedImg } from '@/lib/cropImage';
 import type { ExpertProfile, UserProfile } from '@/types';
 import { Loader2, Plus, Edit2, Search, Users, Activity, ArrowLeft, ChevronRight, UserPlus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 
 export function ExpertsTab() {
@@ -43,6 +43,12 @@ export function ExpertsTab() {
   // Cropper state
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
+  
+  // Pending ID for new experts to keep Storage + Firestore in sync
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,19 +94,29 @@ export function ExpertsTab() {
 
   const handleCropComplete = async (croppedAreaPixels: any) => {
     if (!imageSrc) return;
+    setIsUploading(true);
     try {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, 500);
       if (!croppedImage) throw new Error("Failed to crop image");
 
-      const tempId = editingId || uuidv4();
-      const storageRef = ref(storage, `expertProfiles/${tempId}/profile.jpg`);
+      // Use editingId, or existing pendingId, or generate new pendingId
+      const id = editingId || pendingId || uuidv4();
+      if (!editingId && !pendingId) {
+        setPendingId(id);
+      }
+
+      const storageRef = ref(storage, `expertProfiles/${id}/profile.jpg`);
       await uploadBytes(storageRef, croppedImage);
       const url = await getDownloadURL(storageRef);
       setProfilePictureUrl(url);
       setImageSrc(null); // Close cropper
+      toast({ title: 'Photo uploaded' });
     } catch (e) {
-      console.error(e);
+      console.error("Upload error:", e);
       toast({ title: 'Failed to upload image', variant: 'destructive' });
+      throw e; // Re-throw to let cropper know it failed
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -110,8 +126,9 @@ export function ExpertsTab() {
       return;
     }
 
+    setIsSaving(true);
     try {
-      const id = editingId || uuidv4();
+      const id = editingId || pendingId || uuidv4();
       const now = Timestamp.now();
       
       const expertData: Partial<ExpertProfile> = {
@@ -135,7 +152,10 @@ export function ExpertsTab() {
       await setDoc(doc(db, 'expertUserLinks', linkedUserId), { expertId: id });
 
       toast({ title: editingId ? 'Expert updated' : 'Expert created' });
+      
+      // Reset all form state
       setEditingId(null);
+      setPendingId(null);
       setDisplayName('');
       setHeadline('');
       setLinkedUserId('');
@@ -149,8 +169,10 @@ export function ExpertsTab() {
       setExperts(expertsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as ExpertProfile)));
 
     } catch (e) {
-      console.error(e);
+      console.error("Save error:", e);
       toast({ title: 'Error saving expert', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -167,6 +189,7 @@ export function ExpertsTab() {
 
   const resetForm = () => {
     setEditingId(null);
+    setPendingId(null);
     setDisplayName('');
     setHeadline('');
     setLinkedUserId('');
@@ -174,6 +197,8 @@ export function ExpertsTab() {
     setProfilePictureUrl('');
     setActive(true);
     setView('list');
+    setIsSaving(false);
+    setIsUploading(false);
   };
 
   const handleUserSelect = (u: UserProfile) => {
@@ -383,10 +408,15 @@ export function ExpertsTab() {
                     </div>
 
                     <div className="pt-4 flex gap-3">
-                        <Button onClick={handleSave} className="flex-1 bg-[#ffc01f] hover:bg-[#ffc01f]/90 text-black font-bold h-14 rounded-2xl shadow-lg shadow-[#ffc01f]/10">
-                            {editingId ? 'Save Profile Changes' : 'Complete Expert Setup'}
+                        <Button 
+                            onClick={handleSave} 
+                            disabled={isSaving || isUploading}
+                            className="flex-1 bg-[#ffc01f] hover:bg-[#ffc01f]/90 text-black font-bold h-14 rounded-2xl shadow-lg shadow-[#ffc01f]/10 gap-2"
+                        >
+                            {isSaving && <Loader2 className="w-5 h-5 animate-spin" />}
+                            {isSaving ? 'Saving...' : (editingId ? 'Save Profile Changes' : 'Complete Expert Setup')}
                         </Button>
-                        <Button variant="ghost" onClick={resetForm} className="h-14 px-6 rounded-2xl text-zinc-500 hover:text-white">
+                        <Button variant="ghost" onClick={resetForm} disabled={isSaving || isUploading} className="h-14 px-6 rounded-2xl text-zinc-500 hover:text-white">
                             Discard
                         </Button>
                     </div>

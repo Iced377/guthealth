@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { ExpertCropper } from '@/components/admin/ExpertCropper';
 import { getCroppedImg } from '@/lib/cropImage';
 import type { ExpertProfile, UserProfile } from '@/types';
+import { Loader2 } from 'lucide-react';
 
 export default function AdminExpertsPage() {
   const { userProfile, loading: authLoading } = useAuth();
@@ -38,6 +39,11 @@ export default function AdminExpertsPage() {
   // Cropper state
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
+
+  // Pending ID for new experts
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -75,19 +81,28 @@ export default function AdminExpertsPage() {
 
   const handleCropComplete = async (croppedAreaPixels: any) => {
     if (!imageSrc) return;
+    setIsUploading(true);
     try {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, 500);
       if (!croppedImage) throw new Error("Failed to crop image");
 
-      const tempId = editingId || uuidv4();
-      const storageRef = ref(storage, `expertProfiles/${tempId}/profile.jpg`);
+      const id = editingId || pendingId || uuidv4();
+      if (!editingId && !pendingId) {
+        setPendingId(id);
+      }
+
+      const storageRef = ref(storage, `expertProfiles/${id}/profile.jpg`);
       await uploadBytes(storageRef, croppedImage);
       const url = await getDownloadURL(storageRef);
       setProfilePictureUrl(url);
       setImageSrc(null); // Close cropper
+      toast({ title: 'Photo uploaded' });
     } catch (e) {
-      console.error(e);
+      console.error("Upload error:", e);
       toast({ title: 'Failed to upload image', variant: 'destructive' });
+      throw e;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -97,8 +112,9 @@ export default function AdminExpertsPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
-      const id = editingId || uuidv4();
+      const id = editingId || pendingId || uuidv4();
       const now = Timestamp.now();
       
       const expertData: Partial<ExpertProfile> = {
@@ -123,6 +139,7 @@ export default function AdminExpertsPage() {
 
       toast({ title: editingId ? 'Expert updated' : 'Expert created' });
       setEditingId(null);
+      setPendingId(null);
       setDisplayName('');
       setHeadline('');
       setLinkedUserId('');
@@ -135,8 +152,10 @@ export default function AdminExpertsPage() {
       setExperts(expertsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as ExpertProfile)));
 
     } catch (e) {
-      console.error(e);
+      console.error("Save error:", e);
       toast({ title: 'Error saving expert', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -150,7 +169,7 @@ export default function AdminExpertsPage() {
     setActive(expert.active);
   };
 
-  if (loading || authLoading) return <div className="p-8 text-white">Loading...</div>;
+  if (loading || authLoading) return <div className="p-8 text-white flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>;
 
   const filteredUsers = searchUser 
     ? users.filter(u => u.displayName?.toLowerCase().includes(searchUser.toLowerCase()) || u.email?.toLowerCase().includes(searchUser.toLowerCase()))
@@ -216,11 +235,11 @@ export default function AdminExpertsPage() {
             </div>
 
             <div className="pt-4 flex gap-2">
-              <Button onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-700">
-                {editingId ? 'Save Changes' : 'Create Expert'}
+              <Button onClick={handleSave} disabled={isSaving || isUploading} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
+                {isSaving ? 'Saving...' : (editingId ? 'Save Changes' : 'Create Expert')}
               </Button>
-              {editingId && (
-                <Button variant="outline" onClick={() => { setEditingId(null); setDisplayName(''); setHeadline(''); setLinkedUserId(''); setProfilePictureUrl(''); }}>
+              {(editingId || pendingId || displayName || linkedUserId) && (
+                <Button variant="outline" disabled={isSaving || isUploading} onClick={() => { setEditingId(null); setPendingId(null); setDisplayName(''); setHeadline(''); setLinkedUserId(''); setProfilePictureUrl(''); }}>
                   Cancel
                 </Button>
               )}

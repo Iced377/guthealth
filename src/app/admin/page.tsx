@@ -21,7 +21,7 @@ import { BrandTab } from '@/components/admin/BrandTab';
 import { AppJourneyTab } from '@/components/admin/AppJourneyTab';
 import { ExpertsTab } from '@/components/admin/ExpertsTab';
 import { AppleHealthSourceTotalsLog, writeIntegrationDebugFlag } from '@/lib/integration-monitoring';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 
 

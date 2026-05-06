@@ -14,10 +14,8 @@ service cloud.firestore {
 
     // Helper function to check if the user has the isAdmin flag in their profile
     function isAdmin() {
-
       return isAuthenticated() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     // --- Expert Identity Helpers ---
