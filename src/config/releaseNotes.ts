@@ -8,9 +8,42 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.5.7";
+export const APP_VERSION = "5.6.1";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.6.1',
+        date: 'June 10, 2026',
+        title: 'AI Model Stabilization',
+        description: 'Resolved AI connectivity issues affecting scanning and logging features.',
+        features: [],
+        improvements: [],
+        fixes: [
+            'Updated the default Generative AI model to a supported version (gemini-2.5-flash), fixing a 404 error that prevented the AI from analyzing images and text descriptions when logging food.'
+        ]
+    },
+    {
+        version: '5.6.0',
+        date: 'May 2, 2026',
+        title: 'Expert Hub & Support',
+        description: 'Launch of the Expert Hub and professional support infrastructure.',
+        features: [
+            'Expert Hub: A dedicated dashboard for nutrition experts to manage client relationships and review Food Reality Captures.',
+            'Expert Assignment Prompt: Personalized dashboard invitations to connect with professional support.',
+            'Food Reality Reports: Experts can now generate 3-day average reports for their clients with one click.',
+            'Expert Client Dashboard: A new space for users to manage their assigned expert and data permissions.'
+        ],
+        improvements: [
+            'Emerald Theme Standardization: Final migration of all remaining purple/indigo elements to the brand\'s primary emerald green palette.',
+            'Navigation Optimization: Standardized the navigation grid to a strict 4-item maximum per row for better mobile and iOS layout consistency.',
+            'Expert Hub Reliability: Fixed infinite loading states and optimized data hydration for expert workflows.',
+            'Security: Updated Firestore rules to support expert-client data sharing while maintaining strict privacy.'
+        ],
+        fixes: [
+            'Stability: Resolved \'setDoc\' reference errors during report generation.',
+            'Layout: Fixed grid wrapping issues in navigation sub-panels on smaller devices.'
+        ]
+    },
     {
         version: '5.5.7',
         date: 'May 1, 2026',
