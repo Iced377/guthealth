@@ -1,5 +1,13 @@
 # Release Notes
 
+## v5.6.1 (June 10, 2026) - AI Model Stabilization
+**Resolved AI connectivity issues affecting scanning and logging features.**
+
+### 🐛 Bug Fixes
+- **AI Backend Connectivity**: Updated the default Generative AI model to a supported version (`gemini-2.5-flash`), fixing a 404 error that prevented the AI from analyzing images and text descriptions when logging food.
+
+---
+
 ## v5.6.0 (May 2, 2026) - Expert Hub & Support
 **Launch of the Expert Hub and professional support infrastructure.**
 
