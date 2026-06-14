@@ -38,7 +38,7 @@ export function ExpertsTab() {
   const [view, setView] = useState<'list' | 'form'>('list');
   
   // Stats state
-  const [expertStats, setExpertStats] = useState<Record<string, { assigned: number, active: number }>>({});
+  const [expertStats, setExpertStats] = useState<Record<string, { assigned: number, active: number, assignedUsers: UserProfile[] }>>({});
 
   // Cropper state
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -63,13 +63,20 @@ export function ExpertsTab() {
 
         // Fetch relationship stats
         const relSnap = await getDocs(collection(db, 'expertClientRelationships'));
-        const stats: Record<string, { assigned: number, active: number }> = {};
+        const stats: Record<string, { assigned: number, active: number, assignedUsers: UserProfile[] }> = {};
         
         expertsData.forEach(exp => {
-          const assignments = relSnap.docs.filter(d => d.data().expertId === exp.id && d.data().active === true);
+          const assignments = relSnap.docs.filter(d => d.data().expertId === exp.id && d.data().status === 'active');
+          
+          const assignedUsers = assignments.map(a => {
+             const clientUserId = a.data().clientUserId;
+             return usersData.find(u => u.uid === clientUserId);
+          }).filter(Boolean) as UserProfile[];
+
           stats[exp.id] = {
             assigned: assignments.length,
             active: Math.floor(assignments.length * 0.7), // Mocking active users as 70% of assigned for now
+            assignedUsers,
           };
         });
         setExpertStats(stats);
@@ -236,7 +243,7 @@ export function ExpertsTab() {
             {/* Expert Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {experts.map(expert => {
-                    const stats = expertStats[expert.id] || { assigned: 0, active: 0 };
+                    const stats = expertStats[expert.id] || { assigned: 0, active: 0, assignedUsers: [] };
                     return (
                         <Card key={expert.id} className="bg-white/5 border-white/10 text-white overflow-hidden hover:border-indigo-500/30 transition-colors group">
                             <CardHeader className="pb-4">
@@ -285,7 +292,32 @@ export function ExpertsTab() {
                                             <span key={`${tag}-${i}`} className="text-[8px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{tag}</span>
                                         ))}
                                     </div>
-                                    <Button onClick={() => handleEdit(expert)} variant="secondary" className="w-full bg-white/10 hover:bg-white/15 text-white border-0 rounded-xl h-10 text-xs font-bold gap-2">
+                                    
+                                    {/* Assigned Users List */}
+                                    {stats.assignedUsers.length > 0 && (
+                                        <div className="mt-4 border-t border-white/5 pt-4">
+                                            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-3">Assigned Clients</p>
+                                            <div className="max-h-32 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                                                {stats.assignedUsers.map(u => (
+                                                    <div key={u.uid} className="flex items-center gap-3 bg-white/5 p-2 rounded-xl">
+                                                        {u.photoURL ? (
+                                                            <img src={u.photoURL} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-bold text-indigo-400">
+                                                                {(u.displayName || u.email || '?')[0].toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-semibold text-white truncate">{u.displayName || 'No Name'}</p>
+                                                            <p className="text-[9px] text-zinc-500 truncate">{u.email}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <Button onClick={() => handleEdit(expert)} variant="secondary" className="w-full bg-white/10 hover:bg-white/15 text-white border-0 rounded-xl h-10 text-xs font-bold gap-2 mt-2">
                                         Edit Profile
                                         <ChevronRight className="w-3 h-3" />
                                     </Button>

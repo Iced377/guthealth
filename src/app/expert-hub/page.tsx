@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import ExpertNotesDialog from '@/components/expert/ExpertNotesDialog';
 import LiveSnapshotView from '@/components/expert/LiveSnapshotView';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ExpertPage from '../expert/page';
 import type { ExpertClientRelationship, FoodRealityCapture, FoodRealityReport, TimelineEntry } from '@/types';
 
 interface ClientView {
@@ -203,13 +205,21 @@ export default function ExpertHubPage() {
 
     return (
         <div className={cn("min-h-screen pb-28", isDarkMode ? "bg-[#0a0a0a]" : "bg-zinc-50")}>
-            {/* Header */}
-            <div className="pt-14 px-6 pb-6">
-                <h1 className="text-3xl font-black tracking-tight">Expert Hub</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    {clients.length} {clients.length === 1 ? 'client' : 'clients'} sharing data with you.
-                </p>
-            </div>
+            <Tabs defaultValue="clients" className="w-full">
+                {/* Header */}
+                <div className="pt-14 px-6 pb-6">
+                    <h1 className="text-3xl font-black tracking-tight">Expert Hub</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {clients.length} {clients.length === 1 ? 'client' : 'clients'} sharing data with you.
+                    </p>
+                    
+                    <TabsList className="mt-6 w-full bg-black/5 dark:bg-white/5 h-12 p-1 rounded-2xl grid grid-cols-2">
+                        <TabsTrigger value="clients" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-emerald-500 data-[state=active]:shadow-sm">Assigned Clients</TabsTrigger>
+                        <TabsTrigger value="profile" className="rounded-xl font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-indigo-500 data-[state=active]:shadow-sm">My Connection</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent value="clients" className="mt-0 outline-none">
 
             {/* Client list */}
             <div className="px-4 space-y-3">
@@ -421,6 +431,15 @@ export default function ExpertHubPage() {
                     ))}
                 </AnimatePresence>
             </div>
+            </TabsContent>
+
+            <TabsContent value="profile" className="mt-0 outline-none min-h-[50vh] relative">
+                <div className="absolute inset-0 bg-transparent overflow-hidden">
+                    {/* Render the standard Expert Page experience within this tab */}
+                    <ExpertPage />
+                </div>
+            </TabsContent>
+            </Tabs>
 
             {/* Live Snapshot Dialog */}
             {snapshotOpen && snapshotClientId && (
