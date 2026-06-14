@@ -72,43 +72,62 @@ export default function ExpertHubPage() {
                 const clientViews: ClientView[] = [];
                 for (const rel of relationships) {
                     try {
-                        const userSnap = await getDoc(doc(db, 'users', rel.clientUserId));
-                        const userData = userSnap.data() || {};
+                        let userData: any = {};
+                        if (rel.consentedDataCategories?.includes('profile')) {
+                            try {
+                                const userSnap = await getDoc(doc(db, 'users', rel.clientUserId));
+                                userData = userSnap.data() || {};
+                            } catch (e) {
+                                console.warn(`Could not fetch profile for ${rel.clientUserId}:`, e);
+                            }
+                        }
 
-                        // Fetch captures
-                        const capturesSnap = await getDocs(
-                            query(
-                                collection(db, 'foodRealityCaptures'),
-                                where('userId', '==', rel.clientUserId),
-                                where('sharedWithExpert', '==', true),
-                                orderBy('createdAt', 'desc'),
-                                limit(5)
-                            )
-                        );
-                        const captures = capturesSnap.docs.map(d => ({ id: d.id, ...d.data() } as FoodRealityCapture));
+                        let captures: FoodRealityCapture[] = [];
+                        if (rel.consentedDataCategories?.includes('foodRealityCapture')) {
+                            try {
+                                const capturesSnap = await getDocs(
+                                    query(
+                                        collection(db, 'foodRealityCaptures'),
+                                        where('userId', '==', rel.clientUserId),
+                                        where('sharedWithExpert', '==', true),
+                                        orderBy('createdAt', 'desc'),
+                                        limit(5)
+                                    )
+                                );
+                                captures = capturesSnap.docs.map(d => ({ id: d.id, ...d.data() } as FoodRealityCapture));
+                            } catch (e) {
+                                console.warn(`Could not fetch captures for ${rel.clientUserId}:`, e);
+                            }
+                        }
 
-                        // Fetch reports
-                        const reportsSnap = await getDocs(
-                            query(
-                                collection(db, 'foodRealityReports'),
-                                where('userId', '==', rel.clientUserId),
-                                where('sharedWithExpert', '==', true),
-                                orderBy('createdAt', 'desc'),
-                                limit(5)
-                            )
-                        );
-                        const reports = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() } as FoodRealityReport));
+                        let reports: FoodRealityReport[] = [];
+                        if (rel.consentedDataCategories?.includes('foodRealityReport')) {
+                            try {
+                                const reportsSnap = await getDocs(
+                                    query(
+                                        collection(db, 'foodRealityReports'),
+                                        where('userId', '==', rel.clientUserId),
+                                        where('sharedWithExpert', '==', true),
+                                        orderBy('createdAt', 'desc'),
+                                        limit(5)
+                                    )
+                                );
+                                reports = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() } as FoodRealityReport));
+                            } catch (e) {
+                                console.warn(`Could not fetch reports for ${rel.clientUserId}:`, e);
+                            }
+                        }
 
                         clientViews.push({
                             relationship: rel,
-                            displayName: userData.displayName || 'User',
+                            displayName: userData.displayName || 'Anonymous User',
                             email: userData.email || '',
                             avatarUrl: userData.photoURL,
                             captures,
                             reports,
                         });
                     } catch (e) {
-                        console.error(`Failed to fetch client ${rel.clientUserId}:`, e);
+                        console.error(`Unexpected error processing client ${rel.clientUserId}:`, e);
                     }
                 }
 
