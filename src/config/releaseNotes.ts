@@ -8,9 +8,26 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.6.1";
+export const APP_VERSION = "5.6.2";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.6.2',
+        date: 'June 19, 2026',
+        title: 'Expert Snapshot Upgrades',
+        description: 'Major enhancements to the Live Snapshot tool for experts, allowing deep historical reviews.',
+        features: [
+            'Time Travel: Added intuitive date navigation allowing experts to review snapshots for any past day.',
+            'Historical Trends: Integrated a miniature 14-day weight trend graph directly into the daily snapshot.',
+            'Meal Timings: The snapshot now automatically calculates the precise fasting and eating windows (First to Last Meal) for the selected day.',
+            'Ingredient Insights: Timeline entries now display the full list of logged ingredients underneath each meal, and expand upon click to reveal long descriptions.'
+        ],
+        improvements: [
+            'Steps Data: Integrated daily pedometer totals into the snapshot view.',
+            'Timeline Layout: Entries now gracefully truncate long text and expand into full view when tapped.'
+        ],
+        fixes: []
+    },
     {
         version: '5.6.1',
         date: 'June 10, 2026',

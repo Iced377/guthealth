@@ -1,5 +1,20 @@
 # Release Notes
 
+## v5.6.2 (June 19, 2026) - Expert Snapshot Upgrades
+**Major enhancements to the Live Snapshot tool for experts, allowing deep historical reviews.**
+
+### ✨ New Features
+- **Time Travel**: Added intuitive date navigation allowing experts to review snapshots for any past day.
+- **Historical Trends**: Integrated a miniature 14-day weight trend graph directly into the daily snapshot.
+- **Meal Timings**: The snapshot now automatically calculates the precise fasting and eating windows (First to Last Meal) for the selected day.
+- **Ingredient Insights**: Timeline entries now display the full list of logged ingredients underneath each meal, and expand upon click to reveal long descriptions.
+
+### 🚀 Improvements
+- **Steps Data**: Integrated daily pedometer totals into the snapshot view.
+- **Timeline Layout**: Entries now gracefully truncate long text and expand into full view when tapped.
+
+---
+
 ## v5.6.1 (June 10, 2026) - AI Model Stabilization
 **Resolved AI connectivity issues affecting scanning and logging features.**
 
