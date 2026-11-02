@@ -4,7 +4,7 @@
 | --- | --- |
 | Identifier | GOV-020 |
 | Title | AI System Inventory |
-| Owner | Product owner |
+| Owner | Founder, Product Owner and AIMS Implementation Lead |
 | Version | 0.1 |
 | Created | 2026-11-02 |
 | Review date | On owner review, then on any model, prompt or flow change |

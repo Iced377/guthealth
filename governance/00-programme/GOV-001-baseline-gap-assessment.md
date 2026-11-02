@@ -4,8 +4,8 @@
 | --- | --- |
 | Identifier | GOV-001 |
 | Title | Baseline Gap Assessment |
-| Owner | Product owner |
-| Version | 0.1 |
+| Owner | Founder, Product Owner and AIMS Implementation Lead |
+| Version | 0.2 |
 | Created | 2026-11-02 |
 | Review date | On owner review; then at the end of Phase 1 |
 | Status | Draft |
@@ -26,7 +26,7 @@ There is no management system around these controls. There is no AI policy, risk
 
 Six technical problems need attention ahead of most documentation work, because they affect users now:
 
-1. Server-side authorisation gaps in AI and admin functions (F-01).
+1. Server-side authorisation weaknesses (F-01).
 2. Fabricated FODMAP values stored as if they were analysis results (F-02).
 3. The verification step reports "verified" when it has not verified (F-03).
 4. The mandatory health check fails on `main` and the build ignores type errors (F-06).
@@ -35,7 +35,7 @@ Six technical problems need attention ahead of most documentation work, because 
 
 ## Findings
 
-**F-01 Server-side authorisation (security, privacy).** Some server functions used by AI food analysis and the admin area do not verify who is calling them before using administrative database access. One of these returns account data. Details are recorded privately in SEC-001 and are not published here because the repository is public. Status: unresolved. Severity: high.
+**F-01 Server-side authorisation (security, privacy).** Server-side authorisation weaknesses were identified. Details, evidence and status are held privately in SEC-001 because this repository is public. Severity: high. Status: open.
 
 **F-02 Fabricated FODMAP profiles.** When the AI returns no detailed FODMAP profile, the code generates numbers from a hash of the food name and stores them in `userFodmapProfile`. This happens in `src/actions/food-analysis.ts` (lines 184, 411), `src/contexts/ActionContext.tsx` (lines 792, 951, 1080, 1119, 1309, 1363), `src/app/favorites/page.tsx` and `src/components/food-logging/FoodItemCard.tsx`. When a user marks such an item as safe, the made-up profile is saved with the safe food and later sent to AI-03 and AI-05 as if it were real. Nothing marks these values as placeholders.
 
@@ -55,7 +55,7 @@ Six technical problems need attention ahead of most documentation work, because 
 
 **F-10 Supplier oversight.** No record of the Gemini API terms in force, account tier, data retention or training use, regional processing, or a fallback if the model is withdrawn. The privacy notice links to Google's general terms.
 
-**F-11 Deployment path unconfirmed.** `apphosting.yaml` sets only `maxInstances: 1`. The live branch for App Hosting is set in the Firebase console and was not inspected. The GitHub default branch is `V1` (last commit December 2025), not `main`. It is therefore not confirmed that merging to `main` releases production.
+**F-11 Deployment path partly confirmed.** On 2 November 2026 the public site `https://mygutcheck.app` returned App Hosting response headers (`x-fah-adapter`) and its JavaScript reports version 5.6.2, which was introduced in commit `de9a7ec`, the current head of `main` (EV-011). The iOS and Android apps load the same site (`capacitor.config.ts`), so one server deployment serves all platforms. Not confirmed: the App Hosting backend's live branch, whether automatic rollouts are enabled, and the exact deployed commit. These are set in the Firebase console. `apphosting.yaml` sets only `maxInstances: 1`. The GitHub default branch is `V1`, not `main`.
 
 **F-12 Repository hygiene.** The public repository contains files unrelated to the product or left from debugging: `organize_pc.py`, `tunnel.log` (a tunnel URL), `test_write.txt`, `debug_git.sh`, `debug_repro.*`, `process_video_v4.js`, `ramadan-seed.csv`. No secrets were found by a pattern search of the current tree; Git history was not searched.
 
@@ -66,7 +66,6 @@ Six technical problems need attention ahead of most documentation work, because 
 3. `WORKFLOW.md` says model changes need separate localised testing; no test record exists for commit `20b1752`.
 4. Privacy notice data description versus AI-06 inputs (F-08).
 5. Privacy notice consent claim versus absence of an AI consent step (F-08).
-6. Comment in `src/actions/admin.ts` states the actions should verify the caller's role and do not.
 
 ## Status by AIMS area
 
@@ -95,7 +94,7 @@ Status uses: none, planned, documented, implemented, verified, effective. "Imple
 
 ## Proposed first five priorities
 
-1. **Close the authorisation gaps (F-01).** Verify the Firebase ID token in each server action and derive the user from it; restrict admin actions to admin users. Test with synthetic accounts. Needs owner approval and a release.
+1. **Close the authorisation gaps (F-01).** Tracked privately in SEC-001. Needs owner approval and a release.
 2. **Stop storing fabricated or overstated results (F-02, F-03).** Store no profile, or an explicit "unavailable" state, when the AI returns none. Record re-analysed results as unverified unless re-checked. Make the critic fail closed in the stored record. Decide how to treat existing records.
 3. **Restore the release gate (F-06).** Fix the 12 type errors, remove the build error suppression once clean, and run the health check in a GitHub Actions workflow on pull requests to `develop` and `main`.
 4. **Control model and prompt changes (F-04, F-05).** Record model identifier and prompt version with each AI result; update `WORKFLOW.md`; build a small synthetic evaluation set for AI-01 to AI-03 and run it before any model or prompt change.
@@ -103,18 +102,21 @@ Status uses: none, planned, documented, implemented, verified, effective. "Imple
 
 The AI Coach safety work (F-07) and the risk assessment follow in Phase 2. F-11 should be confirmed before any release from this work.
 
-## Decisions needed from the owner
+## Owner decisions
 
-| ID | Decision |
-| --- | --- |
-| D-01 | Where to keep private records (security details, PECB log, experience chronology, sensitive evidence). Recommended: a separate private GitHub repository. |
-| D-02 | Branch. Work is pushed to `feature/iso42001-aims`, created from `main`. The session's assigned branch `claude/kind-archimedes-se96fo` was created from `V1`, not `main`, and has not been changed. Confirm `feature/iso42001-aims` as the working branch and whether to delete the other. |
-| D-03 | Approve, change or reject the draft scope (GOV-010). |
-| D-04 | Approve starting priority 1 as a code change on a feature branch. |
-| D-05 | Name and role titles to record for the owner. |
+Recorded from the owner's instructions in the working session of 2 November 2026.
+
+| ID | Decision | Status |
+| --- | --- | --- |
+| D-01 | Private records go in a private GitHub repository named `gutcheck-aims-private`. Public documents reference them by identifier only. | Decided. Repository not yet created. |
+| D-02 | Work continues on `feature/iso42001-aims`. The old session branch is left as it is: no force push, no deletion. | Decided |
+| D-03 | GOV-010 approved in principle. Formal status stays Pending owner review until production architecture, data flows and jurisdictions are confirmed. | Decided |
+| D-04 | Authorisation fixes for F-01 may be investigated and prepared. No production deployment without owner approval of the changes and test results. | Decided |
+| D-05 | Owner roles: Founder, Product Owner and AIMS Implementation Lead. PECB Lead Implementer status is not to be stated until awarded. | Decided |
 
 ## Revision history
 
 | Version | Date | Change | By |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-02 | First draft from source review of `main` at `de9a7ec`. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
+| 0.2 | 2026-11-02 | F-01 detail moved to private SEC-001. F-11 updated with live site checks. Owner decisions D-01 to D-05 recorded. | Drafted by AI assistant (Claude Code). Decisions given by the owner; document not yet reviewed by the owner. |

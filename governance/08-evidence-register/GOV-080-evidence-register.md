@@ -4,8 +4,8 @@
 | --- | --- |
 | Identifier | GOV-080 |
 | Title | Evidence Register |
-| Owner | Product owner |
-| Version | 0.1 |
+| Owner | Founder, Product Owner and AIMS Implementation Lead |
+| Version | 0.2 |
 | Created | 2026-11-02 |
 | Review date | Updated with each work session |
 | Status | Draft |
@@ -26,9 +26,12 @@ Each entry records what the evidence shows, where it is, and whether it is publi
 | EV-008 | 2026-11-02 | Absence of tests and CI: no test files, no `.github` directory on `main` | Git at `de9a7ec` | GOV-001 F-05 | Yes |
 | EV-009 | 2026-11-02 | Security finding details | SEC-001 (private) | GOV-001 F-01 | No |
 | EV-010 | 2026-11-02 | GitHub issues list empty (no incident or defect tracking in GitHub) | GitHub | GOV-001 F-09 | Yes |
+| EV-011 | 2026-11-02 | Live site check: `https://mygutcheck.app` served by Firebase App Hosting (`x-fah-adapter: nextjs-14.0.21`); bundled release notes report version 5.6.2. Read-only requests to public pages. | Private copy of headers and bundle extracts (PRIV-EV-011) | GOV-001 F-11 | Summary only |
+| EV-012 | 2026-11-02 | Security investigation and fix test evidence | SEC-001 (private) | GOV-001 F-01 | No |
 
 ## Revision history
 
 | Version | Date | Change | By |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-02 | Register created with baseline evidence. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
+| 0.2 | 2026-11-02 | Added EV-011 and EV-012. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |

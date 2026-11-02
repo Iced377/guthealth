@@ -4,11 +4,11 @@
 | --- | --- |
 | Identifier | GOV-010 |
 | Title | AIMS Scope |
-| Owner | Product owner |
-| Version | 0.1 |
+| Owner | Founder, Product Owner and AIMS Implementation Lead |
+| Version | 0.2 |
 | Created | 2026-11-02 |
 | Review date | On owner review; then annually or when AI functions change |
-| Status | Draft |
+| Status | Pending owner review |
 | ISO references | ISO/IEC 42001:2023 clause 4.3 (with 4.1 and 4.2) |
 | Related evidence | GOV-001, GOV-020 |
 
@@ -51,10 +51,17 @@ The AIMS is sized for a single-operator product. Committees, departments and sep
 
 ## Approval
 
-Not approved. Owner decisions required: D-03 in GOV-001, confirmation of the organisation description, and the jurisdictions to list.
+Approved in principle by the owner on 2 November 2026 (GOV-001, D-03). Formal approval is held until the following are confirmed:
+
+1. Production architecture: App Hosting backend, live branch and rollout settings (GOV-001, F-11).
+2. Data flows: what each AI function sends to Google, and the Gemini account terms (GOV-020 open points).
+3. Jurisdictions where GutCheck has users and app store listings, and the law that applies.
+
+Expected changes once confirmed: list the jurisdictions in the issues section; add the Expert Hub data flow if experts can view AI output; remove AI-08 to AI-10 if they are retired.
 
 ## Revision history
 
 | Version | Date | Change | By |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-02 | First draft. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
+| 0.2 | 2026-11-02 | Status set to Pending owner review after approval in principle (D-03). Conditions for formal approval listed. | Drafted by AI assistant (Claude Code) from the owner's decision. |
