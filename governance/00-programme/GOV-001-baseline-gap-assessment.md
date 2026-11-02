@@ -108,7 +108,7 @@ The AI Coach safety work (F-07) and the risk assessment follow in Phase 2. F-11 
 | ID | Decision |
 | --- | --- |
 | D-01 | Where to keep private records (security details, PECB log, experience chronology, sensitive evidence). Recommended: a separate private GitHub repository. |
-| D-02 | Branch name. The session was assigned `claude/kind-archimedes-se96fo`; the instructions ask for `feature/iso42001-aims`. Both currently point to the same commits. |
+| D-02 | Branch. Work is pushed to `feature/iso42001-aims`, created from `main`. The session's assigned branch `claude/kind-archimedes-se96fo` was created from `V1`, not `main`, and has not been changed. Confirm `feature/iso42001-aims` as the working branch and whether to delete the other. |
 | D-03 | Approve, change or reject the draft scope (GOV-010). |
 | D-04 | Approve starting priority 1 as a code change on a feature branch. |
 | D-05 | Name and role titles to record for the owner. |
