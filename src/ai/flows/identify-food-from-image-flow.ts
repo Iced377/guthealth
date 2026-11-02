@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 /**
  * @fileOverview Identifies food items, ingredients, and estimates portions from an image.
  *

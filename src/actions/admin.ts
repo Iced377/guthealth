@@ -2,12 +2,11 @@
 
 import { getFirestore } from 'firebase-admin/firestore';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { requireAdmin } from '@/lib/auth/server-auth';
 
-// Re-validate that the caller is an admin using their session token
-// Note: In a real production app using 'firebase-admin', you would verify the ID token from cookies/headers.
-// Since we are moving fast, we assume the Client Component already checked "isAdmin" via client SDK,
-// BUT for true security, this server action should independently verify the user's role.
-// For now, we'll implement a basic fetch.
+// Every action here verifies the caller's Firebase ID token and admin flag on the server.
+// Client-side admin checks only control what is displayed.
+export type AdminActionAuth = { idToken: string };
 
 interface AcquisitionData {
     period: string; // 'Jan 24', 'Week 1', etc.
@@ -16,7 +15,12 @@ interface AcquisitionData {
     sortKey: number; // For sorting
 }
 
-export async function getAcquisitionStats(timeframe: 'daily' | 'weekly' | 'monthly'): Promise<AcquisitionData[]> {
+export async function getAcquisitionStats(auth: AdminActionAuth, timeframe: 'daily' | 'weekly' | 'monthly'): Promise<AcquisitionData[]> {
+    try {
+        await requireAdmin(auth?.idToken);
+    } catch {
+        throw new Error('Not authorised');
+    }
     try {
         if (!adminAuth) {
             console.error("Admin Auth not initialized");
@@ -108,7 +112,12 @@ export async function getAcquisitionStats(timeframe: 'daily' | 'weekly' | 'month
     }
 }
 
-export async function checkNewJoinersSince(timestampMock: number): Promise<boolean> {
+export async function checkNewJoinersSince(auth: AdminActionAuth): Promise<boolean> {
+    try {
+        await requireAdmin(auth?.idToken);
+    } catch {
+        return false;
+    }
     // Check if any user joined after X
     // This is for the "Red Dot". 
     // Real implementation would store "LastAdminView" time in DB.
@@ -130,12 +139,18 @@ export async function checkNewJoinersSince(timestampMock: number): Promise<boole
     }
 }
 
-export async function getAuthUsersAction(): Promise<{
+export async function getAuthUsersAction(auth: AdminActionAuth): Promise<{
     success: boolean;
     users?: { uid: string; email?: string; creationTime: string; lastSignInTime?: string }[];
     error?: string;
     debug?: { projectId: string | undefined; hasServiceKey: boolean; userCount: number; sampleDate?: string }
 }> {
+    try {
+        await requireAdmin(auth?.idToken);
+    } catch {
+        return { success: false, error: 'Not authorised' };
+    }
+
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const hasServiceKey = !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 

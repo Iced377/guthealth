@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 
 /**
  * @fileOverview This file defines the daily insights flow, which analyzes a user's food log and symptoms to provide personalized insights.

@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 /**
  * @fileOverview This file defines the symptom correlation flow.
  * It analyzes a user's food log and symptom records to identify potential patterns

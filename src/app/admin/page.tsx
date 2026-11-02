@@ -467,7 +467,8 @@ export default function AdminDashboardPage() {
             setError(null);
             try {
                 const { getAuthUsersAction } = await import('@/actions/admin');
-                const result = await getAuthUsersAction();
+                const { getActionAuth } = await import('@/lib/auth/client-token');
+                const result = await getAuthUsersAction(await getActionAuth());
 
                 if (!result.success) {
                     console.error("Acquisition Fetch Failed:", result.error);

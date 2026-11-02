@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 
 /**
  * @fileOverview This file defines the user recommendations flow, which generates helpful tips and insights for the user.

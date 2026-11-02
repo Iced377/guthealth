@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 /**
  * @fileOverview Processes a natural language meal description to extract structured food information
  * and generate a witty name. This flow is intended to be called before `analyzeFoodItem`.

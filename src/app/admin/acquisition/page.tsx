@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, Users } from 'lucide-react';
 import Link from 'next/link';
 import { getAcquisitionStats } from '@/actions/admin';
+import { getActionAuth } from '@/lib/auth/client-token';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
 
 interface ChartData {
@@ -25,7 +26,7 @@ export default function AcquisitionPage() {
         const loadData = async () => {
             setLoading(true);
             try {
-                const stats = await getAcquisitionStats(timeframe);
+                const stats = await getAcquisitionStats(await getActionAuth(), timeframe);
                 // Sort stats based on date parsing?
                 // For now, assuming server returns reasonable chunks or we trust input order if sorted there.
                 // Reversing or sorting here might be needed if object keys were random.
