@@ -73,4 +73,4 @@ AI results are written to `users/{uid}/timelineEntries/{entryId}` with the Fireb
 | Version | Date | Change | By |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-02 | First draft from source review of `main` at `de9a7ec`. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
-| 0.2 | 2026-11-07 | AI-07 corrected: its only caller is unused; the live feedback page has no AI. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
+| 0.2 | 2026-11-06 | AI-07 corrected: its only caller is unused; the live feedback page has no AI. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
