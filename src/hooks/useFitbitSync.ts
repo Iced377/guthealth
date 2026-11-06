@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { FITBIT_ENABLED } from '@/lib/featureFlags';
 
 export const useFitbitSync = () => {
     const { user } = useAuth();
     const [isSyncing, setIsSyncing] = useState(false);
 
     const syncFitbit = useCallback(async () => {
-        if (!user) return;
+        if (!user || !FITBIT_ENABLED) return;
 
         try {
             setIsSyncing(true);

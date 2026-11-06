@@ -46,6 +46,7 @@ import { calculateBMR, calculateTDEE, calculateNutritionTargets, ACTIVITY_MULTIP
 import { generateUserDataExport } from '@/utils/data-export';
 import { AppleHealthService } from '@/lib/apple-health';
 import { AppleHealthIcon, FitbitIcon } from '@/components/shared/BrandIcons';
+import { FITBIT_ENABLED } from '@/lib/featureFlags';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 // import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; // Removed
@@ -771,11 +772,11 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-medium text-foreground">Fitbit</span>
-                                    <span className="text-xs text-muted-foreground">Syncs weight & steps</span>
+                                    <span className="text-xs text-muted-foreground">{FITBIT_ENABLED ? 'Syncs weight & steps' : 'Paused while Fitbit moves to Google Health'}</span>
                                 </div>
                             </div>
                             {isLoadingFitbit ? <div className="h-5 w-8 bg-white/10 rounded animate-pulse" /> :
-                                <Switch checked={isFitbitConnected} onCheckedChange={handleFitbitToggle} disabled={isTogglingFitbit} />}
+                                <Switch checked={isFitbitConnected} onCheckedChange={handleFitbitToggle} disabled={isTogglingFitbit || (!FITBIT_ENABLED && !isFitbitConnected)} />}
                         </div>
 
                         {/* Data Export */}

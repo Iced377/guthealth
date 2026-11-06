@@ -1,12 +1,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase/admin';
+import { FITBIT_ENABLED } from '@/lib/featureFlags';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import fetch from 'node-fetch';
 import { format, parseISO } from 'date-fns';
 
 export async function POST(req: NextRequest) {
+    if (!FITBIT_ENABLED) {
+        // The Fitbit Web API was turned off by Google on 2 November 2026.
+        return new NextResponse('Fitbit integration is paused', { status: 410 });
+    }
     try {
         const { idToken } = await req.json();
 

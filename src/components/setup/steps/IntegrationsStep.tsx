@@ -9,6 +9,7 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { AppleHealthService } from '@/lib/apple-health';
 import { AppleHealthIcon, FitbitIcon } from '@/components/shared/BrandIcons';
+import { FITBIT_ENABLED } from '@/lib/featureFlags';
 import { SetupData } from '../SetupWizard';
 import { useToast } from '@/hooks/use-toast';
 
@@ -199,8 +200,8 @@ export default function IntegrationsStep({ onNext, user, data, updateData }: Int
                         </div>
                     </motion.button>
 
-                    {/* Fitbit Card */}
-                    <motion.button
+                    {/* Fitbit Card (hidden while the Fitbit integration is paused) */}
+                    {FITBIT_ENABLED && <motion.button
                         disabled={isConnecting}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -242,7 +243,7 @@ export default function IntegrationsStep({ onNext, user, data, updateData }: Int
                                 )}
                             </div>
                         </div>
-                    </motion.button>
+                    </motion.button>}
 
                 </div>
 

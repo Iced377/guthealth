@@ -8,9 +8,21 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.6.3";
+export const APP_VERSION = "5.6.4";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.6.4',
+        date: 'November 6, 2026',
+        title: 'Fitbit Sync Paused',
+        description: 'Google has retired the Fitbit Web API, so Fitbit sync is paused while we move to Google Health.',
+        features: [],
+        improvements: [
+            'Fitbit: Sync is paused because Google turned off the Fitbit Web API on November 2, 2026. Your past Fitbit data stays in GutCheck.',
+            'Fitbit: You can still disconnect Fitbit from your profile. Steps from Apple Health and weight entered by hand keep working.'
+        ],
+        fixes: []
+    },
     {
         version: '5.6.3',
         date: 'November 6, 2026',

@@ -1,5 +1,14 @@
 # Release Notes
 
+## v5.6.4 (November 6, 2026) - Fitbit Sync Paused
+**Google has retired the Fitbit Web API, so Fitbit sync is paused while GutCheck moves to Google Health.**
+
+### Improvements
+- **Fitbit**: Sync is paused because Google turned off the Fitbit Web API on November 2, 2026. Past Fitbit data stays in GutCheck.
+- **Fitbit**: Users can still disconnect Fitbit from their profile. Apple Health steps and manual weight entry keep working.
+
+---
+
 ## v5.6.3 (November 6, 2026) - Security Update
 **Stronger server-side checks for account and AI features.**
 

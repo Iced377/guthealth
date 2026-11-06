@@ -330,7 +330,7 @@ const SupportPage = () => {
                                         </AccordionTrigger>
                                         <AccordionContent className="text-muted-foreground space-y-2">
                                             <p><strong>Consistency is key.</strong> Log every meal, even the small snacks. The more data you provide, the smarter your personal AI insights become.</p>
-                                            <p>Also, try to connect a wearable (Apple Health or Fitbit) to get a truly holistic view of how your activity levels interact with your nutrition; otherwise, you have the option to manually add them.</p>
+                                            <p>Also, try to connect Apple Health to get a truly holistic view of how your activity levels interact with your nutrition; otherwise, you have the option to manually add them.</p>
                                         </AccordionContent>
                                     </AccordionItem>
 
