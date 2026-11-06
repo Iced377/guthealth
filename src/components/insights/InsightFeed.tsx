@@ -169,7 +169,7 @@ export function InsightFeed() {
                     <div className="space-y-4">
                         <FrostBackplate>
                             <p className="mb-2 font-bold text-white">Simple Habit</p>
-                            <p>Add weight on the dashboard card or sync from Fitbit Aria. Consistent trends matter more than daily fluctuations.</p>
+                            <p>Add weight on the dashboard card. Consistent trends matter more than daily fluctuations.</p>
                         </FrostBackplate>
                     </div>
                 )
