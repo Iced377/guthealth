@@ -1,6 +1,6 @@
 # Release Notes
 
-## v5.6.3 (November 7, 2026) - Security Update
+## v5.6.3 (November 6, 2026) - Security Update
 **Stronger server-side checks for account and AI features.**
 
 ### Improvements
