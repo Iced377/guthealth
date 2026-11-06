@@ -5,7 +5,7 @@
 | Identifier | GOV-020 |
 | Title | AI System Inventory |
 | Owner | Founder, Product Owner and AIMS Implementation Lead |
-| Version | 0.1 |
+| Version | 0.2 |
 | Created | 2026-11-02 |
 | Review date | On owner review, then on any model, prompt or flow change |
 | Status | Draft |
@@ -43,14 +43,14 @@ All flows use the same model. The verification step ("critic") therefore checks 
 | AI-04 | Analysis verification (critic) | `verify-food-analysis.ts` | After AI-03; admin debug dialog | Output of AI-03 | Verified flag and flags; triggers one re-analysis if not verified | 0.1 |
 | AI-05 | Safe food similarity | `food-similarity.ts` | Food logging, favourites | Food item and user safe foods with FODMAP profiles | Similarity flag and reason | default |
 | AI-06 | AI Coach ("personal dietitian") | `personalized-dietitian-flow.ts` | Insights, Coach (`CoachView.tsx`, `CoachComponents.tsx`) | User question; food log; symptom log with severity; profile (display name, weight, goal, activity, TDEE, macro targets, dietary preferences); fasting data; trend analysis | Free text guidance shown to the user | default |
-| AI-07 | Feedback triage | `process-feedback-flow.ts` | Feedback widget | Feedback text submitted by the user | Summary and category for the owner | default |
+| AI-07 | Feedback triage | `process-feedback-flow.ts` | `FeedbackWidget.tsx`, which is not used anywhere in the app (removed from navigation; the live feedback page has no AI) | Feedback text submitted by the user | Summary and category for the owner | default |
 | AI-08 | Symptom correlation | `symptom-correlation-flow.ts` | No caller found on `main` (type import only) | Food log, symptom log including free text notes, safe foods | Trigger and safe food insights with confidence | default |
 | AI-09 | Daily insights | `daily-insights.ts` | No caller found on `main` | Not reviewed | Not reviewed | default |
 | AI-10 | User recommendations | `user-recommendations.ts` | No caller found on `main` (type import only) | Not reviewed | Not reviewed | default |
 
 "default" means no temperature is set in the flow, so the provider default applies.
 
-AI-08 to AI-10 appear inactive. They are still registered in `src/ai/dev.ts`. Whether they can be invoked in production needs confirmation (see GOV-001).
+AI-07 to AI-10 appear inactive. They are still registered in `src/ai/dev.ts`. Whether they can be invoked in production needs confirmation (see GOV-001).
 
 ## Data categories processed by AI
 
@@ -65,7 +65,7 @@ AI results are written to `users/{uid}/timelineEntries/{entryId}` with the Fireb
 ## Open points
 
 1. Confirm the model and environment variables set in App Hosting for production.
-2. Confirm whether AI-08 to AI-10 can be invoked in production, and retire them if unused.
+2. Confirm whether AI-07 to AI-10 can be invoked in production, and retire them if unused.
 3. Confirm Gemini API terms applicable to the account (paid or free tier), as these determine whether Google may use submitted data.
 
 ## Revision history
@@ -73,3 +73,4 @@ AI results are written to `users/{uid}/timelineEntries/{entryId}` with the Fireb
 | Version | Date | Change | By |
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-02 | First draft from source review of `main` at `de9a7ec`. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
+| 0.2 | 2026-11-07 | AI-07 corrected: its only caller is unused; the live feedback page has no AI. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
