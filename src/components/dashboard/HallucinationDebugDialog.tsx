@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Bug, Loader2 } from 'lucide-react';
-import { verifyFoodAnalysisFlow } from '@/ai/flows/verify-food-analysis';
+import { verifyFoodAnalysisFlow } from '@/lib/ai-client';
 import { useToast } from '@/hooks/use-toast';
 
 export default function HallucinationDebugDialog() {

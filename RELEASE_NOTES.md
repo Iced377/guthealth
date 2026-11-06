@@ -1,5 +1,13 @@
 # Release Notes
 
+## v5.6.3 (November 6, 2026) - Security Update
+**Stronger server-side checks for account and AI features.**
+
+### Improvements
+- **Security**: Meal analysis, the Coach and admin features now verify the user's sign-in on the server for every request.
+
+---
+
 ## v5.6.2 (June 19, 2026) - Expert Snapshot Upgrades
 **Major enhancements to the Live Snapshot tool for experts, allowing deep historical reviews.**
 

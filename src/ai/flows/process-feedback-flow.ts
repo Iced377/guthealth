@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 /**
  * @fileOverview Processes user feedback to categorize, summarize, and assess it.
  *

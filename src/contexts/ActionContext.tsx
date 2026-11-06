@@ -22,11 +22,26 @@ import type { TimelineEntry, UserProfile, LoggedFoodItem, Symptom, SymptomLog, L
 import { useToast } from '@/hooks/use-toast';
 import { format, isSameDay } from 'date-fns';
 import type { AnalyzeFoodItemOutput, FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
-import { isSimilarToSafeFoods, type FoodSimilarityOutput } from '@/ai/flows/food-similarity';
+import type { FoodSimilarityOutput } from '@/ai/flows/food-similarity';
+import { isSimilarToSafeFoods, verifyFoodAnalysisFlow, processMealDescription, analyzeFoodItem, identifyFoodFromImage } from '@/lib/ai-client';
+import { withAuth } from '@/lib/auth/client-token';
+
+// Server actions verify the caller's ID token; the uid is never sent from here.
+const triggerFoodAnalysis = withAuth(triggerFoodAnalysisAction);
+const triggerTextFoodAnalysis = withAuth(triggerTextFoodAnalysisAction);
+const logAdminEvent = withAuth(logAdminEventAction);
+const logAiPerformanceMetric = withAuth(logAiPerformanceMetricAction);
+const logAiTelemetryEvent = withAuth(logAiTelemetryEventAction);
 import { useFitbitSync } from '@/hooks/useFitbitSync';
 import type { SimplifiedFoodLogFormValues } from '@/components/food-logging/SimplifiedAddFoodDialog';
 import type { IdentifiedPhotoData } from '@/components/food-logging/IdentifyFoodByPhotoDialog';
-import { triggerFoodAnalysis, triggerTextFoodAnalysis, logAdminEvent, logAiPerformanceMetric, logAiTelemetryEvent } from '@/actions/food-analysis';
+import {
+    triggerFoodAnalysis as triggerFoodAnalysisAction,
+    triggerTextFoodAnalysis as triggerTextFoodAnalysisAction,
+    logAdminEvent as logAdminEventAction,
+    logAiPerformanceMetric as logAiPerformanceMetricAction,
+    logAiTelemetryEvent as logAiTelemetryEventAction,
+} from '@/actions/food-analysis';
 import { usePathname } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
 
@@ -644,7 +659,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             verifyingItemsRef.current.add(item.id);
 
             (async () => {
-                const { verifyFoodAnalysisFlow } = await import('@/ai/flows/verify-food-analysis');
                 const fodmapAnalysis = item.fodmapData!;
                 const verification = await verifyFoodAnalysisFlow({
                     foodItemName: item.name,
@@ -778,8 +792,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             if (itemToRepeat.sourceDescription && !itemToRepeat.sourceDescription.startsWith("Identified by photo") && itemToRepeat.sourceDescription !== "Manually logged") {
                 didAnalyzeRepeat = true;
-                const { processMealDescription } = await import('@/ai/flows/process-meal-description-flow');
-                const { analyzeFoodItem } = await import('@/ai/flows/fodmap-detection');
 
                 mealDescriptionOutput = await processMealDescription({ mealDescription: itemToRepeat.sourceDescription });
                 fodmapAnalysis = await analyzeFoodItem({
@@ -844,7 +856,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     flow: 'reuse',
                     durationMs: Math.round(duration),
                     success: repeatSuccess,
-                    userId: authUser.uid,
                     entryId: newItemId,
                 }).catch(() => { /* non-blocking */ });
             }
@@ -925,7 +936,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (editingItem && shouldSkipAnalysis && authUser?.uid) {
             logAiTelemetryEvent({
                 type: 'recalc_skipped',
-                userId: authUser.uid,
                 entryId: editingItem.id,
                 reason: 'description_unchanged',
                 meta: {
@@ -1015,7 +1025,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // Fire-and-forget server-side analysis for resilience.
             triggerTextFoodAnalysis(
                 currentItemId,
-                authUser.uid,
                 formData.mealDescription,
                 userDidOverrideMacros,
                 {
@@ -1037,7 +1046,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 if (shouldLogOverridePersisted && authUser?.uid) {
                     logAiTelemetryEvent({
                         type: 'override_persisted_after_edit',
-                        userId: authUser.uid,
                         entryId: currentItemId,
                         meta: {
                             macrosOverridden: true,
@@ -1056,8 +1064,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         } else {
             // Guest fallback: keep local blocking flow
             try {
-                const { processMealDescription } = await import('@/ai/flows/process-meal-description-flow');
-                const { analyzeFoodItem } = await import('@/ai/flows/fodmap-detection');
 
                 const mealDescriptionOutput = await processMealDescription({ mealDescription: formData.mealDescription });
 
@@ -1143,7 +1149,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
             triggerFoodAnalysis(
                 currentItemId,
-                authUser.uid,
                 photoData.imageUri,
                 photoData.additionalContext
                 // safeFoods fetched by server to keep payload small
@@ -1157,15 +1162,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         trigger: 'photo_analysis',
                         durationMs: Math.round(duration),
                         foodName: photoData.name || "Unknown",
-                        severity: 'warning',
-                        user: authUser.uid
+                        severity: 'warning'
                     });
                 }
                 logAiPerformanceMetric({
                     flow: 'scan',
                     durationMs: Math.round(duration),
                     success: result.success,
-                    userId: authUser.uid,
                     entryId: currentItemId,
                 }).catch(() => { /* non-blocking */ });
 
@@ -1177,8 +1180,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         trigger: 'photo_analysis',
                         error: result.error,
                         foodName: photoData.name || "Unknown",
-                        severity: 'error',
-                        user: authUser.uid
+                        severity: 'error'
                     });
                 } else {
                     // Success toast is optional since UI updates automatically via snapshot, 
@@ -1195,7 +1197,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         flow: 'scan',
                         durationMs: Math.round(duration),
                         success: false,
-                        userId: authUser.uid,
                         entryId: currentItemId,
                     }).catch(() => { /* non-blocking */ });
                 }
@@ -1213,7 +1214,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (!authUser) {
                 // Fallback to old Blocking Flow for Guests
                 try {
-                    const { identifyFoodFromImage } = await import('@/ai/flows/identify-food-from-image-flow');
                     const result = await identifyFoodFromImage({
                         imageDataUri: photoData.imageUri || "",
                         additionalContext: photoData.additionalContext,
@@ -1338,7 +1338,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (!newEntry.macrosOverridden || !newEntry.fodmapData) {
             setIsLoadingAi(prev => ({ ...prev, [currentItemId]: true }));
             try {
-                const { analyzeFoodItem } = await import('@/ai/flows/fodmap-detection');
                 const safeFoodItemsForAnalysis = (userProfile?.safeFoods?.length > 0)
                     ? userProfile.safeFoods.map(sf => ({
                         name: sf.name,

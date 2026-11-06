@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 
 /**
  * @fileOverview This file defines a Genkit flow to determine if a food item (with its portion) is similar to a user's safe foods (with their portions) based on their FODMAP profiles.

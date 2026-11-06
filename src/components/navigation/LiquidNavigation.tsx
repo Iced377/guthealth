@@ -244,7 +244,8 @@ export default function LiquidNavigation({
             // Or just call it. Next.js handles server actions in client components.
             try {
                 const { checkNewJoinersSince } = await import('@/actions/admin');
-                const hasNew = await checkNewJoinersSince(Date.now());
+                const { getActionAuth } = await import('@/lib/auth/client-token');
+                const hasNew = await checkNewJoinersSince(await getActionAuth());
                 setShowAdminDot(hasNew);
             } catch (e) {
                 // ignore

@@ -6,6 +6,34 @@ import { analyzeFoodItem } from '@/ai/flows/fodmap-detection';
 import { verifyFoodAnalysisFlow } from '@/ai/flows/verify-food-analysis';
 import { processMealDescription } from '@/ai/flows/process-meal-description-flow';
 import type { FoodFODMAPProfile } from '@/ai/flows/fodmap-detection';
+import { requireUser, isAuthorizationError } from '@/lib/auth/server-auth';
+
+// Credentials passed by the client. The uid is always taken from the verified token,
+// never from client input.
+export type ActionAuth = { idToken: string };
+
+type AuthFailure = { success: false; error: 'unauthenticated' | 'not_found' };
+
+async function authorizeEntryOwner(auth: ActionAuth, entryId: unknown): Promise<{ uid: string; entryId: string } | AuthFailure> {
+    let uid: string;
+    try {
+        uid = await requireUser(auth?.idToken);
+    } catch (error) {
+        if (isAuthorizationError(error)) {
+            return { success: false, error: 'unauthenticated' };
+        }
+        throw error;
+    }
+    if (typeof entryId !== 'string' || entryId.length === 0 || entryId.length > 200 || entryId.includes('/')) {
+        return { success: false, error: 'not_found' };
+    }
+    // The entry must already exist under the caller's own user document.
+    const snap = await adminDb.collection('users').doc(uid).collection('timelineEntries').doc(entryId).get();
+    if (!snap.exists) {
+        return { success: false, error: 'not_found' };
+    }
+    return { uid, entryId };
+}
 
 // Helper for fallback profile
 const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => {
@@ -30,6 +58,20 @@ const _generateFallbackFodmapProfile = (foodName: string): FoodFODMAPProfile => 
 };
 
 export async function triggerFoodAnalysis(
+    auth: ActionAuth,
+    entryId: string,
+    imageDataUri: string | undefined,
+    additionalContext?: string,
+) {
+    const authz = await authorizeEntryOwner(auth, entryId);
+    if ('success' in authz) {
+        return authz;
+    }
+    // Safe foods are always read server-side from the caller's own profile.
+    return runFoodAnalysis(authz.entryId, authz.uid, imageDataUri, additionalContext);
+}
+
+async function runFoodAnalysis(
     entryId: string,
     userId: string,
     imageDataUri: string | undefined, // Can be undefined if just text context, but usually photo
@@ -205,7 +247,7 @@ export async function triggerFoodAnalysis(
         // Telemetry: missing macros / health tags
         const missingMacros = updateData.calories == null || updateData.protein == null || updateData.carbs == null || updateData.fat == null;
         if (missingMacros) {
-            await logAiTelemetryEvent({
+            await recordAiTelemetryEvent({
                 type: 'missing_macros',
                 userId,
                 entryId,
@@ -221,7 +263,7 @@ export async function triggerFoodAnalysis(
 
         const missingHealthTags = !fodmapAnalysis?.glycemicIndexInfo || !fodmapAnalysis?.dietaryFiberInfo || !fodmapAnalysis?.gutBacteriaImpact || !fodmapAnalysis?.ketoFriendliness;
         if (missingHealthTags) {
-            await logAiTelemetryEvent({
+            await recordAiTelemetryEvent({
                 type: 'missing_health_tags',
                 userId,
                 entryId,
@@ -244,7 +286,44 @@ export async function triggerFoodAnalysis(
     }
 }
 
-export async function logAdminEvent(eventData: any) {
+const CLIENT_ADMIN_EVENT_TYPES = ['performance_issue', 'analysis_failure'] as const;
+type ClientAdminEvent = {
+    type: typeof CLIENT_ADMIN_EVENT_TYPES[number];
+    trigger?: string;
+    durationMs?: number;
+    foodName?: string;
+    error?: string;
+    severity?: 'warning' | 'error';
+};
+
+const clip = (value: unknown, max: number): string | null =>
+    typeof value === 'string' ? value.slice(0, max) : null;
+
+// Client-reported admin events. Only known event types and fields are stored,
+// and the user is taken from the verified token.
+export async function logAdminEvent(auth: ActionAuth, eventData: ClientAdminEvent) {
+    let uid: string;
+    try {
+        uid = await requireUser(auth?.idToken);
+    } catch {
+        return { success: false, error: 'unauthenticated' };
+    }
+    if (!eventData || !CLIENT_ADMIN_EVENT_TYPES.includes(eventData.type)) {
+        return { success: false, error: 'invalid_event' };
+    }
+    return recordAdminEvent({
+        type: eventData.type,
+        trigger: clip(eventData.trigger, 100),
+        durationMs: typeof eventData.durationMs === 'number' ? Math.round(eventData.durationMs) : null,
+        foodName: clip(eventData.foodName, 200),
+        error: clip(eventData.error, 500),
+        severity: eventData.severity === 'error' ? 'error' : 'warning',
+        user: uid,
+        source: 'client',
+    });
+}
+
+async function recordAdminEvent(eventData: Record<string, unknown>) {
     try {
         await adminDb.collection('admin_events').add({
             ...eventData,
@@ -258,14 +337,36 @@ export async function logAdminEvent(eventData: any) {
     }
 }
 
-export async function logAiPerformanceMetric(metric: {
+type AiPerformanceMetric = {
     flow: 'write' | 'scan' | 'reuse';
     durationMs: number;
     success: boolean;
     userId?: string;
     entryId?: string;
     platform?: string;
-}) {
+};
+
+export async function logAiPerformanceMetric(auth: ActionAuth, metric: Omit<AiPerformanceMetric, 'userId'>) {
+    let uid: string;
+    try {
+        uid = await requireUser(auth?.idToken);
+    } catch {
+        return { success: false, error: 'unauthenticated' };
+    }
+    if (!metric || !['write', 'scan', 'reuse'].includes(metric.flow) || typeof metric.durationMs !== 'number') {
+        return { success: false, error: 'invalid_metric' };
+    }
+    return recordAiPerformanceMetric({
+        flow: metric.flow,
+        durationMs: Math.round(metric.durationMs),
+        success: metric.success === true,
+        userId: uid,
+        ...(typeof metric.entryId === 'string' ? { entryId: metric.entryId.slice(0, 200) } : {}),
+        ...(typeof metric.platform === 'string' ? { platform: metric.platform.slice(0, 50) } : {}),
+    });
+}
+
+async function recordAiPerformanceMetric(metric: AiPerformanceMetric) {
     try {
         await adminDb.collection('ai_performance_metrics').add({
             ...metric,
@@ -278,13 +379,45 @@ export async function logAiPerformanceMetric(metric: {
     }
 }
 
-export async function logAiTelemetryEvent(eventData: {
+type AiTelemetryEvent = {
     type: 'recalc_skipped' | 'override_persisted_after_edit' | 'missing_macros' | 'missing_health_tags' | 'hallucination_flagged';
     userId?: string;
     entryId?: string;
     reason?: string;
     meta?: Record<string, any>;
-}) {
+};
+
+const CLIENT_TELEMETRY_TYPES = ['recalc_skipped', 'override_persisted_after_edit'] as const;
+
+// Client-reported telemetry. Server-side events use recordAiTelemetryEvent directly.
+export async function logAiTelemetryEvent(auth: ActionAuth, eventData: Omit<AiTelemetryEvent, 'userId'>) {
+    let uid: string;
+    try {
+        uid = await requireUser(auth?.idToken);
+    } catch {
+        return { success: false, error: 'unauthenticated' };
+    }
+    if (!eventData || !(CLIENT_TELEMETRY_TYPES as readonly string[]).includes(eventData.type)) {
+        return { success: false, error: 'invalid_event' };
+    }
+    const meta: Record<string, string | number | boolean | null> = {};
+    for (const [key, value] of Object.entries(eventData.meta ?? {}).slice(0, 10)) {
+        if (typeof value === 'number' || typeof value === 'boolean' || value === null) {
+            meta[key.slice(0, 50)] = value;
+        } else if (typeof value === 'string') {
+            meta[key.slice(0, 50)] = value.slice(0, 500);
+        }
+    }
+    return recordAiTelemetryEvent({
+        type: eventData.type,
+        userId: uid,
+        ...(typeof eventData.entryId === 'string' ? { entryId: eventData.entryId.slice(0, 200) } : {}),
+        ...(typeof eventData.reason === 'string' ? { reason: eventData.reason.slice(0, 200) } : {}),
+        meta,
+    });
+}
+
+async function recordAiTelemetryEvent(eventData: AiTelemetryEvent) {
     try {
         await adminDb.collection('ai_telemetry_events').add({
             ...eventData,
@@ -298,6 +431,24 @@ export async function logAiTelemetryEvent(eventData: {
 }
 
 export async function triggerTextFoodAnalysis(
+    auth: ActionAuth,
+    entryId: string,
+    mealDescription: string,
+    userDidOverrideMacros: boolean,
+    overrideMacros?: { calories?: number; protein?: number; carbs?: number; fat?: number },
+    overrideName?: string
+) {
+    const authz = await authorizeEntryOwner(auth, entryId);
+    if ('success' in authz) {
+        return authz;
+    }
+    if (typeof mealDescription !== 'string' || mealDescription.trim().length === 0 || mealDescription.length > 5000) {
+        return { success: false, error: 'invalid_input' };
+    }
+    return runTextFoodAnalysis(authz.entryId, authz.uid, mealDescription, userDidOverrideMacros === true, overrideMacros, overrideName);
+}
+
+async function runTextFoodAnalysis(
     entryId: string,
     userId: string,
     mealDescription: string,
@@ -425,7 +576,7 @@ export async function triggerTextFoodAnalysis(
         // Telemetry: missing macros / health tags
         const missingMacros = updateData.calories == null || updateData.protein == null || updateData.carbs == null || updateData.fat == null;
         if (missingMacros) {
-            await logAiTelemetryEvent({
+            await recordAiTelemetryEvent({
                 type: 'missing_macros',
                 userId,
                 entryId,
@@ -441,7 +592,7 @@ export async function triggerTextFoodAnalysis(
 
         const missingHealthTags = !fodmapAnalysis?.glycemicIndexInfo || !fodmapAnalysis?.dietaryFiberInfo || !fodmapAnalysis?.gutBacteriaImpact || !fodmapAnalysis?.ketoFriendliness;
         if (missingHealthTags) {
-            await logAiTelemetryEvent({
+            await recordAiTelemetryEvent({
                 type: 'missing_health_tags',
                 userId,
                 entryId,
@@ -449,7 +600,7 @@ export async function triggerTextFoodAnalysis(
             });
         }
 
-        await logAiPerformanceMetric({
+        await recordAiPerformanceMetric({
             flow: 'write',
             durationMs: Math.round(Date.now() - startTime),
             success: true,
@@ -461,7 +612,7 @@ export async function triggerTextFoodAnalysis(
     } catch (error) {
         console.error("[TextFoodAnalysis] Error:", error);
         try {
-            await logAiPerformanceMetric({
+            await recordAiPerformanceMetric({
                 flow: 'write',
                 durationMs: Math.round(Date.now() - startTime),
                 success: false,

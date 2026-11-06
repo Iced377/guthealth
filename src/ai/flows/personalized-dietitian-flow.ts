@@ -1,5 +1,5 @@
 
-'use server';
+// Server-only module. Client code must call the authenticated wrappers in src/actions/ai.ts.
 /**
  * @fileOverview This file defines the Personalized Dietitian AI flow.
  * It takes a user's question and their health data (food logs, symptoms, profile)

@@ -19,7 +19,8 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { usePathname } from 'next/navigation';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/config/firebase';
-import { processFeedback, type ProcessedFeedbackOutput } from '@/ai/flows/process-feedback-flow';
+import type { ProcessedFeedbackOutput } from '@/ai/flows/process-feedback-flow';
+import { processFeedback } from '@/lib/ai-client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,8 @@ export default function FeedbackWidget() {
 
     try {
       let aiAnalysis: ProcessedFeedbackOutput | undefined = undefined;
-      try {
+      // AI triage needs a signed-in user. Guest feedback is still submitted without it.
+      if (user) try {
         aiAnalysis = await processFeedback({
           feedbackText: data.feedbackText,
           category: data.category,

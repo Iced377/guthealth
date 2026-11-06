@@ -9,7 +9,8 @@ import { Camera, AlertTriangle, CheckCircle2, RefreshCw, X, Sparkles, ScanLine, 
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { identifyFoodFromImage, type IdentifyFoodFromImageOutput } from '@/ai/flows/identify-food-from-image-flow';
+import type { IdentifyFoodFromImageOutput } from '@/ai/flows/identify-food-from-image-flow';
+import { identifyFoodFromImage } from '@/lib/ai-client';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export interface IdentifiedPhotoData {

@@ -8,9 +8,20 @@ export interface ReleaseNote {
     fixes?: string[]; // Add optional for new structure
 }
 
-export const APP_VERSION = "5.6.2";
+export const APP_VERSION = "5.6.3";
 
 export const releaseNotesData: ReleaseNote[] = [
+    {
+        version: '5.6.3',
+        date: 'November 6, 2026',
+        title: 'Security Update',
+        description: 'Stronger server-side checks for your account and AI features.',
+        features: [],
+        improvements: [
+            'Security: Meal analysis, the Coach and admin features now verify your sign-in on the server for every request.'
+        ],
+        fixes: []
+    },
     {
         version: '5.6.2',
         date: 'June 19, 2026',
