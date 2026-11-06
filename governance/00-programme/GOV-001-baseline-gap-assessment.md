@@ -5,7 +5,7 @@
 | Identifier | GOV-001 |
 | Title | Baseline Gap Assessment |
 | Owner | Founder, Product Owner and AIMS Implementation Lead |
-| Version | 0.2 |
+| Version | 0.3 |
 | Created | 2026-11-02 |
 | Review date | On owner review; then at the end of Phase 1 |
 | Status | Draft |
@@ -55,7 +55,7 @@ Six technical problems need attention ahead of most documentation work, because 
 
 **F-10 Supplier oversight.** No record of the Gemini API terms in force, account tier, data retention or training use, regional processing, or a fallback if the model is withdrawn. The privacy notice links to Google's general terms.
 
-**F-11 Deployment path partly confirmed.** On 2 November 2026 the public site `https://mygutcheck.app` returned App Hosting response headers (`x-fah-adapter`) and its JavaScript reports version 5.6.2, which was introduced in commit `de9a7ec`, the current head of `main` (EV-011). The iOS and Android apps load the same site (`capacitor.config.ts`), so one server deployment serves all platforms. Not confirmed: the App Hosting backend's live branch, whether automatic rollouts are enabled, and the exact deployed commit. These are set in the Firebase console. `apphosting.yaml` sets only `maxInstances: 1`. The GitHub default branch is `V1`, not `main`.
+**F-11 Deployment path mostly confirmed.** The Firebase console (owner screenshot, 7 November 2026) shows project `fodmapsafe`, App Hosting backend `studio` in `us-central1`, serving `mygutcheck.app`. The live rollout is commit `de9a7ec` from `main`, dated 20 June 2026, matching the head of `main`. The iOS and Android apps load the same site (`capacitor.config.ts`). Still to confirm in the backend settings: whether automatic rollouts are on for `main`. If they are, merging to `main` releases to production immediately. The GitHub default branch is `V1`, not `main`.
 
 **F-12 Repository hygiene.** The public repository contains files unrelated to the product or left from debugging: `organize_pc.py`, `tunnel.log` (a tunnel URL), `test_write.txt`, `debug_git.sh`, `debug_repro.*`, `process_video_v4.js`, `ramadan-seed.csv`. No secrets were found by a pattern search of the current tree; Git history was not searched.
 
@@ -120,3 +120,4 @@ Recorded from the owner's instructions in the working session of 2 November 2026
 | --- | --- | --- | --- |
 | 0.1 | 2026-11-02 | First draft from source review of `main` at `de9a7ec`. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
 | 0.2 | 2026-11-02 | F-01 detail moved to private SEC-001. F-11 updated with live site checks. Owner decisions D-01 to D-05 recorded. | Drafted by AI assistant (Claude Code). Decisions given by the owner; document not yet reviewed by the owner. |
+| 0.3 | 2026-11-07 | F-11 updated: live backend and commit confirmed from the Firebase console. | Drafted by AI assistant (Claude Code). Not yet reviewed by the owner. |
